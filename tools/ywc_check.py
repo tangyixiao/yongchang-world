@@ -89,8 +89,43 @@ def _declared_key_occurrences(root: Path) -> dict[str, list[tuple[Path, int]]]:
     return dict(occurrences)
 
 
+def _declaration_namespace(path: Path) -> str:
+    """Return the Clausewitz database namespace represented by a script path."""
+
+    parts = {part.lower() for part in path.parts}
+    for namespace in (
+        "dynamic_country_names",
+        "dynamic_country_map_colors",
+        "flag_definitions",
+        "coat_of_arms",
+    ):
+        if namespace in parts:
+            return namespace
+    return "global"
+
+
+def _is_localization_bearing(path: Path) -> bool:
+    """Visual/database identifiers are not UI localization keys."""
+
+    parts = {part.lower() for part in path.parts}
+    return not bool(
+        parts
+        & {
+            "dynamic_country_names",
+            "dynamic_country_map_colors",
+            "flag_definitions",
+            "coat_of_arms",
+        }
+    )
+
+
 def collect_declared_keys(root: Path) -> set[str]:
-    return set(_declared_key_occurrences(Path(root)))
+    occurrences = _declared_key_occurrences(Path(root))
+    return {
+        key
+        for key, locations in occurrences.items()
+        if any(_is_localization_bearing(path) for path, _line in locations)
+    }
 
 
 def collect_localization_keys(root: Path) -> set[str]:
@@ -105,9 +140,11 @@ def collect_localization_keys(root: Path) -> set[str]:
 
 
 def find_duplicate_keys(root: Path) -> set[str]:
-    return {
-        key for key, occurrences in _declared_key_occurrences(Path(root)).items() if len(occurrences) > 1
-    }
+    grouped: dict[tuple[str, str], list[tuple[Path, int]]] = defaultdict(list)
+    for key, occurrences in _declared_key_occurrences(Path(root)).items():
+        for path, line in occurrences:
+            grouped[(_declaration_namespace(path), key)].append((path, line))
+    return {key for (_namespace, key), occurrences in grouped.items() if len(occurrences) > 1}
 
 
 def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
@@ -122,7 +159,13 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
             diagnostics.append(f"{path}:1: {error}")
 
     for key in sorted(find_duplicate_keys(mod_root)):
-        occurrences = _declared_key_occurrences(mod_root)[key]
+        all_occurrences = _declared_key_occurrences(mod_root)[key]
+        by_namespace: dict[str, list[tuple[Path, int]]] = defaultdict(list)
+        for path, line in all_occurrences:
+            by_namespace[_declaration_namespace(path)].append((path, line))
+        occurrences = next(
+            locations for locations in by_namespace.values() if len(locations) > 1
+        )
         locations = ", ".join(f"{path}:{line}" for path, line in occurrences)
         diagnostics.append(f"{locations}: duplicate key {key}")
 
