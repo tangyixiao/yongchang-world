@@ -50,6 +50,11 @@ class AiGuardrailsTest(unittest.TestCase):
 
     def test_startup_hook_assigns_all_catalog_strategies(self):
         text = self.hook_path.read_text("utf-8")
+        self.assertIn(
+            "on_game_started_after_lobby = {\n\ton_actions = {\n\t\tywc_on_game_started_after_lobby",
+            text,
+        )
+        self.assertIn("ywc_on_game_started_after_lobby = {\n\teffect = {", text)
         for tag in TAGS:
             self.assertIn(f"c:{tag} ?= this", text)
             self.assertIn(f"set_strategy = ai_strategy_ywc_{tag.lower()}", text)

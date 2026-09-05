@@ -98,6 +98,7 @@ def _declaration_namespace(path: Path) -> str:
         "dynamic_country_map_colors",
         "flag_definitions",
         "coat_of_arms",
+        "on_actions",
     ):
         if namespace in parts:
             return namespace
@@ -115,6 +116,7 @@ def _is_localization_bearing(path: Path) -> bool:
             "dynamic_country_map_colors",
             "flag_definitions",
             "coat_of_arms",
+            "on_actions",
         }
     )
 

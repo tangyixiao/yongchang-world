@@ -55,6 +55,15 @@ class ScriptStructureTest(unittest.TestCase):
             )
             self.assertEqual(collect_declared_keys(root), {"ywc_example"})
 
+    def test_on_action_ids_do_not_require_localization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "common/on_actions").mkdir(parents=True)
+            (root / "common/on_actions/example.txt").write_text(
+                "ywc_on_action = { effect = {} }\n", encoding="utf-8"
+            )
+            self.assertEqual(collect_declared_keys(root), set())
+
     def test_visual_database_tags_do_not_collide_with_country_definitions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
