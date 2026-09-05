@@ -26,6 +26,7 @@ OCEAN_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_ocean_state
 OCEAN_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_ocean_pops.txt"
 OCEAN_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_ocean_buildings.txt"
 OCEAN_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_ocean_journal.txt"
+REGIONAL_COUNTRY_HISTORY_FILE = ROOT / "yongchang_world/common/history/countries/ywc_regional_countries.txt"
 
 REGIONAL_NEW = {
     "NMG", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
@@ -252,6 +253,23 @@ class OceanTest(unittest.TestCase):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
         self.assertIn("ywc_je_ocean_frontiers =", journal_text)
+
+
+class RegionalCountryHistoryTest(unittest.TestCase):
+    def test_new_regional_countries_have_market_and_basic_laws(self):
+        text = REGIONAL_COUNTRY_HISTORY_FILE.read_text("utf-8")
+        expected = {
+            "OIR", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT",
+            "DER", "KAM", "GYL", "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "MNP",
+            "SHN", "ARA", "LAD", "WBK", "PNP", "PLW", "YAP", "MHL", "MRG",
+        }
+        for tag in expected:
+            match = re.search(rf"(?ms)c:{tag}\s*\?=\s*\{{.*?^\s*\}}", text)
+            self.assertIsNotNone(match, tag)
+            block = match.group(0)
+            self.assertIn("set_market_capital", block)
+            self.assertIn("activate_law", block)
+            self.assertIn("set_tax_level", block)
 
 
 if __name__ == "__main__":
