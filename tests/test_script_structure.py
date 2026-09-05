@@ -46,6 +46,15 @@ class ScriptStructureTest(unittest.TestCase):
             duplicates = find_duplicate_keys(root)
             self.assertIn("ywc_same", duplicates)
 
+    def test_nested_scripted_effect_calls_are_not_declarations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "common").mkdir()
+            (root / "common/example.txt").write_text(
+                "ywc_example = {\n    ywc_example = yes\n}\n", encoding="utf-8"
+            )
+            self.assertEqual(collect_declared_keys(root), {"ywc_example"})
+
     def test_repo_fixtures_are_available(self):
         self.assertTrue((ROOT / "tests/fixtures/broken_brace.txt").exists())
         self.assertTrue((ROOT / "tests/fixtures/missing_localization.txt").exists())

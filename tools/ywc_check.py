@@ -10,7 +10,7 @@ from pathlib import Path
 
 SCRIPT_SUFFIXES = {".txt", ".gui", ".asset", ".gfx", ".mod"}
 LOCALIZATION_SUFFIXES = {".yml", ".yaml"}
-DECLARED_KEY = re.compile(r"^\s*(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2})\s*=")
+DECLARED_KEY = re.compile(r"^(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2})\s*=")
 LOCALIZATION_KEY = re.compile(r"^\s*(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2}(?:_[A-Za-z0-9_]+)?)\s*:")
 
 
