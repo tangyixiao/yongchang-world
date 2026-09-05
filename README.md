@@ -23,6 +23,8 @@ powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch
 
 日志摘要写入 `artifacts/smoke/latest-summary.txt`，十国内容汇总写入 `artifacts/smoke/core-country-summary.json`；原版游戏目录保持只读，仓库只保存摘要而不保存大型日志或存档。
 
+进入已有战局后，可用本体的 `scripted_tests` 命令启用 `yongchang_world/tools/scripted_tests/ywc_release_smoke.txt`，执行只读的 1900 年发布烟测：十国存在、NMG 的墨西哥属国关系以及启动兼容路径均会被检查。
+
 ## 当前边界
 
 本阶段已完成十国内容、DLC 挂载兼容和 AI 策略接线的静态/隐藏启动验收；仍未完成完整 UI 逐国选国与 1836—1900 长期观察局，因此尚未宣称 AI 长期平衡已达标。游戏脚本以本体 1.13.11（Build ID 24799966）为基线，Province ID 来自本体快照。
