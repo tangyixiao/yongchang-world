@@ -1,0 +1,38 @@
+import json
+import pathlib
+import unittest
+
+
+ROOT = pathlib.Path(__file__).parents[1]
+
+
+class MetadataTest(unittest.TestCase):
+    def test_metadata_targets_113(self):
+        data = json.loads(
+            (ROOT / "yongchang_world/.metadata/metadata.json").read_text("utf-8")
+        )
+        self.assertEqual(data["name"], "The Yongchang World")
+        self.assertEqual(data["game_id"], "victoria3")
+        self.assertEqual(data["version"], "0.1.0")
+        self.assertEqual(data["supported_game_version"], "1.13.*")
+        self.assertEqual(
+            data["tags"],
+            ["Alternative History", "Map"],
+        )
+        self.assertTrue(data["game_custom_data"]["multiplayer_synchronized"])
+
+    def test_descriptor_has_launcher_identity(self):
+        descriptor = (ROOT / "yongchang_world/descriptor.mod").read_text("utf-8")
+        self.assertIn('name="The Yongchang World"', descriptor)
+        self.assertIn('version="0.1.0"', descriptor)
+        self.assertIn('supported_version="1.13.*"', descriptor)
+
+    def test_install_script_is_idempotent_by_contract(self):
+        script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
+        self.assertIn("New-Item -ItemType Directory -Force", script)
+        self.assertIn("Set-Content", script)
+        self.assertIn("yongchang_world.mod", script)
+
+
+if __name__ == "__main__":
+    unittest.main()
