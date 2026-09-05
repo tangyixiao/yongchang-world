@@ -5,6 +5,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).parents[1]
 DIPLOMACY_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_inner_asia_diplomacy.txt"
+OCEAN_DIPLOMACY_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_ocean_diplomacy.txt"
 
 
 class InnerAsiaDiplomacyTest(unittest.TestCase):
@@ -34,6 +35,23 @@ class InnerAsiaDiplomacyTest(unittest.TestCase):
     def test_tibet_and_kho_are_not_subjects_of_each_other(self):
         self.assertNotRegex(self.text, r"c:TIB\s*\?=\s*\{(?s:.*?)country\s*=\s*c:KHO")
         self.assertNotRegex(self.text, r"c:KHO\s*\?=\s*\{(?s:.*?)country\s*=\s*c:TIB")
+
+
+class OceanDiplomacyTest(unittest.TestCase):
+    def setUp(self):
+        self.text = OCEAN_DIPLOMACY_FILE.read_text("utf-8")
+
+    def test_overseas_relationships_are_declared(self):
+        self.assertRegex(self.text, r"c:MEX\s*\?=\s*\{(?s:.*?)country\s*=\s*c:NMG(?s:.*?)type\s*=\s*protectorate")
+        for country in ("DAI", "SIA", "CAM", "JHG"):
+            self.assertRegex(self.text, rf"c:MHG\s*\?=\s*\{{(?s:.*?)country\s*=\s*c:{country}")
+        self.assertRegex(self.text, r"c:LAN\s*\?=\s*\{(?s:.*?)country\s*=\s*c:WBK")
+        self.assertRegex(self.text, r"c:WBK\s*\?=\s*\{(?s:.*?)country\s*=\s*c:LAN")
+        for country in ("PNP", "PLW", "YAP", "MHL"):
+            self.assertRegex(self.text, rf"c:JHG\s*\?=\s*\{{(?s:.*?)country\s*=\s*c:{country}")
+
+    def test_nmg_has_no_american_starting_subject_edge(self):
+        self.assertNotRegex(self.text, r"c:USA\s*\?=\s*\{(?s:.*?)create_diplomatic_pact")
 
 
 if __name__ == "__main__":

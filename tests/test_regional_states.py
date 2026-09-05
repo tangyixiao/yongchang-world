@@ -21,9 +21,14 @@ SOUTHWEST_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_southwe
 SOUTHWEST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_southwest_pops.txt"
 SOUTHWEST_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_southwest_buildings.txt"
 SOUTHWEST_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_southwest_journal.txt"
+OCEAN_LEDGER_FILE = ROOT / "data/scenario/ocean_states.json"
+OCEAN_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_ocean_states.txt"
+OCEAN_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_ocean_pops.txt"
+OCEAN_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_ocean_buildings.txt"
+OCEAN_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_ocean_journal.txt"
 
 REGIONAL_NEW = {
-    "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
+    "NMG", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
     "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT", "DER", "KAM", "GYL",
     "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "AMD", "DLI", "PNP",
     "PLW", "YAP", "MHL", "MRG",
@@ -204,6 +209,49 @@ class SouthwestTest(unittest.TestCase):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
         self.assertIn("ywc_je_highland_without_master =", journal_text)
+
+
+class OceanTest(unittest.TestCase):
+    def setUp(self):
+        self.ledger = json.loads(OCEAN_LEDGER_FILE.read_text("utf-8"))
+        self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+
+    def test_ocean_constraints(self):
+        self.assertEqual(self.ledger["named_groups"]["STATE_FORMOSA"]["owner"], "JHG")
+        self.assertEqual(self.ledger["named_groups"]["STATE_LUZON_MANILA_GROUP"]["owner"], "PHI")
+        self.assertEqual(self.ledger["named_groups"]["STATE_BAJA_CALIFORNIA_LORETO_GROUP"]["owner"], "NMG")
+        self.assertEqual(self.ledger["country_population"]["NMG"], 45000)
+
+    def test_luzon_and_baja_groups_use_only_baseline_provinces(self):
+        for name in ("STATE_LUZON", "STATE_BAJA_CALIFORNIA"):
+            baseline = set(self.baseline["state_regions"][name])
+            for row in self.ledger["groups"]:
+                if row["source_state"] == name:
+                    self.assertTrue(set(row["owned_provinces"]).issubset(baseline))
+
+    def test_ocean_groups_do_not_overlap(self):
+        for state in self.ledger["source_states"]:
+            owned = [
+                province
+                for row in self.ledger["groups"]
+                if row["source_state"] == state
+                for province in row["owned_provinces"]
+            ]
+            self.assertEqual(len(owned), len(set(owned)), state)
+
+    def test_north_australia_has_one_station_and_island_tags_have_basic_economy(self):
+        self.assertEqual(self.ledger["north_australia_station_count"], 1)
+        self.assertIn("ywc_south_sea_station", self.ledger["special_buildings"])
+        state_text = OCEAN_STATE_FILE.read_text("utf-8")
+        pop_text = OCEAN_POP_FILE.read_text("utf-8")
+        building_text = OCEAN_BUILDING_FILE.read_text("utf-8")
+        journal_text = OCEAN_JOURNAL_FILE.read_text("utf-8")
+        for state in self.ledger["source_states"]:
+            self.assertIn(f"s:{state}", state_text)
+        for country in ("MHG", "WBK", "PNP", "PLW", "YAP", "MHL", "MRG", "NMG"):
+            self.assertIn(f"region_state:{country}", pop_text)
+            self.assertIn(f"region_state:{country}", building_text)
+        self.assertIn("ywc_je_ocean_frontiers =", journal_text)
 
 
 if __name__ == "__main__":
