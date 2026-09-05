@@ -12,6 +12,10 @@ BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
 NORTHEAST_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_northeast_states.txt"
 NORTHEAST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_northeast_pops.txt"
 NORTHEAST_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_northeast_buildings.txt"
+INNER_ASIA_LEDGER_FILE = ROOT / "data/scenario/inner_asia_states.json"
+INNER_ASIA_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_inner_asia_states.txt"
+INNER_ASIA_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_inner_asia_pops.txt"
+INNER_ASIA_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_inner_asia_buildings.txt"
 
 REGIONAL_NEW = {
     "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
@@ -99,6 +103,57 @@ class NortheastLedgerTest(unittest.TestCase):
         core_building = (ROOT / "yongchang_world/common/history/buildings/ywc_core_buildings.txt").read_text("utf-8")
         self.assertIn("region_state:NQG", core_pop)
         self.assertIn("region_state:NQG", core_building)
+
+
+class InnerAsiaTest(unittest.TestCase):
+    def setUp(self):
+        self.ledger = json.loads(INNER_ASIA_LEDGER_FILE.read_text("utf-8"))
+        self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+
+    def owners_for(self, state):
+        return {
+            row["target_country"]
+            for row in self.ledger["groups"]
+            if row["source_state"] == state
+        }
+
+    def test_expected_state_owners(self):
+        expected = {
+            "STATE_DZUNGARIA": "OIR",
+            "STATE_SEMIRECHE": "OIR",
+            "STATE_URGA": "MNG",
+            "STATE_ULIASTAI": "MNG",
+            "STATE_FERGANA": "KOK",
+        }
+        for state, owner in expected.items():
+            self.assertEqual(self.owners_for(state), {owner}, state)
+
+    def test_oir_mng_and_kho_have_no_province_overlap(self):
+        owners = {"OIR": set(), "MNG": set(), "KHO": set()}
+        for row in self.ledger["groups"]:
+            if row["target_country"] in owners:
+                provinces = set(row["owned_provinces"])
+                self.assertTrue(
+                    provinces.issubset(set(self.baseline["state_regions"][row["source_state"]]))
+                )
+                self.assertTrue(owners[row["target_country"]].isdisjoint(provinces))
+                owners[row["target_country"]].update(provinces)
+        self.assertTrue(all(owners.values()))
+
+    def test_successor_states_and_oases_are_present(self):
+        tags = {row["target_country"] for row in self.ledger["groups"]}
+        self.assertTrue({"KJU", "MJU", "GJU"}.issubset(tags))
+        self.assertTrue({"HMI", "TRF", "KUC", "KSH", "YRK", "KHT"}.issubset(tags))
+
+    def test_inner_asia_history_files_are_connected(self):
+        state_text = INNER_ASIA_STATE_FILE.read_text("utf-8")
+        pop_text = INNER_ASIA_POP_FILE.read_text("utf-8")
+        building_text = INNER_ASIA_BUILDING_FILE.read_text("utf-8")
+        for state in self.ledger["source_states"]:
+            self.assertIn(f"s:{state}", state_text)
+        for country in ("OIR", "MNG", "KOK", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT"):
+            self.assertIn(f"region_state:{country}", pop_text)
+            self.assertIn(f"region_state:{country}", building_text)
 
 
 if __name__ == "__main__":
