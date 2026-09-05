@@ -10,6 +10,9 @@ ZH_FILE = ROOT / "yongchang_world/localization/simp_chinese/ywc_core_l_simp_chin
 EN_FILE = ROOT / "yongchang_world/localization/english/ywc_core_l_english.yml"
 LEDGER_FILE = ROOT / "data/scenario/core_states.json"
 BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
+POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_core_pops.txt"
+BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_core_buildings.txt"
+COUNTRY_HISTORY = ROOT / "yongchang_world/common/history/countries"
 
 EXPECTED = {
     "SHU": ("STATE_BEIJING", "empire", ["han"]),
@@ -80,6 +83,43 @@ class CoreStateTest(unittest.TestCase):
             {row["owner"] for row in by_state["STATE_SAKHALIN"] if row["owner"] == "NQG"},
             {"NQG"},
         )
+
+
+class CoreEconomyTest(unittest.TestCase):
+    def test_northern_qing_population_is_within_gate(self):
+        text = POP_FILE.read_text("utf-8")
+        self.assertIn("region_state:NQG", text)
+        northern_qing = text[text.index("s:STATE_SAKHALIN"):]
+        sizes = [int(size) for size in re.findall(r"size\s*=\s*(\d+)", northern_qing)]
+        self.assertEqual(sum(sizes), 45000)
+        self.assertGreaterEqual(sum(sizes), 30000)
+        self.assertLessEqual(sum(sizes), 60000)
+
+    def test_every_core_state_has_basic_food_and_government(self):
+        text = BUILDING_FILE.read_text("utf-8")
+        for state in ("STATE_BEIJING", "STATE_FORMOSA", "STATE_LUZON", "STATE_SAKHALIN"):
+            start = text.index(f"s:{state}")
+            end = text.find("\n\ts:", start + 1)
+            block = text[start:] if end == -1 else text[start:end]
+            self.assertIn("building_government_administration", block)
+            self.assertRegex(block, r"building_(?:rice_farm|wheat_farm|rye_farm|livestock_ranch)")
+
+    def test_core_country_histories_set_government_laws_and_market(self):
+        required = (
+            "set_market_capital",
+            "activate_law = law_type:",
+            "set_tax_level",
+            "effect_starting_technology_tier_",
+        )
+        for tag in ("shu", "jhg", "dmg", "nqg"):
+            path = COUNTRY_HISTORY / f"ywc_{tag}.txt"
+            text = path.read_text("utf-8")
+            for marker in required:
+                self.assertIn(marker, text)
+
+    def test_northern_qing_uses_low_industry_start(self):
+        text = POP_FILE.read_text("utf-8") + BUILDING_FILE.read_text("utf-8")
+        self.assertNotIn("building_steel_mill", text)
 
 
 if __name__ == "__main__":
