@@ -16,6 +16,11 @@ INNER_ASIA_LEDGER_FILE = ROOT / "data/scenario/inner_asia_states.json"
 INNER_ASIA_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_inner_asia_states.txt"
 INNER_ASIA_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_inner_asia_pops.txt"
 INNER_ASIA_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_inner_asia_buildings.txt"
+SOUTHWEST_LEDGER_FILE = ROOT / "data/scenario/southwest_states.json"
+SOUTHWEST_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_southwest_states.txt"
+SOUTHWEST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_southwest_pops.txt"
+SOUTHWEST_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_southwest_buildings.txt"
+SOUTHWEST_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_southwest_journal.txt"
 
 REGIONAL_NEW = {
     "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
@@ -154,6 +159,51 @@ class InnerAsiaTest(unittest.TestCase):
         for country in ("OIR", "MNG", "KOK", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT"):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
+
+
+class SouthwestTest(unittest.TestCase):
+    def setUp(self):
+        self.ledger = json.loads(SOUTHWEST_LEDGER_FILE.read_text("utf-8"))
+        self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+
+    def owners_for(self, state):
+        return {
+            row["target_country"]
+            for row in self.ledger["groups"]
+            if row["source_state"] == state
+        }
+
+    def test_tibet_does_not_own_qinghai_and_kham(self):
+        self.assertNotIn("TIB", self.owners_for("STATE_QINGHAI"))
+        self.assertNotIn("TIB", self.owners_for("STATE_SICHUAN"))
+        self.assertEqual(self.owners_for("STATE_LHASA"), {"TIB"})
+
+    def test_releasables_are_not_starting_countries(self):
+        self.assertNotIn("AMD", self.ledger["starting_tags"])
+        self.assertNotIn("DLI", self.ledger["starting_tags"])
+        self.assertEqual(set(self.ledger["releasable_tags"]), {"AMD", "DLI"})
+
+    def test_southwest_groups_cover_source_states_without_overlap(self):
+        grouped = {state: [] for state in self.ledger["source_states"]}
+        for row in self.ledger["groups"]:
+            self.assertIn(row["source_state"], grouped)
+            self.assertTrue(row["reason"].strip())
+            grouped[row["source_state"]].extend(row["owned_provinces"])
+        for state, provinces in grouped.items():
+            self.assertEqual(len(provinces), len(set(provinces)), state)
+            self.assertEqual(set(provinces), set(self.baseline["state_regions"][state]), state)
+
+    def test_southwest_history_and_highland_journal_are_connected(self):
+        state_text = SOUTHWEST_STATE_FILE.read_text("utf-8")
+        pop_text = SOUTHWEST_POP_FILE.read_text("utf-8")
+        building_text = SOUTHWEST_BUILDING_FILE.read_text("utf-8")
+        journal_text = SOUTHWEST_JOURNAL_FILE.read_text("utf-8")
+        for state in self.ledger["source_states"]:
+            self.assertIn(f"s:{state}", state_text)
+        for country in self.ledger["starting_tags"]:
+            self.assertIn(f"region_state:{country}", pop_text)
+            self.assertIn(f"region_state:{country}", building_text)
+        self.assertIn("ywc_je_highland_without_master =", journal_text)
 
 
 if __name__ == "__main__":
