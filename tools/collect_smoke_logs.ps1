@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$GameRoot = 'E:\SteamLibrary\steamapps\common\Victoria 3',
-    [string]$UserDataRoot = (Join-Path $env:USERPROFILE 'Documents\Paradox Interactive\Victoria 3'),
+    [string]$UserDataRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Victoria 3'),
     [switch]$NoLaunch
 )
 

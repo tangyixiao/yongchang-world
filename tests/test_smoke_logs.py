@@ -37,6 +37,11 @@ class SmokeLogCollectorTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("Unknown trigger ywc_missing_trigger", result.stdout)
 
+    def test_collector_uses_redirected_windows_documents_by_default(self):
+        script = SCRIPT.read_text("utf-8")
+        self.assertIn("[Environment]::GetFolderPath('MyDocuments')", script)
+        self.assertNotIn("$env:USERPROFILE 'Documents", script)
+
 
 if __name__ == "__main__":
     unittest.main()
