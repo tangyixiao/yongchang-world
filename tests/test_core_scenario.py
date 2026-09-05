@@ -13,6 +13,11 @@ BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
 POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_core_pops.txt"
 BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_core_buildings.txt"
 COUNTRY_HISTORY = ROOT / "yongchang_world/common/history/countries"
+SUBJECT_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_core_subjects.txt"
+RELATIONS_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_core_relations.txt"
+STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/ywc_core_states.txt"
+JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_bootstrap_journal.txt"
+EVENT_FILE = ROOT / "yongchang_world/events/ywc_bootstrap_events.txt"
 
 EXPECTED = {
     "SHU": ("STATE_BEIJING", "empire", ["han"]),
@@ -120,6 +125,62 @@ class CoreEconomyTest(unittest.TestCase):
     def test_northern_qing_uses_low_industry_start(self):
         text = POP_FILE.read_text("utf-8") + BUILDING_FILE.read_text("utf-8")
         self.assertNotIn("building_steel_mill", text)
+
+
+class CoreDiplomacyTest(unittest.TestCase):
+    def test_jinghai_is_only_shun_subject(self):
+        text = SUBJECT_FILE.read_text("utf-8")
+        self.assertRegex(
+            text,
+            r"c:SHU\s*\?=\s*\{(?s:.*?)country\s*=\s*c:JHG(?s:.*?)type\s*=\s*tributary",
+        )
+        self.assertNotRegex(
+            text,
+            r"c:JHG\s*\?=\s*\{(?s:.*?)country\s*=\s*c:SHU",
+        )
+
+    def test_no_core_subject_cycle(self):
+        text = SUBJECT_FILE.read_text("utf-8")
+        self.assertEqual(text.count("type = tributary"), 1)
+
+    def test_spain_has_claim_and_hostile_relations_to_eastern_ming(self):
+        self.assertRegex(
+            STATE_HISTORY_FILE.read_text("utf-8"),
+            r"s:STATE_LUZON\s*=\s*\{(?s:.*?)add_claim\s*=\s*c:SPA",
+        )
+        relations = RELATIONS_FILE.read_text("utf-8")
+        self.assertRegex(
+            relations,
+            r"c:DMG\s*\?=\s*\{(?s:.*?)set_relations\s*=\s*\{\s*country\s*=\s*c:SPA\s+value\s*=\s*-\d+",
+        )
+
+    def test_bootstrap_journals_and_events_are_connected(self):
+        journal = JOURNAL_FILE.read_text("utf-8")
+        events = EVENT_FILE.read_text("utf-8")
+        journal_ids = (
+            "ywc_je_eternal_yongchang",
+            "ywc_je_jinghai_autonomy",
+            "ywc_je_dongming_survival",
+            "ywc_je_blackwater_century",
+        )
+        for journal_id in journal_ids:
+            self.assertIn(f"{journal_id} =", journal)
+        for event_id in ("ywc_bootstrap.1", "ywc_bootstrap.2", "ywc_bootstrap.3", "ywc_bootstrap.4"):
+            self.assertIn(f"{event_id} =", events)
+        self.assertIn("namespace = ywc_bootstrap", events)
+        self.assertGreaterEqual(events.count("set_variable"), 4)
+        self.assertNotIn("add_modifier", events)
+
+    def test_each_core_country_receives_one_bootstrap_journal(self):
+        expected = {
+            "shu": "ywc_je_eternal_yongchang",
+            "jhg": "ywc_je_jinghai_autonomy",
+            "dmg": "ywc_je_dongming_survival",
+            "nqg": "ywc_je_blackwater_century",
+        }
+        for country, journal_id in expected.items():
+            text = (COUNTRY_HISTORY / f"ywc_{country}.txt").read_text("utf-8")
+            self.assertIn(f"type = {journal_id}", text)
 
 
 if __name__ == "__main__":
