@@ -54,7 +54,7 @@ class BaselineExporterTest(unittest.TestCase):
                 encoding="utf-8",
             )
             (game_root / "common/history/states/00_states.txt").write_text(
-                "s:STATE_TEST = { create_state = { country = c:AAA } }",
+                "s:STATE_TEST = { create_state = { country = c:AAA owned_provinces = { xABCDEF x010203 } } }",
                 encoding="utf-8",
             )
 
@@ -66,6 +66,10 @@ class BaselineExporterTest(unittest.TestCase):
             ["x010203", "xABCDEF"],
         )
         self.assertIn("STATE_TEST", baseline["states"])
+        self.assertEqual(
+            baseline["states"]["STATE_TEST"][0]["owned_provinces"],
+            ["x010203", "xABCDEF"],
+        )
 
 
 if __name__ == "__main__":

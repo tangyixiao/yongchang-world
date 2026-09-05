@@ -103,7 +103,9 @@ def _flatten_values(values: list[tuple[str, str]]) -> list[str]:
 
 def _state_provinces(body: str) -> list[str]:
     match = re.search(
-        r"(?m)\bprovinces\s*=\s*\{(?P<body>.*?)\}", body, re.DOTALL
+        r"(?m)\b(?:provinces|owned_provinces)\s*=\s*\{(?P<body>.*?)\}",
+        body,
+        re.DOTALL,
     )
     if not match:
         return []
