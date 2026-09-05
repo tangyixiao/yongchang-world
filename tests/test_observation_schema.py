@@ -21,6 +21,13 @@ REQUIRED_FIELDS = {
 
 
 class ObservationSchemaTest(unittest.TestCase):
+    def test_runner_isolates_user_data_and_does_not_claim_checkpoints(self):
+        text = (ROOT / "tools/run_observation_matrix.ps1").read_text("utf-8")
+        self.assertIn("-userdir", text)
+        self.assertIn("isolatedUserDataRoot", text)
+        self.assertIn("writes_to_user_data = $false", text)
+        self.assertIn("hidden_preload_only", text)
+
     def test_checkpoint_schema(self):
         row = {
             "year": 1846,
