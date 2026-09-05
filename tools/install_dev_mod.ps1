@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$ModDirectory = (Join-Path $env:USERPROFILE 'Documents\Paradox Interactive\Victoria 3\mod')
+    [string]$ModDirectory = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Victoria 3\mod')
 )
 
 $ErrorActionPreference = 'Stop'

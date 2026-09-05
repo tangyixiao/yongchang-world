@@ -15,6 +15,8 @@ class MetadataTest(unittest.TestCase):
         self.assertEqual(data["game_id"], "victoria3")
         self.assertEqual(data["version"], "0.1.0")
         self.assertEqual(data["supported_game_version"], "1.13.*")
+        self.assertEqual(data["short_description"], "1836年永昌世界四国垂直切片")
+        self.assertEqual(data["relationships"], [])
         self.assertEqual(
             data["tags"],
             ["Alternative History", "Map"],
@@ -27,11 +29,25 @@ class MetadataTest(unittest.TestCase):
         self.assertIn('version="0.1.0"', descriptor)
         self.assertIn('supported_version="1.13.*"', descriptor)
 
+    def test_localization_files_have_utf8_bom(self):
+        files = sorted((ROOT / "yongchang_world/localization").rglob("*.yml"))
+        self.assertTrue(files)
+        for path in files:
+            self.assertTrue(
+                path.read_bytes().startswith(b"\xef\xbb\xbf"),
+                f"Missing UTF-8 BOM: {path}",
+            )
+
     def test_install_script_is_idempotent_by_contract(self):
         script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
         self.assertIn("New-Item -ItemType Directory -Force", script)
         self.assertIn("Set-Content", script)
         self.assertIn("yongchang_world.mod", script)
+
+    def test_install_script_uses_redirected_windows_documents(self):
+        script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
+        self.assertIn("[Environment]::GetFolderPath('MyDocuments')", script)
+        self.assertNotIn("$env:USERPROFILE 'Documents", script)
 
 
 if __name__ == "__main__":
