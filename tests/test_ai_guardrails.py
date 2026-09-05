@@ -18,6 +18,7 @@ class AiGuardrailsTest(unittest.TestCase):
         self.country_data = {tag: self.data[tag] for tag in TAGS}
         self.ai_path = ROOT / "yongchang_world/common/ai_strategies/ywc_ai_strategies.txt"
         self.modifier_path = ROOT / "yongchang_world/common/scripted_modifiers/ywc_balance_modifiers.txt"
+        self.hook_path = ROOT / "yongchang_world/common/on_actions/ywc_startup_hooks.txt"
 
     def test_guardrails_have_bounded_targets(self):
         self.assertLessEqual(self.data["SHU"]["max_subject_annexation_before_1866"], 1)
@@ -46,6 +47,13 @@ class AiGuardrailsTest(unittest.TestCase):
         ):
             self.assertIn(modifier, text)
         self.assertGreaterEqual(len(re.findall(r"1866|date", text)), 4)
+
+    def test_startup_hook_assigns_all_catalog_strategies(self):
+        text = self.hook_path.read_text("utf-8")
+        for tag in TAGS:
+            self.assertIn(f"c:{tag} ?= this", text)
+            self.assertIn(f"set_strategy = ai_strategy_ywc_{tag.lower()}", text)
+            self.assertIn("add_journal_entry = { type = ywc_je_dlc_compatibility }", text)
 
 
 if __name__ == "__main__":

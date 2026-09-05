@@ -43,6 +43,8 @@ class DlcMatrixTest(unittest.TestCase):
         compat_text = compat.read_text("utf-8")
         self.assertIn("ywc_dlc_base_path", compat_text)
         self.assertIn("# no DLC fallback", compat_text)
+        hook = (ROOT / "yongchang_world/common/on_actions/ywc_startup_hooks.txt").read_text("utf-8")
+        self.assertEqual(hook.count("ywc_apply_dlc_compatibility = yes"), 10)
 
 
 if __name__ == "__main__":
