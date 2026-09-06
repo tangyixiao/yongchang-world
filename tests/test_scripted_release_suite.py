@@ -17,6 +17,12 @@ class ScriptedReleaseSuiteTest(unittest.TestCase):
         self.assertIn("has_variable = ywc_dlc_base_path", text)
         self.assertIn("is_subject_of = c:MEX", text)
 
+    def test_release_suite_checks_autonomy_action_readiness(self):
+        text = SUITE.read_text("utf-8")
+        self.assertIn("ywc_nmg_autonomy_action_ready", text)
+        self.assertIn("has_journal_entry = ywc_je_new_ming_mexican_chain", text)
+        self.assertIn("has_variable = ywc_nmg_autonomy_negotiation_opened", text)
+
 
 if __name__ == "__main__":
     unittest.main()
