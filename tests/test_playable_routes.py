@@ -58,6 +58,8 @@ class PlayableRouteTest(unittest.TestCase):
             self.assertRegex(event, r"ywc_(add_heritage_legitimacy|open_trade_route|raise_autonomy_pressure)")
             self.assertIn("add_modifier", event)
             self.assertIn("remove_variable", event)
+            self.assertEqual(event.count("ai_chance = {"), 3)
+            self.assertGreaterEqual(event.count("var:ywc_"), 6)
 
     def test_jhg_routes_have_costs_and_mutual_exclusion(self):
         for route, progress, event_id, other_active in (
@@ -82,6 +84,8 @@ class PlayableRouteTest(unittest.TestCase):
             self.assertIn("ywc_raise_autonomy_pressure", event)
             self.assertIn("change_variable", event)
             self.assertIn("add_modifier", event)
+            self.assertEqual(event.count("ai_chance = {"), 3)
+            self.assertGreaterEqual(event.count("var:ywc_"), 6)
 
     def test_main_shu_and_jhg_journals_are_progress_gated(self):
         shu_event = block_for(self.events, "ywc_shu.6")

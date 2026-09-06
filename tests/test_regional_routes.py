@@ -89,6 +89,7 @@ class RegionalRouteContractTest(unittest.TestCase):
             self.assertIn("change_variable", event)
             self.assertIn("add_modifier", event)
             self.assertGreaterEqual(event.count("remove_variable"), 2)
+            self.assertEqual(event.count("ai_chance = {"), 3)
 
     def test_route_events_do_not_directly_complete_on_first_option(self):
         for event_id, success in (
@@ -122,6 +123,7 @@ class RegionalRouteContractTest(unittest.TestCase):
             self.assertIn("change_variable", event)
             self.assertIn("add_modifier", event)
             self.assertGreaterEqual(event.count("remove_variable"), 2)
+            self.assertEqual(event.count("ai_chance = {"), 3)
 
     def test_kor_lan_nmg_routes_use_distinct_overseas_contracts(self):
         specs = (
@@ -142,6 +144,7 @@ class RegionalRouteContractTest(unittest.TestCase):
             self.assertIn("change_variable", event)
             self.assertIn("add_modifier", event)
             self.assertGreaterEqual(event.count("remove_variable"), 2)
+            self.assertEqual(event.count("ai_chance = {"), 3)
 
 
 if __name__ == "__main__":
