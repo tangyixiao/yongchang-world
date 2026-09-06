@@ -3,7 +3,7 @@
 更新时间：2026-09-06  
 仓库：`E:\Victoria3 Mod`  
 当前分支：`codex/yongchang-world-bootstrap`  
-当前提交：`4253ebb test: add autonomy action readiness to in-game smoke suite`
+当前提交：`b608b3c docs: sync release evidence after GLM handoff`
 
 ## 1. 目标与硬约束
 
