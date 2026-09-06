@@ -15,7 +15,7 @@ class MetadataTest(unittest.TestCase):
         self.assertEqual(data["game_id"], "victoria3")
         self.assertEqual(data["version"], "0.1.0")
         self.assertEqual(data["supported_game_version"], "1.13.*")
-        self.assertEqual(data["short_description"], "1836年永昌世界四国垂直切片")
+        self.assertEqual(data["short_description"], "1836年永昌世界十国垂直切片")
         self.assertEqual(data["relationships"], [])
         self.assertEqual(
             data["tags"],
