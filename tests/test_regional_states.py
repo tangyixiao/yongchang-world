@@ -9,6 +9,7 @@ REGISTRY_FILE = ROOT / "data/scenario/tag_registry.json"
 COUNTRY_FILE = ROOT / "yongchang_world/common/country_definitions/ywc_regional_countries.txt"
 NORTHEAST_LEDGER_FILE = ROOT / "data/scenario/northeast_states.json"
 BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
+OVERRIDES_FILE = ROOT / "data/scenario/ownership_overrides.json"
 NORTHEAST_STATE_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
 SEA_REGIONS_FILE = pathlib.Path(r"E:/SteamLibrary/steamapps/common/Victoria 3/game/map_data/state_regions/99_seas.txt")
 NORTHEAST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_northeast_pops.txt"
@@ -28,6 +29,15 @@ OCEAN_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_ocean_pops.txt"
 OCEAN_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_ocean_buildings.txt"
 OCEAN_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_ocean_journal.txt"
 REGIONAL_COUNTRY_HISTORY_FILE = ROOT / "yongchang_world/common/history/countries/ywc_regional_countries.txt"
+
+
+def load_authority():
+    data = json.loads(OVERRIDES_FILE.read_text("utf-8"))
+    return {row["state"]: row["groups"] for row in data["states"]}
+
+
+def authority_group(authority, state, owner):
+    return next(group for group in authority[state] if group["owner"] == owner)
 
 REGIONAL_NEW = {
     "NMG", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
@@ -62,6 +72,7 @@ class NortheastLedgerTest(unittest.TestCase):
     def setUp(self):
         self.ledger = json.loads(NORTHEAST_LEDGER_FILE.read_text("utf-8"))
         self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+        self.authority = load_authority()
 
     def test_required_source_states_are_declared(self):
         self.assertEqual(
@@ -81,18 +92,18 @@ class NortheastLedgerTest(unittest.TestCase):
         for row in self.ledger["groups"]:
             self.assertIn(row["target_country"], expected_tags)
             self.assertIn(row["source_state"], grouped)
-            self.assertTrue(row["owned_provinces"])
             self.assertTrue(row["reason"].strip())
-            grouped[row["source_state"]].extend(row["owned_provinces"])
+            grouped[row["source_state"]].extend(
+                authority_group(self.authority, row["source_state"], row["target_country"])["owned_provinces"]
+            )
 
         for state, provinces in grouped.items():
             self.assertEqual(len(provinces), len(set(provinces)), state)
             self.assertEqual(set(provinces), set(self.baseline["state_regions"][state]), state)
 
     def test_sakhalin_groups_are_disjoint(self):
-        groups = self.ledger["sakhalin_groups"]
         baseline = set(self.baseline["state_regions"]["STATE_SAKHALIN"])
-        owned = [province for provinces in groups.values() for province in provinces]
+        owned = [province for group in self.authority["STATE_SAKHALIN"] for province in group["owned_provinces"]]
         self.assertEqual(set(owned), baseline)
         self.assertEqual(len(owned), len(set(owned)))
 
@@ -121,6 +132,7 @@ class InnerAsiaTest(unittest.TestCase):
     def setUp(self):
         self.ledger = json.loads(INNER_ASIA_LEDGER_FILE.read_text("utf-8"))
         self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+        self.authority = load_authority()
 
     def owners_for(self, state):
         return {
@@ -144,7 +156,7 @@ class InnerAsiaTest(unittest.TestCase):
         owners = {"OIR": set(), "MNG": set(), "KHO": set()}
         for row in self.ledger["groups"]:
             if row["target_country"] in owners:
-                provinces = set(row["owned_provinces"])
+                provinces = set(authority_group(self.authority, row["source_state"], row["target_country"])["owned_provinces"])
                 self.assertTrue(
                     provinces.issubset(set(self.baseline["state_regions"][row["source_state"]]))
                 )
@@ -172,6 +184,7 @@ class SouthwestTest(unittest.TestCase):
     def setUp(self):
         self.ledger = json.loads(SOUTHWEST_LEDGER_FILE.read_text("utf-8"))
         self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+        self.authority = load_authority()
 
     def owners_for(self, state):
         return {
@@ -195,7 +208,9 @@ class SouthwestTest(unittest.TestCase):
         for row in self.ledger["groups"]:
             self.assertIn(row["source_state"], grouped)
             self.assertTrue(row["reason"].strip())
-            grouped[row["source_state"]].extend(row["owned_provinces"])
+            grouped[row["source_state"]].extend(
+                authority_group(self.authority, row["source_state"], row["target_country"])["owned_provinces"]
+            )
         for state, provinces in grouped.items():
             self.assertEqual(len(provinces), len(set(provinces)), state)
             self.assertEqual(set(provinces), set(self.baseline["state_regions"][state]), state)
@@ -222,6 +237,7 @@ class OceanTest(unittest.TestCase):
     def setUp(self):
         self.ledger = json.loads(OCEAN_LEDGER_FILE.read_text("utf-8"))
         self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+        self.authority = load_authority()
 
     def test_ocean_constraints(self):
         self.assertEqual(self.ledger["named_groups"]["STATE_FORMOSA"]["owner"], "JHG")
@@ -234,7 +250,8 @@ class OceanTest(unittest.TestCase):
             baseline = set(self.baseline["state_regions"][name])
             for row in self.ledger["groups"]:
                 if row["source_state"] == name:
-                    self.assertTrue(set(row["owned_provinces"]).issubset(baseline))
+                    provinces = authority_group(self.authority, row["source_state"], row["target_country"])["owned_provinces"]
+                    self.assertTrue(set(provinces).issubset(baseline))
 
     def test_ocean_groups_do_not_overlap(self):
         for state in self.ledger["source_states"]:
@@ -242,7 +259,7 @@ class OceanTest(unittest.TestCase):
                 province
                 for row in self.ledger["groups"]
                 if row["source_state"] == state
-                for province in row["owned_provinces"]
+                for province in authority_group(self.authority, state, row["target_country"])["owned_provinces"]
             ]
             self.assertEqual(len(owned), len(set(owned)), state)
 

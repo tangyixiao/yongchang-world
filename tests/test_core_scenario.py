@@ -9,6 +9,7 @@ COUNTRY_FILE = ROOT / "yongchang_world/common/country_definitions/ywc_core_count
 ZH_FILE = ROOT / "yongchang_world/localization/simp_chinese/ywc_core_l_simp_chinese.yml"
 EN_FILE = ROOT / "yongchang_world/localization/english/ywc_core_l_english.yml"
 LEDGER_FILE = ROOT / "data/scenario/core_states.json"
+OVERRIDES_FILE = ROOT / "data/scenario/ownership_overrides.json"
 BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
 POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_core_pops.txt"
 BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_core_buildings.txt"
@@ -61,32 +62,39 @@ class CoreCountryDefinitionTest(unittest.TestCase):
 class CoreStateTest(unittest.TestCase):
     def setUp(self):
         self.ledger = json.loads(LEDGER_FILE.read_text("utf-8"))
+        self.overrides = json.loads(OVERRIDES_FILE.read_text("utf-8"))
         self.baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+
+    def groups_for(self, state):
+        return next(row["groups"] for row in self.overrides["states"] if row["state"] == state)
 
     def test_core_provinces_have_one_owner(self):
         owners = {}
         for state in self.ledger["states"]:
-            for province in state["owned_provinces"]:
-                self.assertNotIn(province, owners)
-                owners[province] = state["owner"]
+            for group in self.groups_for(state["state"]):
+                for province in group["owned_provinces"]:
+                    self.assertNotIn(province, owners)
+                    owners[province] = group["owner"]
         self.assertEqual(self.ledger["special_rules"]["manila_owner"], "PHI")
         self.assertEqual(self.ledger["special_rules"]["formosa_owner"], "JHG")
 
     def test_ledger_provinces_are_from_the_declared_state(self):
         for row in self.ledger["states"]:
             region_provinces = set(self.baseline["state_regions"][row["state"]])
-            self.assertTrue(set(row["owned_provinces"]).issubset(region_provinces))
+            provinces = {
+                province
+                for group in self.groups_for(row["state"])
+                for province in group["owned_provinces"]
+            }
+            self.assertTrue(provinces.issubset(region_provinces))
 
     def test_core_state_split_matches_boundaries(self):
-        by_state = {}
-        for row in self.ledger["states"]:
-            by_state.setdefault(row["state"], []).append(row)
-        self.assertEqual({row["owner"] for row in by_state["STATE_FORMOSA"]}, {"JHG"})
-        luzon = [row for row in by_state["STATE_LUZON"] if row["owner"] == "DMG"][0]
+        self.assertEqual({group["owner"] for group in self.groups_for("STATE_FORMOSA")}, {"JHG"})
+        luzon = next(group for group in self.groups_for("STATE_LUZON") if group["owner"] == "DMG")
         self.assertNotIn(self.ledger["special_rules"]["manila_province"], luzon["owned_provinces"])
-        self.assertEqual({row["owner"] for row in by_state["STATE_BEIJING"]}, {"SHU"})
+        self.assertEqual({group["owner"] for group in self.groups_for("STATE_BEIJING")}, {"SHU"})
         self.assertEqual(
-            {row["owner"] for row in by_state["STATE_SAKHALIN"] if row["owner"] == "NQG"},
+            {group["owner"] for group in self.groups_for("STATE_SAKHALIN") if group["owner"] == "NQG"},
             {"NQG"},
         )
 
