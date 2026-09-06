@@ -3,7 +3,7 @@
 更新时间：2026-09-06  
 仓库：`E:\Victoria3 Mod`  
 当前分支：`codex/yongchang-world-bootstrap`  
-当前提交：`ae9daba docs: record BOM root cause, mount evidence, and diplomatic action`
+当前提交：`4253ebb test: add autonomy action readiness to in-game smoke suite`
 
 ## 1. 目标与硬约束
 
@@ -42,7 +42,7 @@
 最近一次验证结果：
 
 ```text
-python -m unittest discover -s tests -v  -> 96 tests passed
+python -m unittest discover -s tests -q  -> 97 tests passed
 python tools/ywc_check.py ...            -> exit 0
 git diff --check                         -> pass
 隐藏启动 Victoria 3                   -> Mod mounted，匹配 1.13.11
@@ -92,9 +92,9 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 本体提供的 `scripted_tests` 只能在已经进入战局后检查日期和触发器；`ywc_release_smoke.txt` 是只读不改战局的检查套件，但当前没有证明它已经被实际执行。
 
-### B. 继续 NMG 外交动作的运行时验收
+### B. NMG 外交动作运行时验收状态
 
-已实现 `ywc_nmg_autonomy_negotiation`，接手者应检查其本地化、触发条件和主日志完成效果，并用隐藏启动日志确认 `common/diplomatic_actions` 无 Unknown/Invalid 报错。所有新键继续使用 `ywc_` 前缀。
+已实现 `ywc_nmg_autonomy_negotiation`，本地化、触发条件、主日志前置条件和隐藏启动解析日志均已复核：`common/diplomatic_actions` 枚举成功，Unknown trigger/effect、Invalid database object、缺失本地化和数据库冲突均为零。烟测套件新增 `ywc_nmg_autonomy_action_ready` 只读检查；仍需进入真实战局后执行套件，才能获得运行时执行证据。所有新键继续使用 `ywc_` 前缀。
 
 ### C. 只在有真实证据时更新矩阵
 
