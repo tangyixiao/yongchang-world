@@ -15,8 +15,8 @@ BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_core_buildi
 COUNTRY_HISTORY = ROOT / "yongchang_world/common/history/countries"
 SUBJECT_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_core_subjects.txt"
 RELATIONS_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_core_relations.txt"
-STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/ywc_core_states.txt"
-OCEAN_STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/ywc_ocean_states.txt"
+STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
+OCEAN_STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
 JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_bootstrap_journal.txt"
 EVENT_FILE = ROOT / "yongchang_world/events/ywc_bootstrap_events.txt"
 

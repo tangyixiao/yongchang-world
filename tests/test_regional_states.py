@@ -9,20 +9,20 @@ REGISTRY_FILE = ROOT / "data/scenario/tag_registry.json"
 COUNTRY_FILE = ROOT / "yongchang_world/common/country_definitions/ywc_regional_countries.txt"
 NORTHEAST_LEDGER_FILE = ROOT / "data/scenario/northeast_states.json"
 BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
-NORTHEAST_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_northeast_states.txt"
+NORTHEAST_STATE_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
 NORTHEAST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_northeast_pops.txt"
 NORTHEAST_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_northeast_buildings.txt"
 INNER_ASIA_LEDGER_FILE = ROOT / "data/scenario/inner_asia_states.json"
-INNER_ASIA_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_inner_asia_states.txt"
+INNER_ASIA_STATE_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
 INNER_ASIA_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_inner_asia_pops.txt"
 INNER_ASIA_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_inner_asia_buildings.txt"
 SOUTHWEST_LEDGER_FILE = ROOT / "data/scenario/southwest_states.json"
-SOUTHWEST_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_southwest_states.txt"
+SOUTHWEST_STATE_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
 SOUTHWEST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_southwest_pops.txt"
 SOUTHWEST_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_southwest_buildings.txt"
 SOUTHWEST_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_southwest_journal.txt"
 OCEAN_LEDGER_FILE = ROOT / "data/scenario/ocean_states.json"
-OCEAN_STATE_FILE = ROOT / "yongchang_world/common/history/states/ywc_ocean_states.txt"
+OCEAN_STATE_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
 OCEAN_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_ocean_pops.txt"
 OCEAN_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_ocean_buildings.txt"
 OCEAN_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_ocean_journal.txt"
@@ -304,7 +304,9 @@ class StateHistoryVanillaCoverageTest(unittest.TestCase):
                     elif text[i] == "}":
                         depth -= 1
                     i += 1
-                owned = set(re.findall(r"\b(x[0-9A-Fa-f]{6})\b", text[start:i - 1]))
+                owned = {p.upper() for p in re.findall(r"\b(x[0-9A-Fa-f]{6})\b", text[start:i - 1])}
+                # Vanilla mixes hex case (x7F25CD / x7f25cd); compare normalized.
+                vanilla = {p.upper() for p in vanilla}
                 foreign = sorted(owned - vanilla)
                 missing = sorted(vanilla - owned)
                 if foreign:
