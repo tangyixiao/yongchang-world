@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`441c493 feat: report mod_mount in smoke log summary`
+代码验收基线：`bdcfd0b fix: make install script compatible with Windows PowerShell 5.1`
 
 ## 1. 任务目标与硬约束
 
@@ -89,10 +89,16 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - `tools/collect_smoke_logs.ps1` 的 `latest-summary.txt` 现在报告 `mod_mount=mounted|not_mounted|unknown_no_debug_log` 并附挂载原文行；该字段只作记录，不改变 clean/error 判定。fixture 级测试覆盖三种情形。
 - 已用默认用户目录的一次真实隐藏启动端到端复核：`status=clean`、`finding_count=0`、`mod_mount=mounted`（挂载行时间戳 09:38:42）。
 
+### E. 烟测套件静态验证与安装脚本修复
+
+- 烟测套件（从未被游戏解析过）的触发器词汇已静态对齐先例：`game_date` 与 `is_subject_of = c:X` 有本体用法先例，`exists = c:X` 出现在 mod 自身解析干净的颜色脚本中；带引号的日期字面量已规范化为本体的裸字面量形式（`game_date > 1836.2.1`、`last_date = 1900.1.1`）并用测试锁定。真实执行证据仍需进入战局。
+- `tools/install_dev_mod.ps1` 在本机默认的 Windows PowerShell 5.1 下会因 `-Encoding utf8NoBOM`（PS6+ 值）参数绑定失败而无法运行；已改为 `UTF8Encoding($false)` 写无 BOM 描述符，并实际运行验证（真实用户目录的 `yongchang_world.mod` 内容不变）。
+- 探针目录的 `shadercache`（纯游戏缓存，约 3.4G）已清理；`run.json`、日志等证据文件保留。
+
 ## 4. 当前验证结果
 
 ```text
-python -m unittest discover -s tests -q  -> Ran 104 tests; OK
+python -m unittest discover -s tests -q  -> Ran 106 tests; OK
 python tools/ywc_check.py                 -> exit 0
 git diff --check                           -> pass
 隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11
@@ -132,7 +138,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 ## 6. 建议 GLM 接手顺序
 
-1. 先运行 104 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
+1. 先运行 106 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
 2. 复核 `run_observation_matrix.ps1` 与 `tests/test_observation_schema.py`、`tests/test_release_gate.py`，重点检查上述证据字段的语义边界。
 3. 检查 NMG 外交动作定义、本地化和隐藏启动日志；不要把日志解析成功等同于真实外交动作执行成功。
 4. 若获得真实战局、存档导出或受支持的 headless 证据，再更新矩阵；否则保持 pending。
