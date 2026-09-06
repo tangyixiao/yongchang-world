@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`a1f57fe feat: wire the last four countries; every journal is now playable`
+代码验收基线：`见 git log（人工验收手册轮）`
 
 ## 1. 任务目标与硬约束
 
@@ -185,6 +185,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 - 在真实战局中实际执行 `ywc_release_smoke.txt`。
 - NMG 墨西哥属邦关系、外交动作可用性和主日志完成效果的进入战局运行时证据。
 - journal 完成变量缺口已清零（见 3.L）：全部 71 个完成变量均有设置者，十国及共享 ocean-frontiers 日志已完成静态接线；后续重点转为真实战局执行与事件后果平衡，不要恢复旧的 38 项豁免。
+- **人工验收手册已交付**：`docs/release/manual-acceptance-playbook.md` 覆盖全部剩余门槛的逐步操作——五配置启动（含启动器 Playset DLC 开关与挂载行核验）、逐国进入 1836 的 journal 核对表（十国全部日志名）、`scripted_tests` 控制台执行、`checkpoints.json` 回填格式与 `summarize_observation.py` / `check_release.py` 用法，以及证据规则与已知限制速查。README 与验收记录均已链接。
 
 `artifacts/observe/matrix-summary.json` 的 15 条记录仍为 `not_run_no_desktop_interaction`，总体状态为 `pending_manual_ui_observation`。`tools/check_release.py` 因此应继续返回未通过；不要通过改写矩阵状态绕过门禁。
 
