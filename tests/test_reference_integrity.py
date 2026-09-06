@@ -93,7 +93,9 @@ class ReferenceIntegrityTest(unittest.TestCase):
                     if name != expected:
                         malformed.append(f"{path.name}: {name} (expected {expected})")
                     used.add(name)
-        self.assertGreater(len(used), 150)
+        # The four orphaned regional crisis events were removed after a real
+        # 1.13.11 load; the remaining 144 dotted option keys are all wired.
+        self.assertGreaterEqual(len(used), 140)
         self.assertEqual(malformed, [], "event option names must use dotted event IDs")
         for language in ("english", "simp_chinese"):
             loc = set()
