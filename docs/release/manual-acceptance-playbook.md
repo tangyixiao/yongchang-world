@@ -1,6 +1,6 @@
 # 《永昌世界》v0.1 人工验收手册
 
-> 目标读者：可以在本机操作桌面与游戏 UI 的验收人。自动化轮次已完成全部静态与隐藏启动验证（112 项测试、引用完整、双语对齐、解析零错误）；本手册覆盖仅剩的人工门槛：真实进入战局的启动、选国、烟测执行与观察矩阵证据回填。
+> 目标读者：可以在本机操作桌面与游戏 UI 的验收人。自动化轮次已完成全部静态与隐藏启动验证（测试数量以本次 `python -m unittest discover -s tests -v` 输出为准，引用完整、双语对齐、解析零错误）；本手册覆盖仅剩的人工门槛：真实进入战局的启动、选国、烟测执行与观察矩阵证据回填。
 
 ## 0. 准备
 
@@ -72,7 +72,7 @@
 1. 数据来源（任选其一，均需真实）：
    - 战局内读取：国家面板（rank、人口）、市场面板（market）、外交面板（wars、subjects）、错误计数（本轮 error.log 行数）；
    - 存档导出：`save games` 内联文本中检索对应字段。
-2. 按 `tools/summarize_observation.py` 的模式写入 `artifacts/observe/<config>/<seed>/checkpoints.json`：
+2. 按 `tools/summarize_observation.py` 的模式写入 `artifacts/observe/<config>/run-<seed>/checkpoints.json`：
 
    ```json
    [
@@ -81,10 +81,11 @@
    ]
    ```
 
-   字段齐全、年份必须覆盖 1846/1866/1900、country 仅限十国、population/wars/subjects 非负、error_count 为 0（有脚本错误则如实填写并先修复）。
-3. 运行 `python tools/summarize_observation.py --input artifacts/observe --output artifacts/observe/matrix-summary.json` 汇总（校验失败会返回 1 并说明原因）。
-4. `python tools/check_release.py --matrix artifacts/observe/matrix-summary.json --mod-root yongchang_world`：15 条 run 全部 `verified` 前它会继续失败——**这是门禁本意，不要改写矩阵状态绕过**。
-5. 异常分类沿用计划 04：`script_error`、`state_overlap`、`diplomacy_cycle`、`ai_collapse`、`performance`、`content_unreachable`；同一异常在三个种子重复出现才进入平衡修订。
+   每个 run 必须有 3 年 × 10 国、共 30 条唯一 `(year, country)` 记录；年份必须覆盖 1846/1866/1900、country 仅限十国、population/wars/subjects 非负、error_count 为 0（有脚本错误则如实填写并先修复）。
+3. 在同一目录放置 `run.json`，至少包含 `config`、`run_id`（如 `run-11`）、`requested_seed`、`observed_seed`（无法从证据读回时为 `null`）、`status: "observed_to_checkpoint"`、`game_version: "1.13.11 (Matcha)"`、`mod_mount: "mounted"`、非空 `version_match_evidence`、与配置相符的 `expected_mounted_dlc`/`observed_mounted_dlc`、`dlc_state_matches_config: "yes"` 和非空 `evidence` 对象。预加载状态不能写成观察状态。
+4. 运行 `python tools/summarize_observation.py --input artifacts/observe --output artifacts/observe/matrix-summary.json` 汇总（校验失败会返回 1 并说明原因；只有汇总器会把合格 run 变成 `status: "verified"`）。
+5. `python tools/check_release.py --matrix artifacts/observe/matrix-summary.json --mod-root yongchang_world`：15 条 run 全部 `verified` 且证据字段一致前它会继续失败——**这是门禁本意，不要改写矩阵状态绕过**。
+6. 异常分类沿用计划 04：`script_error`、`state_overlap`、`diplomacy_cycle`、`ai_collapse`、`performance`、`content_unreachable`；同一异常在三个种子重复出现才进入平衡修订。
 
 ## 5. 证据规则与已知限制速查
 

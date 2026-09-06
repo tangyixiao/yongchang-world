@@ -69,33 +69,115 @@ class ObservationSchemaTest(unittest.TestCase):
 
     def test_summarizer_accepts_valid_fixture(self):
         with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory) / "none" / "run-11"
+            run_root.mkdir(parents=True)
+            rows = []
+            for year in (1846, 1866, 1900):
+                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"):
+                    rows.append(
+                        {
+                            "year": year,
+                            "country": country,
+                            "rank": "major_power",
+                            "population": 100000,
+                            "market": country,
+                            "wars": 0,
+                            "subjects": 0,
+                            "error_count": 0,
+                        }
+                    )
+            (run_root / "checkpoints.json").write_text(json.dumps(rows), encoding="utf-8")
+            (run_root / "run.json").write_text(
+                json.dumps(
+                    {
+                        "config": "none",
+                        "run_id": "run-11",
+                        "requested_seed": 11,
+                        "observed_seed": None,
+                        "status": "observed_to_checkpoint",
+                        "game_version": "1.13.11 (Matcha)",
+                        "mod_mount": "mounted",
+                        "version_match_evidence": ["matched"],
+                        "expected_mounted_dlc": [],
+                        "observed_mounted_dlc": [],
+                        "dlc_state_matches_config": "yes",
+                        "evidence": {
+                            "campaign": "manual campaign checkpoint export",
+                            "logs": "debug.log",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             output = pathlib.Path(directory) / "summary.json"
             result = subprocess.run(
-                [sys.executable, str(SUMMARIZER), "--input", str(ROOT / "tests/fixtures/observation-valid"), "--output", str(output)],
+                [sys.executable, str(SUMMARIZER), "--input", str(pathlib.Path(directory)), "--output", str(output)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             summary = json.loads(output.read_text("utf-8"))
-            self.assertEqual(summary["checkpoint_count"], 3)
-            self.assertEqual(summary["years"], [1846, 1866, 1900])
+            self.assertEqual(summary["schema_version"], 1)
+            self.assertEqual(summary["run_ids"], ["none/run-11"])
+            self.assertEqual(len(summary["runs"]), 1)
+            run = summary["runs"][0]
+            self.assertEqual(run["checkpoint_count"], 30)
+            self.assertEqual(run["checkpoint_years"], [1846, 1866, 1900])
+            self.assertEqual(run["countries"], sorted({"SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"}))
+            self.assertEqual(run["status"], "verified")
+            self.assertIn("source", run)
+            self.assertIn("evidence", run)
 
-    def test_summarizer_rejects_negative_population(self):
+    def test_summarizer_rejects_incomplete_or_duplicate_run(self):
         with tempfile.TemporaryDirectory() as directory:
-            input_path = pathlib.Path(directory) / "checkpoints.json"
-            output = pathlib.Path(directory) / "summary.json"
+            run_root = pathlib.Path(directory) / "none" / "run-11"
+            run_root.mkdir(parents=True)
             row = {
                 "year": 1846,
                 "country": "SHU",
-                "rank": "minor_power",
-                "population": -1,
+                "rank": "major_power",
+                "population": 100000,
                 "market": "SHU",
                 "wars": 0,
                 "subjects": 0,
                 "error_count": 0,
             }
-            input_path.write_text(json.dumps([row]), encoding="utf-8")
+            (run_root / "checkpoints.json").write_text(json.dumps([row, row]), encoding="utf-8")
+            (run_root / "run.json").write_text(
+                json.dumps({"config": "none", "run_id": "run-11", "requested_seed": 11}),
+                encoding="utf-8",
+            )
+            output = pathlib.Path(directory) / "summary.json"
+            result = subprocess.run(
+                [sys.executable, str(SUMMARIZER), "--input", str(pathlib.Path(directory)), "--output", str(output)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertRegex(result.stdout, "30 unique")
+
+    def test_summarizer_rejects_negative_population(self):
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = pathlib.Path(directory) / "checkpoints.json"
+            output = pathlib.Path(directory) / "summary.json"
+            rows = []
+            for year in (1846, 1866, 1900):
+                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"):
+                    rows.append(
+                        {
+                            "year": year,
+                            "country": country,
+                            "rank": "minor_power",
+                            "population": -1 if country == "SHU" else 100000,
+                            "market": country,
+                            "wars": 0,
+                            "subjects": 0,
+                            "error_count": 0,
+                        }
+                    )
+            input_path.write_text(json.dumps(rows), encoding="utf-8")
             result = subprocess.run(
                 [sys.executable, str(SUMMARIZER), "--input", str(input_path), "--output", str(output)],
                 cwd=ROOT,

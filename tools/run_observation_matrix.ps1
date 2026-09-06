@@ -119,8 +119,11 @@ if ($launchStatus -ne 'prepared_no_launch') {
 # mounted mod is still not an observation session.
 $metadata = [ordered]@{
     config = $Config
-    seed = $Seed
+    run_id = "run-$Seed"
+    requested_seed = $Seed
+    observed_seed = $null
     checkpoint_years = $parsedYears
+    game_version = '1.13.11 (Matcha)'
     game_root = $GameRoot
     user_data_root = $UserDataRoot
     status = $launchStatus
@@ -139,6 +142,10 @@ $metadata = [ordered]@{
     dlc_ownership_backend = $dlcOwnershipBackend
     store_backend_failure_count = $storeBackendFailureCount
     dlc_state_matches_config = $dlcStateMatchesConfig
+    evidence = [ordered]@{
+        campaign = 'not_recorded_until_campaign_checkpoint_export'
+        logs = $debugLogPath
+    }
     checkpoints = (Join-Path $runRoot 'checkpoints.json')
 }
 $runJsonPath = Join-Path $runRoot 'run.json'
