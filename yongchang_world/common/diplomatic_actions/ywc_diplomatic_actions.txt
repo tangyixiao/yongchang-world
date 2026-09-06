@@ -1,0 +1,83 @@
+# The Yongchang World diplomatic actions.
+# Minimal pact structure modeled on vanilla raiding_pact and rivalry
+# (game/common/diplomatic_actions). Base game only: no DLC capability is
+# used, so no has_dlc_feature gate is required here.
+ywc_nmg_autonomy_negotiation = {
+	groups = {
+		general
+	}
+	requires_approval = yes
+
+	selectable = {
+		is_country = c:NMG
+	}
+
+	potential = {
+		is_country = c:NMG
+		scope:target_country = {
+			is_country = c:MEX
+		}
+	}
+
+	possible = {
+		is_subject_of = scope:target_country
+		has_journal_entry = ywc_je_new_ming_mexican_chain
+		NOT = { has_variable = ywc_nmg_autonomy_negotiation_opened }
+	}
+
+	accept_effect = {
+		set_variable = ywc_nmg_autonomy_negotiation_opened
+		scope:target_country = {
+			set_variable = ywc_nmg_autonomy_negotiation_opened
+		}
+		set_variable = ywc_je_new_ming_mexican_chain_resolved
+	}
+
+	pact = {
+		cost = 0
+		forced_duration = 12
+
+		relations_progress_per_day = 1
+		relations_improvement_max = 50
+
+		requirement_to_maintain = {
+			trigger = {
+				custom_tooltip = {
+					text = ywc_diplo_requirement_subject_relation
+					is_subject_of = scope:target_country
+				}
+			}
+		}
+	}
+
+	ai = {
+		evaluation_chance = {
+			value = 0.05
+		}
+
+		will_propose = {
+			has_journal_entry = ywc_je_new_ming_mexican_chain
+			is_subject_of = scope:target_country
+		}
+
+		accept_score = {
+			value = 0
+			if = {
+				limit = {
+					OR = {
+						has_attitude = {
+							who = scope:target_country
+							attitude = conciliatory
+						}
+						scope:target_country.relations:root >= 0
+					}
+				}
+				value = 10
+			}
+		}
+
+		propose_score = {
+			value = 10
+		}
+	}
+}
