@@ -3,7 +3,7 @@
 更新时间：2026-09-06  
 仓库：`E:\Victoria3 Mod`  
 当前分支：`codex/yongchang-world-bootstrap`  
-当前提交：`7f935d7 test: add in-game release smoke suite`
+当前提交：`ae9daba docs: record BOM root cause, mount evidence, and diplomatic action`
 
 ## 1. 目标与硬约束
 
@@ -34,6 +34,7 @@
 - DLC 兼容层：`ep1_content`、`mp1_content`、`ep2_content`；无 DLC 路径先执行，增强路径再门禁。
 - 启动接线：`yongchang_world/common/on_actions/ywc_startup_hooks.txt` 通过子 on_action 链接原版 `on_game_started_after_lobby`，不要改回直接覆盖原版 effect。
 - 原生发布烟测：`yongchang_world/tools/scripted_tests/ywc_release_smoke.txt`。
+- NMG 外交动作：`ywc_nmg_autonomy_negotiation`，在满足属邦和主日志条件时可向墨西哥提议自治谈判，接受后解决对应主日志。
 - 安装描述文件和开发安装脚本；当前用户数据中的 Mod 路径是 `E:\Victoria3 Mod\yongchang_world`。
 
 ## 3. 已验证证据
@@ -41,7 +42,7 @@
 最近一次验证结果：
 
 ```text
-python -m unittest discover -s tests -v  -> 86 tests passed
+python -m unittest discover -s tests -v  -> 96 tests passed
 python tools/ywc_check.py ...            -> exit 0
 git diff --check                         -> pass
 隐藏启动 Victoria 3                   -> Mod mounted，匹配 1.13.11
@@ -72,12 +73,12 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 - 五配置 × 三种子 × 1846/1866/1900 的真实观察局没有完成。
 - 十国逐国选国、进入 1836 和完整 DLC UI 检查没有完成。
 - `artifacts/observe/matrix-summary.json` 中 15 条记录仍是 `not_run_no_desktop_interaction`；`tools/check_release.py` 预期会因此返回失败。
-- `yongchang_world/common/diplomatic_actions/ywc_diplomatic_actions.txt` 在计划的锁定文件结构中，但当前仓库尚未找到；接手时先判断它是应该实现的实际外交动作，还是计划遗漏，不要用空文件掩盖。
-- `tools/run_observation_matrix.ps1` 的 `-userdir` 只把日志等部分输出放入隔离目录；实测隔离目录中的 `content_load.json` 没有使 Mod 挂载，隔离日志中的 `Mod:` 为空，只挂载了本体。因此不能把现有 runner 的 `hidden_preload_only` 当成“该 DLC 配置已加载”或“观察局已运行”。
+- 观察 runner 的原始问题已修复：PowerShell 5.1 的 `Set-Content -Encoding UTF8` 写入 BOM，游戏解析失败后会静默回退为“全 DLC、无 Mod”；现在改为紧凑无 BOM JSON，并把 Mod/DLC 挂载证据写入 `run.json`。
+- 直接启动 exe 时，`disabledDLC` 不能稳定控制已拥有 DLC；所有权后端在不同启动间会出现全拥有/不可用两种状态。因此单 DLC 配置仍不能在无启动器 UI 条件下宣称完成。
 
 ## 5. 建议接手顺序
 
-### A. 先修正观察工具的证据边界
+### A. 复核观察工具的证据边界
 
 阅读并核对：
 
@@ -87,13 +88,13 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 - `tests/test_observation_schema.py`
 - `tests/test_release_gate.py`
 
-优先找到不碰桌面的真实启动方式。如果本体/兼容层不支持在 `-userdir` 下读取 Mod 配置，就让 runner 明确记录 `mod_mount=false` 和原因，或实现可恢复、不会覆盖用户存档的替代方案；不能只改状态字符串。
+先复核无 BOM 修复后的 `mod_mount`、`version_match_evidence`、`observed_mounted_dlc`、`dlc_ownership_backend` 和 `dlc_state_matches_config` 字段。`hidden_preload_only` 只表示启动预加载，不表示进入战局或完成观察局。
 
 本体提供的 `scripted_tests` 只能在已经进入战局后检查日期和触发器；`ywc_release_smoke.txt` 是只读不改战局的检查套件，但当前没有证明它已经被实际执行。
 
-### B. 补齐计划中遗漏的外交接口
+### B. 继续 NMG 外交动作的运行时验收
 
-先从本体 `game/common/diplomatic_actions` 中选最小、已验证的 pact 结构，再写失败测试和最小实现。所有新键使用 `ywc_` 前缀，DLC 能力仍须用已核验的三个 `has_dlc_feature` ID 门禁。完成后必须跑静态检查并用隐藏启动检查日志。
+已实现 `ywc_nmg_autonomy_negotiation`，接手者应检查其本地化、触发条件和主日志完成效果，并用隐藏启动日志确认 `common/diplomatic_actions` 无 Unknown/Invalid 报错。所有新键继续使用 `ywc_` 前缀。
 
 ### C. 只在有真实证据时更新矩阵
 
