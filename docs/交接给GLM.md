@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`4e59f71 fix: update metadata short description to ten countries`
+代码验收基线：`b90bf0c feat: wire Dongming journals to real decision events`
 
 ## 1. 任务目标与硬约束
 
@@ -109,6 +109,13 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - **桥接前提的进一步核实（本轮）**：映射不是“丢失”而是“不存在”——62 个事件中仅 5 个（bootstrap 4 个、shared 1 个）有 journal pulse 触发者，其余 57 个（`ywc_dmg.1-8`、`ywc_nqg.1-8`、shu/jhg 与 steppe/highland 文件、`ywc_dlc.1`）无触发、无 journal 锚点、共用同一占位标题（"A Crisis of Direction"）。接线的前置任务是为十国撰写真实事件内容，属大内容工程；已写入验收记录的已知限制。
 - `ywc_je_new_ming_mexican_chain` 与 `ywc_je_eternal_yongchang` 是已接线的例外（分别由外交动作与 bootstrap 事件完成）。
 - `.metadata/metadata.json` 的 short_description 仍停留在四国阶段的“四国垂直切片”，已改为“十国垂直切片”并用测试锁定；随后一次真实隐藏启动复核 `status=clean`、`finding_count=0`、`mod_mount=mounted`（挂载行时间戳 11:06:38）。
+
+### H. DMG 事件链接线（本轮，模式样板）
+
+- **DMG（东明）成为第一个 journal 全部可玩的国家**：3 个辅助日志（南明法统、西班牙边患、本地契约）经 `ywc_dmg.1-3` 决策事件完成或失败；2 条路线按 `content_catalog` 的三态契约（success/abandon 完成、failure 失败）经 `ywc_dmg.4-5` 接线，并新增第三个“放弃”选项。
+- journal 采用已验证的 bootstrap 模式：`on_monthly_pulse` 在未决时触发决策事件。事件文本双语，遵循计划 03 约束（对西班牙停战/战争选择、本地文化整合、不自动夺取全吕宋）。事件 6-8 保留为后续链深预留。
+- 豁免清单 58 → 53；隐藏启动验证 `common/events` 枚举干净（0 Unknown/Invalid/缺失本地化）。
+- **后续轮次的标准任务模板**：按同一模式逐国接线——读 `data/content/content_catalog.json` 该国条目（journal/事件/路线三态契约）→ 撰写该国决策事件（双语）→ journal 加 pulse/complete/fail → 豁免清单减项 → 全量测试 + 隐藏启动。剩余九国：SHU、JHG、NQG、OIR、MNG、TIB、KOR、LAN、NMG。
 
 ## 4. 当前验证结果
 
