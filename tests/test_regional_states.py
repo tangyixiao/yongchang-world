@@ -10,6 +10,7 @@ COUNTRY_FILE = ROOT / "yongchang_world/common/country_definitions/ywc_regional_c
 NORTHEAST_LEDGER_FILE = ROOT / "data/scenario/northeast_states.json"
 BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
 NORTHEAST_STATE_FILE = ROOT / "yongchang_world/common/history/states/00_states.txt"
+SEA_REGIONS_FILE = pathlib.Path(r"E:/SteamLibrary/steamapps/common/Victoria 3/game/map_data/state_regions/99_seas.txt")
 NORTHEAST_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_northeast_pops.txt"
 NORTHEAST_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_northeast_buildings.txt"
 INNER_ASIA_LEDGER_FILE = ROOT / "data/scenario/inner_asia_states.json"
@@ -316,6 +317,31 @@ class StateHistoryVanillaCoverageTest(unittest.TestCase):
         self.assertEqual(problems, [])
         self.assertGreater(len(seen), 0)
 
+    def test_state_definitions_and_provinces_are_unique(self):
+        """The vanilla land-state snapshot is the ownership source of truth.
 
+        Sea regions are defined in map data and intentionally have no state
+        history block, so they are excluded from this history-file contract.
+        """
+        baseline = json.loads(BASELINE_FILE.read_text(encoding="utf-8"))
+        sea_text = SEA_REGIONS_FILE.read_text(encoding="utf-8-sig")
+        sea_states = set(re.findall(r"(?m)^STATE_[A-Z0-9_]+\s*=\s*\{", sea_text))
+        sea_states = {state[:-4] for state in sea_states}
+        regions = {
+            state: {p.upper() for p in provinces}
+            for state, provinces in baseline["state_regions"].items()
+            if state not in sea_states
+        }
+        text = NORTHEAST_STATE_FILE.read_text(encoding="utf-8-sig")
+        definitions = list(re.finditer(r"(?m)^s:(STATE_[A-Z0-9_]+)\s*=\s*\{", text))
+        self.assertEqual(len(definitions), len(set(m.group(1) for m in definitions)))
+        self.assertEqual({m.group(1) for m in definitions}, set(regions))
+
+        for index, match in enumerate(definitions):
+            end = definitions[index + 1].start() if index + 1 < len(definitions) else len(text)
+            body = text[match.end():end]
+            provinces = [p.upper() for p in re.findall(r"\bx[0-9A-Fa-f]{6}\b", body)]
+            state = match.group(1)
+            self.assertEqual(set(provinces), regions[state], state)
 if __name__ == "__main__":
     unittest.main()

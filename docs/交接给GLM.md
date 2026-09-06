@@ -151,7 +151,7 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - 用户进入战局后发现只有国家名称变化。复核本次启动的 `debug.log` 后确认：Mod 已挂载，但脚本解析报错，导致 journal、事件和开局历史没有生效；此前仅凭静态检查宣称“解析干净”是不成立的。
 - 修复实际开局错误：所有 Mod `.txt/.yml` 补为 UTF-8 BOM；移除 journal 不支持的顶层 `visible`；将未知的 `is_country = c:TAG` 改为本体可用的 `this = c:TAG`；删除重复事件 `ywc_shu.6` 并保留正确的完成接线。
 - 进一步修复开局数据格式：五个州历史文件补上 `STATES` 外层；152 个建筑历史条目改为本体接受的 `add_ownership.country.levels` 形式；预留事件变量名中的点号改为下划线；DLC/AI 修正迁移到静态修正数据库；海洋国家历史中的传统主义法律使用 `law_type:` 形式。
-- 新增测试锁定上述规则。全量测试由 112 增至 119；`ywc_check.py` 通过。
+- 新增测试锁定上述规则。该阶段全量测试由 112 增至 119；`ywc_check.py` 通过。
 - 独立隐藏启动 `none/23`（15:35:15）证实 Mod 挂载、版本匹配，未再出现 Mod 的 `Unexpected token`、`Inconsistent effect scopes`、非法变量名或找不到静态修正错误；剩余仅为游戏自身的 `paradoxAppId` 与原版 GUI 提示。游戏仍需退出当前旧局并新开 1836，旧存档不会补发开局 journal。
 - 为 `tools/install_dev_mod.ps1` 增加开发目录 Junction：`D:\Documents\Paradox Interactive\Victoria 3\mod\yongchang_world` → `E:\Victoria3 Mod\yongchang_world`，避免新启动器只扫描 Mod 子目录时再次漏掉本地 Mod；脚本已在本机幂等运行验证。
 
@@ -165,7 +165,7 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 
 ### O. N 节两项问题的静态修复（本轮，待实机复核）
 
-- **NQG 选项键已修复**：运行时证据表明游戏按选项名的字面量查找本地化，而 M 轮把选项名改成了下划线事件形式（`ywc_nqg_4.a`），loc 仍是点号键。已把全部 190 个双语选项 loc 键重命名为下划线形式（文本不变），并在 `tests/test_reference_integrity.py` 新增 `test_event_option_names_are_localized`（两语言、>150 选项全覆盖）永久锁定；`test_content_localization` 的选项期望也改为运行时形式。**需实机确认按钮显示文本。**
+- **NQG 选项键已修复**：原截图中的 `ywc_nqg_4.a` 是此前事件选项使用下划线形式、而 loc 使用点号形式造成的未命中。现已把全部事件选项统一为原版使用的点号形式（如 `name = ywc_nqg.4.a`），两种语言的 190 个选项键也统一为相同形式；`tests/test_reference_integrity.py` 与 `test_content_localization` 已锁定该契约。**仍需实机确认按钮显示文本。**
 - **地图碎片化根因已定位并修复**：对 `common/history/states` 与 `data/baseline` 的核对发现 0 个越界省份，但有 2 个州被部分覆盖——MRG 在北领地与西澳的各 1 省沿海据点使 839 个本体省份无归属（无主碎片）。已从 baseline 恢复本体原归属（10+8 个 create_state 块），并新增 `StateHistoryVanillaCoverageTest` 断言每个州精确覆盖其本体 region。
 - **跨文件重复州已去重**：`STATE_LUZON` 与 `STATE_SAKHALIN` 在 core 与区域州历史中重复定义；core 版 SAKHALIN 把省份分给未定义的 AIN/ALK 标签。已保留区域版（实际生效者）并删除 core 重复块；西班牙对吕宋的 `add_claim = c:SPA` 随权威定义迁至 `ywc_ocean_states.txt`，`test_core_scenario` 相应更新。
 - 全量测试 119 → 121 全绿；隐藏启动（`sphere/11`）解析干净（0 Duplicate/Unknown/Invalid/Unexpected token）。**两项修复均需新开 1836 实机复核**：按钮显示文本、地图边界连续、journal 状态变化。
@@ -174,13 +174,13 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 
 - 用户提供的选择界面截图（缅甸选中、全图可见）证实拼花与 mod 州账本相关：账本只覆盖 33 个州，其余州（含中国本土大部分）保持本体归属——**大清（本体）占据中国本土是账本沉默区的正常结果**；碎片是“同一州被本体 00_states.txt 与 mod 账本同时定义、双方 create_state 都执行”造成的省份交错。
 - **修复（整替换）**：mod 现发布 `history/states/00_states.txt`（与本体同名=整文件替换），675 州各定义一次：33 个 ledger 州用场景归属，其余 642 州逐字保留本体归属；5 个部分账本文件删除。由此任意省份恰有一个归属者，拼花不再可能。
-- 附带修正：覆盖测试大小写归一（本体账本混用 `x7F25CD`/`x7f25cd`，38 处假阳性）；场景测试（core/regional）的州文件常量统一指向 00_states.txt。
+- 附带修正：覆盖测试大小写归一（本体账本混用 `x7F25CD`/`x7f25cd`，38 处假阳性）；场景测试（core/regional）的州文件常量统一指向 00_states.txt；州覆盖测试排除本体单独维护的海域 state regions。
 - **待实机复核**：新开 1836 后确认①无碎片/飞地；②蜀汉礼制国（北方）、吐蕃承统国、西域承统国、蒙古承统国等 ledger 归属完整显示、无本体清色交错；③事件按钮双语。若中国本土的大清黄色归属不符合设计预期，那属于 ledger 内容设计问题（33 州账本未覆盖中国本土各州），需要设计侧决策而非地图机制问题。
 
 ## 4. 当前验证结果
 
 ```text
-python -m unittest discover -s tests -q  -> Ran 119 tests; OK
+python -m unittest discover -s tests -q  -> Ran 122 tests; OK
 python tools/ywc_check.py                 -> exit 0
 git diff --check                           -> pass
 隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11

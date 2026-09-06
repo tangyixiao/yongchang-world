@@ -78,16 +78,28 @@ class ReferenceIntegrityTest(unittest.TestCase):
         self.assertEqual(missing, set(), f"unresolved yes-style calls: {sorted(missing)}")
 
     def test_event_option_names_are_localized(self):
-        """Every event option name must have a loc key in both languages.
-        Runtime evidence: the game looks up option loc by the option's literal
-        name, so a name/loc mismatch shows raw keys on the event buttons."""
-        used = set(re.findall(r"option\s*=\s*\{\s*name\s*=\s*(ywc_[A-Za-z0-9_]+\.[abc])", self.text))
+        """Options use the event's dotted ID, and both languages define it."""
+        used = set()
+        malformed = []
+        for path in (MOD / "events").glob("*.txt"):
+            text = path.read_text("utf-8-sig")
+            events = list(re.finditer(r"(?m)^\s*(ywc_[a-z0-9_]+\.[0-9]+)\s*=\s*\{", text))
+            for index, event in enumerate(events):
+                end = events[index + 1].start() if index + 1 < len(events) else len(text)
+                body = text[event.end():end]
+                for option in re.finditer(r"option\s*=\s*\{\s*name\s*=\s*([A-Za-z0-9_.]+)", body):
+                    name = option.group(1)
+                    expected = f"{event.group(1)}.{name.rsplit('.', 1)[-1]}"
+                    if name != expected:
+                        malformed.append(f"{path.name}: {name} (expected {expected})")
+                    used.add(name)
         self.assertGreater(len(used), 150)
+        self.assertEqual(malformed, [], "event option names must use dotted event IDs")
         for language in ("english", "simp_chinese"):
             loc = set()
             for path in (MOD / "localization" / language).glob("*.yml"):
                 loc.update(
-                    re.findall(r"^\s*(ywc_[A-Za-z0-9_]+\.[abc]):\d+", path.read_text("utf-8-sig"), re.MULTILINE)
+                    re.findall(r"^\s*(ywc_[a-z0-9_]+\.[0-9]+\.[abc]):\d+", path.read_text("utf-8-sig"), re.MULTILINE)
                 )
             missing = used - loc
             self.assertEqual(missing, set(), f"{language}: unlocalized options: {sorted(missing)[:8]}")

@@ -40,10 +40,8 @@ class ContentLocalizationTest(unittest.TestCase):
                 expected.update({journal, f"{journal}_reason"})
             for event in row["events"]:
                 expected.update(f"{event}{suffix}" for suffix in (".t", ".d"))
-                # Option names use the underscore event form in loc (runtime
-                # evidence: dotted option names are not looked up).
-                underscore = event.replace(".", "_", 1)
-                expected.update(f"{underscore}{suffix}" for suffix in (".a", ".b"))
+                # Option names follow the dotted event form used by the game.
+                expected.update(f"{event}{suffix}" for suffix in (".a", ".b"))
         self.assertTrue(expected.issubset(load_yaml_keys(ZH_DIR)))
         self.assertTrue(expected.issubset(load_yaml_keys(EN_DIR)))
 
