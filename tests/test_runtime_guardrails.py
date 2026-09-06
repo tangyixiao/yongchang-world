@@ -38,6 +38,27 @@ class RuntimeGuardrailsTest(unittest.TestCase):
         for tag in ("MNG", "TIB", "KOR"):
             self.assertNotRegex(flags, rf"(?m)^\s*{tag}\s*=\s*\{{")
 
+    def test_dynamic_maritime_name_evaluates_shared_trigger_in_country_scope(self):
+        text = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text(
+            "utf-8-sig"
+        )
+        for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "NMG"):
+            expected = (
+                rf"trigger = \{{ exists = scope:actor "
+                rf"scope:actor \?= \{{ c:{tag} \?= this "
+                rf"ywc_has_maritime_network = yes \}} \}}"
+            )
+            self.assertRegex(text, expected)
+
+    def test_custom_flag_triggers_keep_country_comparisons_in_country_scope(self):
+        text = (MOD / "common/flag_definitions/ywc_flags.txt").read_text("utf-8-sig")
+        self.assertNotIn("?= THIS", text)
+        for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "NMG"):
+            self.assertRegex(
+                text,
+                rf"exists = c:{tag} c:{tag} \?= \{{ ywc_has_maritime_network = yes \}}",
+            )
+
     def test_static_modifiers_use_known_11311_modifier_types(self):
         text = (MOD / "common/static_modifiers/ywc_static_modifiers.txt").read_text("utf-8-sig")
         for invalid in (
