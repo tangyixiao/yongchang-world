@@ -168,7 +168,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 - 十国逐国选国、进入 1836 和完整 DLC UI 检查。
 - 在真实战局中实际执行 `ywc_release_smoke.txt`。
 - NMG 墨西哥属邦关系、外交动作可用性和主日志完成效果的进入战局运行时证据。
-- 48 个 journal 完成变量未接线（见 3.G）：DMG 与 NQG 已各完成 5 个 journal 接线；其余国家的大多数主日志/路线在 v0.1 中不可完成，需逐国确认 journal↔事件映射后补桥接。
+- 38 个 journal 完成变量未接线（见 3.G）：DMG、NQG、SHU 与 JHG 已各完成 5 个 journal 接线；其余六国的大多数主日志/路线在 v0.1 中不可完成，需逐国确认 journal↔事件映射后补桥接。
 
 `artifacts/observe/matrix-summary.json` 的 15 条记录仍为 `not_run_no_desktop_interaction`，总体状态为 `pending_manual_ui_observation`。`tools/check_release.py` 因此应继续返回未通过；不要通过改写矩阵状态绕过门禁。
 
