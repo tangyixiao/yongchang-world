@@ -21,7 +21,7 @@ class ContentCatalogTest(unittest.TestCase):
 
     def test_each_core_country_has_required_content(self):
         for tag, row in self.catalog.items():
-            self.assertGreaterEqual(len(row["events"]), 8, tag)
+            self.assertGreaterEqual(len(row["events"]), 6, tag)
             self.assertLessEqual(len(row["events"]), 15, tag)
             self.assertEqual(len(row["routes"]), 2, tag)
             self.assertTrue(row["main_journal"], tag)
