@@ -74,12 +74,26 @@ if (Test-Path -LiteralPath $debugLogPath -PathType Leaf) {
 
 New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
 $status = if ($findings.Count -eq 0) { 'clean' } else { 'error' }
+
+# The summary reports whether the mod actually mounted, taken only from the
+# game's own debug log. This is recorded information: it does not change the
+# clean/error verdict, and a missing mount is reported as-is.
+$modMount = 'unknown_no_debug_log'
+$modMountEvidence = @()
+if (Test-Path -LiteralPath $debugLogPath -PathType Leaf) {
+    $modMountEvidence = @(Get-Content -LiteralPath $debugLogPath |
+        Where-Object { $_ -like '*Mounted Data:*yongchang_world*' })
+    $modMount = if ($modMountEvidence.Count -gt 0) { 'mounted' } else { 'not_mounted' }
+}
+
 $summary = @(
     "status=$status"
     "user_data_root=$UserDataRoot"
     "checked_logs=$($logPaths -join ';');$debugLogPath (optional)"
     "finding_count=$($findings.Count)"
+    "mod_mount=$modMount"
 )
+$summary += @($modMountEvidence | ForEach-Object { "mount_evidence: $_" })
 if ($findings.Count -gt 0) {
     $summary += 'findings:'
     $summary += $findings

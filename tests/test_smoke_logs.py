@@ -42,6 +42,25 @@ class SmokeLogCollectorTest(unittest.TestCase):
         self.assertIn("[Environment]::GetFolderPath('MyDocuments')", script)
         self.assertNotIn("$env:USERPROFILE 'Documents", script)
 
+    def test_collector_reports_unknown_mount_without_debug_log(self):
+        result = self.run_collector(ROOT / "tests/fixtures/userdata-clean")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        summary = (ROOT / "artifacts/smoke/latest-summary.txt").read_text("utf-8")
+        self.assertIn("mod_mount=unknown_no_debug_log", summary)
+
+    def test_collector_detects_mounted_mod_from_debug_log(self):
+        result = self.run_collector(ROOT / "tests/fixtures/userdata-mounted")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        summary = (ROOT / "artifacts/smoke/latest-summary.txt").read_text("utf-8")
+        self.assertIn("mod_mount=mounted", summary)
+        self.assertIn("Mounted Data: E:/Victoria3 Mod/yongchang_world", summary)
+
+    def test_collector_reports_unmounted_mod_when_debug_log_lacks_yongchang(self):
+        result = self.run_collector(ROOT / "tests/fixtures/userdata-mounted-none")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        summary = (ROOT / "artifacts/smoke/latest-summary.txt").read_text("utf-8")
+        self.assertIn("mod_mount=not_mounted", summary)
+
 
 if __name__ == "__main__":
     unittest.main()
