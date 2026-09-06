@@ -180,7 +180,7 @@ class CoreDiplomacyTest(unittest.TestCase):
             self.assertIn(f"{event_id} =", events)
         self.assertIn("namespace = ywc_bootstrap", events)
         self.assertGreaterEqual(events.count("set_variable"), 4)
-        self.assertNotIn("add_modifier", events)
+        self.assertIn("add_modifier = { name = ywc_jhg_south_sea_council", events)
 
     def test_each_core_country_receives_one_bootstrap_journal(self):
         expected = {

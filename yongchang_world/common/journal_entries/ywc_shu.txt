@@ -1,9 +1,7 @@
 ﻿# SHU country content journals.
-# SHU holds two main journals: ywc_je_yongchang_century (added in
-# content_starts, wired to ywc_shu.6 below) and ywc_je_eternal_yongchang
-# (added from ywc_shu.txt history, wired in ywc_bootstrap_journal.txt).
-# Auxiliary journals and routes pulse monthly until their decision event
-# (ywc_shu.1-6) is taken.
+# The main line and the two routes use explicit progress variables. A route
+# cannot complete from a single monthly decision: the player must build five
+# milestones, then qualify for the conclusion option.
 
 ywc_je_yongchang_century = {
     icon = "gfx/interface/icons/event_icons/event_portrait.dds"
@@ -19,7 +17,13 @@ ywc_je_yongchang_century = {
             }
         }
     }
-    complete = { has_variable = ywc_je_yongchang_century_resolved }
+    complete = {
+        AND = {
+            has_variable = ywc_je_yongchang_century_resolved
+            has_variable = ywc_je_yongchang_century_progress
+            var:ywc_je_yongchang_century_progress >= 100
+        }
+    }
     fail = { has_variable = ywc_je_yongchang_century_failed }
 }
 
@@ -94,8 +98,12 @@ ywc_route_shu_bureaucratic_integration = {
     }
     complete = {
         OR = {
-            has_variable = ywc_route_shu_bureaucratic_integration_success
             has_variable = ywc_route_shu_bureaucratic_integration_abandon
+            AND = {
+                has_variable = ywc_route_shu_bureaucratic_integration_success
+                has_variable = ywc_route_shu_bureaucratic_integration_progress
+                var:ywc_route_shu_bureaucratic_integration_progress >= 100
+            }
         }
     }
     fail = { has_variable = ywc_route_shu_bureaucratic_integration_failure }
@@ -118,8 +126,12 @@ ywc_route_shu_customs_reform = {
     }
     complete = {
         OR = {
-            has_variable = ywc_route_shu_customs_reform_success
             has_variable = ywc_route_shu_customs_reform_abandon
+            AND = {
+                has_variable = ywc_route_shu_customs_reform_success
+                has_variable = ywc_route_shu_customs_reform_progress
+                var:ywc_route_shu_customs_reform_progress >= 100
+            }
         }
     }
     fail = { has_variable = ywc_route_shu_customs_reform_failure }

@@ -34,9 +34,57 @@ ywc_shu.4 = {
     title = ywc_shu.4.t
     desc = ywc_shu.4.d
     duration = 1
-    option = { name = ywc_shu.4.a default_option = yes set_variable = { name = ywc_route_shu_bureaucratic_integration_success value = 1 } }
-    option = { name = ywc_shu.4.b set_variable = { name = ywc_route_shu_bureaucratic_integration_failure value = 1 } }
-    option = { name = ywc_shu.4.c set_variable = { name = ywc_route_shu_bureaucratic_integration_abandon value = 1 } }
+    option = {
+        name = ywc_shu.4.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_active }
+            NOT = { has_variable = ywc_route_shu_customs_reform_active }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_success }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_failure }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_abandon }
+        }
+        set_variable = { name = ywc_route_shu_bureaucratic_integration_active value = 1 }
+        set_variable = { name = ywc_route_shu_bureaucratic_integration_progress value = 0 }
+        change_variable = { name = ywc_route_shu_bureaucratic_integration_progress add = 20 }
+        clamp_variable = { name = ywc_route_shu_bureaucratic_integration_progress min = 0 max = 100 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 12 }
+    }
+    option = {
+        name = ywc_shu.4.b
+        trigger = {
+            has_variable = ywc_route_shu_bureaucratic_integration_active
+            has_variable = ywc_route_shu_bureaucratic_integration_progress
+            var:ywc_route_shu_bureaucratic_integration_progress >= 100
+        }
+        if = {
+            limit = { var:ywc_route_shu_bureaucratic_integration_progress >= 100 }
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_success value = 1 }
+            remove_variable = ywc_route_shu_bureaucratic_integration_active
+            add_modifier = { name = ywc_shu_bureaucratic_commitment months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_shu_bureaucratic_integration_progress add = 20 }
+            clamp_variable = { name = ywc_route_shu_bureaucratic_integration_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_shu.4.c
+        trigger = { has_variable = ywc_route_shu_bureaucratic_integration_active }
+        if = {
+            limit = { var:ywc_route_shu_bureaucratic_integration_progress >= 60 }
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_abandon value = 1 }
+            change_variable = { name = ywc_heritage_legitimacy add = -10 }
+            clamp_variable = { name = ywc_heritage_legitimacy min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_shu_bureaucratic_integration_active
+    }
 }
 
 ywc_shu.5 = {
@@ -44,9 +92,57 @@ ywc_shu.5 = {
     title = ywc_shu.5.t
     desc = ywc_shu.5.d
     duration = 1
-    option = { name = ywc_shu.5.a default_option = yes set_variable = { name = ywc_route_shu_customs_reform_success value = 1 } }
-    option = { name = ywc_shu.5.b set_variable = { name = ywc_route_shu_customs_reform_failure value = 1 } }
-    option = { name = ywc_shu.5.c set_variable = { name = ywc_route_shu_customs_reform_abandon value = 1 } }
+    option = {
+        name = ywc_shu.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_shu_customs_reform_active }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_active }
+            NOT = { has_variable = ywc_route_shu_customs_reform_success }
+            NOT = { has_variable = ywc_route_shu_customs_reform_failure }
+            NOT = { has_variable = ywc_route_shu_customs_reform_abandon }
+        }
+        set_variable = { name = ywc_route_shu_customs_reform_active value = 1 }
+        set_variable = { name = ywc_route_shu_customs_reform_progress value = 0 }
+        change_variable = { name = ywc_route_shu_customs_reform_progress add = 20 }
+        clamp_variable = { name = ywc_route_shu_customs_reform_progress min = 0 max = 100 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_shu_customs_network months = 12 }
+    }
+    option = {
+        name = ywc_shu.5.b
+        trigger = {
+            has_variable = ywc_route_shu_customs_reform_active
+            has_variable = ywc_route_shu_customs_reform_progress
+            var:ywc_route_shu_customs_reform_progress >= 100
+        }
+        if = {
+            limit = { var:ywc_route_shu_customs_reform_progress >= 100 }
+            set_variable = { name = ywc_route_shu_customs_reform_success value = 1 }
+            remove_variable = ywc_route_shu_customs_reform_active
+            add_modifier = { name = ywc_shu_customs_network months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_shu_customs_reform_progress add = 20 }
+            clamp_variable = { name = ywc_route_shu_customs_reform_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+        }
+    }
+    option = {
+        name = ywc_shu.5.c
+        trigger = { has_variable = ywc_route_shu_customs_reform_active }
+        if = {
+            limit = { var:ywc_route_shu_customs_reform_progress >= 60 }
+            set_variable = { name = ywc_route_shu_customs_reform_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_shu_customs_reform_abandon value = 1 }
+            change_variable = { name = ywc_maritime_network_level add = -10 }
+            clamp_variable = { name = ywc_maritime_network_level min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_shu_customs_reform_active
+    }
 }
 
 # Main journal decision for SHU (ywc_je_yongchang_century).
@@ -55,8 +151,44 @@ ywc_shu.6 = {
     title = ywc_shu.6.t
     desc = ywc_shu.6.d
     duration = 1
-    option = { name = ywc_shu.6.a default_option = yes set_variable = { name = ywc_je_yongchang_century_resolved value = 1 } }
-    option = { name = ywc_shu.6.b set_variable = { name = ywc_je_yongchang_century_failed value = 1 } }
+    option = {
+        name = ywc_shu.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_je_yongchang_century_resolved }
+            NOT = { has_variable = ywc_je_yongchang_century_failed }
+            NOT = { has_variable = ywc_je_yongchang_century_progress }
+        }
+        set_variable = { name = ywc_je_yongchang_century_progress value = 20 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 12 }
+    }
+    option = {
+        name = ywc_shu.6.b
+        trigger = {
+            has_variable = ywc_je_yongchang_century_progress
+            var:ywc_je_yongchang_century_progress < 100
+        }
+        if = {
+            limit = { var:ywc_heritage_legitimacy <= 30 }
+            set_variable = { name = ywc_je_yongchang_century_failed value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            change_variable = { name = ywc_je_yongchang_century_progress add = 20 }
+            clamp_variable = { name = ywc_je_yongchang_century_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_shu.6.c
+        trigger = {
+            has_variable = ywc_je_yongchang_century_progress
+            var:ywc_je_yongchang_century_progress >= 100
+        }
+        set_variable = { name = ywc_je_yongchang_century_resolved value = 1 }
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 120 }
+    }
 }
 
 ywc_shu.7 = {
@@ -116,9 +248,62 @@ ywc_jhg.4 = {
     title = ywc_jhg.4.t
     desc = ywc_jhg.4.d
     duration = 1
-    option = { name = ywc_jhg.4.a default_option = yes set_variable = { name = ywc_route_jhg_naval_tributary_state_success value = 1 } }
-    option = { name = ywc_jhg.4.b set_variable = { name = ywc_route_jhg_naval_tributary_state_failure value = 1 } }
-    option = { name = ywc_jhg.4.c set_variable = { name = ywc_route_jhg_naval_tributary_state_abandon value = 1 } }
+    option = {
+        name = ywc_jhg.4.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_active }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_active }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_success }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_failure }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_abandon }
+        }
+        set_variable = { name = ywc_route_jhg_naval_tributary_state_active value = 1 }
+        set_variable = { name = ywc_route_jhg_naval_tributary_state_progress value = 0 }
+        change_variable = { name = ywc_route_jhg_naval_tributary_state_progress add = 20 }
+        clamp_variable = { name = ywc_route_jhg_naval_tributary_state_progress min = 0 max = 100 }
+        ywc_raise_autonomy_pressure = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_jhg_naval_tributary months = 12 }
+        change_relations = { country = c:SHU value = -5 }
+    }
+    option = {
+        name = ywc_jhg.4.b
+        trigger = {
+            has_variable = ywc_route_jhg_naval_tributary_state_active
+            has_variable = ywc_route_jhg_naval_tributary_state_progress
+            var:ywc_route_jhg_naval_tributary_state_progress >= 100
+        }
+        if = {
+            limit = { var:ywc_route_jhg_naval_tributary_state_progress >= 100 }
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_success value = 1 }
+            remove_variable = ywc_route_jhg_naval_tributary_state_active
+            add_modifier = { name = ywc_jhg_naval_tributary months = 120 }
+            change_relations = { country = c:SHU value = -10 }
+        }
+        else = {
+            change_variable = { name = ywc_route_jhg_naval_tributary_state_progress add = 20 }
+            clamp_variable = { name = ywc_route_jhg_naval_tributary_state_progress min = 0 max = 100 }
+            ywc_raise_autonomy_pressure = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_jhg.4.c
+        trigger = { has_variable = ywc_route_jhg_naval_tributary_state_active }
+        if = {
+            limit = { var:ywc_route_jhg_naval_tributary_state_progress >= 60 }
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+            change_relations = { country = c:SHU value = -20 }
+        }
+        else = {
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+            change_relations = { country = c:SHU value = 5 }
+        }
+        remove_variable = ywc_route_jhg_naval_tributary_state_active
+    }
 }
 
 ywc_jhg.5 = {
@@ -126,9 +311,59 @@ ywc_jhg.5 = {
     title = ywc_jhg.5.t
     desc = ywc_jhg.5.d
     duration = 1
-    option = { name = ywc_jhg.5.a default_option = yes set_variable = { name = ywc_route_jhg_south_sea_council_success value = 1 } }
-    option = { name = ywc_jhg.5.b set_variable = { name = ywc_route_jhg_south_sea_council_failure value = 1 } }
-    option = { name = ywc_jhg.5.c set_variable = { name = ywc_route_jhg_south_sea_council_abandon value = 1 } }
+    option = {
+        name = ywc_jhg.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_active }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_active }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_success }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_failure }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_abandon }
+        }
+        set_variable = { name = ywc_route_jhg_south_sea_council_active value = 1 }
+        set_variable = { name = ywc_route_jhg_south_sea_council_progress value = 0 }
+        change_variable = { name = ywc_route_jhg_south_sea_council_progress add = 20 }
+        clamp_variable = { name = ywc_route_jhg_south_sea_council_progress min = 0 max = 100 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_jhg_south_sea_council months = 12 }
+    }
+    option = {
+        name = ywc_jhg.5.b
+        trigger = {
+            has_variable = ywc_route_jhg_south_sea_council_active
+            has_variable = ywc_route_jhg_south_sea_council_progress
+            var:ywc_route_jhg_south_sea_council_progress >= 100
+        }
+        if = {
+            limit = { var:ywc_route_jhg_south_sea_council_progress >= 100 }
+            set_variable = { name = ywc_route_jhg_south_sea_council_success value = 1 }
+            remove_variable = ywc_route_jhg_south_sea_council_active
+            add_modifier = { name = ywc_jhg_south_sea_council months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_jhg_south_sea_council_progress add = 20 }
+            clamp_variable = { name = ywc_route_jhg_south_sea_council_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_jhg.5.c
+        trigger = { has_variable = ywc_route_jhg_south_sea_council_active }
+        if = {
+            limit = { var:ywc_route_jhg_south_sea_council_progress >= 60 }
+            set_variable = { name = ywc_route_jhg_south_sea_council_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+            ywc_raise_autonomy_pressure = yes
+        }
+        else = {
+            set_variable = { name = ywc_route_jhg_south_sea_council_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_jhg_south_sea_council_active
+    }
 }
 
 ywc_jhg.6 = {

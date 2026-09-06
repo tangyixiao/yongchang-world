@@ -17,8 +17,44 @@ ywc_bootstrap.2 = {
     title = ywc_bootstrap.2.t
     desc = ywc_bootstrap.2.d
     option = {
-        name = ywc_bootstrap.2.a default_option = yes
+        name = ywc_bootstrap.2.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_jinghai_autonomy_resolved }
+            NOT = { has_variable = ywc_jinghai_autonomy_failed }
+            NOT = { has_variable = ywc_jinghai_autonomy_progress }
+        }
+        set_variable = { name = ywc_jinghai_autonomy_progress value = 20 }
+        ywc_open_trade_route = yes
+        ywc_lower_autonomy_pressure = yes
+        add_modifier = { name = ywc_jhg_south_sea_council months = 12 }
+    }
+    option = {
+        name = ywc_bootstrap.2.b
+        trigger = {
+            has_variable = ywc_jinghai_autonomy_progress
+            var:ywc_jinghai_autonomy_progress < 100
+        }
+        if = {
+            limit = { var:ywc_autonomy_pressure >= 70 }
+            set_variable = { name = ywc_jinghai_autonomy_failed value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            change_variable = { name = ywc_jinghai_autonomy_progress add = 20 }
+            clamp_variable = { name = ywc_jinghai_autonomy_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_raise_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_bootstrap.2.c
+        trigger = {
+            has_variable = ywc_jinghai_autonomy_progress
+            var:ywc_jinghai_autonomy_progress >= 100
+        }
         set_variable = { name = ywc_jinghai_autonomy_resolved value = 1 }
+        add_modifier = { name = ywc_jhg_south_sea_council months = 120 }
     }
 }
 
