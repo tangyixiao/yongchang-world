@@ -77,6 +77,21 @@ class ReferenceIntegrityTest(unittest.TestCase):
         missing = refs - resolvable
         self.assertEqual(missing, set(), f"unresolved yes-style calls: {sorted(missing)}")
 
+    def test_event_option_names_are_localized(self):
+        """Every event option name must have a loc key in both languages.
+        Runtime evidence: the game looks up option loc by the option's literal
+        name, so a name/loc mismatch shows raw keys on the event buttons."""
+        used = set(re.findall(r"option\s*=\s*\{\s*name\s*=\s*(ywc_[A-Za-z0-9_]+\.[abc])", self.text))
+        self.assertGreater(len(used), 150)
+        for language in ("english", "simp_chinese"):
+            loc = set()
+            for path in (MOD / "localization" / language).glob("*.yml"):
+                loc.update(
+                    re.findall(r"^\s*(ywc_[A-Za-z0-9_]+\.[abc]):\d+", path.read_text("utf-8-sig"), re.MULTILINE)
+                )
+            missing = used - loc
+            self.assertEqual(missing, set(), f"{language}: unlocalized options: {sorted(missing)[:8]}")
+
     def test_journal_completion_variables_have_setters(self):
         # Plan 03 requires every main journal and route to be completable or
         # failable. As of v0.1 the event chains record ywc_<tag>.N_success /

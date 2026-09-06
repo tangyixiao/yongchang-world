@@ -16,6 +16,7 @@ COUNTRY_HISTORY = ROOT / "yongchang_world/common/history/countries"
 SUBJECT_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_core_subjects.txt"
 RELATIONS_FILE = ROOT / "yongchang_world/common/history/diplomacy/ywc_core_relations.txt"
 STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/ywc_core_states.txt"
+OCEAN_STATE_HISTORY_FILE = ROOT / "yongchang_world/common/history/states/ywc_ocean_states.txt"
 JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_bootstrap_journal.txt"
 EVENT_FILE = ROOT / "yongchang_world/events/ywc_bootstrap_events.txt"
 
@@ -144,8 +145,10 @@ class CoreDiplomacyTest(unittest.TestCase):
         self.assertEqual(text.count("type = tributary"), 1)
 
     def test_spain_has_claim_and_hostile_relations_to_eastern_ming(self):
+        # LUZON's authoritative definition lives in the ocean states ledger
+        # (the duplicate in the core ledger was removed).
         self.assertRegex(
-            STATE_HISTORY_FILE.read_text("utf-8"),
+            OCEAN_STATE_HISTORY_FILE.read_text("utf-8"),
             r"s:STATE_LUZON\s*=\s*\{(?s:.*?)add_claim\s*=\s*c:SPA",
         )
         relations = RELATIONS_FILE.read_text("utf-8")

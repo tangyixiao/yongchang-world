@@ -277,5 +277,43 @@ class RegionalCountryHistoryTest(unittest.TestCase):
             self.assertIn("set_tax_level", block)
 
 
+class StateHistoryVanillaCoverageTest(unittest.TestCase):
+    """Mod state history is覆盖式: every province of each vanilla state
+    region must be owned by exactly one create_state, or the map shows
+    unowned fragments. Provinces outside the vanilla region are a mismatch
+    with the shipped map."""
+
+    def test_every_state_covers_its_vanilla_region_exactly(self):
+        baseline = json.loads((ROOT / "data/baseline/vic3-1.13.11.json").read_text(encoding="utf-8"))
+        regions = baseline["state_regions"]
+        problems = []
+        seen = set()
+        for path in sorted((ROOT / "yongchang_world/common/history/states").glob("*.txt")):
+            text = path.read_text(encoding="utf-8-sig")
+            for match in re.finditer(r"s:(STATE_[A-Z0-9_]+)\s*=\s*\{", text):
+                state = match.group(1)
+                self.assertNotIn(state, seen, f"{path.name}: duplicate state {state}")
+                seen.add(state)
+                vanilla = set(regions.get(state, []))
+                self.assertTrue(vanilla, f"{path.name}: {state} missing from vanilla baseline")
+                start = match.end()
+                depth, i = 1, start
+                while depth and i < len(text):
+                    if text[i] == "{":
+                        depth += 1
+                    elif text[i] == "}":
+                        depth -= 1
+                    i += 1
+                owned = set(re.findall(r"\b(x[0-9A-Fa-f]{6})\b", text[start:i - 1]))
+                foreign = sorted(owned - vanilla)
+                missing = sorted(vanilla - owned)
+                if foreign:
+                    problems.append(f"{path.name}: {state}: {len(foreign)} provinces outside the vanilla region")
+                if missing:
+                    problems.append(f"{path.name}: {state}: {len(missing)} vanilla provinces left unowned")
+        self.assertEqual(problems, [])
+        self.assertGreater(len(seen), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
