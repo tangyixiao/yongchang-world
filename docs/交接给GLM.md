@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`d600b06 feat: wire Northern Qing journals to decision events`
+代码验收基线：`91d5f54 feat: wire Shun and Jinhai journals to decision events`
 
 ## 1. 任务目标与硬约束
 
@@ -122,6 +122,13 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - **NQG（北清）journal 全部可玩**：流亡日志经 `ywc_nqg.1` 完成或失败；亲俄之择为决策型日志——两个选项都完成并记录所择路径（`ywc_nqg_russia_aligned` / `ywc_nqg_russia_refused`）；岛屿社会日志经 `ywc_nqg.3` 完成或失败；两条路线（库页光复、多族之邦）按三态契约经 `ywc_nqg.4-5` 接线并带放弃选项，遵循计划 03“扩张不得把北清变成满洲大国”的约束（catalog：forbidden become_great_power / mass_settler_colonization）。
 - 事件 6-8 保留；豁免清单 53 → 48；隐藏启动（`none/23`）验证解析干净且 `dlc_state_matches_config=yes`。
 - 下一个建议国家：SHU 或 JHG（`ywc_shu_jhg_events.txt` 每国 8 个事件）。
+
+### J. SHU + JHG 事件链接线（本轮，第三、四个国家）
+
+- **SHU（大顺）journal 可玩**：士商（`ywc_shu.1`）、黑水边疆（`.2`）、鸦片之问（`.3`）成败型接线；士绅官僚整合与海关商政改革两条路线按三态契约经 `.4-5` 接线（事件 6-8 保留）。
+- **JHG（靖海）journal 可玩**：海上网络、继承之诏、行商议事会（`ywc_jhg.1-3`）成败型；藩屏水师与南洋商会两条路线经 `.4-5` 接线。计划 03 约束“提高自治必须加重大顺猜忌与财政成本”已在事件描述中体现，实质后果效果留给平衡轮。
+- **新发现的 catalog 漂移**：SHU 主日志键名不一致——bootstrap 实际接线 `ywc_je_eternal_yongchang`（SHU 开局持有、可玩），而 catalog 声明的 `ywc_je_yongchang_century` 是 `ywc_shu.txt` 中从未被添加的死键（保留在豁免清单）。后续统一时二选一：改 catalog 或删死键。
+- 豁免清单 48 → 38；隐藏启动（`sphere/47`）解析干净。剩余六国：OIR、MNG、TIB（steppe/highland 文件 24 事件）、KOR、LAN、NMG（各 8 事件）。
 
 ## 4. 当前验证结果
 
