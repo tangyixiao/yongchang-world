@@ -45,9 +45,52 @@ ywc_oir.5 = {
     title = ywc_oir.5.t
     desc = ywc_oir.5.d
     duration = 1
-    option = { name = ywc_oir.5.a default_option = yes set_variable = { name = ywc_route_oir_bureaucratic_khanate_success value = 1 } }
-    option = { name = ywc_oir.5.b set_variable = { name = ywc_route_oir_bureaucratic_khanate_failure value = 1 } }
-    option = { name = ywc_oir.5.c set_variable = { name = ywc_route_oir_bureaucratic_khanate_abandon value = 1 } }
+    option = {
+        name = ywc_oir.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_oir_bureaucratic_khanate_active }
+            NOT = { has_variable = ywc_route_oir_pastoral_federation_active }
+            NOT = { has_variable = ywc_route_oir_bureaucratic_khanate_success }
+            NOT = { has_variable = ywc_route_oir_bureaucratic_khanate_failure }
+            NOT = { has_variable = ywc_route_oir_bureaucratic_khanate_abandon }
+        }
+        set_variable = { name = ywc_route_oir_bureaucratic_khanate_active value = 1 }
+        set_variable = { name = ywc_route_oir_bureaucratic_khanate_progress value = 0 }
+        change_variable = { name = ywc_route_oir_bureaucratic_khanate_progress add = 20 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_oir_bureaucratic_khanate months = 12 }
+    }
+    option = {
+        name = ywc_oir.5.b
+        trigger = { has_variable = ywc_route_oir_bureaucratic_khanate_active }
+        if = {
+            limit = { var:ywc_route_oir_bureaucratic_khanate_progress >= 100 }
+            set_variable = { name = ywc_route_oir_bureaucratic_khanate_success value = 1 }
+            remove_variable = ywc_route_oir_bureaucratic_khanate_active
+            add_modifier = { name = ywc_oir_bureaucratic_khanate months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_oir_bureaucratic_khanate_progress add = 20 }
+            clamp_variable = { name = ywc_route_oir_bureaucratic_khanate_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_oir.5.c
+        trigger = { has_variable = ywc_route_oir_bureaucratic_khanate_active }
+        if = {
+            limit = { var:ywc_route_oir_bureaucratic_khanate_progress >= 60 }
+            set_variable = { name = ywc_route_oir_bureaucratic_khanate_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_oir_bureaucratic_khanate_abandon value = 1 }
+            change_variable = { name = ywc_heritage_legitimacy add = -10 }
+            clamp_variable = { name = ywc_heritage_legitimacy min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_oir_bureaucratic_khanate_active
+    }
 }
 
 ywc_oir.6 = {
@@ -55,9 +98,51 @@ ywc_oir.6 = {
     title = ywc_oir.6.t
     desc = ywc_oir.6.d
     duration = 1
-    option = { name = ywc_oir.6.a default_option = yes set_variable = { name = ywc_route_oir_pastoral_federation_success value = 1 } }
-    option = { name = ywc_oir.6.b set_variable = { name = ywc_route_oir_pastoral_federation_failure value = 1 } }
-    option = { name = ywc_oir.6.c set_variable = { name = ywc_route_oir_pastoral_federation_abandon value = 1 } }
+    option = {
+        name = ywc_oir.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_oir_pastoral_federation_active }
+            NOT = { has_variable = ywc_route_oir_bureaucratic_khanate_active }
+            NOT = { has_variable = ywc_route_oir_pastoral_federation_success }
+            NOT = { has_variable = ywc_route_oir_pastoral_federation_failure }
+            NOT = { has_variable = ywc_route_oir_pastoral_federation_abandon }
+        }
+        set_variable = { name = ywc_route_oir_pastoral_federation_active value = 1 }
+        set_variable = { name = ywc_route_oir_pastoral_federation_progress value = 0 }
+        change_variable = { name = ywc_route_oir_pastoral_federation_progress add = 20 }
+        ywc_raise_autonomy_pressure = yes
+        add_modifier = { name = ywc_oir_pastoral_federation months = 12 }
+    }
+    option = {
+        name = ywc_oir.6.b
+        trigger = { has_variable = ywc_route_oir_pastoral_federation_active }
+        if = {
+            limit = { var:ywc_route_oir_pastoral_federation_progress >= 100 }
+            set_variable = { name = ywc_route_oir_pastoral_federation_success value = 1 }
+            remove_variable = ywc_route_oir_pastoral_federation_active
+            add_modifier = { name = ywc_oir_pastoral_federation months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_oir_pastoral_federation_progress add = 20 }
+            clamp_variable = { name = ywc_route_oir_pastoral_federation_progress min = 0 max = 100 }
+            ywc_raise_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_oir.6.c
+        trigger = { has_variable = ywc_route_oir_pastoral_federation_active }
+        if = {
+            limit = { var:ywc_route_oir_pastoral_federation_progress >= 60 }
+            set_variable = { name = ywc_route_oir_pastoral_federation_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_oir_pastoral_federation_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_oir_pastoral_federation_active
+    }
 }
 
 ywc_oir.7 = {
@@ -125,9 +210,52 @@ ywc_mng.5 = {
     title = ywc_mng.5.t
     desc = ywc_mng.5.d
     duration = 1
-    option = { name = ywc_mng.5.a default_option = yes set_variable = { name = ywc_route_mng_southern_trade_success value = 1 } }
-    option = { name = ywc_mng.5.b set_variable = { name = ywc_route_mng_southern_trade_failure value = 1 } }
-    option = { name = ywc_mng.5.c set_variable = { name = ywc_route_mng_southern_trade_abandon value = 1 } }
+    option = {
+        name = ywc_mng.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_mng_southern_trade_active }
+            NOT = { has_variable = ywc_route_mng_russian_protection_active }
+            NOT = { has_variable = ywc_route_mng_southern_trade_success }
+            NOT = { has_variable = ywc_route_mng_southern_trade_failure }
+            NOT = { has_variable = ywc_route_mng_southern_trade_abandon }
+        }
+        set_variable = { name = ywc_route_mng_southern_trade_active value = 1 }
+        set_variable = { name = ywc_route_mng_southern_trade_progress value = 0 }
+        change_variable = { name = ywc_route_mng_southern_trade_progress add = 20 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_mng_southern_trade months = 12 }
+    }
+    option = {
+        name = ywc_mng.5.b
+        trigger = { has_variable = ywc_route_mng_southern_trade_active }
+        if = {
+            limit = { var:ywc_route_mng_southern_trade_progress >= 100 }
+            set_variable = { name = ywc_route_mng_southern_trade_success value = 1 }
+            remove_variable = ywc_route_mng_southern_trade_active
+            add_modifier = { name = ywc_mng_southern_trade months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_mng_southern_trade_progress add = 20 }
+            clamp_variable = { name = ywc_route_mng_southern_trade_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+        }
+    }
+    option = {
+        name = ywc_mng.5.c
+        trigger = { has_variable = ywc_route_mng_southern_trade_active }
+        if = {
+            limit = { var:ywc_route_mng_southern_trade_progress >= 60 }
+            set_variable = { name = ywc_route_mng_southern_trade_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_mng_southern_trade_abandon value = 1 }
+            change_variable = { name = ywc_maritime_network_level add = -10 }
+            clamp_variable = { name = ywc_maritime_network_level min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_mng_southern_trade_active
+    }
 }
 
 ywc_mng.6 = {
@@ -135,9 +263,51 @@ ywc_mng.6 = {
     title = ywc_mng.6.t
     desc = ywc_mng.6.d
     duration = 1
-    option = { name = ywc_mng.6.a default_option = yes set_variable = { name = ywc_route_mng_russian_protection_success value = 1 } }
-    option = { name = ywc_mng.6.b set_variable = { name = ywc_route_mng_russian_protection_failure value = 1 } }
-    option = { name = ywc_mng.6.c set_variable = { name = ywc_route_mng_russian_protection_abandon value = 1 } }
+    option = {
+        name = ywc_mng.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_mng_russian_protection_active }
+            NOT = { has_variable = ywc_route_mng_southern_trade_active }
+            NOT = { has_variable = ywc_route_mng_russian_protection_success }
+            NOT = { has_variable = ywc_route_mng_russian_protection_failure }
+            NOT = { has_variable = ywc_route_mng_russian_protection_abandon }
+        }
+        set_variable = { name = ywc_route_mng_russian_protection_active value = 1 }
+        set_variable = { name = ywc_route_mng_russian_protection_progress value = 0 }
+        change_variable = { name = ywc_route_mng_russian_protection_progress add = 20 }
+        ywc_raise_autonomy_pressure = yes
+        add_modifier = { name = ywc_mng_russian_protection months = 12 }
+    }
+    option = {
+        name = ywc_mng.6.b
+        trigger = { has_variable = ywc_route_mng_russian_protection_active }
+        if = {
+            limit = { var:ywc_route_mng_russian_protection_progress >= 100 }
+            set_variable = { name = ywc_route_mng_russian_protection_success value = 1 }
+            remove_variable = ywc_route_mng_russian_protection_active
+            add_modifier = { name = ywc_mng_russian_protection months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_mng_russian_protection_progress add = 20 }
+            clamp_variable = { name = ywc_route_mng_russian_protection_progress min = 0 max = 100 }
+            ywc_raise_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_mng.6.c
+        trigger = { has_variable = ywc_route_mng_russian_protection_active }
+        if = {
+            limit = { var:ywc_route_mng_russian_protection_progress >= 60 }
+            set_variable = { name = ywc_route_mng_russian_protection_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_mng_russian_protection_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_mng_russian_protection_active
+    }
 }
 
 ywc_mng.7 = {
@@ -202,9 +372,52 @@ ywc_tib.5 = {
     title = ywc_tib.5.t
     desc = ywc_tib.5.d
     duration = 1
-    option = { name = ywc_tib.5.a default_option = yes set_variable = { name = ywc_route_tib_monastic_reform_success value = 1 } }
-    option = { name = ywc_tib.5.b set_variable = { name = ywc_route_tib_monastic_reform_failure value = 1 } }
-    option = { name = ywc_tib.5.c set_variable = { name = ywc_route_tib_monastic_reform_abandon value = 1 } }
+    option = {
+        name = ywc_tib.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_tib_monastic_reform_active }
+            NOT = { has_variable = ywc_route_tib_kham_league_active }
+            NOT = { has_variable = ywc_route_tib_monastic_reform_success }
+            NOT = { has_variable = ywc_route_tib_monastic_reform_failure }
+            NOT = { has_variable = ywc_route_tib_monastic_reform_abandon }
+        }
+        set_variable = { name = ywc_route_tib_monastic_reform_active value = 1 }
+        set_variable = { name = ywc_route_tib_monastic_reform_progress value = 0 }
+        change_variable = { name = ywc_route_tib_monastic_reform_progress add = 20 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_tib_monastic_reform months = 12 }
+    }
+    option = {
+        name = ywc_tib.5.b
+        trigger = { has_variable = ywc_route_tib_monastic_reform_active }
+        if = {
+            limit = { var:ywc_route_tib_monastic_reform_progress >= 100 }
+            set_variable = { name = ywc_route_tib_monastic_reform_success value = 1 }
+            remove_variable = ywc_route_tib_monastic_reform_active
+            add_modifier = { name = ywc_tib_monastic_reform months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_tib_monastic_reform_progress add = 20 }
+            clamp_variable = { name = ywc_route_tib_monastic_reform_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_tib.5.c
+        trigger = { has_variable = ywc_route_tib_monastic_reform_active }
+        if = {
+            limit = { var:ywc_route_tib_monastic_reform_progress >= 60 }
+            set_variable = { name = ywc_route_tib_monastic_reform_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_tib_monastic_reform_abandon value = 1 }
+            change_variable = { name = ywc_heritage_legitimacy add = -10 }
+            clamp_variable = { name = ywc_heritage_legitimacy min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_tib_monastic_reform_active
+    }
 }
 
 ywc_tib.6 = {
@@ -212,9 +425,51 @@ ywc_tib.6 = {
     title = ywc_tib.6.t
     desc = ywc_tib.6.d
     duration = 1
-    option = { name = ywc_tib.6.a default_option = yes set_variable = { name = ywc_route_tib_kham_league_success value = 1 } }
-    option = { name = ywc_tib.6.b set_variable = { name = ywc_route_tib_kham_league_failure value = 1 } }
-    option = { name = ywc_tib.6.c set_variable = { name = ywc_route_tib_kham_league_abandon value = 1 } }
+    option = {
+        name = ywc_tib.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_tib_kham_league_active }
+            NOT = { has_variable = ywc_route_tib_monastic_reform_active }
+            NOT = { has_variable = ywc_route_tib_kham_league_success }
+            NOT = { has_variable = ywc_route_tib_kham_league_failure }
+            NOT = { has_variable = ywc_route_tib_kham_league_abandon }
+        }
+        set_variable = { name = ywc_route_tib_kham_league_active value = 1 }
+        set_variable = { name = ywc_route_tib_kham_league_progress value = 0 }
+        change_variable = { name = ywc_route_tib_kham_league_progress add = 20 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_tib_kham_league months = 12 }
+    }
+    option = {
+        name = ywc_tib.6.b
+        trigger = { has_variable = ywc_route_tib_kham_league_active }
+        if = {
+            limit = { var:ywc_route_tib_kham_league_progress >= 100 }
+            set_variable = { name = ywc_route_tib_kham_league_success value = 1 }
+            remove_variable = ywc_route_tib_kham_league_active
+            add_modifier = { name = ywc_tib_kham_league months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_tib_kham_league_progress add = 20 }
+            clamp_variable = { name = ywc_route_tib_kham_league_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+        }
+    }
+    option = {
+        name = ywc_tib.6.c
+        trigger = { has_variable = ywc_route_tib_kham_league_active }
+        if = {
+            limit = { var:ywc_route_tib_kham_league_progress >= 60 }
+            set_variable = { name = ywc_route_tib_kham_league_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_tib_kham_league_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_tib_kham_league_active
+    }
 }
 
 ywc_tib.7 = {
