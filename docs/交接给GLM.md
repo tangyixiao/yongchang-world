@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`4253ebb test: add autonomy action readiness to in-game smoke suite`
+代码验收基线：`8163429 fix: preserve live run evidence on -NoLaunch rerun`
 
 ## 1. 任务目标与硬约束
 
@@ -52,7 +52,9 @@ runner 现在使用无 BOM 的紧凑 JSON 写入 `content_load.json`，并从隔
 - `store_backend_failure_count`
 - `dlc_state_matches_config`
 
-真实隐藏启动证据表明：Mod 已挂载并匹配 1.13.11；`none/47` 中请求无 DLC 时观察到无 DLC，`dlc_state_matches_config=yes`。`wave/11` 中请求 `dlc018_ep2`，但所有权后端不可用，观察到的 DLC 为空，故如实记录 `dlc_state_matches_config=no`，而不是伪造成功。
+真实隐藏启动证据表明：Mod 已挂载并匹配 1.13.11；`none/47` 中请求无 DLC 时观察到无 DLC，`dlc_state_matches_config=yes`。`wave/11` 与 `all/23` 中所有权后端不可用，观察到的 DLC 为空，故如实记录 `dlc_state_matches_config=no`，而不是伪造成功。
+
+runner 还带有实证守护：对已持有真实启动证据（`status=hidden_preload_only` 且 `mod_mount=mounted`）的配置/种子组合重跑 `-NoLaunch` 时，会原样保留现有 `run.json`，不会覆盖成 `not_evaluated_no_launch` 空壳。已用 `-NoLaunch -Config none -Seed 47` 重跑验证文件哈希不变。
 
 已知根因：PowerShell 5.1 的 `Set-Content -Encoding UTF8` 会写入 UTF-8 BOM，游戏拒绝带 BOM 的 `content_load.json` 后静默回退到“全 DLC、无 Mod”。该问题已修复，Mod 挂载证据已连续多次成功。
 
@@ -83,7 +85,7 @@ runner 现在使用无 BOM 的紧凑 JSON 写入 `content_load.json`，并从隔
 ## 4. 当前验证结果
 
 ```text
-python -m unittest discover -s tests -q  -> Ran 97 tests; OK
+python -m unittest discover -s tests -q  -> Ran 98 tests; OK
 python tools/ywc_check.py                 -> exit 0
 git diff --check                           -> pass
 隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11
@@ -123,7 +125,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 ## 6. 建议 GLM 接手顺序
 
-1. 先运行 97 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
+1. 先运行 98 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
 2. 复核 `run_observation_matrix.ps1` 与 `tests/test_observation_schema.py`、`tests/test_release_gate.py`，重点检查上述证据字段的语义边界。
 3. 检查 NMG 外交动作定义、本地化和隐藏启动日志；不要把日志解析成功等同于真实外交动作执行成功。
 4. 若获得真实战局、存档导出或受支持的 headless 证据，再更新矩阵；否则保持 pending。
