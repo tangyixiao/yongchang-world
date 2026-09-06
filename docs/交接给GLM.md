@@ -95,6 +95,12 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - `tools/install_dev_mod.ps1` 在本机默认的 Windows PowerShell 5.1 下会因 `-Encoding utf8NoBOM`（PS6+ 值）参数绑定失败而无法运行；已改为 `UTF8Encoding($false)` 写无 BOM 描述符，并实际运行验证（真实用户目录的 `yongchang_world.mod` 内容不变）。
 - 探针目录的 `shadercache`（纯游戏缓存，约 3.4G）已清理；`run.json`、日志等证据文件保留。
 
+### F. 静态事实核验（本轮）
+
+- 启动钩子：`on_game_started_after_lobby` 在本体 `00_code_on_actions.txt:13` 真实定义，mod 用子 on_action `ywc_on_game_started_after_lobby` 挂接，未覆盖原版 effect；四个 AI 修正（SHU/JHG/DMG/NQG）与 `guardrails.json` 一致。
+- DLC 门禁：`ep1_content`、`mp1_content`、`ep2_content` 三个 ID 在本体对应 DLC 的成就文件中原样使用（`has_dlc_feature = ep1_content` 等），mod 引用的门禁 ID 真实有效。
+- 基线快照：重跑 `tools/export_vic3_baseline.py` 导出的 `country_tags`、`state_regions`、`states` 与仓库 `data/baseline/vic3-1.13.11.json` 逐键完全一致，测试基线与已安装的 1.13.11 同步。
+
 ## 4. 当前验证结果
 
 ```text
