@@ -83,32 +83,10 @@ class ReferenceIntegrityTest(unittest.TestCase):
         # silently ignored: any NEW unwired variable fails this test, and each
         # entry should be removed once its journal gets real completion logic.
         known_unwired = {
-            "ywc_highland_without_master_resolved",
-            "ywc_je_kor_border_question_resolved",
-            "ywc_je_kor_bureaucratic_state_resolved",
-            "ywc_je_kor_maritime_learning_resolved",
-            "ywc_je_korea_who_inherits_china_resolved",
-            "ywc_je_lan_company_shareholders_resolved",
-            "ywc_je_lan_dutch_pressure_resolved",
-            "ywc_je_lan_miner_frontier_resolved",
-            "ywc_je_lanfang_company_republic_resolved",
-            "ywc_je_nmg_baja_frontier_resolved",
-            "ywc_je_nmg_catholic_huamo_resolved",
-            "ywc_je_nmg_mexican_federation_resolved",
-            "ywc_ocean_frontiers_resolved",
-            "ywc_je_tib_caravan_gate_resolved",
-            "ywc_je_tib_kham_alliance_resolved",
-            "ywc_je_tib_monastery_estates_resolved",
-            "ywc_je_tibet_highland_without_master_resolved",
-            "ywc_je_yongchang_century_resolved",
-            "ywc_route_kor_national_foundation_resolved",
-            "ywc_route_kor_small_china_resolved",
-            "ywc_route_lan_company_republic_resolved",
-            "ywc_route_lan_mining_state_resolved",
-            "ywc_route_nmg_catholic_autonomy_resolved",
-            "ywc_route_nmg_mexican_federalism_resolved",
-            "ywc_route_tib_kham_league_resolved",
-            "ywc_route_tib_monastic_reform_resolved",
+        # All journal completion variables are wired as of 2026-09-06.
+        # Keep this set empty: any entry reappearing here is a regression.
+        # (entries formerly listed: 26)
+
         }
         journal_text = "\n".join(
             p.read_text("utf-8-sig") for p in scripts() if "journal_entries" in str(p)

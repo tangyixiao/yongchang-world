@@ -209,7 +209,12 @@ class SouthwestTest(unittest.TestCase):
         for country in self.ledger["starting_tags"]:
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
-        self.assertIn("ywc_je_highland_without_master =", journal_text)
+        # The duplicate regional journal ywc_je_highland_without_master was
+        # removed (TIB's main journal covers it); the file must not redefine
+        # it and the southwest country history must no longer add it.
+        self.assertNotIn("ywc_je_highland_without_master =", journal_text)
+        country_history = (ROOT / "yongchang_world/common/history/countries/ywc_southwest.txt").read_text("utf-8")
+        self.assertNotIn("ywc_je_highland_without_master", country_history)
 
 
 class OceanTest(unittest.TestCase):
