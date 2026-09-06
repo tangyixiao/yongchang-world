@@ -155,6 +155,14 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - 独立隐藏启动 `none/23`（15:35:15）证实 Mod 挂载、版本匹配，未再出现 Mod 的 `Unexpected token`、`Inconsistent effect scopes`、非法变量名或找不到静态修正错误；剩余仅为游戏自身的 `paradoxAppId` 与原版 GUI 提示。游戏仍需退出当前旧局并新开 1836，旧存档不会补发开局 journal。
 - 为 `tools/install_dev_mod.ps1` 增加开发目录 Junction：`D:\Documents\Paradox Interactive\Victoria 3\mod\yongchang_world` → `E:\Victoria3 Mod\yongchang_world`，避免新启动器只扫描 Mod 子目录时再次漏掉本地 Mod；脚本已在本机幂等运行验证。
 
+### N. 真实战局证据：本地化与地块布局仍有问题（2026-09-06）
+
+- 用户提供的真实新局截图显示：Mod 已进入战局，日期为 1836-02-01，北清的自定义 journal 与事件弹窗均已出现；这证明事件触发和 journal 接线已经进入运行时。
+- 事件选项按钮直接显示原始键 `ywc_nqg_4.a/b/c`、`ywc_nqg_5.a/b/c`，没有显示双语文本。事件标题和描述已显示中文，因此问题收敛为选项本地化键未被游戏命中；不能宣称双语本地化验收完成。
+- 地图地块同时出现大量碎片化省份、飞地和马赛克式边界，国家归属与地理连续性明显不符合可玩地图质量要求。现有“部分区域使用 Province 子集”的已知限制不足以覆盖这个问题，必须重新核对 `common/history/states` 中每个 `STATE_*` 的完整省份集合，以及 ownership 与本体 state regions 的对应关系。
+- 下一步优先级：先修复 NQG 选项本地化键；再逐个核对州历史的省份集合和国家归属。修复后必须新开 1836 实机确认按钮显示文本、地图边界连续，并检查 journal 状态变化。
+- 当前截图是运行时证据，不代表十国均已完成 UI 验收；不要用静态测试或隐藏预加载替代地图与按钮的实机检查。
+
 ## 4. 当前验证结果
 
 ```text
@@ -203,7 +211,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 ## 6. 建议 GLM 接手顺序
 
 1. 先阅读 `docs/release/manual-acceptance-playbook.md`，按其中的证据格式执行人工验收。
-2. 运行 116 个 Python 测试和 `ywc_check.py`，确认接手时静态基线未漂移。
+2. 运行 119 个 Python 测试和 `ywc_check.py`，确认接手时静态基线未漂移。
 3. 通过官方启动器逐一验证五种 DLC 配置，并保存配置/种子专属证据；不要把直接 exe 的 `disabledDLC` 结果当作单 DLC 证明。
 4. 逐国进入 1836，检查十国 journal、首月事件、NMG 属邦关系与自治外交动作；再在战局内执行 `scripted_tests`。
 5. 完成真实检查点后回填 `checkpoints.json`，运行汇总与发布门禁；证据不足时继续保持 pending。
