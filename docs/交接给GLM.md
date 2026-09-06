@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`d568639 feat: wire Oirat and Khalkha journals to decision events`
+代码验收基线：`a1f57fe feat: wire the last four countries; every journal is now playable`
 
 ## 1. 任务目标与硬约束
 
@@ -136,6 +136,15 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - **MNG（喀尔喀）journal 可玩**：主日志“大漠南北”为方向决策型（南倾/北倾都完成，子变量 `ywc_mng_south_alignment` / `ywc_mng_north_alignment` 记录所择）；茶马之市、庇护者之影、泛蒙之会经 `ywc_mng.2-4` 成败型；南向商路与帝俄之翼两条路线按三态契约经 `.5-6` 接线。
 - **遗留清理**：上轮 SHU/JHG 移除命令被 cmd 部分吞掉，豁免表残留 10 条已接线条目（测试不报错因豁免是超集）；本轮已剪除，并用核对脚本确认豁免表 26 条与实际缺口 26 条**精确相等**。
 - 豁免清单 38 → 26；隐藏启动（`wave/23`）解析干净。剩余四国：TIB（含主日志 tibet_highland_without_master 与西南区域日志 highland_without_master 两处澄清）、KOR、LAN、NMG。
+
+### L. 最后四国接线（本轮，journal 接线工程收官）
+
+- **TIB（吐蕃）/ KOR（朝鲜）/ LAN（兰芳）/ NMG（新明）全部可玩**：分别经 `ywc_tib.1-6`、`ywc_kor.1-6`、`ywc_lan.1-6`、`ywc_nmg.1-5` 接线（双语文本；每国事件 7-8 保留）。NMG 主日志 mexican_chain 保持由外交动作完成。
+- **共享日志接线**：MHG 与 NMG 开局持有的 `ywc_je_ocean_frontiers` 经新增 `ywc_shared.2` 事件接线，并把其 `visible = always = yes` 缺陷收窄为仅 MHG/NMG。
+- **重复内容清理**：TIB 专属的区域日志 `ywc_je_highland_without_master` 与主日志完全重复且对所有国家可见，已连同 `ywc_southwest.txt` 的添加行一起删除；区域测试锁改为断言其不再出现。
+- **catalog 漂移修正（撤销再修正）**：SHU 主日志 `ywc_je_yongchang_century` 实际由 content_starts 开局添加——它不是死键。已恢复其定义并经 `ywc_shu.6`“永昌世纪”决策事件接线；catalog 保持 main_journal = yongchang_century。SHU 现有两个主日志（century + eternal）均可玩。
+- **里程碑：71 个 journal 完成变量全部有设置者，豁免清单清零**，计划 03“主日志可完成、失败并进入分支”的设计约束在静态层面全部达成。
+- 隐藏启动验证抓到并修复了一次重复本地化键回归（`ywc_shu.6.a/b` 旧占位行未删）；修正后 `charters/11` 启动解析完全干净（0 Duplicate/Unknown/Invalid）。
 
 ## 4. 当前验证结果
 
