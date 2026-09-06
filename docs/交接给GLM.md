@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`cda91c7 test: add cross-file reference integrity audit`
+代码验收基线：`4e59f71 fix: update metadata short description to ten countries`
 
 ## 1. 任务目标与硬约束
 
@@ -106,7 +106,9 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - 计划 01–03 的锁定文件路径逐项审计：7 个路径（`ywc_regional_*` 系列、`ywc_core_country_events.txt`）不存在，但全部以按区域拆分的形式实现（如 `ywc_regional_buildings.txt` → `ywc_northeast/inner_asia/southwest/ocean_buildings.txt`），是计划文档的命名漂移，不是内容缺失。
 - 新增 `tests/test_reference_integrity.py`：`set_strategy`、`add_modifier`、journal、事件和 yes 式 `ywc_` 引用必须解析到定义——全部通过。
 - **重要发现**：71 个 journal 完成变量中 58 个没有设置者。事件链记录的是 `ywc_<tag>.N_success/_failure` 序号变量，从未桥接到 journal 的 `*_resolved` 完成条件，导致大多数主日志/路线既不能完成也不能失败，违反计划 03“主日志可完成、失败并进入分支”的设计约束。58 项以显式豁免清单固化在测试中：新增缺口会让测试变红，补一条接线即可从清单移除。逐国接线需要确认 journal↔事件映射与设计意图，本轮未臆改。
+- **桥接前提的进一步核实（本轮）**：映射不是“丢失”而是“不存在”——62 个事件中仅 5 个（bootstrap 4 个、shared 1 个）有 journal pulse 触发者，其余 57 个（`ywc_dmg.1-8`、`ywc_nqg.1-8`、shu/jhg 与 steppe/highland 文件、`ywc_dlc.1`）无触发、无 journal 锚点、共用同一占位标题（"A Crisis of Direction"）。接线的前置任务是为十国撰写真实事件内容，属大内容工程；已写入验收记录的已知限制。
 - `ywc_je_new_ming_mexican_chain` 与 `ywc_je_eternal_yongchang` 是已接线的例外（分别由外交动作与 bootstrap 事件完成）。
+- `.metadata/metadata.json` 的 short_description 仍停留在四国阶段的“四国垂直切片”，已改为“十国垂直切片”并用测试锁定；随后一次真实隐藏启动复核 `status=clean`、`finding_count=0`、`mod_mount=mounted`（挂载行时间戳 11:06:38）。
 
 ## 4. 当前验证结果
 
