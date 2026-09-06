@@ -84,8 +84,7 @@ class ReferenceIntegrityTest(unittest.TestCase):
         # entry should be removed once its journal gets real completion logic.
         known_unwired = {
             "ywc_highland_without_master_resolved",
-            "ywc_je_jinghai_council_resolved",
-            "ywc_je_jinghai_maritime_network_resolved",
+            "ywc_je_jinghai_council_resolved",            "ywc_je_jinghai_maritime_network_resolved",
             "ywc_je_jinghai_succession_resolved",
             "ywc_je_kor_border_question_resolved",
             "ywc_je_kor_bureaucratic_state_resolved",
@@ -102,9 +101,6 @@ class ReferenceIntegrityTest(unittest.TestCase):
             "ywc_je_nmg_baja_frontier_resolved",
             "ywc_je_nmg_catholic_huamo_resolved",
             "ywc_je_nmg_mexican_federation_resolved",
-            "ywc_je_northern_qing_exile_resolved",
-            "ywc_je_northern_qing_island_society_resolved",
-            "ywc_je_northern_qing_russian_choice_resolved",
             "ywc_ocean_frontiers_resolved",
             "ywc_je_oir_dzungar_legacy_resolved",
             "ywc_je_oir_ili_trade_resolved",
@@ -127,8 +123,6 @@ class ReferenceIntegrityTest(unittest.TestCase):
             "ywc_route_mng_southern_trade_resolved",
             "ywc_route_nmg_catholic_autonomy_resolved",
             "ywc_route_nmg_mexican_federalism_resolved",
-            "ywc_route_nqg_multicultural_island_resolved",
-            "ywc_route_nqg_sakhalin_restoration_resolved",
             "ywc_route_oir_bureaucratic_khanate_resolved",
             "ywc_route_oir_pastoral_federation_resolved",
             "ywc_route_shu_bureaucratic_integration_resolved",
