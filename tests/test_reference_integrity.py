@@ -83,9 +83,6 @@ class ReferenceIntegrityTest(unittest.TestCase):
         # silently ignored: any NEW unwired variable fails this test, and each
         # entry should be removed once its journal gets real completion logic.
         known_unwired = {
-            "ywc_je_dongming_local_compact_resolved",
-            "ywc_je_dongming_spanish_frontier_resolved",
-            "ywc_je_dongming_who_inherits_china_resolved",
             "ywc_highland_without_master_resolved",
             "ywc_je_jinghai_council_resolved",
             "ywc_je_jinghai_maritime_network_resolved",
@@ -121,10 +118,7 @@ class ReferenceIntegrityTest(unittest.TestCase):
             "ywc_je_tib_monastery_estates_resolved",
             "ywc_je_tibet_highland_without_master_resolved",
             "ywc_je_yongchang_century_resolved",
-            "ywc_route_dmg_huafei_monarchy_resolved",
-            "ywc_route_dmg_local_republic_resolved",
-            "ywc_route_jhg_naval_tributary_state_resolved",
-            "ywc_route_jhg_south_sea_council_resolved",
+            "ywc_route_jhg_naval_tributary_state_resolved",            "ywc_route_jhg_south_sea_council_resolved",
             "ywc_route_kor_national_foundation_resolved",
             "ywc_route_kor_small_china_resolved",
             "ywc_route_lan_company_republic_resolved",
