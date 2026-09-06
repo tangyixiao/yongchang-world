@@ -46,6 +46,14 @@ class ObservationSchemaTest(unittest.TestCase):
         self.assertIn("dlc_ownership_backend", text)
         self.assertIn("store backend", text)
 
+    def test_runner_preserves_live_evidence_on_nolaunch_rerun(self):
+        """A -NoLaunch rerun over an already-verified config/seed must not
+        overwrite the recorded live evidence with a not_evaluated stub."""
+        text = (ROOT / "tools/run_observation_matrix.ps1").read_text("utf-8")
+        self.assertIn("existing.status -eq 'hidden_preload_only'", text)
+        self.assertIn("existing.mod_mount -eq 'mounted'", text)
+        self.assertIn("preserved existing live run evidence", text)
+
     def test_checkpoint_schema(self):
         row = {
             "year": 1846,

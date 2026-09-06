@@ -141,7 +141,29 @@ $metadata = [ordered]@{
     dlc_state_matches_config = $dlcStateMatchesConfig
     checkpoints = (Join-Path $runRoot 'checkpoints.json')
 }
-Write-Utf8NoBom -Path (Join-Path $runRoot 'run.json') -Text ($metadata | ConvertTo-Json -Depth 4)
-Write-Output "Prepared observation run: $runRoot"
-Write-Output "mod_mount=$modMount dlc_state_matches_config=$dlcStateMatchesConfig"
+$runJsonPath = Join-Path $runRoot 'run.json'
+# A -NoLaunch rerun over a config/seed that already holds live launch
+# evidence must not replace that evidence with a not_evaluated stub.
+$preservedExistingEvidence = $false
+if ($launchStatus -eq 'prepared_no_launch' -and (Test-Path -LiteralPath $runJsonPath)) {
+    $existing = $null
+    try {
+        $existing = Get-Content -LiteralPath $runJsonPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch {
+        $existing = $null
+    }
+    if ($null -ne $existing -and $existing.status -eq 'hidden_preload_only' -and $existing.mod_mount -eq 'mounted') {
+        $preservedExistingEvidence = $true
+    }
+}
+
+if ($preservedExistingEvidence) {
+    Write-Output "NoLaunch requested; preserved existing live run evidence: $runJsonPath"
+}
+else {
+    Write-Utf8NoBom -Path $runJsonPath -Text ($metadata | ConvertTo-Json -Depth 4)
+    Write-Output "Prepared observation run: $runRoot"
+    Write-Output "mod_mount=$modMount dlc_state_matches_config=$dlcStateMatchesConfig"
+}
 Write-Output 'No save, desktop window, or user-data file was modified.'
