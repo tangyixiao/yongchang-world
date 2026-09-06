@@ -38,9 +38,19 @@ class MetadataTest(unittest.TestCase):
                 f"Missing UTF-8 BOM: {path}",
             )
 
+    def test_game_script_files_have_utf8_bom(self):
+        files = sorted((ROOT / "yongchang_world").rglob("*.txt"))
+        self.assertTrue(files)
+        for path in files:
+            self.assertTrue(
+                path.read_bytes().startswith(b"\xef\xbb\xbf"),
+                f"Missing UTF-8 BOM: {path}",
+            )
+
     def test_install_script_is_idempotent_by_contract(self):
         script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
         self.assertIn("New-Item -ItemType Directory -Force", script)
+        self.assertIn("New-Item -ItemType Junction", script)
         self.assertIn("yongchang_world.mod", script)
 
     def test_install_script_writes_bom_free_descriptor_without_set_content(self):

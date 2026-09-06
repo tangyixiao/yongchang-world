@@ -32,7 +32,10 @@ class ReferenceIntegrityTest(unittest.TestCase):
     def setUpClass(cls):
         cls.text = all_text()
         cls.strategies = defined_in("common/ai_strategies", prefix="ai_strategy_ywc_")
-        cls.modifiers = defined_in("common/scripted_modifiers")
+        cls.modifiers = (
+            defined_in("common/scripted_modifiers")
+            | defined_in("common/static_modifiers")
+        )
         cls.effects = defined_in("common/scripted_effects")
         cls.triggers = defined_in("common/scripted_triggers")
         cls.journals = defined_in("common/journal_entries")

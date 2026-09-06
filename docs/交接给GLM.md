@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-当前提交：`a9c79d2 docs: add manual acceptance playbook for the remaining gates`
+当前提交：`本轮游戏开局数据解析修复（提交哈希见本轮记录）`
 
 ## 1. 任务目标与硬约束
 
@@ -146,10 +146,19 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - **里程碑：71 个 journal 完成变量全部有设置者，豁免清单清零**，计划 03“主日志可完成、失败并进入分支”的设计约束在静态层面全部达成。
 - 隐藏启动验证抓到并修复了一次重复本地化键回归（`ywc_shu.6.a/b` 旧占位行未删）；修正后 `charters/11` 启动解析完全干净（0 Duplicate/Unknown/Invalid）。
 
+### M. 实际游戏解析错误修复（本轮）
+
+- 用户进入战局后发现只有国家名称变化。复核本次启动的 `debug.log` 后确认：Mod 已挂载，但脚本解析报错，导致 journal、事件和开局历史没有生效；此前仅凭静态检查宣称“解析干净”是不成立的。
+- 修复实际开局错误：所有 Mod `.txt/.yml` 补为 UTF-8 BOM；移除 journal 不支持的顶层 `visible`；将未知的 `is_country = c:TAG` 改为本体可用的 `this = c:TAG`；删除重复事件 `ywc_shu.6` 并保留正确的完成接线。
+- 进一步修复开局数据格式：五个州历史文件补上 `STATES` 外层；152 个建筑历史条目改为本体接受的 `add_ownership.country.levels` 形式；预留事件变量名中的点号改为下划线；DLC/AI 修正迁移到静态修正数据库；海洋国家历史中的传统主义法律使用 `law_type:` 形式。
+- 新增测试锁定上述规则。全量测试由 112 增至 119；`ywc_check.py` 通过。
+- 独立隐藏启动 `none/23`（15:35:15）证实 Mod 挂载、版本匹配，未再出现 Mod 的 `Unexpected token`、`Inconsistent effect scopes`、非法变量名或找不到静态修正错误；剩余仅为游戏自身的 `paradoxAppId` 与原版 GUI 提示。游戏仍需退出当前旧局并新开 1836，旧存档不会补发开局 journal。
+- 为 `tools/install_dev_mod.ps1` 增加开发目录 Junction：`D:\Documents\Paradox Interactive\Victoria 3\mod\yongchang_world` → `E:\Victoria3 Mod\yongchang_world`，避免新启动器只扫描 Mod 子目录时再次漏掉本地 Mod；脚本已在本机幂等运行验证。
+
 ## 4. 当前验证结果
 
 ```text
-python -m unittest discover -s tests -q  -> Ran 112 tests; OK
+python -m unittest discover -s tests -q  -> Ran 119 tests; OK
 python tools/ywc_check.py                 -> exit 0
 git diff --check                           -> pass
 隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11
@@ -194,7 +203,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 ## 6. 建议 GLM 接手顺序
 
 1. 先阅读 `docs/release/manual-acceptance-playbook.md`，按其中的证据格式执行人工验收。
-2. 运行 112 个 Python 测试和 `ywc_check.py`，确认接手时静态基线未漂移。
+2. 运行 116 个 Python 测试和 `ywc_check.py`，确认接手时静态基线未漂移。
 3. 通过官方启动器逐一验证五种 DLC 配置，并保存配置/种子专属证据；不要把直接 exe 的 `disabledDLC` 结果当作单 DLC 证明。
 4. 逐国进入 1836，检查十国 journal、首月事件、NMG 属邦关系与自治外交动作；再在战局内执行 `scripted_tests`。
 5. 完成真实检查点后回填 `checkpoints.json`，运行汇总与发布门禁；证据不足时继续保持 pending。

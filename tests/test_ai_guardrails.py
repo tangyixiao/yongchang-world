@@ -17,7 +17,7 @@ class AiGuardrailsTest(unittest.TestCase):
         self.data = load_guardrails(ROOT / "data/balance/guardrails.json")
         self.country_data = {tag: self.data[tag] for tag in TAGS}
         self.ai_path = ROOT / "yongchang_world/common/ai_strategies/ywc_ai_strategies.txt"
-        self.modifier_path = ROOT / "yongchang_world/common/scripted_modifiers/ywc_balance_modifiers.txt"
+        self.modifier_path = ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt"
         self.hook_path = ROOT / "yongchang_world/common/on_actions/ywc_startup_hooks.txt"
 
     def test_guardrails_have_bounded_targets(self):

@@ -1,4 +1,5 @@
 import pathlib
+import re
 import tempfile
 import unittest
 
@@ -14,6 +15,67 @@ ROOT = pathlib.Path(__file__).parents[1]
 
 
 class ScriptStructureTest(unittest.TestCase):
+    def test_state_history_files_have_states_wrapper(self):
+        state_dir = ROOT / "yongchang_world/common/history/states"
+        for path in sorted(state_dir.glob("*.txt")):
+            text = path.read_text("utf-8-sig")
+            self.assertRegex(text, r"(?m)^\s*STATES\s*=\s*\{", path.name)
+            self.assertRegex(text.rstrip(), r"\}\s*$", path.name)
+
+    def test_building_history_uses_vanilla_level_forms(self):
+        building_dir = ROOT / "yongchang_world/common/history/buildings"
+        offenders = []
+        for path in sorted(building_dir.glob("*.txt")):
+            text = path.read_text("utf-8-sig")
+            if "create_building = { building =" in text and " levels =" in text:
+                offenders.append(path.name)
+            self.assertNotRegex(
+                text,
+                r"(?m)^\s+levels\s*=\s*\d+\s*$",
+                f"top-level create_building levels in {path.name}",
+            )
+        self.assertEqual(offenders, [])
+
+    def test_set_variable_names_do_not_contain_event_dots(self):
+        event_dir = ROOT / "yongchang_world/events"
+        offenders = []
+        for path in sorted(event_dir.glob("*.txt")):
+            text = path.read_text("utf-8-sig")
+            for match in re.finditer(
+                r"set_variable\s*=\s*\{\s*name\s*=\s*([^\s}]+)", text
+            ):
+                name = match.group(1)
+                if "." in name:
+                    line_number = text.count("\n", 0, match.start()) + 1
+                    offenders.append(f"{path}:{line_number}:{name}")
+        self.assertEqual(offenders, [])
+
+    def test_journal_entries_do_not_use_unsupported_visible_clause(self):
+        journal_dir = ROOT / "yongchang_world/common/journal_entries"
+        offenders = []
+        for path in sorted(journal_dir.glob("*.txt")):
+            for line_number, line in enumerate(path.read_text("utf-8-sig").splitlines(), 1):
+                if line.strip().startswith("visible ="):
+                    offenders.append(f"{path}:{line_number}")
+        self.assertEqual(offenders, [])
+
+    def test_country_identity_uses_supported_this_comparison(self):
+        path = ROOT / "yongchang_world/common/scripted_triggers/ywc_shared_triggers.txt"
+        text = path.read_text("utf-8-sig")
+        self.assertNotIn("is_country =", text)
+        self.assertEqual(text.count("this = c:"), 14)
+
+    def test_event_ids_are_unique_across_mod_events(self):
+        event_dir = ROOT / "yongchang_world/events"
+        ids = []
+        for path in sorted(event_dir.glob("*.txt")):
+            ids.extend(
+                line.split("=", 1)[0].strip()
+                for line in path.read_text("utf-8-sig").splitlines()
+                if line.strip().startswith("ywc_") and line.rstrip().endswith("= {")
+            )
+        self.assertEqual(len(ids), len(set(ids)), ids)
+
     def test_reports_unclosed_brace(self):
         self.assertIn("unclosed brace", scan_braces("SHU = { color = { 1 2 3 }"))
 
