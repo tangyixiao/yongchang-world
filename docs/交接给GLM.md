@@ -31,7 +31,7 @@
 - AI 护栏，包括大顺早期有限吞并、靖海不殖民非洲、墨西哥不能在 1846 年前吞并 `NMG` 等规则。
 - DLC 兼容层：`ep1_content`、`mp1_content`、`ep2_content`；无 DLC 路径先执行，增强路径再门禁。
 - 启动接线：`yongchang_world/common/on_actions/ywc_startup_hooks.txt` 通过子 on_action 链接原版 `on_game_started_after_lobby`，不要改回直接覆盖原版 effect。
-- 原生发布烟测：`yongchang_world/tools/scripted_tests/ywc_release_smoke.txt`。
+- 原生发布烟测：`yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt` 与 `ywc_longrun_invariants.txt`，分别覆盖 1836 开局和长期健康约束。
 - NMG 外交动作：`ywc_nmg_autonomy_negotiation`。NMG 作为墨西哥属邦且持有 `ywc_je_new_ming_mexican_chain` 时可提议自治谈判，接受后解决该主日志。
 - 安装描述文件与开发安装脚本。当前用户数据中的 Mod 路径为 `E:\Victoria3 Mod\yongchang_world`。
 
@@ -198,7 +198,8 @@ git diff --check                           -> pass
 - [十国汇总](../artifacts/smoke/core-country-summary.json)
 - [观察矩阵摘要](../artifacts/observe/matrix-summary.json)
 - [外交动作定义](../yongchang_world/common/diplomatic_actions/ywc_diplomatic_actions.txt)
-- [原生发布烟测](../yongchang_world/tools/scripted_tests/ywc_release_smoke.txt)
+- [1836 开局烟测](../yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt)
+- [长期健康烟测](../yongchang_world/tools/scripted_tests/ywc_longrun_invariants.txt)
 
 典型 Mod 挂载日志：
 
@@ -213,7 +214,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 - 五配置（`none`、`sphere`、`charters`、`wave`、`all`）× 三种子（11、23、47）× 1846/1866/1900 的真实观察局。
 - 十国逐国选国、进入 1836 和完整 DLC UI 检查。
-- 在真实战局中实际执行 `ywc_release_smoke.txt`。
+- 在真实战局中实际执行 `ywc_startup_smoke.txt` 与 `ywc_longrun_invariants.txt`。
 - NMG 墨西哥属邦关系、外交动作可用性和主日志完成效果的进入战局运行时证据。
 - journal 完成变量缺口已清零（见 3.L）：全部 71 个完成变量均有设置者，十国及共享 ocean-frontiers 日志已完成静态接线；后续重点转为真实战局执行与事件后果平衡，不要恢复旧的 38 项豁免。
 - **人工验收手册已交付**：`docs/release/manual-acceptance-playbook.md` 覆盖全部剩余门槛的逐步操作——五配置启动（含启动器 Playset DLC 开关与挂载行核验）、逐国进入 1836 的 journal 核对表（十国全部日志名）、`scripted_tests` 控制台执行、`checkpoints.json` 回填格式与 `summarize_observation.py` / `check_release.py` 用法，以及证据规则与已知限制速查。README 与验收记录均已链接。

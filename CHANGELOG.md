@@ -4,6 +4,8 @@
 
 - Added the ten-country Yongchang World content slice for Victoria 3 1.13.11 (Matcha).
 - Added bounded AI guardrails and DLC compatibility gates for `ep1_content`, `mp1_content`, and `ep2_content`.
+- Connected the ten startup-assigned country strategies to the active diplomatic AI layer: route progress, diplomatic crises, subject status, and bankruptcy now adjust each country's caution, while country-specific building and goods priorities remain bounded. Removed the unused `ai_strategy_ywc_guardrail_*` mirror definitions.
+- A fresh isolated no-DLC preload (`none/25`) mounted the Mod, matched 1.13.11, matched the requested empty DLC set, and found no Mod parser/runtime vocabulary errors. This is loading evidence only; no campaign or long-run balance claim is attached.
 - Added hidden-launch mount checks, bilingual content, political identities, dynamic names, colors, and pure-color CoA placeholders.
 - Added the `ywc_nmg_autonomy_negotiation` diplomatic pact action: New Ming can open autonomy negotiations with Mexico while a subject and carrying the New Ming–Mexico chain journal; acceptance resolves the chain. Bilingual localization included. The in-game smoke suite gained a read-only `ywc_nmg_autonomy_action_ready` check, and engine strings confirmed `tools/scripted_tests` as the exact path the game queries for it.
 - Replaced 57 placeholder journal and route titles (all ten countries) with proper English and Simplified Chinese display names, and added a localization parity test that keeps both languages key-aligned and placeholder-free.

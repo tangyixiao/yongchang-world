@@ -16,7 +16,8 @@ class AiGuardrailsTest(unittest.TestCase):
     def setUp(self):
         self.data = load_guardrails(ROOT / "data/balance/guardrails.json")
         self.country_data = {tag: self.data[tag] for tag in TAGS}
-        self.ai_path = ROOT / "yongchang_world/common/ai_strategies/ywc_ai_strategies.txt"
+        self.ai_path = ROOT / "yongchang_world/common/ai_strategies/ywc_core_country_ai.txt"
+        self.legacy_guardrail_path = ROOT / "yongchang_world/common/ai_strategies/ywc_ai_strategies.txt"
         self.modifier_path = ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt"
         self.hook_path = ROOT / "yongchang_world/common/on_actions/ywc_startup_hooks.txt"
 
@@ -36,6 +37,33 @@ class AiGuardrailsTest(unittest.TestCase):
         for tag, row in self.country_data.items():
             self.assertIn(row["strategy_id"], ai_text, tag)
             self.assertIn(tag, ai_text, tag)
+
+    def test_active_strategies_consume_runtime_state(self):
+        """The IDs assigned at startup must be real, state-aware strategies."""
+        self.assertFalse(self.legacy_guardrail_path.exists())
+        text = self.ai_path.read_text("utf-8")
+        for tag, row in self.country_data.items():
+            strategy = row["strategy_id"]
+            start = text.index(f"{strategy} = {{")
+            next_strategy = re.search(
+                r"(?m)^ai_strategy_ywc_[a-z0-9_]+\s*=\s*\{", text[start + 1 :]
+            )
+            end = start + 1 + next_strategy.start() if next_strategy else len(text)
+            block = text[start:end]
+            for field in (
+                "type = diplomatic",
+                "diplomatic_play_neutrality",
+                "diplomatic_play_boldness",
+                "recklessness",
+                "aggression",
+                "building_group_weights",
+                "goods_stances",
+                "weight",
+                "has_modifier = declared_bankruptcy",
+                "is_active_in_diplomatic_play = yes",
+                "has_variable = ywc_route_",
+            ):
+                self.assertIn(field, block, f"{tag}: missing {field}")
 
     def test_balance_modifiers_have_a_finite_window(self):
         text = self.modifier_path.read_text("utf-8")
