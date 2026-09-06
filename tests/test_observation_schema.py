@@ -28,6 +28,24 @@ class ObservationSchemaTest(unittest.TestCase):
         self.assertIn("writes_to_user_data = $false", text)
         self.assertIn("hidden_preload_only", text)
 
+    def test_runner_writes_content_load_json_without_bom(self):
+        """The game fails to parse a UTF-8 BOM content_load.json and silently
+        falls back to 'all DLC enabled, no mods' (see artifacts/observe probes)."""
+        text = (ROOT / "tools/run_observation_matrix.ps1").read_text("utf-8")
+        self.assertNotIn("Set-Content", text)
+        self.assertIn("-Compress", text)
+        self.assertIn("UTF8Encoding", text)
+        self.assertIn("$false", text.split("UTF8Encoding", 1)[1][:40])
+
+    def test_runner_records_mount_evidence_after_launch(self):
+        text = (ROOT / "tools/run_observation_matrix.ps1").read_text("utf-8")
+        self.assertIn("mod_mount", text)
+        self.assertIn("Mounted Data", text)
+        self.assertIn("successfully matched game version", text)
+        self.assertIn("dlc_state_matches_config", text)
+        self.assertIn("dlc_ownership_backend", text)
+        self.assertIn("store backend", text)
+
     def test_checkpoint_schema(self):
         row = {
             "year": 1846,
