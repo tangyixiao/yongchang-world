@@ -20,5 +20,7 @@ $descriptor = @(
     'supported_version="1.13.*"'
 ) -join [Environment]::NewLine
 
-Set-Content -LiteralPath $descriptorPath -Value $descriptor -Encoding utf8NoBOM
+# Windows PowerShell 5.1 rejects the PS6+ utf8NoBOM encoding switch; write
+# BOM-free UTF-8 directly instead.
+[System.IO.File]::WriteAllText($descriptorPath, $descriptor, (New-Object System.Text.UTF8Encoding($false)))
 Write-Output "Installed development descriptor: $descriptorPath"

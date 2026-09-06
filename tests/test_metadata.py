@@ -41,8 +41,16 @@ class MetadataTest(unittest.TestCase):
     def test_install_script_is_idempotent_by_contract(self):
         script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
         self.assertIn("New-Item -ItemType Directory -Force", script)
-        self.assertIn("Set-Content", script)
         self.assertIn("yongchang_world.mod", script)
+
+    def test_install_script_writes_bom_free_descriptor_without_set_content(self):
+        # Windows PowerShell 5.1 (the machine default) rejects
+        # -Encoding utf8NoBOM, so the script must write BOM-free UTF-8 via
+        # UTF8Encoding($false) instead of Set-Content.
+        script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
+        self.assertNotIn("Set-Content", script)
+        self.assertNotIn("-Encoding utf8NoBOM", script)
+        self.assertIn("UTF8Encoding($false)", script)
 
     def test_install_script_uses_redirected_windows_documents(self):
         script = (ROOT / "tools/install_dev_mod.ps1").read_text("utf-8")
