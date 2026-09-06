@@ -163,6 +163,13 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - 下一步优先级：先修复 NQG 选项本地化键；再逐个核对州历史的省份集合和国家归属。修复后必须新开 1836 实机确认按钮显示文本、地图边界连续，并检查 journal 状态变化。
 - 当前截图是运行时证据，不代表十国均已完成 UI 验收；不要用静态测试或隐藏预加载替代地图与按钮的实机检查。
 
+### O. N 节两项问题的静态修复（本轮，待实机复核）
+
+- **NQG 选项键已修复**：运行时证据表明游戏按选项名的字面量查找本地化，而 M 轮把选项名改成了下划线事件形式（`ywc_nqg_4.a`），loc 仍是点号键。已把全部 190 个双语选项 loc 键重命名为下划线形式（文本不变），并在 `tests/test_reference_integrity.py` 新增 `test_event_option_names_are_localized`（两语言、>150 选项全覆盖）永久锁定；`test_content_localization` 的选项期望也改为运行时形式。**需实机确认按钮显示文本。**
+- **地图碎片化根因已定位并修复**：对 `common/history/states` 与 `data/baseline` 的核对发现 0 个越界省份，但有 2 个州被部分覆盖——MRG 在北领地与西澳的各 1 省沿海据点使 839 个本体省份无归属（无主碎片）。已从 baseline 恢复本体原归属（10+8 个 create_state 块），并新增 `StateHistoryVanillaCoverageTest` 断言每个州精确覆盖其本体 region。
+- **跨文件重复州已去重**：`STATE_LUZON` 与 `STATE_SAKHALIN` 在 core 与区域州历史中重复定义；core 版 SAKHALIN 把省份分给未定义的 AIN/ALK 标签。已保留区域版（实际生效者）并删除 core 重复块；西班牙对吕宋的 `add_claim = c:SPA` 随权威定义迁至 `ywc_ocean_states.txt`，`test_core_scenario` 相应更新。
+- 全量测试 119 → 121 全绿；隐藏启动（`sphere/11`）解析干净（0 Duplicate/Unknown/Invalid/Unexpected token）。**两项修复均需新开 1836 实机复核**：按钮显示文本、地图边界连续、journal 状态变化。
+
 ## 4. 当前验证结果
 
 ```text
