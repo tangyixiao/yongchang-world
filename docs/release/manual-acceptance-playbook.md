@@ -54,16 +54,12 @@
 5. DLC 增强检查（`all` 配置下重复任一国家）：确认三个门禁能力（势力范围/投资、公司特许、水师旗舰）随 DLC 开关出现或消失，无"无 DLC 报错"。
 6. 记录：每国的检查结果（journal 清单核对、事件弹出、完成/失败状态、NMG 外交动作）写入 `docs/release/manual-acceptance-log.md`（自建）。
 
-## 3. 门槛三：在真实战局中执行 `ywc_release_smoke.txt`
+## 3. 门槛三：在真实战局中执行原生 scripted_tests 套件
 
 1. 在任意已进入的战局中打开调试控制台（`-debug_mode` 下按 `` ` ``）。
-2. 执行 `scripted_tests`（引擎命令；亦存在 `scripted_tests after` 变体，失败后自动存档——引擎字符串证实，具体表现以实机为准）。
-3. 套件包含四项只读检查：
-   - `ywc_core_country_presence`：十国全部存在；
-   - `ywc_nmg_subject_boundary`：NMG 仍是墨西哥属邦（1836.2.1 后仍不满足即失败）；
-   - `ywc_startup_compatibility_path`：SHU 的 DLC 基础路径变量已设置；
-   - `ywc_nmg_autonomy_action_ready`：NMG 持有链条主日志或已开过自治谈判。
-4. 把控制台输出截图或抄录，连同使用的种子/日期记入验收日志。**该套件在 1900.1.1 前一直有效，可在长观察局的三个检查年重复执行。**
+2. 在 1836 新局推进到首月后执行 `scripted_tests`，记录 `ywc_startup_smoke.txt` 的结果：十国存在、JHG/NMG 开局属邦边界、SHU 的 DLC 基础路径，以及十国主日志和两条路线入口。
+3. 在观察局的检查年执行 `scripted_tests`，选择 `ywc_longrun_invariants.txt`：它只检查无负人口、无存活国家孤立首都、共享变量范围和 DLC 兼容日志，不要求十国继续存在，也不要求 NMG 永远保持属邦。
+4. `scripted_tests after` 可作为失败后自动存档的变体（具体表现以实机为准）。把控制台输出截图或抄录，连同使用的套件、种子、日期和存档路径记入验收日志；静态扫描和隐藏预载不能替代这一步。
 
 ## 4. 门槛四：观察矩阵与检查点回填
 

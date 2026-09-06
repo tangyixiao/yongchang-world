@@ -23,7 +23,7 @@ powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch
 
 日志摘要写入 `artifacts/smoke/latest-summary.txt`，十国内容汇总写入 `artifacts/smoke/core-country-summary.json`；原版游戏目录保持只读，仓库只保存摘要而不保存大型日志或存档。
 
-进入已有战局后，可用本体的 `scripted_tests` 命令启用 `yongchang_world/tools/scripted_tests/ywc_release_smoke.txt`，执行只读的 1900 年发布烟测：十国存在、NMG 的墨西哥属国关系以及启动兼容路径均会被检查。
+进入已有战局后，可用本体的 `scripted_tests` 命令分别执行 `yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt`（1836 开局硬约束）和 `yongchang_world/tools/scripted_tests/ywc_longrun_invariants.txt`（长期数据健康）。两套测试均为只读；长期套件不要求十国继续存在，也不要求 NMG 永远保持墨西哥属邦。
 
 剩余的人工验收门槛（五配置启动、逐国进入 1836、烟测执行、观察矩阵回填）的逐步操作见 [docs/release/manual-acceptance-playbook.md](docs/release/manual-acceptance-playbook.md)。
 
