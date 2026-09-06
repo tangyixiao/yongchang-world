@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`b90bf0c feat: wire Dongming journals to real decision events`
+代码验收基线：`d600b06 feat: wire Northern Qing journals to decision events`
 
 ## 1. 任务目标与硬约束
 
@@ -116,6 +116,12 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - journal 采用已验证的 bootstrap 模式：`on_monthly_pulse` 在未决时触发决策事件。事件文本双语，遵循计划 03 约束（对西班牙停战/战争选择、本地文化整合、不自动夺取全吕宋）。事件 6-8 保留为后续链深预留。
 - 豁免清单 58 → 53；隐藏启动验证 `common/events` 枚举干净（0 Unknown/Invalid/缺失本地化）。
 - **后续轮次的标准任务模板**：按同一模式逐国接线——读 `data/content/content_catalog.json` 该国条目（journal/事件/路线三态契约）→ 撰写该国决策事件（双语）→ journal 加 pulse/complete/fail → 豁免清单减项 → 全量测试 + 隐藏启动。剩余九国：SHU、JHG、NQG、OIR、MNG、TIB、KOR、LAN、NMG。
+
+### I. NQG 事件链接线（本轮，第二个国家）
+
+- **NQG（北清）journal 全部可玩**：流亡日志经 `ywc_nqg.1` 完成或失败；亲俄之择为决策型日志——两个选项都完成并记录所择路径（`ywc_nqg_russia_aligned` / `ywc_nqg_russia_refused`）；岛屿社会日志经 `ywc_nqg.3` 完成或失败；两条路线（库页光复、多族之邦）按三态契约经 `ywc_nqg.4-5` 接线并带放弃选项，遵循计划 03“扩张不得把北清变成满洲大国”的约束（catalog：forbidden become_great_power / mass_settler_colonization）。
+- 事件 6-8 保留；豁免清单 53 → 48；隐藏启动（`none/23`）验证解析干净且 `dlc_state_matches_config=yes`。
+- 下一个建议国家：SHU 或 JHG（`ywc_shu_jhg_events.txt` 每国 8 个事件）。
 
 ## 4. 当前验证结果
 
