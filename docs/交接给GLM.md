@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`见 git log（人工验收手册轮）`
+当前提交：`a9c79d2 docs: add manual acceptance playbook for the remaining gates`
 
 ## 1. 任务目标与硬约束
 
@@ -193,11 +193,11 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 ## 6. 建议 GLM 接手顺序
 
-1. 先运行 112 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
-2. 复核 `run_observation_matrix.ps1` 与 `tests/test_observation_schema.py`、`tests/test_release_gate.py`，重点检查上述证据字段的语义边界。
-3. 检查 NMG 外交动作定义、本地化和隐藏启动日志；不要把日志解析成功等同于真实外交动作执行成功。
-4. 若获得真实战局、存档导出或受支持的 headless 证据，再更新矩阵；否则保持 pending。
-5. 所有改动完成后同步更新 `docs/release/v0.1-acceptance.md`、`CHANGELOG.md` 和本交接文档。
+1. 先阅读 `docs/release/manual-acceptance-playbook.md`，按其中的证据格式执行人工验收。
+2. 运行 112 个 Python 测试和 `ywc_check.py`，确认接手时静态基线未漂移。
+3. 通过官方启动器逐一验证五种 DLC 配置，并保存配置/种子专属证据；不要把直接 exe 的 `disabledDLC` 结果当作单 DLC 证明。
+4. 逐国进入 1836，检查十国 journal、首月事件、NMG 属邦关系与自治外交动作；再在战局内执行 `scripted_tests`。
+5. 完成真实检查点后回填 `checkpoints.json`，运行汇总与发布门禁；证据不足时继续保持 pending。
 
 ## 7. 常用命令
 
