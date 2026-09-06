@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`bdcfd0b fix: make install script compatible with Windows PowerShell 5.1`
+代码验收基线：`cda91c7 test: add cross-file reference integrity audit`
 
 ## 1. 任务目标与硬约束
 
@@ -101,10 +101,17 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - DLC 门禁：`ep1_content`、`mp1_content`、`ep2_content` 三个 ID 在本体对应 DLC 的成就文件中原样使用（`has_dlc_feature = ep1_content` 等），mod 引用的门禁 ID 真实有效。
 - 基线快照：重跑 `tools/export_vic3_baseline.py` 导出的 `country_tags`、`state_regions`、`states` 与仓库 `data/baseline/vic3-1.13.11.json` 逐键完全一致，测试基线与已安装的 1.13.11 同步。
 
+### G. 计划锁定清单与引用完整性审计（本轮）
+
+- 计划 01–03 的锁定文件路径逐项审计：7 个路径（`ywc_regional_*` 系列、`ywc_core_country_events.txt`）不存在，但全部以按区域拆分的形式实现（如 `ywc_regional_buildings.txt` → `ywc_northeast/inner_asia/southwest/ocean_buildings.txt`），是计划文档的命名漂移，不是内容缺失。
+- 新增 `tests/test_reference_integrity.py`：`set_strategy`、`add_modifier`、journal、事件和 yes 式 `ywc_` 引用必须解析到定义——全部通过。
+- **重要发现**：71 个 journal 完成变量中 58 个没有设置者。事件链记录的是 `ywc_<tag>.N_success/_failure` 序号变量，从未桥接到 journal 的 `*_resolved` 完成条件，导致大多数主日志/路线既不能完成也不能失败，违反计划 03“主日志可完成、失败并进入分支”的设计约束。58 项以显式豁免清单固化在测试中：新增缺口会让测试变红，补一条接线即可从清单移除。逐国接线需要确认 journal↔事件映射与设计意图，本轮未臆改。
+- `ywc_je_new_ming_mexican_chain` 与 `ywc_je_eternal_yongchang` 是已接线的例外（分别由外交动作与 bootstrap 事件完成）。
+
 ## 4. 当前验证结果
 
 ```text
-python -m unittest discover -s tests -q  -> Ran 106 tests; OK
+python -m unittest discover -s tests -q  -> Ran 112 tests; OK
 python tools/ywc_check.py                 -> exit 0
 git diff --check                           -> pass
 隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11
@@ -137,6 +144,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 - 十国逐国选国、进入 1836 和完整 DLC UI 检查。
 - 在真实战局中实际执行 `ywc_release_smoke.txt`。
 - NMG 墨西哥属邦关系、外交动作可用性和主日志完成效果的进入战局运行时证据。
+- 58 个 journal 完成变量未接线（见 3.G）：大多数主日志/路线在 v0.1 中不可完成，需逐国确认 journal↔事件映射后补桥接。
 
 `artifacts/observe/matrix-summary.json` 的 15 条记录仍为 `not_run_no_desktop_interaction`，总体状态为 `pending_manual_ui_observation`。`tools/check_release.py` 因此应继续返回未通过；不要通过改写矩阵状态绕过门禁。
 
@@ -144,7 +152,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 ## 6. 建议 GLM 接手顺序
 
-1. 先运行 106 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
+1. 先运行 112 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
 2. 复核 `run_observation_matrix.ps1` 与 `tests/test_observation_schema.py`、`tests/test_release_gate.py`，重点检查上述证据字段的语义边界。
 3. 检查 NMG 外交动作定义、本地化和隐藏启动日志；不要把日志解析成功等同于真实外交动作执行成功。
 4. 若获得真实战局、存档导出或受支持的 headless 证据，再更新矩阵；否则保持 pending。

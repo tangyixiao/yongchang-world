@@ -14,4 +14,4 @@
 - Probes established that directly launched executables ignore `disabledDLC` when the ownership backend reports ownership, and that the backend flips between all-owned and none-owned across launches; single-DLC observation configs remain pending instead of being claimed as loaded.
 - The 15-run / three-seed observation matrix is prepared but remains pending manual UI observation; no long-run statistics are claimed.
 
-Known limits: the mod does not change base map geometry, some regional starts use Province subsets, and NMG remains a contested Mexican autonomous subject.
+Known limits: most main journals and routes cannot currently complete (58 of 71 `*_resolved` completion variables are unwired to the event chains; tracked by an allowlist test), the mod does not change base map geometry, some regional starts use Province subsets, and NMG remains a contested Mexican autonomous subject.
