@@ -9,6 +9,7 @@ from tools.ywc_check import (
     find_duplicate_keys,
     scan_braces,
 )
+from tools.build_state_history import balanced_end
 
 
 ROOT = pathlib.Path(__file__).parents[1]
@@ -29,11 +30,19 @@ class ScriptStructureTest(unittest.TestCase):
             text = path.read_text("utf-8-sig")
             if "create_building = { building =" in text and " levels =" in text:
                 offenders.append(path.name)
-            self.assertNotRegex(
-                text,
-                r"(?m)^\s+levels\s*=\s*\d+\s*$",
-                f"top-level create_building levels in {path.name}",
-            )
+            for match in re.finditer(r"create_building\s*=\s*\{", text):
+                opening = text.find("{", match.start(), match.end())
+                block_end = balanced_end(text, opening)
+                block = text[opening + 1 : block_end]
+                depth = 0
+                for line in block.splitlines():
+                    depth += line.count("{") - line.count("}")
+                    if depth == 0:
+                        self.assertNotRegex(
+                            line,
+                            r"^\s*levels\s*=\s*\d+\s*$",
+                            f"top-level create_building levels in {path.name}",
+                        )
         self.assertEqual(offenders, [])
 
     def test_set_variable_names_do_not_contain_event_dots(self):
