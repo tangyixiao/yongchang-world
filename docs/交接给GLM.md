@@ -1,8 +1,8 @@
 # 《永昌世界》交接给 GLM
 
-更新时间：2026-09-06  
-仓库：`E:\Victoria3 Mod`  
-分支：`codex/yongchang-world-bootstrap`  
+更新时间：2026-09-06
+仓库：`E:\Victoria3 Mod`
+分支：`codex/yongchang-world-bootstrap`
 代码验收基线：`4253ebb test: add autonomy action readiness to in-game smoke suite`
 
 ## 1. 任务目标与硬约束
