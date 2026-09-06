@@ -60,10 +60,17 @@ class ScriptStructureTest(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_country_identity_uses_supported_this_comparison(self):
+        # Runtime evidence (user campaign, 2026-09-06 16:31): plain
+        # `this = c:TAG` raises "comparison were of different types
+        # (country vs country_definition)" when evaluated in journal and
+        # flag contexts. The supported idiom is `c:TAG ?= this`, which the
+        # mod's own dynamic map colors already use successfully.
         path = ROOT / "yongchang_world/common/scripted_triggers/ywc_shared_triggers.txt"
         text = path.read_text("utf-8-sig")
         self.assertNotIn("is_country =", text)
-        self.assertEqual(text.count("this = c:"), 14)
+        self.assertNotIn("visible =", text)
+        self.assertEqual(text.count("this = c:"), 0)
+        self.assertEqual(text.count("?= this"), 14)
 
     def test_event_ids_are_unique_across_mod_events(self):
         event_dir = ROOT / "yongchang_world/events"
