@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`91d5f54 feat: wire Shun and Jinhai journals to decision events`
+代码验收基线：`d568639 feat: wire Oirat and Khalkha journals to decision events`
 
 ## 1. 任务目标与硬约束
 
@@ -129,6 +129,13 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 - **JHG（靖海）journal 可玩**：海上网络、继承之诏、行商议事会（`ywc_jhg.1-3`）成败型；藩屏水师与南洋商会两条路线经 `.4-5` 接线。计划 03 约束“提高自治必须加重大顺猜忌与财政成本”已在事件描述中体现，实质后果效果留给平衡轮。
 - **新发现的 catalog 漂移**：SHU 主日志键名不一致——bootstrap 实际接线 `ywc_je_eternal_yongchang`（SHU 开局持有、可玩），而 catalog 声明的 `ywc_je_yongchang_century` 是 `ywc_shu.txt` 中从未被添加的死键（保留在豁免清单）。后续统一时二选一：改 catalog 或删死键。
 - 豁免清单 48 → 38；隐藏启动（`sphere/47`）解析干净。剩余六国：OIR、MNG、TIB（steppe/highland 文件 24 事件）、KOR、LAN、NMG（各 8 事件）。
+
+### K. OIR + MNG 事件链接线（本轮，第五、六个国家）
+
+- **OIR（卫拉特）journal 可玩**：准噶尔遗业、俄国之压、伊犁商路、虚位之鞍（继承危机）经 `ywc_oir.1-4` 成败型接线——遵循计划 03“继承危机与俄压必须真实存在、不扩张也可通过改革生存”；文法之汗国与牧地之盟两条路线按三态契约经 `.5-6` 接线。
+- **MNG（喀尔喀）journal 可玩**：主日志“大漠南北”为方向决策型（南倾/北倾都完成，子变量 `ywc_mng_south_alignment` / `ywc_mng_north_alignment` 记录所择）；茶马之市、庇护者之影、泛蒙之会经 `ywc_mng.2-4` 成败型；南向商路与帝俄之翼两条路线按三态契约经 `.5-6` 接线。
+- **遗留清理**：上轮 SHU/JHG 移除命令被 cmd 部分吞掉，豁免表残留 10 条已接线条目（测试不报错因豁免是超集）；本轮已剪除，并用核对脚本确认豁免表 26 条与实际缺口 26 条**精确相等**。
+- 豁免清单 38 → 26；隐藏启动（`wave/23`）解析干净。剩余四国：TIB（含主日志 tibet_highland_without_master 与西南区域日志 highland_without_master 两处澄清）、KOR、LAN、NMG。
 
 ## 4. 当前验证结果
 
