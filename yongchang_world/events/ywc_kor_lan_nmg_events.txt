@@ -43,9 +43,52 @@ ywc_kor.5 = {
     title = ywc_kor.5.t
     desc = ywc_kor.5.d
     duration = 1
-    option = { name = ywc_kor.5.a default_option = yes set_variable = { name = ywc_route_kor_small_china_success value = 1 } }
-    option = { name = ywc_kor.5.b set_variable = { name = ywc_route_kor_small_china_failure value = 1 } }
-    option = { name = ywc_kor.5.c set_variable = { name = ywc_route_kor_small_china_abandon value = 1 } }
+    option = {
+        name = ywc_kor.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_kor_small_china_active }
+            NOT = { has_variable = ywc_route_kor_national_foundation_active }
+            NOT = { has_variable = ywc_route_kor_small_china_success }
+            NOT = { has_variable = ywc_route_kor_small_china_failure }
+            NOT = { has_variable = ywc_route_kor_small_china_abandon }
+        }
+        set_variable = { name = ywc_route_kor_small_china_active value = 1 }
+        set_variable = { name = ywc_route_kor_small_china_progress value = 0 }
+        change_variable = { name = ywc_route_kor_small_china_progress add = 20 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_kor_small_china months = 12 }
+    }
+    option = {
+        name = ywc_kor.5.b
+        trigger = { has_variable = ywc_route_kor_small_china_active }
+        if = {
+            limit = { var:ywc_route_kor_small_china_progress >= 100 }
+            set_variable = { name = ywc_route_kor_small_china_success value = 1 }
+            remove_variable = ywc_route_kor_small_china_active
+            add_modifier = { name = ywc_kor_small_china months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_kor_small_china_progress add = 20 }
+            clamp_variable = { name = ywc_route_kor_small_china_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_kor.5.c
+        trigger = { has_variable = ywc_route_kor_small_china_active }
+        if = {
+            limit = { var:ywc_route_kor_small_china_progress >= 60 }
+            set_variable = { name = ywc_route_kor_small_china_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_kor_small_china_abandon value = 1 }
+            change_variable = { name = ywc_heritage_legitimacy add = -10 }
+            clamp_variable = { name = ywc_heritage_legitimacy min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_kor_small_china_active
+    }
 }
 
 ywc_kor.6 = {
@@ -53,9 +96,54 @@ ywc_kor.6 = {
     title = ywc_kor.6.t
     desc = ywc_kor.6.d
     duration = 1
-    option = { name = ywc_kor.6.a default_option = yes set_variable = { name = ywc_route_kor_national_foundation_success value = 1 } }
-    option = { name = ywc_kor.6.b set_variable = { name = ywc_route_kor_national_foundation_failure value = 1 } }
-    option = { name = ywc_kor.6.c set_variable = { name = ywc_route_kor_national_foundation_abandon value = 1 } }
+    option = {
+        name = ywc_kor.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_kor_national_foundation_active }
+            NOT = { has_variable = ywc_route_kor_small_china_active }
+            NOT = { has_variable = ywc_route_kor_national_foundation_success }
+            NOT = { has_variable = ywc_route_kor_national_foundation_failure }
+            NOT = { has_variable = ywc_route_kor_national_foundation_abandon }
+        }
+        set_variable = { name = ywc_route_kor_national_foundation_active value = 1 }
+        set_variable = { name = ywc_route_kor_national_foundation_progress value = 0 }
+        change_variable = { name = ywc_route_kor_national_foundation_progress add = 20 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_kor_national_foundation months = 12 }
+    }
+    option = {
+        name = ywc_kor.6.b
+        trigger = { has_variable = ywc_route_kor_national_foundation_active }
+        if = {
+            limit = { var:ywc_route_kor_national_foundation_progress >= 100 }
+            set_variable = { name = ywc_route_kor_national_foundation_success value = 1 }
+            remove_variable = ywc_route_kor_national_foundation_active
+            add_modifier = { name = ywc_kor_national_foundation months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_kor_national_foundation_progress add = 20 }
+            clamp_variable = { name = ywc_route_kor_national_foundation_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_kor.6.c
+        trigger = { has_variable = ywc_route_kor_national_foundation_active }
+        if = {
+            limit = { var:ywc_route_kor_national_foundation_progress >= 60 }
+            set_variable = { name = ywc_route_kor_national_foundation_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_kor_national_foundation_abandon value = 1 }
+            change_variable = { name = ywc_maritime_network_level add = -10 }
+            clamp_variable = { name = ywc_maritime_network_level min = 0 max = 100 }
+        }
+        remove_variable = ywc_route_kor_national_foundation_active
+    }
 }
 
 ywc_kor.7 = {
@@ -122,9 +210,53 @@ ywc_lan.5 = {
     title = ywc_lan.5.t
     desc = ywc_lan.5.d
     duration = 1
-    option = { name = ywc_lan.5.a default_option = yes set_variable = { name = ywc_route_lan_company_republic_success value = 1 } }
-    option = { name = ywc_lan.5.b set_variable = { name = ywc_route_lan_company_republic_failure value = 1 } }
-    option = { name = ywc_lan.5.c set_variable = { name = ywc_route_lan_company_republic_abandon value = 1 } }
+    option = {
+        name = ywc_lan.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_lan_company_republic_active }
+            NOT = { has_variable = ywc_route_lan_mining_state_active }
+            NOT = { has_variable = ywc_route_lan_company_republic_success }
+            NOT = { has_variable = ywc_route_lan_company_republic_failure }
+            NOT = { has_variable = ywc_route_lan_company_republic_abandon }
+        }
+        set_variable = { name = ywc_route_lan_company_republic_active value = 1 }
+        set_variable = { name = ywc_route_lan_company_republic_progress value = 0 }
+        change_variable = { name = ywc_route_lan_company_republic_progress add = 20 }
+        ywc_open_trade_route = yes
+        ywc_raise_autonomy_pressure = yes
+        add_modifier = { name = ywc_lan_company_republic months = 12 }
+    }
+    option = {
+        name = ywc_lan.5.b
+        trigger = { has_variable = ywc_route_lan_company_republic_active }
+        if = {
+            limit = { var:ywc_route_lan_company_republic_progress >= 100 }
+            set_variable = { name = ywc_route_lan_company_republic_success value = 1 }
+            remove_variable = ywc_route_lan_company_republic_active
+            add_modifier = { name = ywc_lan_company_republic months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_lan_company_republic_progress add = 20 }
+            clamp_variable = { name = ywc_route_lan_company_republic_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_raise_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_lan.5.c
+        trigger = { has_variable = ywc_route_lan_company_republic_active }
+        if = {
+            limit = { var:ywc_route_lan_company_republic_progress >= 60 }
+            set_variable = { name = ywc_route_lan_company_republic_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_lan_company_republic_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_lan_company_republic_active
+    }
 }
 
 ywc_lan.6 = {
@@ -132,9 +264,53 @@ ywc_lan.6 = {
     title = ywc_lan.6.t
     desc = ywc_lan.6.d
     duration = 1
-    option = { name = ywc_lan.6.a default_option = yes set_variable = { name = ywc_route_lan_mining_state_success value = 1 } }
-    option = { name = ywc_lan.6.b set_variable = { name = ywc_route_lan_mining_state_failure value = 1 } }
-    option = { name = ywc_lan.6.c set_variable = { name = ywc_route_lan_mining_state_abandon value = 1 } }
+    option = {
+        name = ywc_lan.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_lan_mining_state_active }
+            NOT = { has_variable = ywc_route_lan_company_republic_active }
+            NOT = { has_variable = ywc_route_lan_mining_state_success }
+            NOT = { has_variable = ywc_route_lan_mining_state_failure }
+            NOT = { has_variable = ywc_route_lan_mining_state_abandon }
+        }
+        set_variable = { name = ywc_route_lan_mining_state_active value = 1 }
+        set_variable = { name = ywc_route_lan_mining_state_progress value = 0 }
+        change_variable = { name = ywc_route_lan_mining_state_progress add = 20 }
+        ywc_add_heritage_legitimacy = yes
+        ywc_raise_autonomy_pressure = yes
+        add_modifier = { name = ywc_lan_mining_state months = 12 }
+    }
+    option = {
+        name = ywc_lan.6.b
+        trigger = { has_variable = ywc_route_lan_mining_state_active }
+        if = {
+            limit = { var:ywc_route_lan_mining_state_progress >= 100 }
+            set_variable = { name = ywc_route_lan_mining_state_success value = 1 }
+            remove_variable = ywc_route_lan_mining_state_active
+            add_modifier = { name = ywc_lan_mining_state months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_lan_mining_state_progress add = 20 }
+            clamp_variable = { name = ywc_route_lan_mining_state_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+            ywc_raise_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_lan.6.c
+        trigger = { has_variable = ywc_route_lan_mining_state_active }
+        if = {
+            limit = { var:ywc_route_lan_mining_state_progress >= 60 }
+            set_variable = { name = ywc_route_lan_mining_state_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_lan_mining_state_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_lan_mining_state_active
+    }
 }
 
 ywc_lan.7 = {
@@ -190,9 +366,53 @@ ywc_nmg.4 = {
     title = ywc_nmg.4.t
     desc = ywc_nmg.4.d
     duration = 1
-    option = { name = ywc_nmg.4.a default_option = yes set_variable = { name = ywc_route_nmg_catholic_autonomy_success value = 1 } }
-    option = { name = ywc_nmg.4.b set_variable = { name = ywc_route_nmg_catholic_autonomy_failure value = 1 } }
-    option = { name = ywc_nmg.4.c set_variable = { name = ywc_route_nmg_catholic_autonomy_abandon value = 1 } }
+    option = {
+        name = ywc_nmg.4.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_nmg_catholic_autonomy_active }
+            NOT = { has_variable = ywc_route_nmg_mexican_federalism_active }
+            NOT = { has_variable = ywc_route_nmg_catholic_autonomy_success }
+            NOT = { has_variable = ywc_route_nmg_catholic_autonomy_failure }
+            NOT = { has_variable = ywc_route_nmg_catholic_autonomy_abandon }
+        }
+        set_variable = { name = ywc_route_nmg_catholic_autonomy_active value = 1 }
+        set_variable = { name = ywc_route_nmg_catholic_autonomy_progress value = 0 }
+        change_variable = { name = ywc_route_nmg_catholic_autonomy_progress add = 20 }
+        ywc_raise_autonomy_pressure = yes
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_nmg_catholic_autonomy months = 12 }
+    }
+    option = {
+        name = ywc_nmg.4.b
+        trigger = { has_variable = ywc_route_nmg_catholic_autonomy_active }
+        if = {
+            limit = { var:ywc_route_nmg_catholic_autonomy_progress >= 100 }
+            set_variable = { name = ywc_route_nmg_catholic_autonomy_success value = 1 }
+            remove_variable = ywc_route_nmg_catholic_autonomy_active
+            add_modifier = { name = ywc_nmg_catholic_autonomy months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_nmg_catholic_autonomy_progress add = 20 }
+            clamp_variable = { name = ywc_route_nmg_catholic_autonomy_progress min = 0 max = 100 }
+            ywc_raise_autonomy_pressure = yes
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_nmg.4.c
+        trigger = { has_variable = ywc_route_nmg_catholic_autonomy_active }
+        if = {
+            limit = { var:ywc_route_nmg_catholic_autonomy_progress >= 60 }
+            set_variable = { name = ywc_route_nmg_catholic_autonomy_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_nmg_catholic_autonomy_abandon value = 1 }
+            ywc_lower_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_nmg_catholic_autonomy_active
+    }
 }
 
 ywc_nmg.5 = {
@@ -200,9 +420,53 @@ ywc_nmg.5 = {
     title = ywc_nmg.5.t
     desc = ywc_nmg.5.d
     duration = 1
-    option = { name = ywc_nmg.5.a default_option = yes set_variable = { name = ywc_route_nmg_mexican_federalism_success value = 1 } }
-    option = { name = ywc_nmg.5.b set_variable = { name = ywc_route_nmg_mexican_federalism_failure value = 1 } }
-    option = { name = ywc_nmg.5.c set_variable = { name = ywc_route_nmg_mexican_federalism_abandon value = 1 } }
+    option = {
+        name = ywc_nmg.5.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_route_nmg_mexican_federalism_active }
+            NOT = { has_variable = ywc_route_nmg_catholic_autonomy_active }
+            NOT = { has_variable = ywc_route_nmg_mexican_federalism_success }
+            NOT = { has_variable = ywc_route_nmg_mexican_federalism_failure }
+            NOT = { has_variable = ywc_route_nmg_mexican_federalism_abandon }
+        }
+        set_variable = { name = ywc_route_nmg_mexican_federalism_active value = 1 }
+        set_variable = { name = ywc_route_nmg_mexican_federalism_progress value = 0 }
+        change_variable = { name = ywc_route_nmg_mexican_federalism_progress add = 20 }
+        ywc_open_trade_route = yes
+        ywc_lower_autonomy_pressure = yes
+        add_modifier = { name = ywc_nmg_mexican_federalism months = 12 }
+    }
+    option = {
+        name = ywc_nmg.5.b
+        trigger = { has_variable = ywc_route_nmg_mexican_federalism_active }
+        if = {
+            limit = { var:ywc_route_nmg_mexican_federalism_progress >= 100 }
+            set_variable = { name = ywc_route_nmg_mexican_federalism_success value = 1 }
+            remove_variable = ywc_route_nmg_mexican_federalism_active
+            add_modifier = { name = ywc_nmg_mexican_federalism months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_nmg_mexican_federalism_progress add = 20 }
+            clamp_variable = { name = ywc_route_nmg_mexican_federalism_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_lower_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_nmg.5.c
+        trigger = { has_variable = ywc_route_nmg_mexican_federalism_active }
+        if = {
+            limit = { var:ywc_route_nmg_mexican_federalism_progress >= 60 }
+            set_variable = { name = ywc_route_nmg_mexican_federalism_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_nmg_mexican_federalism_abandon value = 1 }
+            ywc_raise_autonomy_pressure = yes
+        }
+        remove_variable = ywc_route_nmg_mexican_federalism_active
+    }
 }
 
 ywc_nmg.6 = {
