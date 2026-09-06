@@ -3,7 +3,7 @@
 更新时间：2026-09-06
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-代码验收基线：`8163429 fix: preserve live run evidence on -NoLaunch rerun`
+代码验收基线：`441c493 feat: report mod_mount in smoke log summary`
 
 ## 1. 任务目标与硬约束
 
@@ -82,15 +82,22 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 
 从游戏引擎字符串确认，Mod 内路径 `tools/scripted_tests` 是正确的查询路径，并存在 `scripted_tests after` 执行命令。但目前没有真实进入战局并执行该套件的证据，不能宣称烟测已运行。
 
+### D. 本地化审计与烟测收集器
+
+- 新增 `tests/test_localization_parity.py`：双语键集合必须对齐，且禁止“键名小写化”式占位标题。
+- 审计发现并修复 57 个占位 journal/路线标题（十国全部主日志与路线，两种语言，共 114 行），例如 `ywc_je_new_ming_mexican_chain:0 "new ming mexican chain"` → `"The New Ming-Mexico Chain"` / `"新明—墨西哥链条"`。
+- `tools/collect_smoke_logs.ps1` 的 `latest-summary.txt` 现在报告 `mod_mount=mounted|not_mounted|unknown_no_debug_log` 并附挂载原文行；该字段只作记录，不改变 clean/error 判定。fixture 级测试覆盖三种情形。
+- 已用默认用户目录的一次真实隐藏启动端到端复核：`status=clean`、`finding_count=0`、`mod_mount=mounted`（挂载行时间戳 09:38:42）。
+
 ## 4. 当前验证结果
 
 ```text
-python -m unittest discover -s tests -q  -> Ran 98 tests; OK
+python -m unittest discover -s tests -q  -> Ran 104 tests; OK
 python tools/ywc_check.py                 -> exit 0
 git diff --check                           -> pass
 隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11
 相关脚本错误关键词                         -> none
-tools/collect_smoke_logs.ps1 -NoLaunch    -> status=clean，finding_count=0
+tools/collect_smoke_logs.ps1 -NoLaunch    -> status=clean，finding_count=0，mod_mount=mounted
 工作树                                     -> clean
 ```
 
@@ -125,7 +132,7 @@ Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matche
 
 ## 6. 建议 GLM 接手顺序
 
-1. 先运行 98 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
+1. 先运行 104 个 Python 测试和 `ywc_check.py`，确认接手时基线未漂移。
 2. 复核 `run_observation_matrix.ps1` 与 `tests/test_observation_schema.py`、`tests/test_release_gate.py`，重点检查上述证据字段的语义边界。
 3. 检查 NMG 外交动作定义、本地化和隐藏启动日志；不要把日志解析成功等同于真实外交动作执行成功。
 4. 若获得真实战局、存档导出或受支持的 headless 证据，再更新矩阵；否则保持 pending。
