@@ -64,6 +64,12 @@ class AiGuardrailsTest(unittest.TestCase):
                 "has_variable = ywc_route_",
             ):
                 self.assertIn(field, block, f"{tag}: missing {field}")
+            for comparison in re.findall(r"var:(ywc_route_[a-z0-9_]+)\s*>=\s*80", block):
+                self.assertRegex(
+                    block,
+                    rf"has_variable\s*=\s*{comparison}",
+                    f"{tag}: compares an unguarded route variable",
+                )
 
     def test_balance_modifiers_have_a_finite_window(self):
         text = self.modifier_path.read_text("utf-8")
