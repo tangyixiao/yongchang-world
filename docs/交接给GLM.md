@@ -72,6 +72,8 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 
 英文和简体中文本地化均已提供，使用 `ywc_` 前缀。
 
+2026-09-07 的 NMG 专项隐藏启动 `artifacts/observe/manual-gate4-nmg-preload` 已自然结束并推进到 `1836.1.1.12`；日志加载 `ywc_nmg` 命名空间及 `events/ywc_kor_lan_nmg_events.txt` 的 17 个事件，未出现 NMG/MNG/MGL 重复、未知触发器/效果或 Mod 自有法律错误。该证据只证明隔离启动时脚本和 NMG 事件可加载，不能替代进入战局后的外交动作可用性与接受/拒绝分支证据。
+
 ### C. 原生 scripted_tests 烟测套件
 
 已新增只读检查 `ywc_nmg_autonomy_action_ready`：
