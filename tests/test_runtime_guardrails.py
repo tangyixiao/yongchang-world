@@ -80,6 +80,37 @@ class RuntimeGuardrailsTest(unittest.TestCase):
             )
             self.assertRegex(text, expected)
 
+    def test_maritime_trigger_uses_shared_numeric_threshold(self):
+        text = (MOD / "common/scripted_triggers/ywc_shared_triggers.txt").read_text(
+            "utf-8-sig"
+        )
+        match = re.search(
+            r"ywc_has_maritime_network\s*=\s*\{(?P<body>.*?)\n\}",
+            text,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(match)
+        body = match.group("body")
+        self.assertIn("has_variable = ywc_maritime_network_level", body)
+        self.assertRegex(body, r"var:ywc_maritime_network_level\s*>=\s*60")
+        self.assertNotRegex(body, r"c:(?:JHG|DMG|LAN|NMG)")
+
+    def test_shu_dynamic_names_match_shun_identity(self):
+        zh = (MOD / "localization/simp_chinese/ywc_content_l_simp_chinese.yml").read_text(
+            "utf-8-sig"
+        )
+        en = (MOD / "localization/english/ywc_content_l_english.yml").read_text(
+            "utf-8-sig"
+        )
+        self.assertRegex(zh, r'ywc_dyn_shu_heritage:0\s+"大顺礼制国"')
+        self.assertRegex(zh, r'ywc_dyn_shu_maritime:0\s+"大顺海疆国"')
+        self.assertRegex(en, r'ywc_dyn_shu_heritage:0\s+"Shun Ritual State"')
+        self.assertRegex(en, r'ywc_dyn_shu_maritime:0\s+"Shun Maritime State"')
+        self.assertNotIn("蜀汉礼制国", zh)
+        self.assertNotIn("蜀汉海疆国", zh)
+        self.assertNotIn('"Shu Ritual State"', en)
+        self.assertNotIn('"Shu Maritime State"', en)
+
     def test_custom_flag_triggers_keep_country_comparisons_in_country_scope(self):
         text = (MOD / "common/flag_definitions/ywc_flags.txt").read_text("utf-8-sig")
         self.assertNotIn("?= THIS", text)

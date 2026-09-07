@@ -80,7 +80,10 @@ class ScriptStructureTest(unittest.TestCase):
         self.assertNotIn("is_country =", text)
         self.assertNotIn("visible =", text)
         self.assertEqual(text.count("this = c:"), 0)
-        self.assertEqual(text.count("?= this"), 14)
+        # Ten supported country identity comparisons remain; the former
+        # four-country maritime whitelist is now a numeric shared-variable
+        # trigger and must not contribute extra tag comparisons.
+        self.assertEqual(text.count("?= this"), 10)
 
     def test_event_ids_are_unique_across_mod_events(self):
         event_dir = ROOT / "yongchang_world/events"

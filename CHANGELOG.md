@@ -3,6 +3,7 @@
 ## v0.1.0-rc1 (prepared)
 
 - Added the ten-country Yongchang World content slice for Victoria 3 1.13.11 (Matcha).
+- Corrected the shared maritime trigger to use the 0–100 `ywc_maritime_network_level` threshold rather than a fixed country whitelist, so maritime dynamic names and flags can actually activate after route progress; aligned SHU's dynamic identity with Shun/Dashun in both languages.
 - Added bounded AI guardrails and DLC compatibility gates for `ep1_content`, `mp1_content`, and `ep2_content`.
 - Connected the ten startup-assigned country strategies to the active diplomatic AI layer: route progress, diplomatic crises, subject status, and bankruptcy now adjust each country's caution, while country-specific building and goods priorities remain bounded. Removed the unused `ai_strategy_ywc_guardrail_*` mirror definitions.
 - A fresh isolated no-DLC preload (`none/25`) mounted the Mod, matched 1.13.11, matched the requested empty DLC set, and found no Mod parser/runtime vocabulary errors. This is loading evidence only; no campaign or long-run balance claim is attached.
