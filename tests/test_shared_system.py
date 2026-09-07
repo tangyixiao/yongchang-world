@@ -58,6 +58,39 @@ class SharedSystemTest(unittest.TestCase):
         self.assertNotIn("change_variable = { name = ywc_heritage_legitimacy", event_text)
         self.assertNotIn("set_variable = { name = ywc_heritage_legitimacy", event_text)
 
+    def test_autonomy_pressure_changes_subject_liberty_desire(self):
+        effects = EFFECTS.read_text("utf-8")
+        modifiers = STATIC_MODIFIERS.read_text("utf-8")
+        english = ENGLISH.read_text("utf-8")
+        chinese = CHINESE.read_text("utf-8")
+
+        self.assertIn("ywc_refresh_autonomy_pressure_modifier = {", effects)
+        self.assertIn("is_subject = yes", effects)
+        self.assertIn("var:ywc_autonomy_pressure >= 70", effects)
+        self.assertIn("var:ywc_autonomy_pressure <= 30", effects)
+        self.assertIn("remove_modifier = ywc_autonomy_pressure_high", effects)
+        self.assertIn("remove_modifier = ywc_autonomy_pressure_low", effects)
+        self.assertIn("add_modifier = { name = ywc_autonomy_pressure_high }", effects)
+        self.assertIn("add_modifier = { name = ywc_autonomy_pressure_low }", effects)
+        self.assertIn("ywc_autonomy_pressure_high = {", modifiers)
+        self.assertIn("ywc_autonomy_pressure_low = {", modifiers)
+        self.assertIn("country_liberty_desire_add = 0.10", modifiers)
+        self.assertIn("country_liberty_desire_add = -0.05", modifiers)
+        self.assertIn("ywc_autonomy_pressure_high:0", english)
+        self.assertIn("ywc_autonomy_pressure_low:0", english)
+        self.assertIn("ywc_refresh_autonomy_pressure_modifier:0", english)
+        self.assertIn("ywc_autonomy_pressure_high:0", chinese)
+        self.assertIn("ywc_autonomy_pressure_low:0", chinese)
+        self.assertIn("ywc_refresh_autonomy_pressure_modifier:0", chinese)
+
+    def test_autonomy_mutations_refresh_subject_effect(self):
+        effects = EFFECTS.read_text("utf-8")
+        self.assertIn("ywc_raise_autonomy_pressure = {\n    change_variable", effects)
+        self.assertIn("ywc_lower_autonomy_pressure = {\n    change_variable", effects)
+        self.assertIn("clamp_variable = { name = ywc_autonomy_pressure min = 0 max = 100 }\n    ywc_refresh_autonomy_pressure_modifier = yes", effects)
+        self.assertIn("ywc_set_heritage_legitimacy = yes\n    set_variable = { name = ywc_maritime_network_level", effects)
+        self.assertIn("set_variable = { name = ywc_autonomy_pressure value = 0 }\n    ywc_refresh_autonomy_pressure_modifier = yes", effects)
+
     def test_shared_journal_and_event_are_connected(self):
         journal = JOURNAL.read_text("utf-8")
         events = EVENTS.read_text("utf-8")

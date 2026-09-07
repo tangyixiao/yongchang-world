@@ -43,15 +43,37 @@ ywc_add_maritime_network = {
 ywc_raise_autonomy_pressure = {
     change_variable = { name = ywc_autonomy_pressure add = 10 }
     clamp_variable = { name = ywc_autonomy_pressure min = 0 max = 100 }
+    ywc_refresh_autonomy_pressure_modifier = yes
 }
 
 ywc_lower_autonomy_pressure = {
     change_variable = { name = ywc_autonomy_pressure add = -10 }
     clamp_variable = { name = ywc_autonomy_pressure min = 0 max = 100 }
+    ywc_refresh_autonomy_pressure_modifier = yes
+}
+
+ywc_refresh_autonomy_pressure_modifier = {
+    remove_modifier = ywc_autonomy_pressure_high
+    remove_modifier = ywc_autonomy_pressure_low
+    if = {
+        limit = {
+            is_subject = yes
+            var:ywc_autonomy_pressure >= 70
+        }
+        add_modifier = { name = ywc_autonomy_pressure_high }
+    }
+    else_if = {
+        limit = {
+            is_subject = yes
+            var:ywc_autonomy_pressure <= 30
+        }
+        add_modifier = { name = ywc_autonomy_pressure_low }
+    }
 }
 
 ywc_reset_shared_variables = {
     ywc_set_heritage_legitimacy = yes
     set_variable = { name = ywc_maritime_network_level value = 0 }
     set_variable = { name = ywc_autonomy_pressure value = 0 }
+    ywc_refresh_autonomy_pressure_modifier = yes
 }
