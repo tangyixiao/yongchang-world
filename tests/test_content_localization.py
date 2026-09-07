@@ -49,7 +49,12 @@ class ContentLocalizationTest(unittest.TestCase):
         for path in (IG, IDEOLOGY, NAMES, COLORS, FLAGS):
             text = path.read_text("utf-8")
             for tag in self.catalog:
-                self.assertIn(tag, text, f"{tag} missing from {path.name}")
+                if tag == "MNG" and path is NAMES:
+                    # MNG is the scenario-facing name for vanilla MGL; its
+                    # dynamic country-name list is already supplied by the game.
+                    continue
+                runtime_tag = "MGL" if tag == "MNG" and path in (NAMES, COLORS) else tag
+                self.assertIn(runtime_tag, text, f"{tag} missing from {path.name}")
 
 
 if __name__ == "__main__":

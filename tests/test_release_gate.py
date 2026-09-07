@@ -10,7 +10,7 @@ from tools.check_release import check
 
 ROOT = pathlib.Path(__file__).parents[1]
 CONFIGS = {"none", "sphere", "charters", "wave", "all"}
-COUNTRIES = ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG")
+COUNTRIES = ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG")
 EXPECTED_DLC = {
     "none": [],
     "sphere": ["dlc010_ep1"],
@@ -47,7 +47,7 @@ class ReleaseMatrixTest(unittest.TestCase):
                             "status": "verified",
                             "checkpoint_years": [1846, 1866, 1900],
                             "checkpoint_count": 30,
-                            "countries": ["SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"],
+                            "countries": ["SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG"],
                             "source": "artifacts/observe",
                             "evidence": {"campaign": "checkpoint export", "logs": "debug.log"},
                             "mod_mount": "mounted",

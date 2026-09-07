@@ -67,6 +67,14 @@ class RegionalCountryDefinitionTest(unittest.TestCase):
             self.assertRegex(block, r"capital\s*=\s*STATE_[A-Z0-9_]+")
             self.assertRegex(block, r"cultures\s*=\s*\{[^}]+\}")
 
+    def test_mng_logical_country_uses_vanilla_mgl(self):
+        registry = json.loads(REGISTRY_FILE.read_text("utf-8"))
+        row = next(row for row in registry["countries"] if row["tag"] == "MNG")
+        baseline = json.loads(BASELINE_FILE.read_text("utf-8"))
+        self.assertEqual(row["source_tag"], "MGL")
+        self.assertIn("MGL", baseline["country_tags"])
+        self.assertNotRegex(COUNTRY_FILE.read_text("utf-8"), r"(?m)^\s*MNG\s*=")
+
 
 class NortheastLedgerTest(unittest.TestCase):
     def setUp(self):
@@ -145,15 +153,15 @@ class InnerAsiaTest(unittest.TestCase):
         expected = {
             "STATE_DZUNGARIA": "OIR",
             "STATE_SEMIRECHE": "OIR",
-            "STATE_URGA": "MNG",
-            "STATE_ULIASTAI": "MNG",
+            "STATE_URGA": "MGL",
+            "STATE_ULIASTAI": "MGL",
             "STATE_FERGANA": "KOK",
         }
         for state, owner in expected.items():
             self.assertEqual(self.owners_for(state), {owner}, state)
 
     def test_oir_mng_and_kho_have_no_province_overlap(self):
-        owners = {"OIR": set(), "MNG": set(), "KHO": set()}
+        owners = {"OIR": set(), "MGL": set(), "KHO": set()}
         for row in self.ledger["groups"]:
             if row["target_country"] in owners:
                 provinces = set(authority_group(self.authority, row["source_state"], row["target_country"])["owned_provinces"])
@@ -175,7 +183,7 @@ class InnerAsiaTest(unittest.TestCase):
         building_text = INNER_ASIA_BUILDING_FILE.read_text("utf-8")
         for state in self.ledger["source_states"]:
             self.assertIn(f"s:{state}", state_text)
-        for country in ("OIR", "MNG", "KOK", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT"):
+        for country in ("OIR", "MGL", "KOK", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT"):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
 

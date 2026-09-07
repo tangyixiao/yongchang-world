@@ -33,16 +33,20 @@ class RuntimeGuardrailsTest(unittest.TestCase):
     def test_existing_vanilla_country_lists_are_not_redeclared(self):
         dynamic_names = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text("utf-8-sig")
         flags = (MOD / "common/flag_definitions/ywc_flags.txt").read_text("utf-8-sig")
-        for tag in ("KOR", "LAN"):
+        for tag in ("KOR", "LAN", "MGL"):
             self.assertNotRegex(dynamic_names, rf"(?m)^\s*{tag}\s*=\s*\{{")
-        for tag in ("MNG", "TIB", "KOR"):
+        for tag in ("MGL", "TIB", "KOR"):
             self.assertNotRegex(flags, rf"(?m)^\s*{tag}\s*=\s*\{{")
 
     def test_dynamic_maritime_name_evaluates_shared_trigger_in_country_scope(self):
         text = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text(
             "utf-8-sig"
         )
-        for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "NMG"):
+        for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "NMG"):
+            if tag == "MGL":
+                # MGL already owns a vanilla dynamic-name list; redeclaring it
+                # would be rejected as a duplicate database key.
+                continue
             expected = (
                 rf"trigger = \{{ exists = scope:actor "
                 rf"scope:actor \?= \{{ c:{tag} \?= this "

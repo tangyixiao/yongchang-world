@@ -27,8 +27,11 @@ class TagRegistryTest(unittest.TestCase):
                 self.assertNotIn(row["tag"], base)
                 self.assertIsNone(row["source_tag"])
             else:
-                self.assertIn(row["tag"], base)
-                self.assertEqual(row["source_tag"], row["tag"])
+                self.assertIn(row["source_tag"], base)
+
+    def test_mng_logical_country_maps_to_vanilla_mgl(self):
+        rows = {row["tag"]: row for row in self.registry["countries"]}
+        self.assertEqual(rows["MNG"]["source_tag"], "MGL")
 
     def test_registry_has_expected_core_tags(self):
         rows = {row["tag"]: row for row in self.registry["countries"]}

@@ -73,7 +73,7 @@ class ObservationSchemaTest(unittest.TestCase):
             run_root.mkdir(parents=True)
             rows = []
             for year in (1846, 1866, 1900):
-                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"):
+                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG"):
                     rows.append(
                         {
                             "year": year,
@@ -124,7 +124,7 @@ class ObservationSchemaTest(unittest.TestCase):
             run = summary["runs"][0]
             self.assertEqual(run["checkpoint_count"], 30)
             self.assertEqual(run["checkpoint_years"], [1846, 1866, 1900])
-            self.assertEqual(run["countries"], sorted({"SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"}))
+            self.assertEqual(run["countries"], sorted({"SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG"}))
             self.assertEqual(run["status"], "verified")
             self.assertIn("source", run)
             self.assertIn("evidence", run)
@@ -164,7 +164,7 @@ class ObservationSchemaTest(unittest.TestCase):
             output = pathlib.Path(directory) / "summary.json"
             rows = []
             for year in (1846, 1866, 1900):
-                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"):
+                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG"):
                     rows.append(
                         {
                             "year": year,

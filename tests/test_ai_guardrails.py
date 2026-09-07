@@ -90,7 +90,8 @@ class AiGuardrailsTest(unittest.TestCase):
         )
         self.assertIn("ywc_on_game_started_after_lobby = {\n\teffect = {", text)
         for tag in TAGS:
-            self.assertIn(f"c:{tag} ?= this", text)
+            runtime_tag = "MGL" if tag == "MNG" else tag
+            self.assertIn(f"c:{runtime_tag} ?= this", text)
             self.assertIn(f"set_strategy = ai_strategy_ywc_{tag.lower()}", text)
             self.assertIn("add_journal_entry = { type = ywc_je_dlc_compatibility }", text)
 

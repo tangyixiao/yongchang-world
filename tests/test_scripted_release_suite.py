@@ -17,7 +17,7 @@ class ScriptedReleaseSuiteTest(unittest.TestCase):
         self.assertTrue(STARTUP_SUITE.is_file())
         self.assertIn("last_date = 1836.2.1", self.startup)
         self.assertNotIn("last_date = 1900.1.1", self.startup)
-        for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG"):
+        for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG"):
             self.assertIn(f"exists = c:{tag}", self.startup)
         self.assertIn("is_subject_of = c:SHU", self.startup)
         self.assertIn("is_subject_of = c:MEX", self.startup)

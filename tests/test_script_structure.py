@@ -8,6 +8,7 @@ from tools.ywc_check import (
     collect_localization_keys,
     find_duplicate_keys,
     scan_braces,
+    validate,
 )
 from tools.build_state_history import balanced_end
 
@@ -114,6 +115,21 @@ class ScriptStructureTest(unittest.TestCase):
             self.assertEqual(
                 collect_declared_keys(root) - collect_localization_keys(root), set()
             )
+
+    def test_validate_accepts_vanilla_localization_for_overridden_tag(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            mod = root / "mod"
+            game = root / "game"
+            (mod / "common/country_definitions").mkdir(parents=True)
+            (game / "localization/english").mkdir(parents=True)
+            (mod / "common/country_definitions/country.txt").write_text(
+                "MNG = { country_type = unrecognized }\n", encoding="utf-8"
+            )
+            (game / "localization/english/countries.yml").write_text(
+                'l_english:\n MNG:0 "Minas Gerais"\n', encoding="utf-8"
+            )
+            self.assertEqual(validate(mod, game), [])
 
     def test_reports_duplicate_declared_keys(self):
         with tempfile.TemporaryDirectory() as directory:

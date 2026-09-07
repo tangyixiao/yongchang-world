@@ -171,7 +171,13 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
         locations = ", ".join(f"{path}:{line}" for path, line in occurrences)
         diagnostics.append(f"{locations}: duplicate key {key}")
 
-    missing = collect_declared_keys(mod_root) - collect_localization_keys(mod_root)
+    available_localization = collect_localization_keys(mod_root)
+    # Reused country tags keep their vanilla localization.  A mod may still
+    # override the country definition without shadowing the base localization
+    # key, which would make the game report duplicate localization entries.
+    if game_root is not None and Path(game_root).is_dir():
+        available_localization |= collect_localization_keys(Path(game_root))
+    missing = collect_declared_keys(mod_root) - available_localization
     for key in sorted(missing):
         diagnostics.append(f"{mod_root}:1: missing localization key {key}")
 

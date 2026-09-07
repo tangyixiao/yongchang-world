@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 
-CORE_COUNTRIES = ("SHU", "JHG", "DMG", "NQG", "OIR", "MNG", "TIB", "KOR", "LAN", "NMG")
+CORE_COUNTRIES = ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG")
 CONFIGS = ("none", "sphere", "charters", "wave", "all")
 SEEDS = (11, 23, 47)
 GAME_VERSION = "1.13.11 (Matcha)"
