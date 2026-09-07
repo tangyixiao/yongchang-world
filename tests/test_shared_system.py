@@ -6,6 +6,9 @@ ROOT = pathlib.Path(__file__).parents[1]
 TRIGGERS = ROOT / "yongchang_world/common/scripted_triggers/ywc_shared_triggers.txt"
 EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_shared_effects.txt"
 MODIFIERS = ROOT / "yongchang_world/common/scripted_modifiers/ywc_shared_modifiers.txt"
+STATIC_MODIFIERS = ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt"
+ENGLISH = ROOT / "yongchang_world/localization/english/ywc_content_l_english.yml"
+CHINESE = ROOT / "yongchang_world/localization/simp_chinese/ywc_content_l_simp_chinese.yml"
 JOURNAL = ROOT / "yongchang_world/common/journal_entries/ywc_shared_journal.txt"
 EVENTS = ROOT / "yongchang_world/events/ywc_shared_events.txt"
 
@@ -24,6 +27,36 @@ class SharedSystemTest(unittest.TestCase):
         self.assertIn("ywc_heritage_legitimacy", text)
         self.assertIn("ywc_maritime_network_level", text)
         self.assertIn("ywc_autonomy_pressure", text)
+
+    def test_heritage_legitimacy_refresh_has_visible_political_effect(self):
+        effects = EFFECTS.read_text("utf-8")
+        modifiers = STATIC_MODIFIERS.read_text("utf-8")
+        english = ENGLISH.read_text("utf-8")
+        chinese = CHINESE.read_text("utf-8")
+
+        self.assertIn("ywc_refresh_heritage_legitimacy_modifier = {", effects)
+        self.assertIn("var:ywc_heritage_legitimacy >= 70", effects)
+        self.assertIn("var:ywc_heritage_legitimacy <= 30", effects)
+        self.assertIn("remove_modifier = ywc_heritage_legitimacy_high", effects)
+        self.assertIn("remove_modifier = ywc_heritage_legitimacy_low", effects)
+        self.assertIn("add_modifier = { name = ywc_heritage_legitimacy_high }", effects)
+        self.assertIn("add_modifier = { name = ywc_heritage_legitimacy_low }", effects)
+        self.assertIn("ywc_heritage_legitimacy_high = {", modifiers)
+        self.assertIn("ywc_heritage_legitimacy_low = {", modifiers)
+        self.assertIn("country_legitimacy_base_add = 5", modifiers)
+        self.assertIn("country_legitimacy_base_add = -5", modifiers)
+        self.assertIn("ywc_heritage_legitimacy_high:0", english)
+        self.assertIn("ywc_heritage_legitimacy_low:0", english)
+        self.assertIn("ywc_heritage_legitimacy_high:0", chinese)
+        self.assertIn("ywc_heritage_legitimacy_low:0", chinese)
+
+    def test_heritage_mutations_route_through_refresh_effect(self):
+        effects = EFFECTS.read_text("utf-8")
+        event_text = "\n".join(path.read_text("utf-8") for path in (ROOT / "yongchang_world/events").glob("*.txt"))
+
+        self.assertIn("ywc_refresh_heritage_legitimacy_modifier = yes", effects)
+        self.assertNotIn("change_variable = { name = ywc_heritage_legitimacy", event_text)
+        self.assertNotIn("set_variable = { name = ywc_heritage_legitimacy", event_text)
 
     def test_shared_journal_and_event_are_connected(self):
         journal = JOURNAL.read_text("utf-8")
