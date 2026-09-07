@@ -71,6 +71,25 @@ class AiGuardrailsTest(unittest.TestCase):
                     f"{tag}: compares an unguarded route variable",
                 )
 
+    def test_non_colonial_guardrails_suppress_colonization_rights(self):
+        """The catalog's no-Africa rule must reach the strategy actually assigned at startup."""
+        text = self.ai_path.read_text("utf-8")
+        for tag, row in self.country_data.items():
+            if row["can_colonize_africa"]:
+                continue
+            strategy = row["strategy_id"]
+            start = text.index(f"{strategy} = {{")
+            next_strategy = re.search(
+                r"(?m)^ai_strategy_ywc_[a-z0-9_]+\s*=\s*\{", text[start + 1 :]
+            )
+            end = start + 1 + next_strategy.start() if next_strategy else len(text)
+            block = text[start:end]
+            self.assertRegex(
+                block,
+                r"colonization_rights\s*=\s*\{\s*value\s*=\s*0\s*\}",
+                f"{tag}: strategy does not suppress colonial expansion",
+            )
+
     def test_balance_modifiers_have_a_finite_window(self):
         text = self.modifier_path.read_text("utf-8")
         for modifier in (
