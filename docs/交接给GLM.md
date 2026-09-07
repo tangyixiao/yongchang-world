@@ -27,7 +27,7 @@
 
 - 十个核心国家：`SHU`、`JHG`、`DMG`、`NQG`、`OIR`、`MGL`、`TIB`、`KOR`、`LAN`、`NMG`；其中 `MGL` 是喀尔喀运行时标签，内容/计划中的逻辑名仍为 `MNG`。
 - 东北、内亚、西南、南洋、太平洋和新明相关区域的州、人口、建筑、外交事实与场景数据。
-- 十国主日志、辅助日志、事件、两条路线、AI 策略、动态国名、地图颜色、政治身份和纯色 CoA 占位。
+- 十国主日志、辅助日志、事件、两条路线、AI 策略、动态国名、地图颜色和政治身份；六国使用本体纹样图集的几何 CoA，MNG/TIB/KOR/LAN 沿用本体旗帜定义。
 - AI 护栏，包括大顺早期有限吞并、靖海不殖民非洲、墨西哥不能在 1846 年前吞并 `NMG` 等规则。
 - DLC 兼容层：`ep1_content`、`mp1_content`、`ep2_content`；无 DLC 路径先执行，增强路径再门禁。
 - 启动接线：`yongchang_world/common/on_actions/ywc_startup_hooks.txt` 通过子 on_action 链接原版 `on_game_started_after_lobby`，不要改回直接覆盖原版 effect。
