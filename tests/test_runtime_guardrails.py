@@ -10,9 +10,35 @@ ACTION_LOCATIONS = (
     MOD / "localization/english/ywc_diplomacy_l_english.yml",
     MOD / "localization/simp_chinese/ywc_diplomacy_l_simp_chinese.yml",
 )
+LAW_COMPATIBILITY = (
+    MOD / "common/history/countries/ywc_regional_countries.txt",
+    MOD / "common/history/countries/ywc_ocean_countries.txt",
+)
+REGIONAL_LAW_TAGS = (
+    "OIR", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "KJU", "MJU", "GJU",
+    "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT", "DER", "KAM", "GYL",
+    "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "AMD", "DLI", "PNP",
+    "PLW", "YAP", "MHL", "MRG", "NMG",
+)
+ASSEMBLY_LAW_TAGS = {"KHQ", "HUL", "SOL", "AMR"}
 
 
 class RuntimeGuardrailsTest(unittest.TestCase):
+    def test_regional_starts_use_law_compatible_fallbacks(self):
+        text = "\n".join(path.read_text("utf-8-sig") for path in LAW_COMPATIBILITY)
+        for tag in REGIONAL_LAW_TAGS:
+            blocks = re.findall(rf"(?ms)^\s*c:{tag}\s+\?=\s*\{{.*?^\s*\}}", text)
+            block = next((candidate for candidate in blocks if "law_type:law_isolationism" in candidate), "")
+            self.assertTrue(block, tag)
+            self.assertIn("activate_law = law_type:law_isolationism", block, tag)
+            speech_law = "law_right_of_assembly" if tag in ASSEMBLY_LAW_TAGS else "law_censorship"
+            self.assertIn(f"activate_law = law_type:{speech_law}", block, tag)
+
+    def test_shun_start_uses_a_valid_free_speech_law(self):
+        text = (MOD / "common/history/countries/ywc_shu.txt").read_text("utf-8-sig")
+        self.assertIn("activate_law = law_type:law_right_of_assembly", text)
+        self.assertNotIn("activate_law = law_type:law_censorship", text)
+
     def test_mod_does_not_add_unsupported_interest_group_database_objects(self):
         text = (MOD / "common/interest_groups/ywc_interest_groups.txt").read_text("utf-8-sig")
         self.assertNotRegex(text, r"(?m)^\s*ig_ywc_[A-Za-z0-9_]+\s*=\s*\{")
