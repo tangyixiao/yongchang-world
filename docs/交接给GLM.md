@@ -86,6 +86,8 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 
 2026-09-07 的隔离实测进一步确认：`-scripted_tests -run_until 1836.2.2` 能让战局运行到目标日期并生成 `tests.txt`，但文件只有 `Tests:` 标题。`tools/collect_smoke_logs.ps1 -RequireScriptedTests` 现在会将此状态标为 `scripted_tests=empty` 并返回失败；只有出现实际结果行才可进入 Gate 4 证据。
 
+已读取本体原始说明 `E:/SteamLibrary/steamapps/common/Victoria 3/game/tools/scripted_tests/scripted_tests.md`：命令行参数只启用 scripted tests，进入战局后还可用控制台命令 `scripted_tests` 开关；测试结果在套件完成后才写入 Documents。用真实生成的 `campaign-cli-01/save games/autosave.v3` 做独立副本复现时，`-load_game` 与 `-continue_game` 均停在前端初始化（`dedicated_server.log` 为空），不能伪造为战局执行证据；此前能推进日期的 headless 参数路径仍只产生空 `tests.txt`。
+
 ### D. 本地化审计与烟测收集器
 
 - 新增 `tests/test_localization_parity.py`：双语键集合必须对齐，且禁止“键名小写化”式占位标题。
