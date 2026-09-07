@@ -25,6 +25,8 @@ powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch
 
 进入已有战局后，可用本体的 `scripted_tests` 命令分别执行 `yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt`（1836 开局硬约束）和 `yongchang_world/tools/scripted_tests/ywc_longrun_invariants.txt`（长期数据健康）。两套测试均为只读；长期套件不要求十国继续存在，也不要求 NMG 永远保持墨西哥属邦。
 
+原生烟测结束后，应对同一个隔离用户目录运行 `powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch -UserDataRoot <userdir> -RequireScriptedTests`。摘要中的 `scripted_tests=present` 才表示发现了实际结果；`missing` 或只有 `Tests:` 标题的 `empty` 结果均不能算通过。
+
 剩余的人工验收门槛（五配置启动、逐国进入 1836、烟测执行、观察矩阵回填）的逐步操作见 [docs/release/manual-acceptance-playbook.md](docs/release/manual-acceptance-playbook.md)。
 
 ## 当前边界

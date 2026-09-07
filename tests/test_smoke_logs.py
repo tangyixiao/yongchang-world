@@ -1,5 +1,7 @@
 import pathlib
+import shutil
 import subprocess
+import tempfile
 import unittest
 
 
@@ -8,7 +10,7 @@ SCRIPT = ROOT / "tools/collect_smoke_logs.ps1"
 
 
 class SmokeLogCollectorTest(unittest.TestCase):
-    def run_collector(self, user_data_root):
+    def run_collector(self, user_data_root, *extra_args):
         return subprocess.run(
             [
                 "powershell",
@@ -20,6 +22,7 @@ class SmokeLogCollectorTest(unittest.TestCase):
                 "-NoLaunch",
                 "-UserDataRoot",
                 str(user_data_root),
+                *extra_args,
             ],
             cwd=ROOT,
             capture_output=True,
@@ -60,6 +63,21 @@ class SmokeLogCollectorTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         summary = (ROOT / "artifacts/smoke/latest-summary.txt").read_text("utf-8")
         self.assertIn("mod_mount=not_mounted", summary)
+
+    def test_required_scripted_tests_reject_empty_engine_result(self):
+        with tempfile.TemporaryDirectory() as temporary_root:
+            user_data_root = pathlib.Path(temporary_root) / "userdata"
+            shutil.copytree(ROOT / "tests/fixtures/userdata-clean", user_data_root)
+            (user_data_root / "tests.txt").write_text("Tests:\n", encoding="utf-8")
+            summary_path = ROOT / "artifacts/smoke/latest-summary.txt"
+            if summary_path.exists():
+                summary_path.unlink()
+            result = self.run_collector(user_data_root, "-RequireScriptedTests")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertTrue(summary_path.is_file(), result.stderr)
+        summary = (ROOT / "artifacts/smoke/latest-summary.txt").read_text("utf-8-sig")
+        self.assertIn("scripted_tests=empty", summary)
+        self.assertIn("scripted test results are empty", result.stdout)
 
 
 if __name__ == "__main__":

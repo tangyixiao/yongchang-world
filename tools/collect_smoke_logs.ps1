@@ -2,7 +2,8 @@
 param(
     [string]$GameRoot = 'E:\SteamLibrary\steamapps\common\Victoria 3',
     [string]$UserDataRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Victoria 3'),
-    [switch]$NoLaunch
+    [switch]$NoLaunch,
+    [switch]$RequireScriptedTests
 )
 
 $ErrorActionPreference = 'Stop'
@@ -72,6 +73,22 @@ if (Test-Path -LiteralPath $debugLogPath -PathType Leaf) {
     }
 }
 
+# Scripted-test output is written beside the isolated user data when the game
+# is launched with -userdir.  A file containing only the header means that the
+# engine's test mode was enabled but no suite completed; it is not a pass.
+$scriptedTestStatus = 'not_requested'
+$scriptedTestResultsPath = Join-Path $UserDataRoot 'tests.txt'
+if (Test-Path -LiteralPath $scriptedTestResultsPath -PathType Leaf) {
+    $scriptedTestText = (Get-Content -LiteralPath $scriptedTestResultsPath -Raw) -replace '^\uFEFF', ''
+    $scriptedTestPayload = $scriptedTestText -replace '^\s*Tests:\s*', ''
+    $scriptedTestStatus = if ([string]::IsNullOrWhiteSpace($scriptedTestPayload)) { 'empty' } else { 'present' }
+} elseif ($RequireScriptedTests) {
+    $scriptedTestStatus = 'missing'
+}
+if ($RequireScriptedTests -and $scriptedTestStatus -ne 'present') {
+    $findings.Add("$scriptedTestResultsPath:1: scripted test results are $scriptedTestStatus")
+}
+
 New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
 $status = if ($findings.Count -eq 0) { 'clean' } else { 'error' }
 
@@ -92,7 +109,9 @@ $summary = @(
     "checked_logs=$($logPaths -join ';');$debugLogPath (optional)"
     "finding_count=$($findings.Count)"
     "mod_mount=$modMount"
+    "scripted_tests=$scriptedTestStatus"
 )
+$summary += "scripted_test_results_path=$scriptedTestResultsPath"
 $summary += @($modMountEvidence | ForEach-Object { "mount_evidence: $_" })
 if ($findings.Count -gt 0) {
     $summary += 'findings:'

@@ -82,6 +82,8 @@ runner 还带有实证守护：对已持有真实启动证据（`status=hidden_p
 
 从游戏引擎字符串确认，Mod 内路径 `tools/scripted_tests` 是正确的查询路径，并存在 `scripted_tests after` 执行命令。但目前没有真实进入战局并执行该套件的证据，不能宣称烟测已运行。
 
+2026-09-07 的隔离实测进一步确认：`-scripted_tests -run_until 1836.2.2` 能让战局运行到目标日期并生成 `tests.txt`，但文件只有 `Tests:` 标题。`tools/collect_smoke_logs.ps1 -RequireScriptedTests` 现在会将此状态标为 `scripted_tests=empty` 并返回失败；只有出现实际结果行才可进入 Gate 4 证据。
+
 ### D. 本地化审计与烟测收集器
 
 - 新增 `tests/test_localization_parity.py`：双语键集合必须对齐，且禁止“键名小写化”式占位标题。

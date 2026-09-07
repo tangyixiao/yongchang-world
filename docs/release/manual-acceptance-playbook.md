@@ -60,6 +60,13 @@
 2. 在 1836 新局推进到首月后执行 `scripted_tests`，记录 `ywc_startup_smoke.txt` 的结果：十国存在、JHG/NMG 开局属邦边界、SHU 的 DLC 基础路径，以及十国主日志和两条路线入口。
 3. 在观察局的检查年执行 `scripted_tests`，选择 `ywc_longrun_invariants.txt`：它只检查无负人口、无存活国家孤立首都、共享变量范围和 DLC 兼容日志，不要求十国继续存在，也不要求 NMG 永远保持属邦。
 4. `scripted_tests after` 可作为失败后自动存档的变体（具体表现以实机为准）。把控制台输出截图或抄录，连同使用的套件、种子、日期和存档路径记入验收日志；静态扫描和隐藏预载不能替代这一步。
+5. 退出该轮游戏后，针对同一个用户目录运行：
+
+   ```powershell
+   powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch -UserDataRoot <userdir> -RequireScriptedTests
+   ```
+
+   只有摘要中的 `scripted_tests=present` 才能作为结果文件存在的证据；`scripted_tests=missing` 或 `scripted_tests=empty`（文件只有 `Tests:` 标题）都必须保持为未通过。一次直接隔离启动到 1836.2.2 的实测曾生成空结果，因此不能仅凭 `-scripted_tests` 参数或到达目标日期宣称套件已执行。
 
 ## 4. 门槛四：观察矩阵与检查点回填
 
