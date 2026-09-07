@@ -13,6 +13,17 @@ CONFIGS = {
     "all": {"ep1_content", "mp1_content", "ep2_content"},
 }
 KNOWN_FEATURES = set().union(*CONFIGS.values())
+EXPECTED_MODIFIERS = {
+    "none": set(),
+    "sphere": {"ywc_dlc_ep1_investment"},
+    "charters": {"ywc_dlc_mp1_charters"},
+    "wave": {"ywc_dlc_ep2_flagship"},
+    "all": {
+        "ywc_dlc_ep1_investment",
+        "ywc_dlc_mp1_charters",
+        "ywc_dlc_ep2_flagship",
+    },
+}
 
 
 class DlcMatrixTest(unittest.TestCase):
@@ -45,6 +56,29 @@ class DlcMatrixTest(unittest.TestCase):
         self.assertIn("# no DLC fallback", compat_text)
         hook = (ROOT / "yongchang_world/common/on_actions/ywc_startup_hooks.txt").read_text("utf-8")
         self.assertEqual(hook.count("ywc_apply_dlc_compatibility = yes"), 10)
+
+    def test_matrix_enhancements_are_visible_and_gated(self):
+        matrix = json.loads(self.matrix_path.read_text("utf-8"))
+        modifiers = (ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt").read_text("utf-8")
+        simplified = (ROOT / "yongchang_world/localization/simp_chinese/ywc_content_l_simp_chinese.yml").read_text("utf-8")
+        english = (ROOT / "yongchang_world/localization/english/ywc_content_l_english.yml").read_text("utf-8")
+        compat = (ROOT / "yongchang_world/common/scripted_effects/ywc_dlc_effects.txt").read_text("utf-8")
+
+        for config, expected in EXPECTED_MODIFIERS.items():
+            self.assertEqual(set(matrix[config]["modifiers"]), expected, config)
+        for modifier in set().union(*EXPECTED_MODIFIERS.values()):
+            self.assertRegex(modifiers, rf"(?m)^{modifier}\s*=\s*\{{")
+            self.assertRegex(simplified, rf"(?m)^\s*{modifier}:0\s+\"")
+            self.assertRegex(english, rf"(?m)^\s*{modifier}:0\s+\"")
+        for feature, modifier in (
+            ("ep1_content", "ywc_dlc_ep1_investment"),
+            ("mp1_content", "ywc_dlc_mp1_charters"),
+            ("ep2_content", "ywc_dlc_ep2_flagship"),
+        ):
+            self.assertRegex(
+                compat,
+                rf"has_dlc_feature\s*=\s*{feature}[\s\S]*?add_modifier\s*=\s*\{{\s*name\s*=\s*{modifier}",
+            )
 
 
 if __name__ == "__main__":
