@@ -43,6 +43,11 @@ class DiplomaticActionFileTest(unittest.TestCase):
         self.assertIn("has_journal_entry = ywc_je_new_ming_mexican_chain", self.text)
         self.assertIn("set_variable = ywc_je_new_ming_mexican_chain_resolved", self.text)
 
+    def test_acceptance_resolves_the_chain_and_reduces_autonomy_pressure(self):
+        self.assertIn("ywc_lower_autonomy_pressure = yes", self.text)
+        self.assertIn("set_variable = ywc_je_new_ming_mexican_chain_resolved", self.text)
+        self.assertIn("relations_progress_per_day = 1", self.text)
+
     def test_pact_uses_minimal_verified_structure(self):
         self.assertIn("requires_approval = yes", self.text)
         self.assertIn("forced_duration = 12", self.text)  # PACT_REQUIRES_APPROVAL_MIN_FORCED_MONTHS
