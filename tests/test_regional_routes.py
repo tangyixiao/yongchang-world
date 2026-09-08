@@ -4,6 +4,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).parents[1]
 EVENTS = ROOT / "yongchang_world/events/ywc_dmg_nqg_events.txt"
+SHU_JHG_EVENTS = ROOT / "yongchang_world/events/ywc_shu_jhg_events.txt"
 STEPPE_EVENTS = ROOT / "yongchang_world/events/ywc_steppe_highland_events.txt"
 OVERSEAS_EVENTS = ROOT / "yongchang_world/events/ywc_kor_lan_nmg_events.txt"
 DMG_JOURNAL = ROOT / "yongchang_world/common/journal_entries/ywc_dmg.txt"
@@ -40,6 +41,7 @@ def outcome_branch(event: str, outcome: str) -> str:
 class RegionalRouteContractTest(unittest.TestCase):
     def setUp(self):
         self.events = EVENTS.read_text("utf-8")
+        self.shu_jhg_events = SHU_JHG_EVENTS.read_text("utf-8")
         self.steppe_events = STEPPE_EVENTS.read_text("utf-8")
         self.overseas_events = OVERSEAS_EVENTS.read_text("utf-8")
         self.dmg_journal = DMG_JOURNAL.read_text("utf-8")
@@ -138,6 +140,31 @@ class RegionalRouteContractTest(unittest.TestCase):
             (self.steppe_events, "ywc_tib.2"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
             (self.steppe_events, "ywc_tib.3"): ("ywc_open_trade_route", "ywc_lower_heritage_legitimacy"),
             (self.steppe_events, "ywc_tib.4"): ("ywc_open_trade_route", "ywc_lower_heritage_legitimacy"),
+        }
+        for (text, event_id), effects in expected.items():
+            event = block_for(text, event_id)
+            for effect in effects:
+                self.assertIn(effect, event, f"{event_id} lacks stateful option effect: {effect}")
+
+    def test_core_decision_events_leave_stateful_outcomes(self):
+        expected = {
+            (self.shu_jhg_events, "ywc_shu.1"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.shu_jhg_events, "ywc_shu.2"): ("ywc_add_heritage_legitimacy", "ywc_open_trade_route"),
+            (self.shu_jhg_events, "ywc_shu.3"): ("ywc_add_heritage_legitimacy", "ywc_open_trade_route"),
+            (self.shu_jhg_events, "ywc_jhg.1"): ("ywc_add_maritime_network", "ywc_reduce_maritime_network"),
+            (self.shu_jhg_events, "ywc_jhg.2"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.shu_jhg_events, "ywc_jhg.3"): ("ywc_open_trade_route", "ywc_reduce_maritime_network"),
+            (self.overseas_events, "ywc_kor.1"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.overseas_events, "ywc_kor.2"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.overseas_events, "ywc_kor.3"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.overseas_events, "ywc_kor.4"): ("ywc_open_trade_route", "ywc_reduce_maritime_network"),
+            (self.overseas_events, "ywc_lan.1"): ("ywc_open_trade_route", "ywc_reduce_maritime_network"),
+            (self.overseas_events, "ywc_lan.2"): ("ywc_open_trade_route", "ywc_lower_heritage_legitimacy"),
+            (self.overseas_events, "ywc_lan.3"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.overseas_events, "ywc_lan.4"): ("change_relations = { country = c:NET value = 20 }", "change_relations = { country = c:NET value = -30 }"),
+            (self.overseas_events, "ywc_nmg.1"): ("ywc_add_heritage_legitimacy", "ywc_lower_autonomy_pressure"),
+            (self.overseas_events, "ywc_nmg.2"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.overseas_events, "ywc_nmg.3"): ("change_relations = { country = c:MEX value = 20 }", "change_relations = { country = c:MEX value = -25 }"),
         }
         for (text, event_id), effects in expected.items():
             event = block_for(text, event_id)
