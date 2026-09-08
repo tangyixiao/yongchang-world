@@ -80,6 +80,28 @@ class DlcMatrixTest(unittest.TestCase):
                 rf"has_dlc_feature\s*=\s*{feature}[\s\S]*?add_modifier\s*=\s*\{{\s*name\s*=\s*{modifier}",
             )
 
+    def test_dlc_modifiers_have_semantic_effects(self):
+        modifiers = (ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt").read_text("utf-8")
+        expected_effects = {
+            "ywc_dlc_ep1_investment": [
+                "country_bureaucracy_investment_cost_factor_mult = -0.10",
+            ],
+            "ywc_dlc_mp1_charters": [
+                "country_free_charters_add = 1",
+                "country_company_throughput_bonus_add = 0.05",
+            ],
+            "ywc_dlc_ep2_flagship": [
+                "country_ship_construction_progress_max_add = 5",
+                "country_supply_ship_construction_ratio_add = 0.25",
+            ],
+        }
+        for modifier, effects in expected_effects.items():
+            start = modifiers.index(f"{modifier} = {{")
+            end = modifiers.index("\n}", start)
+            block = modifiers[start:end]
+            for effect in effects:
+                self.assertIn(effect, block, modifier)
+
 
 if __name__ == "__main__":
     unittest.main()
