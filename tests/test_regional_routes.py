@@ -186,6 +186,40 @@ class RegionalRouteContractTest(unittest.TestCase):
                 self.assertIn("add_modifier", branch, f"{event_id} {outcome} lacks a persistent consequence")
                 self.assertIn(result, journal, f"{event_id} {outcome} is not visible in the journal state")
 
+    def test_regional_abandonment_uses_a_timed_cooldown_and_reopens_the_route(self):
+        routes = (
+            ("ywc_dmg.4", "ywc_route_dmg_huafei_monarchy", self.dmg_journal),
+            ("ywc_dmg.5", "ywc_route_dmg_local_republic", self.dmg_journal),
+            ("ywc_nqg.4", "ywc_route_nqg_sakhalin_restoration", self.nqg_journal),
+            ("ywc_nqg.5", "ywc_route_nqg_multicultural_island", self.nqg_journal),
+            ("ywc_oir.5", "ywc_route_oir_bureaucratic_khanate", self.oir_journal),
+            ("ywc_oir.6", "ywc_route_oir_pastoral_federation", self.oir_journal),
+            ("ywc_mng.5", "ywc_route_mng_southern_trade", self.mng_journal),
+            ("ywc_mng.6", "ywc_route_mng_russian_protection", self.mng_journal),
+            ("ywc_tib.5", "ywc_route_tib_monastic_reform", self.tib_journal),
+            ("ywc_tib.6", "ywc_route_tib_kham_league", self.tib_journal),
+            ("ywc_kor.5", "ywc_route_kor_small_china", self.kor_journal),
+            ("ywc_kor.6", "ywc_route_kor_national_foundation", self.kor_journal),
+            ("ywc_lan.5", "ywc_route_lan_company_republic", self.lan_journal),
+            ("ywc_lan.6", "ywc_route_lan_mining_state", self.lan_journal),
+            ("ywc_nmg.4", "ywc_route_nmg_catholic_autonomy", self.nmg_journal),
+            ("ywc_nmg.5", "ywc_route_nmg_mexican_federalism", self.nmg_journal),
+        )
+        for event_id, route, journal_text in routes:
+            event = block_for(
+                self.events if event_id.startswith(("ywc_dmg", "ywc_nqg"))
+                else self.steppe_events if event_id.startswith(("ywc_oir", "ywc_mng", "ywc_tib"))
+                else self.overseas_events,
+                event_id,
+            )
+            cooldown = f"{route}_abandonment_cooldown"
+            self.assertIn(f"set_variable = {{ name = {cooldown} days = 365 }}", event)
+            self.assertIn(f"remove_variable = {route}_abandon", event)
+            self.assertIn(f"NOT = {{ has_variable = {cooldown} }}", event)
+            journal = block_for(journal_text, route)
+            self.assertIn(f"has_variable = {cooldown}", journal)
+            self.assertIn(f"NOT = {{ has_variable = {cooldown} }}", journal)
+
 
 if __name__ == "__main__":
     unittest.main()

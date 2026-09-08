@@ -147,6 +147,23 @@ class PlayableRouteTest(unittest.TestCase):
                 self.assertIn("add_modifier", branch, f"{event_id} {outcome} lacks a persistent consequence")
                 self.assertIn(result, journal, f"{event_id} {outcome} is not visible in the journal state")
 
+    def test_abandonment_uses_a_timed_cooldown_and_reopens_the_route(self):
+        routes = (
+            ("ywc_shu.4", "ywc_route_shu_bureaucratic_integration", self.shu_journal),
+            ("ywc_shu.5", "ywc_route_shu_customs_reform", self.shu_journal),
+            ("ywc_jhg.4", "ywc_route_jhg_naval_tributary_state", self.jhg_journal),
+            ("ywc_jhg.5", "ywc_route_jhg_south_sea_council", self.jhg_journal),
+        )
+        for event_id, route, journal_text in routes:
+            event = block_for(self.events, event_id)
+            cooldown = f"{route}_abandonment_cooldown"
+            self.assertIn(f"set_variable = {{ name = {cooldown} days = 365 }}", event)
+            self.assertIn(f"remove_variable = {route}_abandon", event)
+            self.assertIn(f"NOT = {{ has_variable = {cooldown} }}", event)
+            journal = block_for(journal_text, route)
+            self.assertIn(f"has_variable = {cooldown}", journal)
+            self.assertIn(f"NOT = {{ has_variable = {cooldown} }}", journal)
+
     def test_route_modifiers_are_defined(self):
         modifiers = MODIFIERS.read_text("utf-8")
         for name in (
