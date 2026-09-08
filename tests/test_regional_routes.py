@@ -30,6 +30,13 @@ def block_for(text: str, key: str) -> str:
     raise AssertionError(f"unclosed block: {key}")
 
 
+def outcome_branch(event: str, outcome: str) -> str:
+    marker = f"set_variable = {{ name = {outcome} value = 1 }}"
+    start = event.index(marker) + len(marker)
+    end = event.index("\n        }", start)
+    return event[start:end]
+
+
 class RegionalRouteContractTest(unittest.TestCase):
     def setUp(self):
         self.events = EVENTS.read_text("utf-8")
@@ -145,6 +152,39 @@ class RegionalRouteContractTest(unittest.TestCase):
             self.assertIn("add_modifier", event)
             self.assertGreaterEqual(event.count("remove_variable"), 2)
             self.assertEqual(event.count("ai_chance = {"), 3)
+
+    def test_each_regional_route_outcome_has_numeric_and_persistent_consequences(self):
+        routes = (
+            ("ywc_dmg.4", "ywc_route_dmg_huafei_monarchy", self.dmg_journal, ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_heritage_legitimacy")),
+            ("ywc_dmg.5", "ywc_route_dmg_local_republic", self.dmg_journal, ("ywc_open_trade_route", "ywc_reduce_maritime_network", "ywc_reduce_maritime_network")),
+            ("ywc_nqg.4", "ywc_route_nqg_sakhalin_restoration", self.nqg_journal, ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_autonomy_pressure")),
+            ("ywc_nqg.5", "ywc_route_nqg_multicultural_island", self.nqg_journal, ("ywc_add_maritime_network", "ywc_reduce_maritime_network", "ywc_lower_autonomy_pressure")),
+            ("ywc_oir.5", "ywc_route_oir_bureaucratic_khanate", self.oir_journal, ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_heritage_legitimacy")),
+            ("ywc_oir.6", "ywc_route_oir_pastoral_federation", self.oir_journal, ("ywc_raise_autonomy_pressure", "ywc_raise_autonomy_pressure", "ywc_lower_autonomy_pressure")),
+            ("ywc_mng.5", "ywc_route_mng_southern_trade", self.mng_journal, ("ywc_open_trade_route", "ywc_reduce_maritime_network", "ywc_reduce_maritime_network")),
+            ("ywc_mng.6", "ywc_route_mng_russian_protection", self.mng_journal, ("ywc_raise_autonomy_pressure", "ywc_raise_autonomy_pressure", "ywc_lower_autonomy_pressure")),
+            ("ywc_tib.5", "ywc_route_tib_monastic_reform", self.tib_journal, ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_heritage_legitimacy")),
+            ("ywc_tib.6", "ywc_route_tib_kham_league", self.tib_journal, ("ywc_open_trade_route", "ywc_reduce_maritime_network", "ywc_lower_autonomy_pressure")),
+            ("ywc_kor.5", "ywc_route_kor_small_china", self.kor_journal, ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_heritage_legitimacy")),
+            ("ywc_kor.6", "ywc_route_kor_national_foundation", self.kor_journal, ("ywc_open_trade_route", "ywc_reduce_maritime_network", "ywc_reduce_maritime_network")),
+            ("ywc_lan.5", "ywc_route_lan_company_republic", self.lan_journal, ("ywc_open_trade_route", "ywc_reduce_maritime_network", "ywc_lower_autonomy_pressure")),
+            ("ywc_lan.6", "ywc_route_lan_mining_state", self.lan_journal, ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_autonomy_pressure")),
+            ("ywc_nmg.4", "ywc_route_nmg_catholic_autonomy", self.nmg_journal, ("ywc_raise_autonomy_pressure", "ywc_raise_autonomy_pressure", "ywc_lower_autonomy_pressure")),
+            ("ywc_nmg.5", "ywc_route_nmg_mexican_federalism", self.nmg_journal, ("ywc_open_trade_route", "ywc_reduce_maritime_network", "ywc_raise_autonomy_pressure")),
+        )
+        for event_id, route, journal, outcome_effects in routes:
+            event = block_for(
+                self.events if event_id.startswith(("ywc_dmg", "ywc_nqg"))
+                else self.steppe_events if event_id.startswith(("ywc_oir", "ywc_mng", "ywc_tib"))
+                else self.overseas_events,
+                event_id,
+            )
+            for outcome, effect in zip(("success", "failure", "abandon"), outcome_effects):
+                result = f"{route}_{outcome}"
+                branch = outcome_branch(event, result)
+                self.assertIn(effect, branch, f"{event_id} {outcome} lacks its numeric/shared-state change")
+                self.assertIn("add_modifier", branch, f"{event_id} {outcome} lacks a persistent consequence")
+                self.assertIn(result, journal, f"{event_id} {outcome} is not visible in the journal state")
 
 
 if __name__ == "__main__":
