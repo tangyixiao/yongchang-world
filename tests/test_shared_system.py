@@ -132,6 +132,15 @@ class SharedSystemTest(unittest.TestCase):
         self.assertIn("ywc_shared.1 =", events)
         self.assertIn("trigger_event = { id = ywc_shared.1", journal)
 
+    def test_ocean_frontier_decision_changes_shared_maritime_state(self):
+        events = EVENTS.read_text("utf-8")
+        start = events.index("ywc_shared.2 = {")
+        ocean = events[start:]
+        self.assertIn("name = ywc_shared.2.a", ocean)
+        self.assertIn("ywc_open_trade_route = yes", ocean)
+        self.assertIn("name = ywc_shared.2.b", ocean)
+        self.assertIn("ywc_reduce_maritime_network = yes", ocean)
+
 
 if __name__ == "__main__":
     unittest.main()

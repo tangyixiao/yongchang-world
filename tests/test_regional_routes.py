@@ -126,6 +126,18 @@ class RegionalRouteContractTest(unittest.TestCase):
         self.assertIn("change_relations = { country = c:RUS value = -25 }", nqg)
         self.assertIn("add_modifier = { name = ywc_nqg_russian_refusal months = 24 }", nqg)
 
+    def test_dmg_and_nqg_auxiliary_decisions_leave_stateful_outcomes(self):
+        expected = {
+            "ywc_dmg.1": ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            "ywc_dmg.3": ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            "ywc_nqg.1": ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            "ywc_nqg.3": ("ywc_open_trade_route", "ywc_reduce_maritime_network"),
+        }
+        for event_id, effects in expected.items():
+            event = block_for(self.events, event_id)
+            for effect in effects:
+                self.assertIn(effect, event, f"{event_id} lacks stateful option effect: {effect}")
+
     def test_steppe_decision_events_leave_stateful_outcomes(self):
         expected = {
             (self.steppe_events, "ywc_oir.1"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
