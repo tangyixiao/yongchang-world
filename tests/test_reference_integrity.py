@@ -108,12 +108,10 @@ class ReferenceIntegrityTest(unittest.TestCase):
 
     def test_journal_completion_variables_have_setters(self):
         # Plan 03 requires every main journal and route to be completable or
-        # failable. As of v0.1 the event chains record ywc_<tag>.N_success /
-        # _failure variables that were never bridged to the journals'
-        # *_resolved completion conditions, so the variables below (audited
-        # 2026-09-06) have no setter. They are recorded here instead of being
-        # silently ignored: any NEW unwired variable fails this test, and each
-        # entry should be removed once its journal gets real completion logic.
+        # failable. The historical audit found 26 missing setters; those
+        # bridges are now implemented. Keep this set empty so any regression
+        # or newly unwired journal variable fails the test instead of being
+        # silently ignored.
         known_unwired = {
         # All journal completion variables are wired as of 2026-09-06.
         # Keep this set empty: any entry reappearing here is a regression.
