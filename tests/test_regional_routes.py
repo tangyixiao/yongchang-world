@@ -111,6 +111,19 @@ class RegionalRouteContractTest(unittest.TestCase):
                 rf"option = \{{\s*name = [^}}]+\s+default_option = yes\s+set_variable = \{{ name = {success}",
             )
 
+    def test_dmg_spanish_and_nqg_russian_decisions_change_diplomacy_and_survival(self):
+        dmg = block_for(self.events, "ywc_dmg.2")
+        self.assertIn("change_relations = { country = c:SPA value = 20 }", dmg)
+        self.assertIn("create_bidirectional_truce = { country = c:SPA months = 24 }", dmg)
+        self.assertIn("change_relations = { country = c:SPA value = -30 }", dmg)
+        self.assertIn("add_modifier = { name = ywc_dmg_spanish_war_preparation months = 24 }", dmg)
+
+        nqg = block_for(self.events, "ywc_nqg.2")
+        self.assertIn("change_relations = { country = c:RUS value = 25 }", nqg)
+        self.assertIn("add_modifier = { name = ywc_nqg_russian_alignment months = 24 }", nqg)
+        self.assertIn("change_relations = { country = c:RUS value = -25 }", nqg)
+        self.assertIn("add_modifier = { name = ywc_nqg_russian_refusal months = 24 }", nqg)
+
     def test_oir_mng_tib_routes_use_the_same_contract(self):
         specs = (
             ("ywc_route_oir_bureaucratic_khanate", "ywc_route_oir_bureaucratic_khanate_progress", "ywc_oir.5", "ywc_route_oir_pastoral_federation_active", self.oir_journal, "ywc_add_heritage_legitimacy"),
