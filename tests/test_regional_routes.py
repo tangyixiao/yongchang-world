@@ -124,6 +124,26 @@ class RegionalRouteContractTest(unittest.TestCase):
         self.assertIn("change_relations = { country = c:RUS value = -25 }", nqg)
         self.assertIn("add_modifier = { name = ywc_nqg_russian_refusal months = 24 }", nqg)
 
+    def test_steppe_decision_events_leave_stateful_outcomes(self):
+        expected = {
+            (self.steppe_events, "ywc_oir.1"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_oir.2"): ("change_relations = { country = c:RUS value = 20 }", "change_relations = { country = c:RUS value = -25 }"),
+            (self.steppe_events, "ywc_oir.3"): ("ywc_open_trade_route", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_oir.4"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_mng.1"): ("change_relations = { country = c:SHU value = 20 }", "change_relations = { country = c:RUS value = 20 }"),
+            (self.steppe_events, "ywc_mng.2"): ("ywc_open_trade_route", "ywc_reduce_maritime_network"),
+            (self.steppe_events, "ywc_mng.3"): ("change_relations = { country = c:RUS value = 15 }", "change_relations = { country = c:RUS value = -25 }"),
+            (self.steppe_events, "ywc_mng.4"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_tib.1"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_tib.2"): ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_tib.3"): ("ywc_open_trade_route", "ywc_lower_heritage_legitimacy"),
+            (self.steppe_events, "ywc_tib.4"): ("ywc_open_trade_route", "ywc_lower_heritage_legitimacy"),
+        }
+        for (text, event_id), effects in expected.items():
+            event = block_for(text, event_id)
+            for effect in effects:
+                self.assertIn(effect, event, f"{event_id} lacks stateful option effect: {effect}")
+
     def test_oir_mng_tib_routes_use_the_same_contract(self):
         specs = (
             ("ywc_route_oir_bureaucratic_khanate", "ywc_route_oir_bureaucratic_khanate_progress", "ywc_oir.5", "ywc_route_oir_pastoral_federation_active", self.oir_journal, "ywc_add_heritage_legitimacy"),
