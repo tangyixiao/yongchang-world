@@ -48,6 +48,16 @@ class DiplomaticActionFileTest(unittest.TestCase):
         self.assertIn("set_variable = ywc_je_new_ming_mexican_chain_resolved", self.text)
         self.assertIn("relations_progress_per_day = 1", self.text)
 
+    def test_decline_keeps_chain_open_and_records_a_timed_cost(self):
+        decline = re.search(r"decline_effect\s*=\s*\{(?P<body>.*?)\n\s*pact\s*=", self.text, re.DOTALL)
+        self.assertIsNotNone(decline)
+        body = decline.group("body")
+        self.assertIn("ywc_raise_autonomy_pressure = yes", body)
+        self.assertIn("change_relations = { country = root value = -20 }", body)
+        self.assertIn("set_variable = { name = ywc_nmg_autonomy_negotiation_declined days = 365 }", body)
+        self.assertNotIn("ywc_je_new_ming_mexican_chain_resolved", body)
+        self.assertIn("NOT = { has_variable = ywc_nmg_autonomy_negotiation_declined }", self.text)
+
     def test_pact_uses_minimal_verified_structure(self):
         self.assertIn("requires_approval = yes", self.text)
         self.assertIn("forced_duration = 12", self.text)  # PACT_REQUIRES_APPROVAL_MIN_FORCED_MONTHS
