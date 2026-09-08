@@ -89,7 +89,40 @@ class SharedSystemTest(unittest.TestCase):
         self.assertIn("ywc_lower_autonomy_pressure = {\n    change_variable", effects)
         self.assertIn("clamp_variable = { name = ywc_autonomy_pressure min = 0 max = 100 }\n    ywc_refresh_autonomy_pressure_modifier = yes", effects)
         self.assertIn("ywc_set_heritage_legitimacy = yes\n    set_variable = { name = ywc_maritime_network_level", effects)
-        self.assertIn("set_variable = { name = ywc_autonomy_pressure value = 0 }\n    ywc_refresh_autonomy_pressure_modifier = yes", effects)
+        self.assertIn("set_variable = { name = ywc_autonomy_pressure value = 0 }\n    ywc_refresh_maritime_network_modifier = yes", effects)
+        self.assertIn("ywc_refresh_maritime_network_modifier = yes\n    ywc_refresh_autonomy_pressure_modifier = yes", effects)
+
+    def test_maritime_network_changes_trade_and_port_capacity(self):
+        effects = EFFECTS.read_text("utf-8")
+        modifiers = STATIC_MODIFIERS.read_text("utf-8")
+        english = ENGLISH.read_text("utf-8")
+        chinese = CHINESE.read_text("utf-8")
+
+        self.assertIn("ywc_refresh_maritime_network_modifier = {", effects)
+        self.assertIn("var:ywc_maritime_network_level >= 60", effects)
+        self.assertIn("remove_modifier = ywc_maritime_network_established", effects)
+        self.assertIn("add_modifier = { name = ywc_maritime_network_established }", effects)
+        self.assertIn("ywc_maritime_network_established = {", modifiers)
+        self.assertIn("building_port_throughput_add = 0.10", modifiers)
+        self.assertIn("state_trade_capacity_mult = 0.10", modifiers)
+        self.assertIn("state_trade_advantage_mult = 0.05", modifiers)
+        self.assertIn("ywc_maritime_network_established:0", english)
+        self.assertIn("ywc_reduce_maritime_network:0", english)
+        self.assertIn("ywc_refresh_maritime_network_modifier:0", english)
+        self.assertIn("ywc_maritime_network_established:0", chinese)
+        self.assertIn("ywc_reduce_maritime_network:0", chinese)
+        self.assertIn("ywc_refresh_maritime_network_modifier:0", chinese)
+
+    def test_maritime_mutations_route_through_refresh_effect(self):
+        effects = EFFECTS.read_text("utf-8")
+        event_text = "\n".join(path.read_text("utf-8") for path in (ROOT / "yongchang_world/events").glob("*.txt"))
+
+        self.assertIn("ywc_open_trade_route = {\n    change_variable", effects)
+        self.assertIn("ywc_add_maritime_network = {\n    change_variable", effects)
+        self.assertIn("ywc_reduce_maritime_network = {\n    change_variable", effects)
+        self.assertIn("clamp_variable = { name = ywc_maritime_network_level min = 0 max = 100 }\n    ywc_refresh_maritime_network_modifier = yes", effects)
+        self.assertNotIn("change_variable = { name = ywc_maritime_network_level", event_text)
+        self.assertNotIn("set_variable = { name = ywc_maritime_network_level", event_text)
 
     def test_shared_journal_and_event_are_connected(self):
         journal = JOURNAL.read_text("utf-8")
