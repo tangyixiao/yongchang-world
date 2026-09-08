@@ -28,6 +28,13 @@ def block_for(text: str, key: str) -> str:
     raise AssertionError(f"unclosed block: {key}")
 
 
+def outcome_branch(event: str, outcome: str) -> str:
+    marker = f"set_variable = {{ name = {outcome} value = 1 }}"
+    start = event.index(marker) + len(marker)
+    end = event.index("\n        }", start)
+    return event[start:end]
+
+
 class PlayableRouteTest(unittest.TestCase):
     def setUp(self):
         self.events = EVENTS.read_text("utf-8")
@@ -104,6 +111,42 @@ class PlayableRouteTest(unittest.TestCase):
             self.assertGreaterEqual(event.count("remove_variable"), 2, event_id)
             self.assertRegex(event, r"_(failure|abandon)\s+value\s*=\s*1")
 
+    def test_each_shu_jhg_outcome_has_numeric_and_persistent_consequences(self):
+        routes = (
+            (
+                "ywc_shu.4",
+                "ywc_route_shu_bureaucratic_integration",
+                ("ywc_add_heritage_legitimacy", "ywc_lower_heritage_legitimacy", "ywc_lower_heritage_legitimacy"),
+            ),
+            (
+                "ywc_shu.5",
+                "ywc_route_shu_customs_reform",
+                ("ywc_add_maritime_network", "ywc_reduce_maritime_network", "ywc_reduce_maritime_network"),
+            ),
+            (
+                "ywc_jhg.4",
+                "ywc_route_jhg_naval_tributary_state",
+                ("ywc_add_maritime_network", "ywc_raise_autonomy_pressure", "ywc_lower_autonomy_pressure"),
+            ),
+            (
+                "ywc_jhg.5",
+                "ywc_route_jhg_south_sea_council",
+                ("ywc_open_trade_route", "ywc_raise_autonomy_pressure", "ywc_lower_autonomy_pressure"),
+            ),
+        )
+        for event_id, route, outcome_effects in routes:
+            event = block_for(self.events, event_id)
+            journal = block_for(
+                self.shu_journal if event_id.startswith("ywc_shu") else self.jhg_journal,
+                route,
+            )
+            for outcome, effect in zip(("success", "failure", "abandon"), outcome_effects):
+                result = f"{route}_{outcome}"
+                branch = outcome_branch(event, result)
+                self.assertIn(effect, branch, f"{event_id} {outcome} lacks its numeric/shared-state change")
+                self.assertIn("add_modifier", branch, f"{event_id} {outcome} lacks a persistent consequence")
+                self.assertIn(result, journal, f"{event_id} {outcome} is not visible in the journal state")
+
     def test_route_modifiers_are_defined(self):
         modifiers = MODIFIERS.read_text("utf-8")
         for name in (
@@ -112,6 +155,7 @@ class PlayableRouteTest(unittest.TestCase):
             "ywc_jhg_naval_tributary",
             "ywc_jhg_south_sea_council",
             "ywc_route_failure_backlash",
+            "ywc_route_abandonment_recovery",
         ):
             self.assertRegex(modifiers, rf"(?m)^{re.escape(name)}\s*=\s*\{{")
 
