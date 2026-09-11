@@ -5,7 +5,7 @@
 更新时间：2026-09-12（GLM/ZCode 实机会话轮）
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-HEAD：`3d20820 fix: use colonial_interest_ratio in core country AI strategies`（另有若干未提交修复，见 §3）
+HEAD：`b7254b7 fix: repair runtime script errors and adopt vanilla scripted-test format`（工作树 clean；`docs/交接给GLM.md` 即本文件）
 游戏基线：Victoria 3 `1.13.11 (Matcha)`，Build ID `24799966`
 游戏目录：`E:\SteamLibrary\steamapps\common\Victoria 3`
 
@@ -16,7 +16,7 @@ HEAD：`3d20820 fix: use colonial_interest_ratio in core country AI strategies`�
 - `python -m unittest discover -s tests`：`190` 个测试通过。
 - `python tools/ywc_check.py --mod-root yongchang_world --game-root 'E:/SteamLibrary/steamapps/common/Victoria 3'`：exit 0。
 - 已提交：AI 策略修复 `colonization_rights` → `colonial_interest_ratio`（提交 `3d20820`，已对照原版 1.13.11 文件验证字段存在）。
-- 未提交（本轮新增，全部经过 190 测试 + ywc_check 验证）：
+- 未提交（本轮新增，全部经过 190 测试 + ywc_check 验证）：→ **已全部提交于 `b7254b7`**，清单如下：
   - `yongchang_world/common/scripted_effects/ywc_shared_effects.txt`：三处 refresh 效果的 `remove_modifier` 加 `has_modifier` 守卫（修复实机 error.log 中 338 次脚本错误洪水）。
   - `yongchang_world/events/ywc_shu_jhg_events.txt`：ywc_shu.4.b、ywc_shu.5.b、ywc_jhg 两条路线共 4 处"继续/成功"选项的 trigger 误含 `progress >= 100`（导致路线卡死在 20、AI 每月只能选放弃、事件无有效选项刷 113 次错误），已按其他国家路线模板修正。
   - `yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt`、`ywc_longrun_invariants.txt`：改为原版加载器格式（无 BOM、日期带引号、4 空格缩进），并新增 `ywc_probe.txt` 最小探针套件。
