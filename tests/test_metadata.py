@@ -42,6 +42,14 @@ class MetadataTest(unittest.TestCase):
         files = sorted((ROOT / "yongchang_world").rglob("*.txt"))
         self.assertTrue(files)
         for path in files:
+            if path.parent.name == "scripted_tests":
+                # Native scripted-test suites must match the vanilla loader
+                # format, which ships BOM-free quoted-date files.
+                self.assertFalse(
+                    path.read_bytes().startswith(b"\xef\xbb\xbf"),
+                    f"Scripted test suite must be BOM-free: {path}",
+                )
+                continue
             self.assertTrue(
                 path.read_bytes().startswith(b"\xef\xbb\xbf"),
                 f"Missing UTF-8 BOM: {path}",

@@ -15,8 +15,11 @@ class ScriptedReleaseSuiteTest(unittest.TestCase):
 
     def test_startup_suite_checks_only_1836_invariants(self):
         self.assertTrue(STARTUP_SUITE.is_file())
-        self.assertIn("last_date = 1836.2.1", self.startup)
-        self.assertNotIn("last_date = 1900.1.1", self.startup)
+        # Vanilla suites (game/tools/scripted_tests/italy.txt) quote date
+        # literals; the in-game test loader never produced results with the
+        # old unquoted form, so the quoted vanilla format is the contract.
+        self.assertIn('last_date = "1836.2.1"', self.startup)
+        self.assertNotIn('last_date = "1900.1.1"', self.startup)
         for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG"):
             self.assertIn(f"exists = c:{tag}", self.startup)
         self.assertIn("is_subject_of = c:SHU", self.startup)
@@ -41,7 +44,7 @@ class ScriptedReleaseSuiteTest(unittest.TestCase):
 
     def test_longrun_suite_does_not_freeze_starting_subject_or_country_set(self):
         self.assertTrue(LONGRUN_SUITE.is_file())
-        self.assertIn("last_date = 1900.1.1", self.longrun)
+        self.assertIn('last_date = "1900.1.1"', self.longrun)
         self.assertIn("ywc_longrun_no_negative_population", self.longrun)
         self.assertIn("ywc_longrun_no_orphaned_capital", self.longrun)
         self.assertIn("ywc_longrun_shared_variables_bounded", self.longrun)
@@ -51,9 +54,14 @@ class ScriptedReleaseSuiteTest(unittest.TestCase):
     def test_legacy_monolithic_suite_is_removed(self):
         self.assertFalse(LEGACY_SUITE.exists())
 
-    def test_suites_use_unquoted_date_literals(self):
+    def test_suites_follow_vanilla_loader_format(self):
+        # The engine's own suites ship without a BOM and quote every date
+        # literal; deviating from that format left tests.txt header-only in
+        # real 1836 sessions, so the vanilla format is required here.
         for text in (self.startup, self.longrun):
-            self.assertNotRegex(text, r'=\s*"\d{4}\.\d+\.\d+"')
+            self.assertRegex(text, r'last_date\s*=\s*"\d{4}\.\d+\.\d+"')
+            self.assertRegex(text, r'game_date\s*>\s*"\d{4}\.\d+\.\d+"')
+            self.assertNotRegex(text, r'last_date\s*=\s*\d')
 
 
 if __name__ == "__main__":

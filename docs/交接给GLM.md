@@ -1,264 +1,101 @@
 # 《永昌世界》交接给 GLM
 
-更新时间：2026-09-06
+> 这是一份以当前工作区为准的交接快照。旧版交接内容中若与本文件、当前 Git 状态或新生成证据冲突，以当前工作区为准。
+
+更新时间：2026-09-12（GLM/ZCode 实机会话轮）
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-当前提交：`本轮游戏开局数据解析修复（提交哈希见本轮记录）`
-
-## 1. 任务目标与硬约束
-
-继续执行以下计划，目标是交付 Victoria 3 1.13.11（Matcha，Build ID `24799966`）可游玩的《永昌世界》v0.1：
-
-- `docs/superpowers/plans/2026-09-04-00-永昌世界实施总路线.md`
-- `docs/superpowers/plans/2026-09-04-01-基础骨架与四国垂直切片.md`
-- `docs/superpowers/plans/2026-09-04-02-区域场景扩展.md`
-- `docs/superpowers/plans/2026-09-04-03-十国内容与共享系统.md`
-- `docs/superpowers/plans/2026-09-04-04-AI平衡DLC与发行验收.md`
-
-硬约束：
-
-1. 不操作桌面，不切换窗口、不截图、不点击 UI；只能使用文件、日志和隐藏进程验证。
-2. 不修改或覆盖 `E:\SteamLibrary\steamapps\common\Victoria 3` 本体目录。
-3. 不修改 `Juij_Steam.dll`、`version.dll`、`winmm.dll` 三个兼容层 DLL。
-4. 不伪造 1846、1866、1900 检查点；没有真实证据就保持 `pending`。
-5. 不使用 `git reset --hard` 或 `git checkout --`，保留已有工作。
-
-## 2. 当前已实现内容
-
-- 十个核心国家：`SHU`、`JHG`、`DMG`、`NQG`、`OIR`、`MGL`、`TIB`、`KOR`、`LAN`、`NMG`；其中 `MGL` 是喀尔喀运行时标签，内容/计划中的逻辑名仍为 `MNG`。
-- 东北、内亚、西南、南洋、太平洋和新明相关区域的州、人口、建筑、外交事实与场景数据。
-- 十国主日志、辅助日志、事件、两条路线、AI 策略、动态国名、地图颜色和政治身份；六国使用本体纹样图集的几何 CoA，MNG/TIB/KOR/LAN 沿用本体旗帜定义。
-- AI 护栏，包括大顺早期有限吞并、靖海不殖民非洲、墨西哥不能在 1846 年前吞并 `NMG` 等规则。
-- DLC 兼容层：`ep1_content`、`mp1_content`、`ep2_content`；无 DLC 路径先执行，增强路径再门禁。
-- 启动接线：`yongchang_world/common/on_actions/ywc_startup_hooks.txt` 通过子 on_action 链接原版 `on_game_started_after_lobby`，不要改回直接覆盖原版 effect。
-- 原生发布烟测：`yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt` 与 `ywc_longrun_invariants.txt`，分别覆盖 1836 开局和长期健康约束。
-- NMG 外交动作：`ywc_nmg_autonomy_negotiation`。NMG 作为墨西哥属邦且持有 `ywc_je_new_ming_mexican_chain` 时可提议自治谈判，接受后解决该主日志。
-- 安装描述文件与开发安装脚本。当前用户数据中的 Mod 路径为 `E:\Victoria3 Mod\yongchang_world`。
-
-## 3. 本轮已完成的复核
-
-### A. 观察 runner 证据字段
-
-已通读 `tools/run_observation_matrix.ps1`，确认无悬空引用，且 `hidden_preload_only` 没有被解释成进入战局或完成长期观察。
-
-runner 现在使用无 BOM 的紧凑 JSON 写入 `content_load.json`，并从隔离 debug 日志记录：
-
-- `mod_mount`
-- `version_match_evidence`
-- `dlc_mount_evidence`
-- `expected_mounted_dlc`
-- `observed_mounted_dlc`
-- `dlc_ownership_backend`
-- `store_backend_failure_count`
-- `dlc_state_matches_config`
-
-真实隐藏启动证据表明：Mod 已挂载并匹配 1.13.11；`none/47` 中请求无 DLC 时观察到无 DLC，`dlc_state_matches_config=yes`。`wave/11` 与 `all/23` 中所有权后端不可用，观察到的 DLC 为空，故如实记录 `dlc_state_matches_config=no`，而不是伪造成功。
-
-runner 还带有实证守护：对已持有真实启动证据（`status=hidden_preload_only` 且 `mod_mount=mounted`）的配置/种子组合重跑 `-NoLaunch` 时，会原样保留现有 `run.json`，不会覆盖成 `not_evaluated_no_launch` 空壳。已用 `-NoLaunch -Config none -Seed 47` 重跑验证文件哈希不变。
-
-已知根因：PowerShell 5.1 的 `Set-Content -Encoding UTF8` 会写入 UTF-8 BOM，游戏拒绝带 BOM 的 `content_load.json` 后静默回退到“全 DLC、无 Mod”。该问题已修复，Mod 挂载证据已连续多次成功。
-
-### B. NMG 外交动作
-
-已确认主日志 `ywc_je_new_ming_mexican_chain` 在开局加给 `NMG`，外交动作门禁前提成立。
-
-隐藏启动日志成功枚举 `common/diplomatic_actions`；以下错误均为零：
-
-- Unknown trigger
-- Unknown effect
-- Invalid database object
-- 缺失本地化
-- 数据库冲突
-
-英文和简体中文本地化均已提供，使用 `ywc_` 前缀。
-
-2026-09-07 的 NMG 专项隐藏启动 `artifacts/observe/manual-gate4-nmg-preload` 已自然结束并推进到 `1836.1.1.12`；日志加载 `ywc_nmg` 命名空间及 `events/ywc_kor_lan_nmg_events.txt` 的 17 个事件，未出现 NMG/MNG/MGL 重复、未知触发器/效果或 Mod 自有法律错误。该证据只证明隔离启动时脚本和 NMG 事件可加载，不能替代进入战局后的外交动作可用性与接受/拒绝分支证据。
-
-### C. 原生 scripted_tests 烟测套件
-
-已新增只读检查 `ywc_nmg_autonomy_action_ready`：
-
-- NMG 持有自治谈判主日志，或已经有 `ywc_nmg_autonomy_negotiation_opened` 变量时通过。
-- 超过 `1836.2.1` 仍未满足时失败。
-- 不修改战局数据。
-
-从游戏引擎字符串确认，Mod 内路径 `tools/scripted_tests` 是正确的查询路径，并存在 `scripted_tests after` 执行命令。但目前没有真实进入战局并执行该套件的证据，不能宣称烟测已运行。
-
-2026-09-07 的隔离实测进一步确认：`-scripted_tests -run_until 1836.2.2` 能让战局运行到目标日期并生成 `tests.txt`，但文件只有 `Tests:` 标题。`tools/collect_smoke_logs.ps1 -RequireScriptedTests` 现在会将此状态标为 `scripted_tests=empty` 并返回失败；只有出现实际结果行才可进入 Gate 4 证据。
-
-已读取本体原始说明 `E:/SteamLibrary/steamapps/common/Victoria 3/game/tools/scripted_tests/scripted_tests.md`：命令行参数只启用 scripted tests，进入战局后还可用控制台命令 `scripted_tests` 开关；测试结果在套件完成后才写入 Documents。用真实生成的 `campaign-cli-01/save games/autosave.v3` 做独立副本复现时，`-load_game` 与 `-continue_game` 均停在前端初始化（`dedicated_server.log` 为空），不能伪造为战局执行证据；此前能推进日期的 headless 参数路径仍只产生空 `tests.txt`。
-
-### D. 本地化审计与烟测收集器
-
-- 新增 `tests/test_localization_parity.py`：双语键集合必须对齐，且禁止“键名小写化”式占位标题。
-- 审计发现并修复 57 个占位 journal/路线标题（十国全部主日志与路线，两种语言，共 114 行），例如 `ywc_je_new_ming_mexican_chain:0 "new ming mexican chain"` → `"The New Ming-Mexico Chain"` / `"新明—墨西哥链条"`。
-- `tools/collect_smoke_logs.ps1` 的 `latest-summary.txt` 现在报告 `mod_mount=mounted|not_mounted|unknown_no_debug_log` 并附挂载原文行；该字段只作记录，不改变 clean/error 判定。fixture 级测试覆盖三种情形。
-- 已用默认用户目录的一次真实隐藏启动端到端复核：`status=clean`、`finding_count=0`、`mod_mount=mounted`（挂载行时间戳 09:38:42）。
-
-### E. 烟测套件静态验证与安装脚本修复
-
-- 烟测套件（从未被游戏解析过）的触发器词汇已静态对齐先例：`game_date` 与 `is_subject_of = c:X` 有本体用法先例，`exists = c:X` 出现在 mod 自身解析干净的颜色脚本中；带引号的日期字面量已规范化为本体的裸字面量形式（`game_date > 1836.2.1`、`last_date = 1900.1.1`）并用测试锁定。真实执行证据仍需进入战局。
-- `tools/install_dev_mod.ps1` 在本机默认的 Windows PowerShell 5.1 下会因 `-Encoding utf8NoBOM`（PS6+ 值）参数绑定失败而无法运行；已改为 `UTF8Encoding($false)` 写无 BOM 描述符，并实际运行验证（真实用户目录的 `yongchang_world.mod` 内容不变）。
-- 探针目录的 `shadercache`（纯游戏缓存，约 3.4G）已清理；`run.json`、日志等证据文件保留。
-
-### F. 静态事实核验（本轮）
-
-- 启动钩子：`on_game_started_after_lobby` 在本体 `00_code_on_actions.txt:13` 真实定义，mod 用子 on_action `ywc_on_game_started_after_lobby` 挂接，未覆盖原版 effect；四个 AI 修正（SHU/JHG/DMG/NQG）与 `guardrails.json` 一致。
-- DLC 门禁：`ep1_content`、`mp1_content`、`ep2_content` 三个 ID 在本体对应 DLC 的成就文件中原样使用（`has_dlc_feature = ep1_content` 等），mod 引用的门禁 ID 真实有效。
-- 基线快照：重跑 `tools/export_vic3_baseline.py` 导出的 `country_tags`、`state_regions`、`states` 与仓库 `data/baseline/vic3-1.13.11.json` 逐键完全一致，测试基线与已安装的 1.13.11 同步。
-
-### G. 计划锁定清单与引用完整性审计（本轮）
-
-- 计划 01–03 的锁定文件路径逐项审计：7 个路径（`ywc_regional_*` 系列、`ywc_core_country_events.txt`）不存在，但全部以按区域拆分的形式实现（如 `ywc_regional_buildings.txt` → `ywc_northeast/inner_asia/southwest/ocean_buildings.txt`），是计划文档的命名漂移，不是内容缺失。
-- 新增 `tests/test_reference_integrity.py`：`set_strategy`、`add_modifier`、journal、事件和 yes 式 `ywc_` 引用必须解析到定义——全部通过。
-- **重要发现**：71 个 journal 完成变量中 58 个没有设置者。事件链记录的是 `ywc_<tag>.N_success/_failure` 序号变量，从未桥接到 journal 的 `*_resolved` 完成条件，导致大多数主日志/路线既不能完成也不能失败，违反计划 03“主日志可完成、失败并进入分支”的设计约束。58 项以显式豁免清单固化在测试中：新增缺口会让测试变红，补一条接线即可从清单移除。逐国接线需要确认 journal↔事件映射与设计意图，本轮未臆改。
-- **桥接前提的历史核实（已关闭）**：早期审计曾发现 62 个事件中仅 5 个（bootstrap 4 个、shared 1 个）有 journal pulse 触发者，其余 57 个事件缺少触发、journal 锚点或真实内容。随后已为保留事件补齐触发与双语选项，并删除无用途的 `*.6`/`*.7`/`*.8` 预留事件；当前引用完整性与运行护栏测试不再接受已知孤儿事件。
-- `ywc_je_new_ming_mexican_chain` 与 `ywc_je_eternal_yongchang` 是已接线的例外（分别由外交动作与 bootstrap 事件完成）。
-- `.metadata/metadata.json` 的 short_description 仍停留在四国阶段的“四国垂直切片”，已改为“十国垂直切片”并用测试锁定；随后一次真实隐藏启动复核 `status=clean`、`finding_count=0`、`mod_mount=mounted`（挂载行时间戳 11:06:38）。
-
-### H. DMG 事件链接线（本轮，模式样板）
-
-- **DMG（东明）成为第一个 journal 全部可玩的国家**：3 个辅助日志（南明法统、西班牙边患、本地契约）经 `ywc_dmg.1-3` 决策事件完成或失败；2 条路线按 `content_catalog` 的三态契约（success/abandon 完成、failure 失败）经 `ywc_dmg.4-5` 接线，并新增第三个“放弃”选项。
-- journal 采用已验证的 bootstrap 模式：`on_monthly_pulse` 在未决时触发决策事件。事件文本双语，遵循计划 03 约束（对西班牙停战/战争选择、本地文化整合、不自动夺取全吕宋）。事件 6-8 保留为后续链深预留。
-- 豁免清单 58 → 53；隐藏启动验证 `common/events` 枚举干净（0 Unknown/Invalid/缺失本地化）。
-- **后续轮次的标准任务模板**：按同一模式逐国接线——读 `data/content/content_catalog.json` 该国条目（journal/事件/路线三态契约）→ 撰写该国决策事件（双语）→ journal 加 pulse/complete/fail → 豁免清单减项 → 全量测试 + 隐藏启动。剩余九国：SHU、JHG、NQG、OIR、MNG、TIB、KOR、LAN、NMG。
-
-### I. NQG 事件链接线（本轮，第二个国家）
-
-- **NQG（北清）journal 全部可玩**：流亡日志经 `ywc_nqg.1` 完成或失败；亲俄之择为决策型日志——两个选项都完成并记录所择路径（`ywc_nqg_russia_aligned` / `ywc_nqg_russia_refused`）；岛屿社会日志经 `ywc_nqg.3` 完成或失败；两条路线（库页光复、多族之邦）按三态契约经 `ywc_nqg.4-5` 接线并带放弃选项，遵循计划 03“扩张不得把北清变成满洲大国”的约束（catalog：forbidden become_great_power / mass_settler_colonization）。
-- 事件 6-8 保留；豁免清单 53 → 48；隐藏启动（`none/23`）验证解析干净且 `dlc_state_matches_config=yes`。
-- 下一个建议国家：SHU 或 JHG（`ywc_shu_jhg_events.txt` 每国 8 个事件）。
-
-### J. SHU + JHG 事件链接线（本轮，第三、四个国家）
-
-- **SHU（大顺）journal 可玩**：士商（`ywc_shu.1`）、黑水边疆（`.2`）、鸦片之问（`.3`）成败型接线；士绅官僚整合与海关商政改革两条路线按三态契约经 `.4-5` 接线（事件 6-8 保留）。
-- **JHG（靖海）journal 可玩**：海上网络、继承之诏、行商议事会（`ywc_jhg.1-3`）成败型；藩屏水师与南洋商会两条路线经 `.4-5` 接线。计划 03 约束“提高自治必须加重大顺猜忌与财政成本”已在事件描述中体现，实质后果效果留给平衡轮。
-- **新发现的 catalog 漂移**：SHU 主日志键名不一致——bootstrap 实际接线 `ywc_je_eternal_yongchang`（SHU 开局持有、可玩），而 catalog 声明的 `ywc_je_yongchang_century` 是 `ywc_shu.txt` 中从未被添加的死键（保留在豁免清单）。后续统一时二选一：改 catalog 或删死键。
-- 豁免清单 48 → 38；隐藏启动（`sphere/47`）解析干净。剩余六国：OIR、MNG、TIB（steppe/highland 文件 24 事件）、KOR、LAN、NMG（各 8 事件）。
-
-### K. OIR + MNG 事件链接线（本轮，第五、六个国家）
-
-- **OIR（卫拉特）journal 可玩**：准噶尔遗业、俄国之压、伊犁商路、虚位之鞍（继承危机）经 `ywc_oir.1-4` 成败型接线——遵循计划 03“继承危机与俄压必须真实存在、不扩张也可通过改革生存”；文法之汗国与牧地之盟两条路线按三态契约经 `.5-6` 接线。
-- **MNG（喀尔喀）journal 可玩**：主日志“大漠南北”为方向决策型（南倾/北倾都完成，子变量 `ywc_mng_south_alignment` / `ywc_mng_north_alignment` 记录所择）；茶马之市、庇护者之影、泛蒙之会经 `ywc_mng.2-4` 成败型；南向商路与帝俄之翼两条路线按三态契约经 `.5-6` 接线。
-- **遗留清理**：上轮 SHU/JHG 移除命令被 cmd 部分吞掉，豁免表残留 10 条已接线条目（测试不报错因豁免是超集）；本轮已剪除，并用核对脚本确认豁免表 26 条与实际缺口 26 条**精确相等**。
-- 豁免清单 38 → 26；隐藏启动（`wave/23`）解析干净。剩余四国：TIB（含主日志 tibet_highland_without_master 与西南区域日志 highland_without_master 两处澄清）、KOR、LAN、NMG。
-
-### L. 最后四国接线（本轮，journal 接线工程收官）
-
-- **TIB（吐蕃）/ KOR（朝鲜）/ LAN（兰芳）/ NMG（新明）全部可玩**：分别经 `ywc_tib.1-6`、`ywc_kor.1-6`、`ywc_lan.1-6`、`ywc_nmg.1-5` 接线（双语文本；每国事件 7-8 保留）。NMG 主日志 mexican_chain 保持由外交动作完成。
-- **共享日志接线**：MHG 与 NMG 开局持有的 `ywc_je_ocean_frontiers` 经新增 `ywc_shared.2` 事件接线，并把其 `visible = always = yes` 缺陷收窄为仅 MHG/NMG。
-- **重复内容清理**：TIB 专属的区域日志 `ywc_je_highland_without_master` 与主日志完全重复且对所有国家可见，已连同 `ywc_southwest.txt` 的添加行一起删除；区域测试锁改为断言其不再出现。
-- **catalog 漂移修正（撤销再修正）**：SHU 主日志 `ywc_je_yongchang_century` 实际由 content_starts 开局添加——它不是死键。已恢复其定义并经 `ywc_shu.6`“永昌世纪”决策事件接线；catalog 保持 main_journal = yongchang_century。SHU 现有两个主日志（century + eternal）均可玩。
-- **里程碑：71 个 journal 完成变量全部有设置者，豁免清单清零**，计划 03“主日志可完成、失败并进入分支”的设计约束在静态层面全部达成。
-- 隐藏启动验证抓到并修复了一次重复本地化键回归（`ywc_shu.6.a/b` 旧占位行未删）；修正后 `charters/11` 启动解析完全干净（0 Duplicate/Unknown/Invalid）。
-
-### M. 实际游戏解析错误修复（本轮）
-
-- 用户进入战局后发现只有国家名称变化。复核本次启动的 `debug.log` 后确认：Mod 已挂载，但脚本解析报错，导致 journal、事件和开局历史没有生效；此前仅凭静态检查宣称“解析干净”是不成立的。
-- 修复实际开局错误：所有 Mod `.txt/.yml` 补为 UTF-8 BOM；移除 journal 不支持的顶层 `visible`；将未知的 `is_country = c:TAG` 改为本体可用的 `this = c:TAG`；删除重复事件 `ywc_shu.6` 并保留正确的完成接线。
-- 进一步修复开局数据格式：五个州历史文件补上 `STATES` 外层；152 个建筑历史条目改为本体接受的 `add_ownership.country.levels` 形式；预留事件变量名中的点号改为下划线；DLC/AI 修正迁移到静态修正数据库；海洋国家历史中的传统主义法律使用 `law_type:` 形式。
-- 新增测试锁定上述规则。该阶段全量测试由 112 增至 119；`ywc_check.py` 通过。
-- 独立隐藏启动 `none/23`（15:35:15）证实 Mod 挂载、版本匹配，未再出现 Mod 的 `Unexpected token`、`Inconsistent effect scopes`、非法变量名或找不到静态修正错误；剩余仅为游戏自身的 `paradoxAppId` 与原版 GUI 提示。游戏仍需退出当前旧局并新开 1836，旧存档不会补发开局 journal。
-- 为 `tools/install_dev_mod.ps1` 增加开发目录 Junction：`D:\Documents\Paradox Interactive\Victoria 3\mod\yongchang_world` → `E:\Victoria3 Mod\yongchang_world`，避免新启动器只扫描 Mod 子目录时再次漏掉本地 Mod；脚本已在本机幂等运行验证。
-
-### N. 真实战局证据：本地化与地块布局仍有问题（2026-09-06）
-
-- 用户提供的真实新局截图显示：Mod 已进入战局，日期为 1836-02-01，北清的自定义 journal 与事件弹窗均已出现；这证明事件触发和 journal 接线已经进入运行时。
-- 事件选项按钮直接显示原始键 `ywc_nqg_4.a/b/c`、`ywc_nqg_5.a/b/c`，没有显示双语文本。事件标题和描述已显示中文，因此问题收敛为选项本地化键未被游戏命中；不能宣称双语本地化验收完成。
-- 地图地块同时出现大量碎片化省份、飞地和马赛克式边界，国家归属与地理连续性明显不符合可玩地图质量要求。现有“部分区域使用 Province 子集”的已知限制不足以覆盖这个问题，必须重新核对 `common/history/states` 中每个 `STATE_*` 的完整省份集合，以及 ownership 与本体 state regions 的对应关系。
-- 下一步优先级：先修复 NQG 选项本地化键；再逐个核对州历史的省份集合和国家归属。修复后必须新开 1836 实机确认按钮显示文本、地图边界连续，并检查 journal 状态变化。
-- 当前截图是运行时证据，不代表十国均已完成 UI 验收；不要用静态测试或隐藏预加载替代地图与按钮的实机检查。
-
-### O. N 节两项问题的静态修复（本轮，待实机复核）
-
-- **NQG 选项键已修复**：原截图中的 `ywc_nqg_4.a` 是此前事件选项使用下划线形式、而 loc 使用点号形式造成的未命中。现已把全部事件选项统一为原版使用的点号形式（如 `name = ywc_nqg.4.a`），两种语言的 190 个选项键也统一为相同形式；`tests/test_reference_integrity.py` 与 `test_content_localization` 已锁定该契约。**仍需实机确认按钮显示文本。**
-- **地图碎片化根因已定位并修复**：对 `common/history/states` 与 `data/baseline` 的核对发现 0 个越界省份，但有 2 个州被部分覆盖——MRG 在北领地与西澳的各 1 省沿海据点使 839 个本体省份无归属（无主碎片）。已从 baseline 恢复本体原归属（10+8 个 create_state 块），并新增 `StateHistoryVanillaCoverageTest` 断言每个州精确覆盖其本体 region。
-- **跨文件重复州已去重**：`STATE_LUZON` 与 `STATE_SAKHALIN` 在 core 与区域州历史中重复定义；core 版 SAKHALIN 把省份分给未定义的 AIN/ALK 标签。已保留区域版（实际生效者）并删除 core 重复块；西班牙对吕宋的 `add_claim = c:SPA` 随权威定义迁至 `ywc_ocean_states.txt`，`test_core_scenario` 相应更新。
-- 全量测试 119 → 121 全绿；隐藏启动（`sphere/11`）解析干净（0 Duplicate/Unknown/Invalid/Unexpected token）。**两项修复均需新开 1836 实机复核**：按钮显示文本、地图边界连续、journal 状态变化。
-
-### P. 选国界面截图定性：州账本重复定义（本轮，拼花根因修复）
-
-- 用户提供的选择界面截图（缅甸选中、全图可见）证实拼花与 mod 州账本相关：账本只覆盖 33 个州，其余州（含中国本土大部分）保持本体归属——**大清（本体）占据中国本土是账本沉默区的正常结果**；碎片是“同一州被本体 00_states.txt 与 mod 账本同时定义、双方 create_state 都执行”造成的省份交错。
-- **修复（整替换）**：mod 现发布 `history/states/00_states.txt`（与本体同名=整文件替换），675 州各定义一次：33 个 ledger 州用场景归属，其余 642 州逐字保留本体归属；5 个部分账本文件删除。由此任意省份恰有一个归属者，拼花不再可能。
-- 附带修正：覆盖测试大小写归一（本体账本混用 `x7F25CD`/`x7f25cd`，38 处假阳性）；场景测试（core/regional）的州文件常量统一指向 00_states.txt；州覆盖测试排除本体单独维护的海域 state regions。
-- **待实机复核**：新开 1836 后确认①无碎片/飞地；②蜀汉礼制国（北方）、吐蕃承统国、西域承统国、蒙古承统国等 ledger 归属完整显示、无本体清色交错；③事件按钮双语。若中国本土的大清黄色归属不符合设计预期，那属于 ledger 内容设计问题（33 州账本未覆盖中国本土各州），需要设计侧决策而非地图机制问题。
-
-## 4. 当前验证结果
-
-```text
-python -m unittest discover -s tests -q  -> Ran 122 tests; OK
-python tools/ywc_check.py                 -> exit 0
-git diff --check                           -> pass
-隐藏启动 Victoria 3                       -> Mod mounted，匹配 1.13.11
-相关脚本错误关键词                         -> none
-独立隐藏启动证据                         -> status=clean，finding_count=0，mod_mount=mounted
-工作树                                     -> clean
-```
-
-注意：`artifacts/smoke/latest-summary.txt` 是被 `.gitignore` 忽略的生成文件；全量单元测试会依次运行多个 fixture，最后可能留下 `userdata-broken` 的预期 error 摘要。因此它不能单独作为最新隐藏启动 clean 证据，验收时应以独立隐藏启动的日志或配置/种子专属 `artifacts/observe/*/run.json` 为准。
-
-证据文件：
-
-- [发行验收记录](release/v0.1-acceptance.md)
-- [隐藏启动摘要](../artifacts/smoke/latest-summary.txt)
-- [十国汇总](../artifacts/smoke/core-country-summary.json)
-- [观察矩阵摘要](../artifacts/observe/matrix-summary.json)
-- [外交动作定义](../yongchang_world/common/diplomatic_actions/ywc_diplomatic_actions.txt)
-- [1836 开局烟测](../yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt)
-- [长期健康烟测](../yongchang_world/tools/scripted_tests/ywc_longrun_invariants.txt)
-
-典型 Mod 挂载日志：
-
-```text
-Mounted Data: E:/Victoria3 Mod/yongchang_world
-Mod The Yongchang World (the_yongchang_world) version 1.13.* successfully matched game version 1.13.11.
-```
-
-三枚本体兼容层 DLL 未被本仓库修改；此前核验的长度均为 `5452240`，最后写入时间为 `2026/7/3 20:40:00`。
-
-## 5. 尚未完成、不可宣称完成的门槛
-
-- 五配置（`none`、`sphere`、`charters`、`wave`、`all`）× 三种子（11、23、47）× 1846/1866/1900 的真实观察局。
-- 十国逐国选国、进入 1836 和完整 DLC UI 检查。
-- 在真实战局中实际执行 `ywc_startup_smoke.txt` 与 `ywc_longrun_invariants.txt`。
-- NMG 墨西哥属邦关系、外交动作可用性和主日志完成效果的进入战局运行时证据。
-- journal 完成变量缺口已清零（见 3.L）：全部 71 个完成变量均有设置者，十国及共享 ocean-frontiers 日志已完成静态接线；后续重点转为真实战局执行与事件后果平衡，不要恢复旧的 38 项豁免。
-- **人工验收手册已交付**：`docs/release/manual-acceptance-playbook.md` 覆盖全部剩余门槛的逐步操作——五配置启动（含启动器 Playset DLC 开关与挂载行核验）、逐国进入 1836 的 journal 核对表（十国全部日志名）、`scripted_tests` 控制台执行、`checkpoints.json` 回填格式与 `summarize_observation.py` / `check_release.py` 用法，以及证据规则与已知限制速查。README 与验收记录均已链接。
-
-`artifacts/observe/matrix-summary.json` 的 15 条记录仍为 `not_run_no_desktop_interaction`，总体状态为 `pending_manual_ui_observation`。`tools/check_release.py` 因此应继续返回未通过；不要通过改写矩阵状态绕过门禁。
-
-直接启动 exe 时，`disabledDLC` 无法稳定控制已拥有 DLC：所有权后端会在不同启动间出现“全拥有”和“不可用”两种状态。单 DLC 配置在没有官方启动器 UI 的条件下不能宣称完成。
-
-## 6. 建议 GLM 接手顺序
-
-1. 先阅读 `docs/release/manual-acceptance-playbook.md`，按其中的证据格式执行人工验收。
-2. 运行 119 个 Python 测试和 `ywc_check.py`，确认接手时静态基线未漂移。
-3. 通过官方启动器逐一验证五种 DLC 配置，并保存配置/种子专属证据；不要把直接 exe 的 `disabledDLC` 结果当作单 DLC 证明。
-4. 逐国进入 1836，检查十国 journal、首月事件、NMG 属邦关系与自治外交动作；再在战局内执行 `scripted_tests`。
-5. 完成真实检查点后回填 `checkpoints.json`，运行汇总与发布门禁；证据不足时继续保持 pending。
-
-## 7. 常用命令
-
-```powershell
-Set-Location 'E:\Victoria3 Mod'
-python -m unittest discover -s tests -v
-python tools/ywc_check.py --mod-root yongchang_world --game-root 'E:\SteamLibrary\steamapps\common\Victoria 3\game'
-powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch
-git -c safe.directory='E:/Victoria3 Mod' status --short --branch
-```
-
-隐藏启动前先确认没有已有 `victoria3.exe`，结束时只按 PID 停止本次创建的进程；不要停止用户原本运行的进程。
-
-## 8. 交接完成标准
-
-只有在以下证据齐全后才能把目标标为完成：
-
-- 全部测试和静态检查通过。
-- 无 DLC、三种单 DLC、全 DLC 均有实际启动并进入 1836 的证据。
-- 至少三种随机种子完成 1836—1900 真实观察，异常有分类。
-- 十国边界与 `NMG` 墨西哥属邦关系有运行时证据。
-- NMG 外交动作和原生 scripted_tests 有真实战局执行证据。
-- 发行记录、变更记录和已知限制同步更新。
-- 工作树干净，且无桌面操作、无本体目录和 DLL 修改。
-
-当前目标必须保持为“进行中”，不要调用完成门禁。
+HEAD：`3d20820 fix: use colonial_interest_ratio in core country AI strategies`（另有若干未提交修复，见 §3）
+游戏基线：Victoria 3 `1.13.11 (Matcha)`，Build ID `24799966`
+游戏目录：`E:\SteamLibrary\steamapps\common\Victoria 3`
+
+## 1. 先看结论
+
+本轮（2026-09-11/12 实机会话）完成了历史性突破：**首次真实进入 Mod 战局并打通了原生 scripted_tests 的执行管线**，同时发现并修复了四个真实 Mod 运行时缺陷。静态与管线状态：
+
+- `python -m unittest discover -s tests`：`190` 个测试通过。
+- `python tools/ywc_check.py --mod-root yongchang_world --game-root 'E:/SteamLibrary/steamapps/common/Victoria 3'`：exit 0。
+- 已提交：AI 策略修复 `colonization_rights` → `colonial_interest_ratio`（提交 `3d20820`，已对照原版 1.13.11 文件验证字段存在）。
+- 未提交（本轮新增，全部经过 190 测试 + ywc_check 验证）：
+  - `yongchang_world/common/scripted_effects/ywc_shared_effects.txt`：三处 refresh 效果的 `remove_modifier` 加 `has_modifier` 守卫（修复实机 error.log 中 338 次脚本错误洪水）。
+  - `yongchang_world/events/ywc_shu_jhg_events.txt`：ywc_shu.4.b、ywc_shu.5.b、ywc_jhg 两条路线共 4 处"继续/成功"选项的 trigger 误含 `progress >= 100`（导致路线卡死在 20、AI 每月只能选放弃、事件无有效选项刷 113 次错误），已按其他国家路线模板修正。
+  - `yongchang_world/tools/scripted_tests/ywc_startup_smoke.txt`、`ywc_longrun_invariants.txt`：改为原版加载器格式（无 BOM、日期带引号、4 空格缩进），并新增 `ywc_probe.txt` 最小探针套件。
+  - `tests/test_metadata.py`、`tests/test_scripted_release_suite.py`：契约随引擎真实格式更新（scripted_tests 目录豁免 BOM 规则、断言引号日期）。这不是删契约，而是修正与引擎相反的旧契约。
+  - `tools/ywc_test_gui/`：**临时测试工具 Mod**（覆盖 `gui/console.gui`，在调试工具栏 Debug|Misc 列加一个 "YWC Tests" 按钮）。仅用于实机验收，不随发行版发布；不想要可直接删除该目录。
+  - `artifacts/observe/manual-gate23-1836-shu-01/`：本轮实机会话的隔离 userdir 与全部运行证据（logs、tests.txt、console_history、截图脚本等）。
+
+仍不能宣称完成（见 §6）：十国逐国 UI 验收、scripted tests 拿到非空 PASS 结果、观察矩阵、`check_release.py` 门禁。
+
+## 2. 实机会话已确认的事实（本轮新证据）
+
+以下全部来自真实游戏窗口操作与隔离 userdir 日志，不是推测：
+
+1. **Mod 挂载与运行**：直启 exe（无 Steam）+ `-debug_mode -userdir <隔离目录>` + 无 BOM `content_load.json` 时，主菜单显示 `MP Checksum: xxx (Modified)`；选国界面可见 Shun Ritual State、Great Qing、Great Mongolian State、Tibetan Successor State 等十国布局与专属描述文本（"The Yongchang Era is an age of industry and expedition..."）。
+2. **选国并进入 1836 战局**：SHU（多次）、Kengtung/Shan States、Touggourt、Uruguay 均可进入；SHU 面板显示 Fragile Unity 独有日志；战局内 outliner 可见 SHU 全套 journal（The Yongchang Century、The Opium Question、The Blackwater Marches、A Customs Board、Yongchang Unfinished Work 等），Mod 事件弹出（`Event ID: ywc_shu.3`）且带双语/DEBUG 选项。
+3. **-debug_mode 生效**：地图悬停显示省份调试信息；右下角 error 计数弹窗出现。
+4. **控制台可以打开**：` 键（PostMessage WM_KEYDOWN VK_OEM_3 可触发）；控制台与调试工具栏是同一窗口（gui/console.gui 的 console_window + toolbars_window）。战局内注入键盘（SendInput/WM_CHAR 文本）大多不进 editbox，但 **GUI 按钮点击可靠**。
+5. **scripted_tests 机制（读 `game/tools/scripted_tests/scripted_tests.md` + 实测）**：
+   - 启用方式两种：启动参数 `-scripted_tests`（boot 时武装）或控制台命令 `scripted_tests`（可再加 `before`/`none`/`after`；再执行一次=禁用）。
+   - 套件 = `tools/scripted_tests/` 下每个 .txt；`last_date` 到达即套件结束并**把结果写入 userdir 的 `tests.txt`**；到 last_date 都没 success/fail 的测试记为 skipped。
+   - **实测确认**：无参数时退出游戏也会写 header-only 的 `tests.txt`；带 `-scripted_tests` 参数 + 测试启用 + 真实战局跑到 last_date 时，`tests.txt` 会在套件结束日被**就地重写**（mtime 多次验证）。
+   - **已定位的边界（本轮终点）**：套件元数据（last_date）被引擎读取并驱动周期，但 `tests` 块始终零记录。已排除：BOM、无引号日期、TAB 缩进、观察者模式、参数缺失、未武装（双击切换）、套件内容复杂度——包括新增的 `ywc_probe.txt`（单个 `always = yes` 成功测试、独立 last_date）也在其结束日零记录。结论：该 1.13.11 直启构建在无更多内部条件下不评估套件内的测试（可能需要 PDX CI 使用的额外参数如 `-handsoff`/`-run_until`，或仅内部构建支持）。后续若要继续，先试 `-handsoff` 组合，再考虑联系/查 PDX 内部资料；`collect_smoke_logs.ps1 -RequireScriptedTests` 的门禁语义保持不变。
+6. **键盘注入的边界（自动化复用要点）**：
+   - 方向键、空格：`PostMessage WM_KEYDOWN/WM_KEYUP`（带扫描码 lParam）可靠——空格可暂停/继续，方向键可平移地图（注意惯性极大，每次平移后必须截图确认）。
+   - **点击选国会把镜头居中到所点省份**，点海会把镜头带去海上；选国界面务必"先 mouse_move 悬停 → 看 debug tooltip 显示目标国 → 再点击"。
+   - Random Country 按钮：随机选一个可玩国家并居中放大——是绕过地图导航的最稳路径；scripted tests 只查世界状态，**用哪个国家开局都行**。
+7. **实机错误计数**：debug 弹窗计数为进程累计；隔离 userdir 的 `error.log` 才可分类。修复前每局数万~数十万计数全部来自 §3 的两类 bug；修复后开局仅 16-21 个（原版军事部署/法律警告 + 少量 mod 州建筑提示），运行数周不增长。
+
+## 3. 本轮发现并修复的 Mod 缺陷（未提交）
+
+| 文件 | 缺陷 | 实机证据 | 修复 |
+| --- | --- | --- | --- |
+| `common/scripted_effects/ywc_shared_effects.txt` | `ywc_refresh_heritage_legitimacy_modifier`、`ywc_refresh_maritime_network_modifier`、`ywc_refresh_autonomy_pressure_modifier` 无条件 `remove_modifier` 不存在的修正 | error.log：`remove_modifier effect [ Timed modifier ywc_... not found ]` ×338，且每 tick 重复触发（游戏内计数飙到 23 万+，Slow Ticks） | 三处都改为 `if = { limit = { has_modifier = ... } remove_modifier = ... }` |
+| `events/ywc_shu_jhg_events.txt` | ywc_shu.4.b / ywc_shu.5.b / ywc_jhg 两条路线的"继续"选项 trigger 误含 `var:..._progress >= 100`（其他国家的路线模板没有） | error.log：`Out of the 3 scripted options for event ywc_shu.4, none were valid` ×113（同一秒内每 tick 刷）；路线永远停在 20，AI 只能选放弃 | trigger 删去 `>= 100` 行（if/limit 内的成功判断保留） |
+
+另有观察（未修，需上游决策）：
+- `events/ywc_shared_events.txt:39`（月度共享事件）会对未初始化共享变量的国家调用 `ywc_open_trade_route` 等效果，产生 `change_variable [ Variable not of the 'value' scope type ]` / `Failed to fetch variable 'ywc_maritime_network_level'` 错误（本轮乌拉圭局 8 次）。建议在该事件效果前加 `has_variable` 守卫或限制作用域为十国。
+- SHU 海关事件（ywc_shu.3）弹出的插画是粉色占位图形，疑似缺 event picture 资源。
+- `tools/ywc_test_gui/` 触发一条 `Mod metadata read error ... .metadata/metadata.json` 无害告警；如需消除，补一个最小 metadata.json 即可。
+- `collect_smoke_logs.ps1` 只扫 `logs/debug.log`，而长会话的启动期挂载行会轮转进 `logs/debug.1.log`——本轮 `mod_mount=not_mounted` 即此工具盲点（实际挂载与版本匹配证据在 debug.1.log:94-96）。下轮可让采集器一并扫 `debug.*.log`。
+
+## 4. 复现本轮实机管线的最小步骤（下轮直接照做）
+
+1. 隔离 userdir：`artifacts/observe/<name>/userdata`，写无 BOM `content_load.json`（enabledMods 用 `\\` 转义路径，参考现有文件）。
+2. 启动：`binaries/victoria3.exe -debug_mode -userdir "<ud>" -scripted_tests`（WorkingDirectory=游戏根）。直启无 Steam 可进战局，不影响证据。
+3. 主菜单（约 2-3 分钟，首次编译着色器更久）→ New Game → Sandbox → **Random Country** → Start。
+4. 等开局初始化完成（开局 1-10 分钟内 UI 点击无响应属正常，等 FPS 恢复、错误弹窗稳定）。
+5. PostMessage `` ` ``（脚本 `artifacts/observe/manual-gate23-1836-shu-01/post_key.ps1`，改 hwnd 参数）打开调试工具栏。
+6. 点 "YWC Tests"（137,613@1280x800）→ zoom 左上角 console 确认最后一行是 `Scripted tests enabled.`（每次点击只切换一次；若 disabled 再点一次）。
+7. PostMessage VK_SPACE（`post_space.ps1`）解除暂停；速度 1 下约 60-80 秒到达 1836.2.1，套件结束并写 `tests.txt`。
+8. 检查 `<ud>/tests.txt`；随后菜单 → Exit Game → Exit to Desktop（正常退出保证日志完整）。
+9. 采集：`powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch -UserDataRoot <ud> -RequireScriptedTests`——`scripted_tests=present` 才算数。
+
+## 5. 当前验证事实（静态）
+
+- 全量测试：`Ran 190 tests ... OK`（含更新后的契约测试）。
+- `ywc_check.py`：exit 0。
+- 本次会话创建的实机证据目录：`artifacts/observe/manual-gate23-1836-shu-01/`（含 userdata/logs 全套、console_history、多个失败/成功切换的控制台记录、errors 分类输入）。
+- 旧结论仍有效：观察矩阵 15 个 run 全部诚实 pending；`check_release.py` 必须失败是门禁设计。
+
+## 6. 接下来按这个顺序做
+
+1. **scripted tests 证据（当前硬卡点）**：本轮已把管线推到极限——套件加载、周期、冲洗全部验证，但测试零记录（含 `always = yes` 探针）。下一轮先试 `-handsoff -run_until 1836.3.1 -scripted_tests` 组合（PDX CI 风格）；仍不行则该门槛对本构建不可自动化，向用户如实说明并请示（人工在真机点控制台执行是备选）。`collect_smoke_logs.ps1 -RequireScriptedTests` 语义不变。
+2. **提交本轮修复**（§3 全部文件 + 本文档），提交信息建议 `fix: guard remove_modifier, repair SHU/JHG route option triggers, adopt vanilla scripted-test suite format`。
+3. **十国 UI 验收**（手册门槛二）：逐国选国进 1836、核对 journal 表、首月事件双语选项、路线月度选项推进（现在 trigger 修复后"继续"选项可用了）、NMG 自治谈判两分支、DLC 开关增强项。结果写入 `docs/release/manual-acceptance-log.md`。
+4. **五配置启动证据**（手册门槛一）：官方启动器 Playset 五配置，采集 `launcher-evidence.txt`。
+5. **观察矩阵与门禁**（手册门槛四）：15 run × 3 检查年 × 10 国，`summarize_observation.py` + `check_release.py`。
+6. 事件贴图：SHU 海关事件（ywc_shu.3）弹出的插画显示为粉色占位图形，确认是否缺 event picture 资源。
+
+## 7. 常见误区（沿用并更新）
+
+- 不要把 `MNG` 当运行时 TAG；运行时是 `MGL`。
+- 不要把 `artifacts/smoke/latest-summary.txt` 单独当 clean 证据。
+- 不要用键盘注入往控制台 editbox 打字（会重复字符且 `_` 变 `-`）；用 GUI 按钮或临时 GUI Mod 按钮。
+- 每次点击 "YWC Tests" 只切换一次状态；以 console 回显为准，不在回显确认前连续点击。
+- 选国界面点击省份会居中镜头；先悬停验证 tooltip 再点。
+- 不要把"套件周期工作（tests.txt 被重写）"当成"测试已通过"——以结果行出现 PASS 为准。
+- 本仓库不修改本体目录与三枚兼容层 DLL；`tools/ywc_test_gui/` 是本仓库自己的临时工具 Mod，不影响该约束。
+
+## 8. 交接后的完成定义
+
+与上一版一致：静态全绿 + 十国 UI 验收 + 两套原生 scripted tests 非空结果 + 15 run 观察证据 + `check_release.py` 通过 + 文档如实记录。本轮已把最后一项的前置管线全部打通，卡点只剩 §6.1 的测试记录问题。
