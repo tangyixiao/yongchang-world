@@ -292,7 +292,7 @@ class RegionalCountryHistoryTest(unittest.TestCase):
         expected = {
             "OIR", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT",
             "DER", "KAM", "GYL", "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "MNP",
-            "SHN", "ARA", "LAD", "WBK", "PNP", "PLW", "YAP", "MHL", "MRG",
+            "SHD", "ARA", "LAD", "WBK", "PNP", "PLW", "YAP", "MHL", "MRG",
         }
         for tag in expected:
             match = re.search(rf"(?ms)c:{tag}\s*\?=\s*\{{.*?^\s*\}}", text)
