@@ -26,6 +26,12 @@ HEAD：`b7254b7 fix: repair runtime script errors and adopt vanilla scripted-tes
 
 仍不能宣称完成（见 §6）：十国逐国 UI 验收、scripted tests 拿到非空 PASS 结果、观察矩阵、`check_release.py` 门禁。
 
+### 1.1 后续轮：选国界面拼花已修复（ownership 权威表地理重排）
+
+- 用户选国界面截图确认：东北（蜀汉礼制国）、西域、川滇的**马赛克碎片**根因是场景账本按 owner 随机采样省份（25/693 个 owner 组在真实地图邻接图上不连通，如天山六绿洲链标签各持 40 个散布全省的省份）。
+- **修复**：`data/scenario/ownership_overrides.json` 已按真实地图邻接图（从本体 `provinces.png` 构建，40875 省）地理重排——每个 owner 保留其最大连通分量、剩余省份按邻接吸收、每 owner 省份数精确守恒；`tools/build_state_history.py` 已从重排后的权威表重新生成 `00_states.txt`。弱组（<50% 连通）从 25 降到 4，剩余 4 个为海岛/飞地/绿洲链拓扑（本体自身有 54 组同类）。
+- **需实机复核**：新开 1836 后确认①东北/西域/川滇边界连贯无碎片；②NQG 等国事件按钮显示双语选项文本；③journal 完成流转。
+
 ## 2. 实机会话已确认的事实（本轮新证据）
 
 以下全部来自真实游戏窗口操作与隔离 userdir 日志，不是推测：
