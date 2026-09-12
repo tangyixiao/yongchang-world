@@ -5,7 +5,7 @@
 更新时间：2026-09-12（GLM/ZCode 实机会话轮）
 仓库：`E:\Victoria3 Mod`
 分支：`codex/yongchang-world-bootstrap`
-HEAD：`b7254b7 fix: repair runtime script errors and adopt vanilla scripted-test format`（工作树 clean；`docs/交接给GLM.md` 即本文件）
+HEAD：`080aefa docs: record the mosaic fix and ownership regroup`（其后为 4cf632a 地理重排与本文件）（工作树 clean；`docs/交接给GLM.md` 即本文件）
 游戏基线：Victoria 3 `1.13.11 (Matcha)`，Build ID `24799966`
 游戏目录：`E:\SteamLibrary\steamapps\common\Victoria 3`
 
@@ -31,6 +31,7 @@ HEAD：`b7254b7 fix: repair runtime script errors and adopt vanilla scripted-tes
 - 用户选国界面截图确认：东北（蜀汉礼制国）、西域、川滇的**马赛克碎片**根因是场景账本按 owner 随机采样省份（25/693 个 owner 组在真实地图邻接图上不连通，如天山六绿洲链标签各持 40 个散布全省的省份）。
 - **修复**：`data/scenario/ownership_overrides.json` 已按真实地图邻接图（从本体 `provinces.png` 构建，40875 省）地理重排——每个 owner 保留其最大连通分量、剩余省份按邻接吸收、每 owner 省份数精确守恒；`tools/build_state_history.py` 已从重排后的权威表重新生成 `00_states.txt`。弱组（<50% 连通）从 25 降到 4，剩余 4 个为海岛/飞地/绿洲链拓扑（本体自身有 54 组同类）。
 - **需实机复核**：新开 1836 后确认①东北/西域/川滇边界连贯无碎片；②NQG 等国事件按钮显示双语选项文本；③journal 完成流转。
+- **✅ 实机复核通过（2026-09-12 用户截图 ×3）**：重排后新开 1836 选国界面三个视角（欧亚大陆、北美、海洋东南亚）确认——①东北碎片消除：大清、大顺礼制国、大蒙古国、虾夷地各持连贯板块；②西域承统国/吐蕃承统国/和硕特青海及中亚诸玉兹连贯；③下加州的新墨西哥承统国（NMG）为单一干净沿海块；④西婆罗洲兰芳（LAN）连贯，文莱/班贾尔/望加锡等岛国标签清晰。选国面板的国名、文化（阿伊努/大和、墨西哥/汉、汉/客家/达雅）、政体与自定义 flavor 文本渲染正确。**地图视觉验收通过**；事件按钮双语文本仍待事件弹窗截图确认。
 
 ## 2. 实机会话已确认的事实（本轮新证据）
 
