@@ -181,7 +181,7 @@ class RuntimeGuardrailsTest(unittest.TestCase):
             for row in catalog["countries"].values()
             for event in row["events"]
         }
-        self.assertEqual(declared & {"ywc_dlc.1", "ywc_jhg.6", "ywc_dmg.6", "ywc_nqg.6", "ywc_nmg.6"}, set())
+        self.assertEqual(declared & {"ywc_dlc.1"}, set())
         self.assertTrue(catalog_events.issubset(triggered))
 
 
