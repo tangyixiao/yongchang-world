@@ -76,6 +76,16 @@ class ContentLocalizationTest(unittest.TestCase):
                 runtime_tag = "MGL" if tag == "MNG" and path in (NAMES, COLORS) else tag
                 self.assertIn(runtime_tag, text, f"{tag} missing from {path.name}")
 
+    def test_journal_reasons_are_not_generic_placeholders(self):
+        generic_reasons = (
+            "这条路线在成功、失败或放弃后都保留可玩的政治状态。",
+            "This route preserves a playable political state after success, failure, or abandonment.",
+        )
+        for path in (ZH, EN):
+            text = path.read_text("utf-8-sig")
+            for reason in generic_reasons:
+                self.assertNotIn(reason, text, f"generic journal reason remains in {path.name}")
+
 
 if __name__ == "__main__":
     unittest.main()
