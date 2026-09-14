@@ -115,6 +115,45 @@ class ContentCatalogTest(unittest.TestCase):
                     journal,
                 )
 
+    def test_flavor_setup_events_give_ai_both_directions(self):
+        event_text = "\n".join(
+            path.read_text("utf-8") for path in EVENT_DIR.glob("*.txt")
+        )
+        for row in self.catalog.values():
+            for event in row["flavor"]["events"][:2]:
+                match = re.search(
+                    rf"(?ms)^{re.escape(event)} = \{{(.*?)(?=^\S.* = \{{|\Z)",
+                    event_text,
+                )
+                self.assertIsNotNone(match, event)
+                block = match.group(1)
+                options = re.findall(
+                    r"(?ms)^    option = \{(.*?)(?=^    option = \{|\Z)",
+                    block,
+                )
+                self.assertGreaterEqual(len(options), 2, event)
+                for option in options[:2]:
+                    self.assertRegex(option, r"(?ms)^        ai_chance = \{")
+
+    def test_flavor_resolution_events_weight_threshold_and_compromise(self):
+        event_text = "\n".join(
+            path.read_text("utf-8") for path in EVENT_DIR.glob("*.txt")
+        )
+        for row in self.catalog.values():
+            event = row["flavor"]["events"][2]
+            match = re.search(
+                rf"(?ms)^{re.escape(event)} = \{{(.*?)(?=^\S.* = \{{|\Z)",
+                event_text,
+            )
+            self.assertIsNotNone(match, event)
+            options = re.findall(
+                r"(?ms)^    option = \{(.*?)(?=^    option = \{|\Z)",
+                match.group(1),
+            )
+            self.assertEqual(len(options), 3, event)
+            for option in options:
+                self.assertRegex(option, r"(?ms)^        ai_chance = \{")
+
 
 class OverseasMingTest(unittest.TestCase):
     def setUp(self):
