@@ -1,5 +1,6 @@
 import json
 import pathlib
+import re
 import unittest
 
 
@@ -7,6 +8,9 @@ ROOT = pathlib.Path(__file__).parents[1]
 CATALOG_FILE = ROOT / "data/content/content_catalog.json"
 AI_FILE = ROOT / "yongchang_world/common/ai_strategies/ywc_core_country_ai.txt"
 JOURNAL_DIR = ROOT / "yongchang_world/common/journal_entries"
+EVENT_DIR = ROOT / "yongchang_world/events"
+FLAVOR_EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_flavor_effects.txt"
+FLAVOR_MODIFIERS = ROOT / "yongchang_world/common/scripted_modifiers/ywc_flavor_modifiers.txt"
 
 
 class ContentCatalogTest(unittest.TestCase):
@@ -52,6 +56,36 @@ class ContentCatalogTest(unittest.TestCase):
                 journal_text = journal_file.read_text("utf-8")
             for journal in [row["main_journal"], *row["auxiliary_journals"], *(route["id"] for route in row["routes"])]:
                 self.assertIn(f"{journal} =", journal_text, journal)
+
+    def test_each_core_country_has_flavor_contract(self):
+        journal_text = "\n".join(
+            path.read_text("utf-8") for path in JOURNAL_DIR.glob("*.txt")
+        )
+        event_text = "\n".join(
+            path.read_text("utf-8") for path in EVENT_DIR.glob("*.txt")
+        )
+        effects_text = FLAVOR_EFFECTS.read_text("utf-8")
+        modifiers_text = FLAVOR_MODIFIERS.read_text("utf-8")
+        for tag, row in self.catalog.items():
+            flavor = row["flavor"]
+            self.assertTrue(flavor["variable"].startswith("ywc_flavor_"), tag)
+            self.assertEqual(len(flavor["journals"]), 3, tag)
+            self.assertEqual(len(flavor["events"]), 3, tag)
+            self.assertTrue(flavor["high_modifier"].startswith("ywc_flavor_"), tag)
+            self.assertTrue(flavor["low_modifier"].startswith("ywc_flavor_"), tag)
+            for journal in flavor["journals"]:
+                self.assertIn(f"{journal} =", journal_text, journal)
+            for event in flavor["events"]:
+                self.assertIn(f"{event} =", event_text, event)
+            self.assertIn(flavor["high_modifier"] + " =", modifiers_text)
+            self.assertIn(flavor["low_modifier"] + " =", modifiers_text)
+            effect_prefix = f"ywc_flavor_{tag.lower()}_"
+            self.assertIn(effect_prefix + "initialize =", effects_text)
+            self.assertRegex(
+                effects_text,
+                rf"name = {re.escape(flavor['variable'])}[\s\S]*?clamp_variable = \{{ name = {re.escape(flavor['variable'])} min = 0 max = 100 \}}",
+                tag,
+            )
 
 
 class OverseasMingTest(unittest.TestCase):

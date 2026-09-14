@@ -42,6 +42,26 @@ class ContentLocalizationTest(unittest.TestCase):
                 expected.update(f"{event}{suffix}" for suffix in (".t", ".d"))
                 # Option names follow the dotted event form used by the game.
                 expected.update(f"{event}{suffix}" for suffix in (".a", ".b"))
+            flavor = row["flavor"]
+            expected.update(
+                {
+                    flavor["variable"],
+                    f"{flavor['variable']}_desc",
+                    flavor["high_modifier"],
+                    f"{flavor['high_modifier']}_desc",
+                    flavor["low_modifier"],
+                    f"{flavor['low_modifier']}_desc",
+                }
+            )
+            for journal in flavor["journals"]:
+                expected.update({journal, f"{journal}_reason"})
+            for event in flavor["events"]:
+                suffixes = (".t", ".d", ".a", ".b")
+                if event == flavor["events"][-1]:
+                    suffixes += (".c",)
+                expected.update(
+                    f"{event}{suffix}" for suffix in suffixes
+                )
         self.assertTrue(expected.issubset(load_yaml_keys(ZH_DIR)))
         self.assertTrue(expected.issubset(load_yaml_keys(EN_DIR)))
 
