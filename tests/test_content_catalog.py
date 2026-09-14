@@ -87,6 +87,34 @@ class ContentCatalogTest(unittest.TestCase):
                 tag,
             )
 
+    def test_flavor_journals_keep_success_and_failure_states_separate(self):
+        journal_text = "\n".join(
+            path.read_text("utf-8") for path in JOURNAL_DIR.glob("*.txt")
+        )
+        for row in self.catalog.values():
+            for journal in row["flavor"]["journals"]:
+                match = re.search(
+                    rf"(?ms)^{re.escape(journal)} = \{{(.*?)(?=^\S.* = \{{|\Z)",
+                    journal_text,
+                )
+                self.assertIsNotNone(match, journal)
+                block = match.group(1)
+                self.assertIn(
+                    f"complete = {{\n        has_variable = {journal}_resolved\n    }}",
+                    block,
+                    journal,
+                )
+                self.assertIn(
+                    f"fail = {{ has_variable = {journal}_failed }}",
+                    block,
+                    journal,
+                )
+                self.assertNotIn(
+                    f"has_variable = {journal}_failed\n        }}",
+                    block,
+                    journal,
+                )
+
 
 class OverseasMingTest(unittest.TestCase):
     def setUp(self):
