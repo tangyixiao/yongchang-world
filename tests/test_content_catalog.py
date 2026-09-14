@@ -10,7 +10,7 @@ AI_FILE = ROOT / "yongchang_world/common/ai_strategies/ywc_core_country_ai.txt"
 JOURNAL_DIR = ROOT / "yongchang_world/common/journal_entries"
 EVENT_DIR = ROOT / "yongchang_world/events"
 FLAVOR_EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_flavor_effects.txt"
-FLAVOR_MODIFIERS = ROOT / "yongchang_world/common/scripted_modifiers/ywc_flavor_modifiers.txt"
+FLAVOR_MODIFIERS = ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt"
 
 
 class ContentCatalogTest(unittest.TestCase):
