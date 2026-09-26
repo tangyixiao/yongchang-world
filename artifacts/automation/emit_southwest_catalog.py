@@ -1,0 +1,363 @@
+# One-off emitter: build data/content/southwest_event_catalog.json for the
+# v0.2 六六大顺 southwest layer. Committed source of truth for
+# tools/build_southwest_content.py.
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "data/content/southwest_event_catalog.json"
+
+LINES = [
+    {
+        "short": "ljg", "tag": "LJG", "name_cn": "丽江国", "name_en": "Lijiang",
+        "journal": "ywc_je_sw_ljg",
+        "events": [
+            {
+                "id": "ywc_ljg.1", "slot": 1,
+                "title_cn": "引盐之议", "desc_cn": "大顺欲以盐引抽分改写茶马旧例，引权出自木氏数百年。奉命则引权旁落，力陈则忤逆宗主。",
+                "title_en": "The Salt Permit Dispute",
+                "desc_en": "Shun wants to rewrite the tea-horse precedent with salt-permit levies. Comply and the Mu clan's ancient licence slips away; refuse and the suzerain takes offence.",
+                "choices": [
+                    {"label_cn": "奉行政令，交引权与大顺税吏", "label_en": "Enforce the edict: hand the licence to Shun's assessors",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ljg_e1_done"},
+                             {"op": "modifier", "name": "ywc_sw_tea_charter", "months": 24},
+                             {"op": "relations", "tag": "SHU", "value": 15},
+                             {"op": "treasury", "amount": -200}]},
+                    {"label_cn": "力陈旧例，请以贡茶代税", "label_en": "Plead the old precedent: offer tribute tea instead",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ljg_e1_done"},
+                             {"op": "relations", "tag": "SHU", "value": -5}]},
+                ],
+            },
+            {
+                "id": "ywc_ljg.2", "slot": 2,
+                "title_cn": "藏商入城", "desc_cn": "德格僧商携金直入丽江，绕开大顺税卡。开城则商路大兴而税卡旁落，设卡则一体课征而商旅却步。",
+                "title_en": "Tibetan Merchants at the Gate",
+                "desc_en": "Derge's monk-traders ride straight into Lijiang, bypassing Shun's tolls. Open the gates and the caravan road booms past the tax line; toll them and the caravans turn away.",
+                "choices": [
+                    {"label_cn": "开城互市，藏商照单全收", "label_en": "Open the market: welcome the caravans",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ljg_e2_done"},
+                             {"op": "modifier", "name": "ywc_sw_market_open", "months": 24},
+                             {"op": "relations", "tag": "DER", "value": 15},
+                             {"op": "relations", "tag": "SHU", "value": -5}]},
+                    {"label_cn": "设卡抽税，一体课征", "label_en": "Toll them all alike",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ljg_e2_done"},
+                             {"op": "treasury", "amount": 300},
+                             {"op": "relations", "tag": "DER", "value": -10}]},
+                ],
+            },
+            {
+                "id": "ywc_ljg.3", "slot": 3,
+                "title_cn": "木氏继嗣", "desc_cn": "老土司病笃，嗣子年幼，族中欲立弟。大顺流官议请诰命——受诰则名分稳固，自立则族内相安。",
+                "title_en": "The Mu Succession",
+                "desc_en": "The old chieftain is dying, the heir a child, and the clan would raise his brother. Shun's officials offer an imperial patent: accept and the title is secure; stand alone and the clan stays whole.",
+                "choices": [
+                    {"label_cn": "请诰于大顺，立幼子以世职", "label_en": "Ask Shun for the patent: confirm the child heir",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ljg_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_ljg_resolved"},
+                             {"op": "relations", "tag": "SHU", "value": 15},
+                             {"op": "treasury", "amount": -200}]},
+                    {"label_cn": "族中自立，不受诰命", "label_en": "Settle it in the clan: no patent",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ljg_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_ljg_failed"},
+                             {"op": "relations", "tag": "SHU", "value": -10}]},
+                ],
+            },
+        ],
+    },
+    {
+        "short": "sip", "tag": "SIP", "name_cn": "西双版纳", "name_en": "Sipsongpanna",
+        "journal": "ywc_je_sw_sip",
+        "events": [
+            {
+                "id": "ywc_sip.1", "slot": 1,
+                "title_cn": "茶山之约", "desc_cn": "汉商求承包六大茶山，岁纳租银。议事庭争执：得银速而茶山渐非我有，自营则费而自主。",
+                "title_en": "The Tea Hills Contract",
+                "desc_en": "Han merchants offer to lease the six tea hills for yearly silver. The council splits: quick silver for slowly losing the hills, or costly self-management that keeps them.",
+                "choices": [
+                    {"label_cn": "承包给汉商，岁纳租银", "label_en": "Lease the hills to the merchants",
+                     "ops": [{"op": "marker", "name": "ywc_sw_sip_e1_done"},
+                             {"op": "treasury", "amount": 400},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 24}]},
+                    {"label_cn": "归官茶山，自设茶局", "label_en": "Keep the hills: run our own tea office",
+                     "ops": [{"op": "marker", "name": "ywc_sw_sip_e1_done"},
+                             {"op": "treasury", "amount": -200},
+                             {"op": "modifier", "name": "ywc_sw_tea_charter", "months": 24}]},
+                ],
+            },
+            {
+                "id": "ywc_sip.2", "slot": 2,
+                "title_cn": "缅使西来", "desc_cn": "缅甸使者携礼而至，请车里照旧入贡缅京。两属之礼再难兼得——报大顺则拒缅，虚与委蛇则两贡并输。",
+                "title_en": "The Envoy from Burma",
+                "desc_en": "A Burmese envoy arrives asking that Sipsongpanna tribute Ava as before. Two courts, one mandala: report to Shun and refuse Burma, or hedge with double tribute.",
+                "choices": [
+                    {"label_cn": "报大顺边署，拒缅使", "label_en": "Report to Shun: refuse the envoy",
+                     "ops": [{"op": "marker", "name": "ywc_sw_sip_e2_done"},
+                             {"op": "relations", "tag": "SHU", "value": 10},
+                             {"op": "relations", "tag": "BUR", "value": -10}]},
+                    {"label_cn": "虚与委蛇，两贡并存", "label_en": "Hedge: tribute both courts",
+                     "ops": [{"op": "marker", "name": "ywc_sw_sip_e2_done"},
+                             {"op": "relations", "tag": "SHU", "value": -5},
+                             {"op": "relations", "tag": "BUR", "value": 5},
+                             {"op": "treasury", "amount": -100}]},
+                ],
+            },
+            {
+                "id": "ywc_sip.3", "slot": 3,
+                "title_cn": "十二版纳分担", "desc_cn": "朝贡与防务之费浩繁，议事庭请十二版纳均摊，召片领欲以王命独断。",
+                "title_en": "Sharing the Twelve Banners",
+                "desc_en": "Tribute and defence cost dearly: the council asks all twelve banners to share, the Chao Phaendin would decide alone.",
+                "choices": [
+                    {"label_cn": "依例十二版纳均摊", "label_en": "Share it across the twelve banners",
+                     "ops": [{"op": "marker", "name": "ywc_sw_sip_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_sip_resolved"},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 12}]},
+                    {"label_cn": "召片领独任，以王命压之", "label_en": "The Chao Phaendin bears it alone",
+                     "ops": [{"op": "marker", "name": "ywc_sw_sip_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_sip_failed"},
+                             {"op": "relations", "tag": "SHU", "value": -5}]},
+                ],
+            },
+        ],
+    },
+    {
+        "short": "der", "tag": "DER", "name_cn": "德格王国", "name_en": "Derge",
+        "journal": "ywc_je_sw_der",
+        "events": [
+            {
+                "id": "ywc_der.1", "slot": 1,
+                "title_cn": "印经院的债", "desc_cn": "印经院议扩刻大藏经，银钱不济。借商银则经成而债立，缓刻则省钱而寺院失望。",
+                "title_en": "The Printing House Debt",
+                "desc_en": "The printing house means to expand the canon but the treasury runs short. Borrow and the blocks get carved; wait and the monasteries grumble.",
+                "choices": [
+                    {"label_cn": "借商银续刻，分年偿还", "label_en": "Borrow and keep carving",
+                     "ops": [{"op": "marker", "name": "ywc_sw_der_e1_done"},
+                             {"op": "treasury", "amount": 500},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 24}]},
+                    {"label_cn": "缓刻三年，先清旧账", "label_en": "Wait three years: clear the old debts",
+                     "ops": [{"op": "marker", "name": "ywc_sw_der_e1_done"},
+                             {"op": "relations", "tag": "TIB", "value": -5}]},
+                ],
+            },
+            {
+                "id": "ywc_der.2", "slot": 2,
+                "title_cn": "护商之约", "desc_cn": "商道劫掠频发，商队请德格护送。出兵则费而收名，请大顺边军则省而权分。",
+                "title_en": "The Caravan Escort Pact",
+                "desc_en": "Raids plague the highland roads and the caravans beg Derge for escort. Ride out at our own cost, or ask Shun's frontier army and split the credit.",
+                "choices": [
+                    {"label_cn": "出兵护商，收护路之名", "label_en": "Escort them ourselves",
+                     "ops": [{"op": "marker", "name": "ywc_sw_der_e2_done"},
+                             {"op": "treasury", "amount": -250},
+                             {"op": "modifier", "name": "ywc_sw_caravan_guard", "months": 24},
+                             {"op": "relations", "tag": "TIB", "value": 10}]},
+                    {"label_cn": "请大顺边军护路", "label_en": "Ask Shun's frontier army",
+                     "ops": [{"op": "marker", "name": "ywc_sw_der_e2_done"},
+                             {"op": "relations", "tag": "SHU", "value": 10},
+                             {"op": "relations", "tag": "TIB", "value": -5}]},
+                ],
+            },
+            {
+                "id": "ywc_der.3", "slot": 3,
+                "title_cn": "僧俗之争", "desc_cn": "印经院管理之权，土司与寺院相持不下。俗官掌印则政令归一，依旧并立则旧 Ruhe。",
+                "title_en": "Monks and Ministers",
+                "desc_en": "The printing house's stewardship sets the chieftain's ministers against the monasteries: one hand governs cleanly, the old duality keeps the peace at a price.",
+                "choices": [
+                    {"label_cn": "俗官掌印，寺院领经资", "label_en": "Ministers take the seal; monasteries keep the income",
+                     "ops": [{"op": "marker", "name": "ywc_sw_der_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_der_resolved"},
+                             {"op": "relations", "tag": "TIB", "value": -10},
+                             {"op": "treasury", "amount": 200}]},
+                    {"label_cn": "依旧并立，各守其旧", "label_en": "Keep the old duality",
+                     "ops": [{"op": "marker", "name": "ywc_sw_der_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_der_failed"},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 12}]},
+                ],
+            },
+        ],
+    },
+    {
+        "short": "gyl", "tag": "GYL", "name_cn": "嘉绒联盟", "name_en": "Gyalrong League",
+        "journal": "ywc_je_sw_gyl",
+        "events": [
+            {
+                "id": "ywc_gyl.1", "slot": 1,
+                "title_cn": "屯田与牧场", "desc_cn": "联盟屯田渐侵牧场，牧部赴会陈情。限屯则边备虚，扩屯则内部怨。",
+                "title_en": "Fields Against Pastures",
+                "desc_en": "The league's farm colonies creep into the pastures and the herders petition the assembly. Curb the farms and the frontier thins; expand them and the tribes seethe.",
+                "choices": [
+                    {"label_cn": "限屯还牧，牧部得直", "label_en": "Curb the farms: the herders win",
+                     "ops": [{"op": "marker", "name": "ywc_sw_gyl_e1_done"},
+                             {"op": "treasury", "amount": -150}]},
+                    {"label_cn": "扩屯固边，牧部自迁", "label_en": "Expand the farms: the herders move",
+                     "ops": [{"op": "marker", "name": "ywc_sw_gyl_e1_done"},
+                             {"op": "treasury", "amount": 250},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 12}]},
+                ],
+            },
+            {
+                "id": "ywc_gyl.2", "slot": 2,
+                "title_cn": "练军之请", "desc_cn": "大顺请嘉绒遣兵受训，为西南屏藩。受训则得新法而听调，辞谢则全旧俗而失援。",
+                "title_en": "The Drill Request",
+                "desc_en": "Shun asks the league to send men for drilling — a shield for the southwest. Accept and gain the new drill at the price of summons; refuse and keep the old ways without a patron.",
+                "choices": [
+                    {"label_cn": "遣三百兵受训，请给饷械", "label_en": "Send three hundred for drilling",
+                     "ops": [{"op": "marker", "name": "ywc_sw_gyl_e2_done"},
+                             {"op": "treasury", "amount": -300},
+                             {"op": "modifier", "name": "ywc_sw_drill_effect", "months": 24},
+                             {"op": "relations", "tag": "SHU", "value": 15}]},
+                    {"label_cn": "辞以旧例，边事自任", "label_en": "Decline: our borders, our ways",
+                     "ops": [{"op": "marker", "name": "ywc_sw_gyl_e2_done"},
+                             {"op": "relations", "tag": "SHU", "value": -5}]},
+                ],
+            },
+            {
+                "id": "ywc_gyl.3", "slot": 3,
+                "title_cn": "盟主之争", "desc_cn": "老盟主病故，七部争立。推强部则号令归一而诸部侧目，轮值则均势而事权不一。",
+                "title_en": "The League Chair",
+                "desc_en": "The old league chief is dead and seven tribes contend. A strong chair commands but breeds envy; a rotating one keeps peace and loses grip.",
+                "choices": [
+                    {"label_cn": "推强部为盟主，号令归一", "label_en": "Seat the strongest tribe",
+                     "ops": [{"op": "marker", "name": "ywc_sw_gyl_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_gyl_resolved"},
+                             {"op": "modifier", "name": "ywc_sw_drill_effect", "months": 12}]},
+                    {"label_cn": "轮值盟主，诸部均势", "label_en": "Rotate the chair among the tribes",
+                     "ops": [{"op": "marker", "name": "ywc_sw_gyl_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_gyl_failed"},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 12}]},
+                ],
+            },
+        ],
+    },
+    {
+        "short": "shd", "tag": "SHD", "name_cn": "掸邦联盟", "name_en": "Shan Confederation",
+        "journal": "ywc_je_sw_shd",
+        "events": [
+            {
+                "id": "ywc_shd.1", "slot": 1,
+                "title_cn": "三十七土司", "desc_cn": "联席会议议贡额与驿路：均摊则众服而迟缓，强部代缴则速而怨聚。",
+                "title_en": "The Thirty-Four Chiefs",
+                "desc_en": "The joint council sets tribute and post-road shares: spread evenly and all agree but slowly, or let the strong sawbwas pay and collect the grudge.",
+                "choices": [
+                    {"label_cn": "三十七土司均摊", "label_en": "Share it across the chiefs",
+                     "ops": [{"op": "marker", "name": "ywc_sw_shd_e1_done"},
+                             {"op": "treasury", "amount": 200},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 12}]},
+                    {"label_cn": "强部代缴，贡期无误", "label_en": "The strong sawbwas pay on time",
+                     "ops": [{"op": "marker", "name": "ywc_sw_shd_e1_done"},
+                             {"op": "treasury", "amount": 350},
+                             {"op": "relations", "tag": "SHU", "value": 5}]},
+                ],
+            },
+            {
+                "id": "ywc_shd.2", "slot": 2,
+                "title_cn": "设官之请", "desc_cn": "大顺请于缅宁设流官，理商路诉讼。受官则名分归顺而土司权削，拒官则旧制完而边务自理。",
+                "title_en": "The Magistrate Request",
+                "desc_en": "Shun asks to post a magistrate at Mianning for the trade-road suits. Accept and the suzerain's law takes root; refuse and the old order keeps its own.",
+                "choices": [
+                    {"label_cn": "受官，请以土司会同听讼", "label_en": "Accept, with the chiefs sitting alongside",
+                     "ops": [{"op": "marker", "name": "ywc_sw_shd_e2_done"},
+                             {"op": "relations", "tag": "SHU", "value": 15},
+                             {"op": "treasury", "amount": 100}]},
+                    {"label_cn": "拒官，边务土司自理", "label_en": "Refuse: our chiefs keep our law",
+                     "ops": [{"op": "marker", "name": "ywc_sw_shd_e2_done"},
+                             {"op": "relations", "tag": "SHU", "value": -10}]},
+                ],
+            },
+            {
+                "id": "ywc_shd.3", "slot": 3,
+                "title_cn": "茶叶与罂粟", "desc_cn": "山地获利两途：禁罂粟、广植茶则久利而近利顿减；放任罂粟则白银立至而烟毒蔓延。",
+                "title_en": "Tea or Poppy",
+                "desc_en": "The hills can grow tea or poppy: ban the poppy for slow honest money, or let it bloom for silver now and blight later.",
+                "choices": [
+                    {"label_cn": "禁罂粟、广植茶，请大顺商路相助", "label_en": "Ban poppy, plant tea, ask Shun's roads",
+                     "ops": [{"op": "marker", "name": "ywc_sw_shd_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_shd_resolved"},
+                             {"op": "treasury", "amount": -150},
+                             {"op": "relations", "tag": "SHU", "value": 10},
+                             {"op": "modifier", "name": "ywc_sw_tea_charter", "months": 24}]},
+                    {"label_cn": "放任罂粟，坐收其银", "label_en": "Let the poppy bloom",
+                     "ops": [{"op": "marker", "name": "ywc_sw_shd_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_shd_failed"},
+                             {"op": "treasury", "amount": 400},
+                             {"op": "relations", "tag": "SHU", "value": -10},
+                             {"op": "modifier", "name": "ywc_sw_poppy_shadow", "months": 24}]},
+                ],
+            },
+        ],
+    },
+    {
+        "short": "ara", "tag": "ARA", "name_cn": "若开", "name_en": "Arakan",
+        "journal": "ywc_je_sw_ara",
+        "events": [
+            {
+                "id": "ywc_ara.1", "slot": 1,
+                "title_cn": "驻扎官的账单", "desc_cn": "英国驻扎官摊派防务费，限日出结。缴纳则库竭而相安，拖欠则生嫌隙。",
+                "title_en": "The Resident's Bill",
+                "desc_en": "The British Resident assesses a defence levy, payment at once. Pay and the treasury empties quietly; stall and the friction shows.",
+                "choices": [
+                    {"label_cn": "如数缴纳，不生枝节", "label_en": "Pay in full, no fuss",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ara_e1_done"},
+                             {"op": "treasury", "amount": -300},
+                             {"op": "relations", "tag": "GBR", "value": 10}]},
+                    {"label_cn": "拖欠分期，以灾年为辞", "label_en": "Stall: plead the lean harvest",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ara_e1_done"},
+                             {"op": "relations", "tag": "GBR", "value": -10},
+                             {"op": "modifier", "name": "ywc_sw_levy_burden", "months": 12}]},
+                ],
+            },
+            {
+                "id": "ywc_ara.2", "slot": 2,
+                "title_cn": "缅甸流亡者", "desc_cn": "缅甸王族数人渡界而至，若开僧俗收留之。庇护则得人心而触怒缅局，引渡则安邻而寒故旧。",
+                "title_en": "The Burmese Exiles",
+                "desc_en": "Princes of the Burmese royal house cross the border and the monks shelter them. Harbour them and win hearts while provoking Ava; hand them over and calm the neighbour at a cost.",
+                "choices": [
+                    {"label_cn": "庇护之，请英国体谅", "label_en": "Shelter them; ask Britain's forbearance",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ara_e2_done"},
+                             {"op": "relations", "tag": "BUR", "value": -10},
+                             {"op": "modifier", "name": "ywc_sw_exile_strain", "months": 24}]},
+                    {"label_cn": "引渡以安缅局", "label_en": "Hand them over to calm Ava",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ara_e2_done"},
+                             {"op": "relations", "tag": "GBR", "value": 10},
+                             {"op": "relations", "tag": "BUR", "value": 5}]},
+                ],
+            },
+            {
+                "id": "ywc_ara.3", "slot": 3,
+                "title_cn": "稻米专约", "desc_cn": "英国求稻米出口专约，价定多年。签则收入稳而农受压价，限则价自主而英情不悦。",
+                "title_en": "The Rice Contract",
+                "desc_en": "Britain offers a multi-year rice export contract at fixed prices. Sign for steady income and squeezed growers, or cap exports and sour the Resident.",
+                "choices": [
+                    {"label_cn": "签专约，岁供定额", "label_en": "Sign the contract: fixed quotas",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ara_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_ara_resolved"},
+                             {"op": "relations", "tag": "GBR", "value": 15},
+                             {"op": "modifier", "name": "ywc_sw_rice_contract", "months": 24}]},
+                    {"label_cn": "限额外销，余米自售", "label_en": "Cap the exports",
+                     "ops": [{"op": "marker", "name": "ywc_sw_ara_e3_done"},
+                             {"op": "marker", "name": "ywc_sw_ara_failed"},
+                             {"op": "relations", "tag": "GBR", "value": -10},
+                             {"op": "treasury", "amount": 150}]},
+                ],
+            },
+        ],
+    },
+]
+
+
+def main() -> int:
+    count = sum(len(line["events"]) for line in LINES)
+    ids = [event["id"] for line in LINES for event in line["events"]]
+    assert len(ids) == len(set(ids)) == 18, ids
+    catalog = {
+        "schema_version": 1,
+        "source": ["docs/superpowers/specs/2026-09-26-六六大顺-西南六国设计.md"],
+        "lines": LINES,
+    }
+    OUT.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"wrote {count} southwest events to {OUT.name}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

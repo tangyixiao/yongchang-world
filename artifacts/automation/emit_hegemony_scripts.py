@@ -153,7 +153,7 @@ ywc_shift_heritage_legitimacy = {
 LOC_CN = {
     "ywc_hegemony_pulse": "推进天命霸权进程",
     "ywc_shift_heritage_legitimacy": "调整传统正统",
-    "ywc_je_hegemony_order": "天命霸权：顺我者昌",
+    "ywc_je_hegemony_order": "受命于天，既寿永昌——天命霸权",
     "ywc_je_hegemony_order_reason": "大顺既定天下之名，颁朝贡新籍：顺者得互市与庇护，逆者受孤立与问责。",
     "ywc_tributary_trade": "朝贡互市",
     "ywc_defiance_isolation": "逆藩之罚",
@@ -165,7 +165,7 @@ LOC_CN = {
 LOC_EN = {
     "ywc_hegemony_pulse": "Advance the mandate process",
     "ywc_shift_heritage_legitimacy": "Shift heritage legitimacy",
-    "ywc_je_hegemony_order": "The Mandate: Submit and Prosper",
+    "ywc_je_hegemony_order": "The Mandate of Heaven: Enduring Prosperity",
     "ywc_je_hegemony_order_reason": "With the mandate settled, Shun's tribute registry is proclaimed: the enrolled trade and find shelter; the defiant face isolation and censure.",
     "ywc_tributary_trade": "Tributary Trade",
     "ywc_defiance_isolation": "Defiance Censure",
