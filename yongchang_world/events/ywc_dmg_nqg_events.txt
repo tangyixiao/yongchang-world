@@ -1,0 +1,641 @@
+﻿namespace = ywc_dmg
+
+# Events ywc_dmg.1-5 are wired to DMG journals: each journal pulses monthly
+# until its decision is taken. Events 6-8 stay reserved for later chain depth.
+
+ywc_dmg.1 = {
+    type = country_event
+    title = ywc_dmg.1.t
+    desc = ywc_dmg.1.d
+    duration = 1
+    option = {
+        name = ywc_dmg.1.a
+        default_option = yes
+        set_variable = { name = ywc_je_dongming_who_inherits_china_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_dmg_huafei_compact months = 24 }
+    }
+    option = {
+        name = ywc_dmg.1.b
+        set_variable = { name = ywc_je_dongming_who_inherits_china_failed value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_dmg.2 = {
+    type = country_event
+    title = ywc_dmg.2.t
+    desc = ywc_dmg.2.d
+    duration = 1
+    option = {
+        name = ywc_dmg.2.a
+        default_option = yes
+        set_variable = { name = ywc_je_dongming_spanish_frontier_resolved value = 1 }
+        change_relations = { country = c:SPA value = 20 }
+        create_bidirectional_truce = { country = c:SPA months = 24 }
+    }
+    option = {
+        name = ywc_dmg.2.b
+        set_variable = { name = ywc_je_dongming_spanish_frontier_failed value = 1 }
+        change_relations = { country = c:SPA value = -30 }
+        add_modifier = { name = ywc_dmg_spanish_war_preparation months = 24 }
+    }
+}
+
+ywc_dmg.3 = {
+    type = country_event
+    title = ywc_dmg.3.t
+    desc = ywc_dmg.3.d
+    duration = 1
+    option = {
+        name = ywc_dmg.3.a
+        default_option = yes
+        set_variable = { name = ywc_je_dongming_local_compact_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_dmg_republic_frontier months = 24 }
+    }
+    option = {
+        name = ywc_dmg.3.b
+        set_variable = { name = ywc_je_dongming_local_compact_failed value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_dmg.4 = {
+    type = country_event
+    title = ywc_dmg.4.t
+    desc = ywc_dmg.4.d
+    duration = 1
+    option = {
+        name = ywc_dmg.4.a
+        default_option = yes
+        ai_chance = {
+            base = 60
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 60 } add = 25 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 70 } add = -20 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_dmg_huafei_monarchy_active }
+            NOT = { has_variable = ywc_route_dmg_local_republic_active }
+            NOT = { has_variable = ywc_route_dmg_huafei_monarchy_success }
+            NOT = { has_variable = ywc_route_dmg_huafei_monarchy_failure }
+            NOT = { has_variable = ywc_route_dmg_huafei_monarchy_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_dmg_huafei_monarchy_abandon }
+            remove_variable = ywc_route_dmg_huafei_monarchy_abandon
+        }
+        set_variable = { name = ywc_route_dmg_huafei_monarchy_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_dmg_huafei_compact >= 70 }
+            add_modifier = { name = ywc_flavor_dmg_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_dmg_huafei_compact < 30 }
+            add_modifier = { name = ywc_flavor_dmg_low months = 12 }
+        }
+        set_variable = { name = ywc_route_dmg_huafei_monarchy_progress value = 0 }
+        change_variable = { name = ywc_route_dmg_huafei_monarchy_progress add = 20 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_dmg_huafei_compact months = 12 }
+    }
+    option = {
+        name = ywc_dmg.4.b
+        ai_chance = {
+            base = 78
+            modifier = { trigger = { var:ywc_route_dmg_huafei_monarchy_progress >= 80 } add = 18 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 60 } add = 10 }
+        }
+        trigger = { has_variable = ywc_route_dmg_huafei_monarchy_active }
+        if = {
+            limit = { var:ywc_route_dmg_huafei_monarchy_progress >= 100 }
+            set_variable = { name = ywc_route_dmg_huafei_monarchy_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_dmg_huafei_compact >= 70 }
+                add_modifier = { name = ywc_flavor_dmg_high months = 24 }
+            }
+            remove_variable = ywc_route_dmg_huafei_monarchy_active
+            ywc_add_heritage_legitimacy = yes
+            add_modifier = { name = ywc_dmg_huafei_compact months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_dmg_huafei_monarchy_progress add = 20 }
+            clamp_variable = { name = ywc_route_dmg_huafei_monarchy_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_dmg.4.c
+        ai_chance = {
+            base = 4
+            modifier = { trigger = { var:ywc_route_dmg_huafei_monarchy_progress >= 60 } add = 35 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy < 30 } add = 20 }
+        }
+        trigger = { has_variable = ywc_route_dmg_huafei_monarchy_active }
+        if = {
+            limit = { var:ywc_route_dmg_huafei_monarchy_progress >= 60 }
+            set_variable = { name = ywc_route_dmg_huafei_monarchy_failure value = 1 }
+            ywc_lower_heritage_legitimacy = yes
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_dmg_huafei_monarchy_abandon value = 1 }
+            set_variable = { name = ywc_route_dmg_huafei_monarchy_abandonment_cooldown days = 365 }
+            ywc_lower_heritage_legitimacy = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_dmg_huafei_monarchy_active
+    }
+}
+
+ywc_dmg.5 = {
+    type = country_event
+    title = ywc_dmg.5.t
+    desc = ywc_dmg.5.d
+    duration = 1
+    option = {
+        name = ywc_dmg.5.a
+        default_option = yes
+        ai_chance = {
+            base = 32
+            modifier = { trigger = { var:ywc_maritime_network_level >= 40 } add = 30 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 70 } add = -15 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_dmg_local_republic_active }
+            NOT = { has_variable = ywc_route_dmg_huafei_monarchy_active }
+            NOT = { has_variable = ywc_route_dmg_local_republic_success }
+            NOT = { has_variable = ywc_route_dmg_local_republic_failure }
+            NOT = { has_variable = ywc_route_dmg_local_republic_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_dmg_local_republic_abandon }
+            remove_variable = ywc_route_dmg_local_republic_abandon
+        }
+        set_variable = { name = ywc_route_dmg_local_republic_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_dmg_huafei_compact >= 70 }
+            add_modifier = { name = ywc_flavor_dmg_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_dmg_huafei_compact < 30 }
+            add_modifier = { name = ywc_flavor_dmg_low months = 12 }
+        }
+        set_variable = { name = ywc_route_dmg_local_republic_progress value = 0 }
+        change_variable = { name = ywc_route_dmg_local_republic_progress add = 20 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_dmg_republic_frontier months = 12 }
+    }
+    option = {
+        name = ywc_dmg.5.b
+        ai_chance = {
+            base = 82
+            modifier = { trigger = { var:ywc_route_dmg_local_republic_progress >= 80 } add = 12 }
+            modifier = { trigger = { var:ywc_maritime_network_level >= 50 } add = 15 }
+        }
+        trigger = { has_variable = ywc_route_dmg_local_republic_active }
+        if = {
+            limit = { var:ywc_route_dmg_local_republic_progress >= 100 }
+            set_variable = { name = ywc_route_dmg_local_republic_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_dmg_huafei_compact >= 70 }
+                add_modifier = { name = ywc_flavor_dmg_high months = 24 }
+            }
+            remove_variable = ywc_route_dmg_local_republic_active
+            ywc_open_trade_route = yes
+            add_modifier = { name = ywc_dmg_republic_frontier months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_dmg_local_republic_progress add = 20 }
+            clamp_variable = { name = ywc_route_dmg_local_republic_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_dmg.5.c
+        ai_chance = {
+            base = 3
+            modifier = { trigger = { var:ywc_route_dmg_local_republic_progress >= 60 } add = 40 }
+            modifier = { trigger = { var:ywc_maritime_network_level < 20 } add = 18 }
+        }
+        trigger = { has_variable = ywc_route_dmg_local_republic_active }
+        if = {
+            limit = { var:ywc_route_dmg_local_republic_progress >= 60 }
+            set_variable = { name = ywc_route_dmg_local_republic_failure value = 1 }
+            ywc_reduce_maritime_network = yes
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_dmg_local_republic_abandon value = 1 }
+            set_variable = { name = ywc_route_dmg_local_republic_abandonment_cooldown days = 365 }
+            ywc_reduce_maritime_network = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_dmg_local_republic_active
+    }
+}
+
+
+
+namespace = ywc_nqg
+
+# Events ywc_nqg.1-5 are wired to NQG journals. The Russian choice is a
+# decision journal: both options complete it and record which path was taken.
+
+ywc_nqg.1 = {
+    type = country_event
+    title = ywc_nqg.1.t
+    desc = ywc_nqg.1.d
+    duration = 1
+    option = {
+        name = ywc_nqg.1.a
+        default_option = yes
+        set_variable = { name = ywc_je_northern_qing_exile_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_ai_northern_qing_survival months = 24 }
+    }
+    option = {
+        name = ywc_nqg.1.b
+        set_variable = { name = ywc_je_northern_qing_exile_failed value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_nqg.2 = {
+    type = country_event
+    title = ywc_nqg.2.t
+    desc = ywc_nqg.2.d
+    duration = 1
+    option = {
+        name = ywc_nqg.2.a
+        default_option = yes
+        set_variable = { name = ywc_je_northern_qing_russian_choice_resolved value = 1 }
+        set_variable = { name = ywc_nqg_russia_aligned value = 1 }
+        change_relations = { country = c:RUS value = 25 }
+        add_modifier = { name = ywc_nqg_russian_alignment months = 24 }
+    }
+    option = {
+        name = ywc_nqg.2.b
+        set_variable = { name = ywc_je_northern_qing_russian_choice_resolved value = 1 }
+        set_variable = { name = ywc_nqg_russia_refused value = 1 }
+        change_relations = { country = c:RUS value = -25 }
+        add_modifier = { name = ywc_nqg_russian_refusal months = 24 }
+    }
+}
+
+ywc_nqg.3 = {
+    type = country_event
+    title = ywc_nqg.3.t
+    desc = ywc_nqg.3.d
+    duration = 1
+    option = {
+        name = ywc_nqg.3.a
+        default_option = yes
+        set_variable = { name = ywc_je_northern_qing_island_society_resolved value = 1 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_nqg_island_council months = 24 }
+    }
+    option = {
+        name = ywc_nqg.3.b
+        set_variable = { name = ywc_je_northern_qing_island_society_failed value = 1 }
+        ywc_reduce_maritime_network = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_nqg.4 = {
+    type = country_event
+    title = ywc_nqg.4.t
+    desc = ywc_nqg.4.d
+    duration = 1
+    option = {
+        name = ywc_nqg.4.a
+        default_option = yes
+        ai_chance = {
+            base = 40
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 55 } add = 25 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 60 } add = -15 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_nqg_sakhalin_restoration_active }
+            NOT = { has_variable = ywc_route_nqg_multicultural_island_active }
+            NOT = { has_variable = ywc_route_nqg_sakhalin_restoration_success }
+            NOT = { has_variable = ywc_route_nqg_sakhalin_restoration_failure }
+            NOT = { has_variable = ywc_route_nqg_sakhalin_restoration_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_nqg_sakhalin_restoration_abandon }
+            remove_variable = ywc_route_nqg_sakhalin_restoration_abandon
+        }
+        set_variable = { name = ywc_route_nqg_sakhalin_restoration_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_nqg_island_supply >= 70 }
+            add_modifier = { name = ywc_flavor_nqg_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_nqg_island_supply < 30 }
+            add_modifier = { name = ywc_flavor_nqg_low months = 12 }
+        }
+        set_variable = { name = ywc_route_nqg_sakhalin_restoration_progress value = 0 }
+        change_variable = { name = ywc_route_nqg_sakhalin_restoration_progress add = 20 }
+        ywc_add_heritage_legitimacy = yes
+        ywc_raise_autonomy_pressure = yes
+        add_modifier = { name = ywc_nqg_sakhalin_expedition months = 12 }
+    }
+    option = {
+        name = ywc_nqg.4.b
+        ai_chance = {
+            base = 76
+            modifier = { trigger = { var:ywc_route_nqg_sakhalin_restoration_progress >= 80 } add = 20 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 60 } add = 10 }
+        }
+        trigger = { has_variable = ywc_route_nqg_sakhalin_restoration_active }
+        if = {
+            limit = { var:ywc_route_nqg_sakhalin_restoration_progress >= 100 }
+            set_variable = { name = ywc_route_nqg_sakhalin_restoration_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_nqg_island_supply >= 70 }
+                add_modifier = { name = ywc_flavor_nqg_high months = 24 }
+            }
+            remove_variable = ywc_route_nqg_sakhalin_restoration_active
+            ywc_add_heritage_legitimacy = yes
+            add_modifier = { name = ywc_nqg_sakhalin_expedition months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_nqg_sakhalin_restoration_progress add = 20 }
+            clamp_variable = { name = ywc_route_nqg_sakhalin_restoration_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+            ywc_raise_autonomy_pressure = yes
+        }
+    }
+    option = {
+        name = ywc_nqg.4.c
+        ai_chance = {
+            base = 5
+            modifier = { trigger = { var:ywc_route_nqg_sakhalin_restoration_progress >= 60 } add = 35 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy < 30 } add = 15 }
+        }
+        trigger = { has_variable = ywc_route_nqg_sakhalin_restoration_active }
+        if = {
+            limit = { var:ywc_route_nqg_sakhalin_restoration_progress >= 60 }
+            set_variable = { name = ywc_route_nqg_sakhalin_restoration_failure value = 1 }
+            ywc_lower_heritage_legitimacy = yes
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_nqg_sakhalin_restoration_abandon value = 1 }
+            set_variable = { name = ywc_route_nqg_sakhalin_restoration_abandonment_cooldown days = 365 }
+            ywc_lower_autonomy_pressure = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_nqg_sakhalin_restoration_active
+    }
+}
+
+ywc_nqg.5 = {
+    type = country_event
+    title = ywc_nqg.5.t
+    desc = ywc_nqg.5.d
+    duration = 1
+    option = {
+        name = ywc_nqg.5.a
+        default_option = yes
+        ai_chance = {
+            base = 55
+            modifier = { trigger = { var:ywc_maritime_network_level >= 50 } add = 25 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 70 } add = 10 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_nqg_multicultural_island_active }
+            NOT = { has_variable = ywc_route_nqg_sakhalin_restoration_active }
+            NOT = { has_variable = ywc_route_nqg_multicultural_island_success }
+            NOT = { has_variable = ywc_route_nqg_multicultural_island_failure }
+            NOT = { has_variable = ywc_route_nqg_multicultural_island_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_nqg_multicultural_island_abandon }
+            remove_variable = ywc_route_nqg_multicultural_island_abandon
+        }
+        set_variable = { name = ywc_route_nqg_multicultural_island_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_nqg_island_supply >= 70 }
+            add_modifier = { name = ywc_flavor_nqg_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_nqg_island_supply < 30 }
+            add_modifier = { name = ywc_flavor_nqg_low months = 12 }
+        }
+        set_variable = { name = ywc_route_nqg_multicultural_island_progress value = 0 }
+        change_variable = { name = ywc_route_nqg_multicultural_island_progress add = 20 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_nqg_island_council months = 12 }
+    }
+    option = {
+        name = ywc_nqg.5.b
+        ai_chance = {
+            base = 80
+            modifier = { trigger = { var:ywc_route_nqg_multicultural_island_progress >= 80 } add = 15 }
+            modifier = { trigger = { var:ywc_maritime_network_level >= 40 } add = 12 }
+        }
+        trigger = { has_variable = ywc_route_nqg_multicultural_island_active }
+        if = {
+            limit = { var:ywc_route_nqg_multicultural_island_progress >= 100 }
+            set_variable = { name = ywc_route_nqg_multicultural_island_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_nqg_island_supply >= 70 }
+                add_modifier = { name = ywc_flavor_nqg_high months = 24 }
+            }
+            remove_variable = ywc_route_nqg_multicultural_island_active
+            ywc_add_maritime_network = yes
+            add_modifier = { name = ywc_nqg_island_council months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_nqg_multicultural_island_progress add = 20 }
+            clamp_variable = { name = ywc_route_nqg_multicultural_island_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_nqg.5.c
+        ai_chance = {
+            base = 4
+            modifier = { trigger = { var:ywc_route_nqg_multicultural_island_progress >= 60 } add = 38 }
+            modifier = { trigger = { var:ywc_maritime_network_level < 20 } add = 18 }
+        }
+        trigger = { has_variable = ywc_route_nqg_multicultural_island_active }
+        if = {
+            limit = { var:ywc_route_nqg_multicultural_island_progress >= 60 }
+            set_variable = { name = ywc_route_nqg_multicultural_island_failure value = 1 }
+            ywc_reduce_maritime_network = yes
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_nqg_multicultural_island_abandon value = 1 }
+            set_variable = { name = ywc_route_nqg_multicultural_island_abandonment_cooldown days = 365 }
+            ywc_lower_autonomy_pressure = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_nqg_multicultural_island_active
+    }
+}
+
+# Flavor events ywc_dmg.6-8: a Huafei compact can be built through a court or
+# a council, but either direction has to survive Spanish pressure.
+ywc_dmg.6 = {
+    type = country_event
+    title = ywc_dmg.6.t
+    desc = ywc_dmg.6.d
+    duration = 1
+    option = {
+        name = ywc_dmg.6.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_dmg_c1_prelude value = 1 }
+        ywc_flavor_dmg_monarchy = yes
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_flavor_dmg_high months = 12 }
+    }
+    option = {
+        name = ywc_dmg.6.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_dmg_c1_prelude value = 1 }
+        ywc_flavor_dmg_republic = yes
+        add_modifier = { name = ywc_dmg_republic_frontier months = 12 }
+    }
+}
+
+ywc_dmg.7 = {
+    type = country_event
+    title = ywc_dmg.7.t
+    desc = ywc_dmg.7.d
+    duration = 1
+    option = {
+        name = ywc_dmg.7.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_dmg_c2_prelude value = 1 }
+        ywc_flavor_dmg_monarchy = yes
+        add_modifier = { name = ywc_dmg_huafei_compact months = 12 }
+    }
+    option = {
+        name = ywc_dmg.7.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_dmg_c2_prelude value = 1 }
+        ywc_flavor_dmg_republic = yes
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_flavor_dmg_low months = 12 }
+    }
+}
+
+ywc_dmg.8 = {
+    type = country_event
+    title = ywc_dmg.8.t
+    desc = ywc_dmg.8.d
+    duration = 1
+    option = {
+        name = ywc_dmg.8.a
+        ai_chance = { base = 70 }
+        default_option = yes
+        trigger = { var:ywc_flavor_dmg_huafei_compact >= 70 }
+        set_variable = { name = ywc_campaign_dmg_c3_prelude value = 1 }
+        add_modifier = { name = ywc_flavor_dmg_high months = 120 }
+    }
+    option = {
+        name = ywc_dmg.8.b
+        ai_chance = { base = 70 }
+        trigger = { var:ywc_flavor_dmg_huafei_compact < 30 }
+        set_variable = { name = ywc_campaign_dmg_c3_prelude value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_dmg_spanish_war_preparation months = 12 }
+        add_modifier = { name = ywc_flavor_dmg_low months = 24 }
+    }
+    option = {
+        name = ywc_dmg.8.c
+        ai_chance = { base = 30 }
+        set_variable = { name = ywc_campaign_dmg_c3_prelude value = 1 }
+        add_modifier = { name = ywc_dmg_republic_frontier months = 24 }
+    }
+}
+
+# Flavor events ywc_nqg.6-8: a tiny island court must divide scarce stores
+# between a restoration expedition and a durable multi-ethnic society.
+ywc_nqg.6 = {
+    type = country_event
+    title = ywc_nqg.6.t
+    desc = ywc_nqg.6.d
+    duration = 1
+    option = {
+        name = ywc_nqg.6.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_nqg_c1_prelude value = 1 }
+        ywc_flavor_nqg_restoration = yes
+        add_modifier = { name = ywc_nqg_sakhalin_expedition months = 12 }
+    }
+    option = {
+        name = ywc_nqg.6.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_nqg_c1_prelude value = 1 }
+        ywc_flavor_nqg_island = yes
+        add_modifier = { name = ywc_nqg_island_council months = 12 }
+    }
+}
+
+ywc_nqg.7 = {
+    type = country_event
+    title = ywc_nqg.7.t
+    desc = ywc_nqg.7.d
+    duration = 1
+    option = {
+        name = ywc_nqg.7.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_nqg_c2_prelude value = 1 }
+        ywc_flavor_nqg_restoration = yes
+        add_modifier = { name = ywc_nqg_sakhalin_expedition months = 12 }
+    }
+    option = {
+        name = ywc_nqg.7.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_nqg_c2_prelude value = 1 }
+        ywc_flavor_nqg_island = yes
+        add_modifier = { name = ywc_nqg_island_council months = 12 }
+    }
+}
+
+ywc_nqg.8 = {
+    type = country_event
+    title = ywc_nqg.8.t
+    desc = ywc_nqg.8.d
+    duration = 1
+    option = {
+        name = ywc_nqg.8.a
+        ai_chance = { base = 70 }
+        default_option = yes
+        trigger = { var:ywc_flavor_nqg_island_supply >= 70 }
+        set_variable = { name = ywc_campaign_nqg_c3_prelude value = 1 }
+        add_modifier = { name = ywc_flavor_nqg_high months = 120 }
+    }
+    option = {
+        name = ywc_nqg.8.b
+        ai_chance = { base = 70 }
+        trigger = { var:ywc_flavor_nqg_island_supply < 30 }
+        set_variable = { name = ywc_campaign_nqg_c3_prelude value = 1 }
+        add_modifier = { name = ywc_nqg_russian_refusal months = 12 }
+        add_modifier = { name = ywc_flavor_nqg_low months = 24 }
+    }
+    option = {
+        name = ywc_nqg.8.c
+        ai_chance = { base = 30 }
+        ai_chance = { base = 30 }
+        set_variable = { name = ywc_campaign_nqg_c3_prelude value = 1 }
+        add_modifier = { name = ywc_nqg_island_council months = 24 }
+    }
+}

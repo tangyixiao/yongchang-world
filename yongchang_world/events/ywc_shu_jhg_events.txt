@@ -1,0 +1,706 @@
+﻿namespace = ywc_shu
+
+# Events ywc_shu.1-5 are wired to SHU auxiliary journals and routes.
+
+ywc_shu.1 = {
+    type = country_event
+    title = ywc_shu.1.t
+    desc = ywc_shu.1.d
+    duration = 1
+    option = {
+        name = ywc_shu.1.a
+        default_option = yes
+        set_variable = { name = ywc_je_shu_scholar_merchants_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 24 }
+    }
+    option = {
+        name = ywc_shu.1.b
+        set_variable = { name = ywc_je_shu_scholar_merchants_failed value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_shu.2 = {
+    type = country_event
+    title = ywc_shu.2.t
+    desc = ywc_shu.2.d
+    duration = 1
+    option = {
+        name = ywc_shu.2.a
+        default_option = yes
+        set_variable = { name = ywc_je_shu_blackwater_frontier_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 24 }
+    }
+    option = {
+        name = ywc_shu.2.b
+        set_variable = { name = ywc_je_shu_blackwater_frontier_failed value = 1 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_shu_customs_network months = 24 }
+    }
+}
+
+ywc_shu.3 = {
+    type = country_event
+    title = ywc_shu.3.t
+    desc = ywc_shu.3.d
+    duration = 1
+    option = {
+        name = ywc_shu.3.a
+        default_option = yes
+        set_variable = { name = ywc_je_shu_opium_question_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 24 }
+    }
+    option = {
+        name = ywc_shu.3.b
+        set_variable = { name = ywc_je_shu_opium_question_failed value = 1 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_shu_customs_network months = 24 }
+    }
+}
+
+ywc_shu.4 = {
+    type = country_event
+    title = ywc_shu.4.t
+    desc = ywc_shu.4.d
+    duration = 1
+    option = {
+        name = ywc_shu.4.a
+        default_option = yes
+        ai_chance = {
+            base = 50
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 55 } add = 25 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 70 } add = -18 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_active }
+            NOT = { has_variable = ywc_route_shu_customs_reform_active }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_success }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_failure }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_shu_bureaucratic_integration_abandon }
+            remove_variable = ywc_route_shu_bureaucratic_integration_abandon
+        }
+        set_variable = { name = ywc_route_shu_bureaucratic_integration_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_shu_court_balance >= 70 }
+            add_modifier = { name = ywc_flavor_shu_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_shu_court_balance < 30 }
+            add_modifier = { name = ywc_flavor_shu_low months = 12 }
+        }
+        set_variable = { name = ywc_route_shu_bureaucratic_integration_progress value = 0 }
+        change_variable = { name = ywc_route_shu_bureaucratic_integration_progress add = 20 }
+        clamp_variable = { name = ywc_route_shu_bureaucratic_integration_progress min = 0 max = 100 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 12 }
+    }
+    option = {
+        name = ywc_shu.4.b
+        ai_chance = {
+            base = 80
+            modifier = { trigger = { var:ywc_route_shu_bureaucratic_integration_progress >= 80 } add = 15 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 60 } add = 12 }
+        }
+        trigger = {
+            has_variable = ywc_route_shu_bureaucratic_integration_active
+            has_variable = ywc_route_shu_bureaucratic_integration_progress
+        }
+        if = {
+            limit = { var:ywc_route_shu_bureaucratic_integration_progress >= 100 }
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_shu_court_balance >= 70 }
+                add_modifier = { name = ywc_flavor_shu_high months = 24 }
+            }
+            remove_variable = ywc_route_shu_bureaucratic_integration_active
+            ywc_add_heritage_legitimacy = yes
+            add_modifier = { name = ywc_shu_bureaucratic_commitment months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_shu_bureaucratic_integration_progress add = 20 }
+            clamp_variable = { name = ywc_route_shu_bureaucratic_integration_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_shu.4.c
+        ai_chance = {
+            base = 4
+            modifier = { trigger = { var:ywc_route_shu_bureaucratic_integration_progress >= 60 } add = 38 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy < 30 } add = 15 }
+        }
+        trigger = { has_variable = ywc_route_shu_bureaucratic_integration_active }
+        if = {
+            limit = { var:ywc_route_shu_bureaucratic_integration_progress >= 60 }
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_failure value = 1 }
+            ywc_lower_heritage_legitimacy = yes
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_abandon value = 1 }
+            set_variable = { name = ywc_route_shu_bureaucratic_integration_abandonment_cooldown days = 365 }
+            ywc_lower_heritage_legitimacy = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_shu_bureaucratic_integration_active
+    }
+}
+
+ywc_shu.5 = {
+    type = country_event
+    title = ywc_shu.5.t
+    desc = ywc_shu.5.d
+    duration = 1
+    option = {
+        name = ywc_shu.5.a
+        default_option = yes
+        ai_chance = {
+            base = 45
+            modifier = { trigger = { var:ywc_maritime_network_level >= 35 } add = 30 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 70 } add = -15 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_shu_customs_reform_active }
+            NOT = { has_variable = ywc_route_shu_bureaucratic_integration_active }
+            NOT = { has_variable = ywc_route_shu_customs_reform_success }
+            NOT = { has_variable = ywc_route_shu_customs_reform_failure }
+            NOT = { has_variable = ywc_route_shu_customs_reform_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_shu_customs_reform_abandon }
+            remove_variable = ywc_route_shu_customs_reform_abandon
+        }
+        set_variable = { name = ywc_route_shu_customs_reform_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_shu_court_balance >= 70 }
+            add_modifier = { name = ywc_flavor_shu_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_shu_court_balance < 30 }
+            add_modifier = { name = ywc_flavor_shu_low months = 12 }
+        }
+        set_variable = { name = ywc_route_shu_customs_reform_progress value = 0 }
+        change_variable = { name = ywc_route_shu_customs_reform_progress add = 20 }
+        clamp_variable = { name = ywc_route_shu_customs_reform_progress min = 0 max = 100 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_shu_customs_network months = 12 }
+    }
+    option = {
+        name = ywc_shu.5.b
+        ai_chance = {
+            base = 83
+            modifier = { trigger = { var:ywc_route_shu_customs_reform_progress >= 80 } add = 15 }
+            modifier = { trigger = { var:ywc_maritime_network_level >= 50 } add = 12 }
+        }
+        trigger = {
+            has_variable = ywc_route_shu_customs_reform_active
+            has_variable = ywc_route_shu_customs_reform_progress
+        }
+        if = {
+            limit = { var:ywc_route_shu_customs_reform_progress >= 100 }
+            set_variable = { name = ywc_route_shu_customs_reform_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_shu_court_balance >= 70 }
+                add_modifier = { name = ywc_flavor_shu_high months = 24 }
+            }
+            remove_variable = ywc_route_shu_customs_reform_active
+            ywc_add_maritime_network = yes
+            add_modifier = { name = ywc_shu_customs_network months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_shu_customs_reform_progress add = 20 }
+            clamp_variable = { name = ywc_route_shu_customs_reform_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+        }
+    }
+    option = {
+        name = ywc_shu.5.c
+        ai_chance = {
+            base = 3
+            modifier = { trigger = { var:ywc_route_shu_customs_reform_progress >= 60 } add = 40 }
+            modifier = { trigger = { var:ywc_maritime_network_level < 20 } add = 18 }
+        }
+        trigger = { has_variable = ywc_route_shu_customs_reform_active }
+        if = {
+            limit = { var:ywc_route_shu_customs_reform_progress >= 60 }
+            set_variable = { name = ywc_route_shu_customs_reform_failure value = 1 }
+            ywc_reduce_maritime_network = yes
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            set_variable = { name = ywc_route_shu_customs_reform_abandon value = 1 }
+            set_variable = { name = ywc_route_shu_customs_reform_abandonment_cooldown days = 365 }
+            ywc_reduce_maritime_network = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_shu_customs_reform_active
+    }
+}
+
+# Main journal decision for SHU (ywc_je_yongchang_century).
+ywc_shu.6 = {
+    type = country_event
+    title = ywc_shu.6.t
+    desc = ywc_shu.6.d
+    duration = 1
+    option = {
+        name = ywc_shu.6.a
+        default_option = yes
+        trigger = {
+            NOT = { has_variable = ywc_je_yongchang_century_resolved }
+            NOT = { has_variable = ywc_je_yongchang_century_failed }
+            NOT = { has_variable = ywc_je_yongchang_century_progress }
+        }
+        set_variable = { name = ywc_je_yongchang_century_progress value = 20 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 12 }
+    }
+    option = {
+        name = ywc_shu.6.b
+        trigger = {
+            has_variable = ywc_je_yongchang_century_progress
+            var:ywc_je_yongchang_century_progress < 100
+        }
+        if = {
+            limit = { var:ywc_heritage_legitimacy <= 30 }
+            set_variable = { name = ywc_je_yongchang_century_failed value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+        }
+        else = {
+            change_variable = { name = ywc_je_yongchang_century_progress add = 20 }
+            clamp_variable = { name = ywc_je_yongchang_century_progress min = 0 max = 100 }
+            ywc_add_heritage_legitimacy = yes
+        }
+    }
+    option = {
+        name = ywc_shu.6.c
+        trigger = {
+            has_variable = ywc_je_yongchang_century_progress
+            var:ywc_je_yongchang_century_progress >= 100
+        }
+        set_variable = { name = ywc_je_yongchang_century_resolved value = 1 }
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 120 }
+    }
+}
+
+namespace = ywc_jhg
+
+# Events ywc_jhg.1-5 are wired to JHG auxiliary journals and routes. The
+# naval-tributary route raises autonomy, tension with SHU, and fiscal cost.
+# The fiscal cost is explicitly represented by the route modifier's loan-interest
+# effect; its magnitude remains subject to real campaign balance observation.
+
+ywc_jhg.1 = {
+    type = country_event
+    title = ywc_jhg.1.t
+    desc = ywc_jhg.1.d
+    duration = 1
+    option = {
+        name = ywc_jhg.1.a
+        default_option = yes
+        set_variable = { name = ywc_je_jinghai_maritime_network_resolved value = 1 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_jhg_south_sea_council months = 24 }
+    }
+    option = {
+        name = ywc_jhg.1.b
+        set_variable = { name = ywc_je_jinghai_maritime_network_failed value = 1 }
+        ywc_reduce_maritime_network = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_jhg.2 = {
+    type = country_event
+    title = ywc_jhg.2.t
+    desc = ywc_jhg.2.d
+    duration = 1
+    option = {
+        name = ywc_jhg.2.a
+        default_option = yes
+        set_variable = { name = ywc_je_jinghai_succession_resolved value = 1 }
+        ywc_add_heritage_legitimacy = yes
+        add_modifier = { name = ywc_jhg_naval_tributary months = 24 }
+    }
+    option = {
+        name = ywc_jhg.2.b
+        set_variable = { name = ywc_je_jinghai_succession_failed value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_jhg.3 = {
+    type = country_event
+    title = ywc_jhg.3.t
+    desc = ywc_jhg.3.d
+    duration = 1
+    option = {
+        name = ywc_jhg.3.a
+        default_option = yes
+        set_variable = { name = ywc_je_jinghai_council_resolved value = 1 }
+        ywc_open_trade_route = yes
+        add_modifier = { name = ywc_jhg_south_sea_council months = 24 }
+    }
+    option = {
+        name = ywc_jhg.3.b
+        set_variable = { name = ywc_je_jinghai_council_failed value = 1 }
+        ywc_reduce_maritime_network = yes
+        add_modifier = { name = ywc_route_failure_backlash months = 24 }
+    }
+}
+
+ywc_jhg.4 = {
+    type = country_event
+    title = ywc_jhg.4.t
+    desc = ywc_jhg.4.d
+    duration = 1
+    option = {
+        name = ywc_jhg.4.a
+        default_option = yes
+        ai_chance = {
+            base = 55
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 45 } add = 25 }
+            modifier = { trigger = { var:ywc_maritime_network_level >= 60 } add = 15 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_active }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_active }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_success }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_failure }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_jhg_naval_tributary_state_abandon }
+            remove_variable = ywc_route_jhg_naval_tributary_state_abandon
+        }
+        set_variable = { name = ywc_route_jhg_naval_tributary_state_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_jhg_convoy_commitment >= 70 }
+            add_modifier = { name = ywc_flavor_jhg_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_jhg_convoy_commitment < 30 }
+            add_modifier = { name = ywc_flavor_jhg_low months = 12 }
+        }
+        set_variable = { name = ywc_route_jhg_naval_tributary_state_progress value = 0 }
+        change_variable = { name = ywc_route_jhg_naval_tributary_state_progress add = 20 }
+        clamp_variable = { name = ywc_route_jhg_naval_tributary_state_progress min = 0 max = 100 }
+        ywc_raise_autonomy_pressure = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_jhg_naval_tributary months = 12 }
+        change_relations = { country = c:SHU value = -5 }
+    }
+    option = {
+        name = ywc_jhg.4.b
+        ai_chance = {
+            base = 74
+            modifier = { trigger = { var:ywc_route_jhg_naval_tributary_state_progress >= 80 } add = 18 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 60 } add = 12 }
+        }
+        trigger = {
+            has_variable = ywc_route_jhg_naval_tributary_state_active
+            has_variable = ywc_route_jhg_naval_tributary_state_progress
+        }
+        if = {
+            limit = { var:ywc_route_jhg_naval_tributary_state_progress >= 100 }
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_jhg_convoy_commitment >= 70 }
+                add_modifier = { name = ywc_flavor_jhg_high months = 24 }
+            }
+            remove_variable = ywc_route_jhg_naval_tributary_state_active
+            ywc_add_maritime_network = yes
+            add_modifier = { name = ywc_jhg_naval_tributary months = 120 }
+            change_relations = { country = c:SHU value = -10 }
+        }
+        else = {
+            change_variable = { name = ywc_route_jhg_naval_tributary_state_progress add = 20 }
+            clamp_variable = { name = ywc_route_jhg_naval_tributary_state_progress min = 0 max = 100 }
+            ywc_raise_autonomy_pressure = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_jhg.4.c
+        ai_chance = {
+            base = 6
+            modifier = { trigger = { var:ywc_route_jhg_naval_tributary_state_progress >= 60 } add = 36 }
+            modifier = { trigger = { var:ywc_autonomy_pressure >= 75 } add = 15 }
+        }
+        trigger = { has_variable = ywc_route_jhg_naval_tributary_state_active }
+        if = {
+            limit = { var:ywc_route_jhg_naval_tributary_state_progress >= 60 }
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+            ywc_raise_autonomy_pressure = yes
+            change_relations = { country = c:SHU value = -20 }
+        }
+        else = {
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_abandon value = 1 }
+            set_variable = { name = ywc_route_jhg_naval_tributary_state_abandonment_cooldown days = 365 }
+            ywc_lower_autonomy_pressure = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+            change_relations = { country = c:SHU value = 5 }
+        }
+        remove_variable = ywc_route_jhg_naval_tributary_state_active
+    }
+}
+
+ywc_jhg.5 = {
+    type = country_event
+    title = ywc_jhg.5.t
+    desc = ywc_jhg.5.d
+    duration = 1
+    option = {
+        name = ywc_jhg.5.a
+        default_option = yes
+        ai_chance = {
+            base = 48
+            modifier = { trigger = { var:ywc_maritime_network_level >= 45 } add = 30 }
+            modifier = { trigger = { var:ywc_heritage_legitimacy >= 60 } add = 15 }
+        }
+        trigger = {
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_active }
+            NOT = { has_variable = ywc_route_jhg_naval_tributary_state_active }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_success }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_failure }
+            NOT = { has_variable = ywc_route_jhg_south_sea_council_abandonment_cooldown }
+        }
+        if = {
+            limit = { has_variable = ywc_route_jhg_south_sea_council_abandon }
+            remove_variable = ywc_route_jhg_south_sea_council_abandon
+        }
+        set_variable = { name = ywc_route_jhg_south_sea_council_active value = 1 }
+        if = {
+            limit = { var:ywc_flavor_jhg_convoy_commitment >= 70 }
+            add_modifier = { name = ywc_flavor_jhg_high months = 12 }
+        }
+        if = {
+            limit = { var:ywc_flavor_jhg_convoy_commitment < 30 }
+            add_modifier = { name = ywc_flavor_jhg_low months = 12 }
+        }
+        set_variable = { name = ywc_route_jhg_south_sea_council_progress value = 0 }
+        change_variable = { name = ywc_route_jhg_south_sea_council_progress add = 20 }
+        clamp_variable = { name = ywc_route_jhg_south_sea_council_progress min = 0 max = 100 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_jhg_south_sea_council months = 12 }
+    }
+    option = {
+        name = ywc_jhg.5.b
+        ai_chance = {
+            base = 79
+            modifier = { trigger = { var:ywc_route_jhg_south_sea_council_progress >= 80 } add = 16 }
+            modifier = { trigger = { var:ywc_maritime_network_level >= 55 } add = 12 }
+        }
+        trigger = {
+            has_variable = ywc_route_jhg_south_sea_council_active
+            has_variable = ywc_route_jhg_south_sea_council_progress
+        }
+        if = {
+            limit = { var:ywc_route_jhg_south_sea_council_progress >= 100 }
+            set_variable = { name = ywc_route_jhg_south_sea_council_success value = 1 }
+            if = {
+                limit = { var:ywc_flavor_jhg_convoy_commitment >= 70 }
+                add_modifier = { name = ywc_flavor_jhg_high months = 24 }
+            }
+            remove_variable = ywc_route_jhg_south_sea_council_active
+            ywc_open_trade_route = yes
+            add_modifier = { name = ywc_jhg_south_sea_council months = 120 }
+        }
+        else = {
+            change_variable = { name = ywc_route_jhg_south_sea_council_progress add = 20 }
+            clamp_variable = { name = ywc_route_jhg_south_sea_council_progress min = 0 max = 100 }
+            ywc_open_trade_route = yes
+            ywc_add_maritime_network = yes
+        }
+    }
+    option = {
+        name = ywc_jhg.5.c
+        ai_chance = {
+            base = 4
+            modifier = { trigger = { var:ywc_route_jhg_south_sea_council_progress >= 60 } add = 40 }
+            modifier = { trigger = { var:ywc_maritime_network_level < 20 } add = 18 }
+        }
+        trigger = { has_variable = ywc_route_jhg_south_sea_council_active }
+        if = {
+            limit = { var:ywc_route_jhg_south_sea_council_progress >= 60 }
+            set_variable = { name = ywc_route_jhg_south_sea_council_failure value = 1 }
+            add_modifier = { name = ywc_route_failure_backlash months = 24 }
+            ywc_raise_autonomy_pressure = yes
+        }
+        else = {
+            set_variable = { name = ywc_route_jhg_south_sea_council_abandon value = 1 }
+            set_variable = { name = ywc_route_jhg_south_sea_council_abandonment_cooldown days = 365 }
+            ywc_lower_autonomy_pressure = yes
+            add_modifier = { name = ywc_route_abandonment_recovery months = 12 }
+        }
+        remove_variable = ywc_route_jhg_south_sea_council_active
+    }
+}
+
+# Flavor events ywc_shu.7-9: the court balance is a choice between a stronger
+# register state and the local mobilization that keeps the frontier governable.
+ywc_shu.7 = {
+    type = country_event
+    title = ywc_shu.7.t
+    desc = ywc_shu.7.d
+    duration = 1
+    option = {
+        name = ywc_shu.7.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_shu_c1_prelude value = 1 }
+        ywc_flavor_shu_bureaucracy = yes
+        add_modifier = { name = ywc_flavor_shu_high months = 12 }
+    }
+    option = {
+        name = ywc_shu.7.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_shu_c1_prelude value = 1 }
+        ywc_flavor_shu_local = yes
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_flavor_shu_low months = 12 }
+    }
+}
+
+ywc_shu.8 = {
+    type = country_event
+    title = ywc_shu.8.t
+    desc = ywc_shu.8.d
+    duration = 1
+    option = {
+        name = ywc_shu.8.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_shu_c2_prelude value = 1 }
+        ywc_flavor_shu_bureaucracy = yes
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 12 }
+    }
+    option = {
+        name = ywc_shu.8.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_shu_c2_prelude value = 1 }
+        ywc_flavor_shu_local = yes
+        add_modifier = { name = ywc_flavor_shu_low months = 12 }
+    }
+}
+
+ywc_shu.9 = {
+    type = country_event
+    title = ywc_shu.9.t
+    desc = ywc_shu.9.d
+    duration = 1
+    option = {
+        name = ywc_shu.9.a
+        ai_chance = { base = 70 }
+        default_option = yes
+        trigger = { var:ywc_flavor_shu_court_balance >= 70 }
+        set_variable = { name = ywc_campaign_shu_c3_prelude value = 1 }
+        add_modifier = { name = ywc_flavor_shu_high months = 120 }
+    }
+    option = {
+        name = ywc_shu.9.b
+        ai_chance = { base = 70 }
+        trigger = { var:ywc_flavor_shu_court_balance < 30 }
+        set_variable = { name = ywc_campaign_shu_c3_prelude value = 1 }
+        ywc_lower_heritage_legitimacy = yes
+        add_modifier = { name = ywc_flavor_shu_low months = 24 }
+    }
+    option = {
+        name = ywc_shu.9.c
+        ai_chance = { base = 30 }
+        set_variable = { name = ywc_campaign_shu_c3_prelude value = 1 }
+        add_modifier = { name = ywc_shu_bureaucratic_commitment months = 24 }
+    }
+}
+
+# Flavor events ywc_jhg.6-8: convoy promises compete with the budget owed to
+# the Shun court and with the cost of keeping dockyards active.
+ywc_jhg.6 = {
+    type = country_event
+    title = ywc_jhg.6.t
+    desc = ywc_jhg.6.d
+    duration = 1
+    option = {
+        name = ywc_jhg.6.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_jhg_c1_prelude value = 1 }
+        ywc_flavor_jhg_maritime = yes
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_flavor_jhg_high months = 12 }
+    }
+    option = {
+        name = ywc_jhg.6.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_jhg_c1_prelude value = 1 }
+        ywc_flavor_jhg_tribute = yes
+        add_modifier = { name = ywc_flavor_jhg_low months = 12 }
+    }
+}
+
+ywc_jhg.7 = {
+    type = country_event
+    title = ywc_jhg.7.t
+    desc = ywc_jhg.7.d
+    duration = 1
+    option = {
+        name = ywc_jhg.7.a
+        ai_chance = { base = 65 }
+        default_option = yes
+        set_variable = { name = ywc_campaign_jhg_c2_prelude value = 1 }
+        ywc_flavor_jhg_maritime = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_jhg_south_sea_council months = 12 }
+    }
+    option = {
+        name = ywc_jhg.7.b
+        ai_chance = { base = 35 }
+        set_variable = { name = ywc_campaign_jhg_c2_prelude value = 1 }
+        ywc_flavor_jhg_tribute = yes
+        add_modifier = { name = ywc_flavor_jhg_low months = 12 }
+    }
+}
+
+ywc_jhg.8 = {
+    type = country_event
+    title = ywc_jhg.8.t
+    desc = ywc_jhg.8.d
+    duration = 1
+    option = {
+        name = ywc_jhg.8.a
+        ai_chance = { base = 70 }
+        default_option = yes
+        trigger = { var:ywc_flavor_jhg_convoy_commitment >= 70 }
+        set_variable = { name = ywc_campaign_jhg_c3_prelude value = 1 }
+        ywc_open_trade_route = yes
+        ywc_add_maritime_network = yes
+        add_modifier = { name = ywc_flavor_jhg_high months = 120 }
+    }
+    option = {
+        name = ywc_jhg.8.b
+        ai_chance = { base = 70 }
+        trigger = { var:ywc_flavor_jhg_convoy_commitment < 30 }
+        set_variable = { name = ywc_campaign_jhg_c3_prelude value = 1 }
+        ywc_reduce_maritime_network = yes
+        add_modifier = { name = ywc_flavor_jhg_low months = 24 }
+    }
+    option = {
+        name = ywc_jhg.8.c
+        ai_chance = { base = 30 }
+        ai_chance = { base = 30 }
+        set_variable = { name = ywc_campaign_jhg_c3_prelude value = 1 }
+        add_modifier = { name = ywc_jhg_naval_tributary months = 24 }
+    }
+}
