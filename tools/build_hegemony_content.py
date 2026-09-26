@@ -129,9 +129,10 @@ def render_op(op: dict, catalog: dict) -> str:
     if kind == "stance":
         return f"set_variable = {{ name = ywc_tribute_answer value = {op['value']} }}"
     if kind == "counter":
-        sign = "+" if op["delta"] >= 0 else ""
+        sign = "" if op["delta"] >= 0 else "-"
+        delta = abs(op["delta"])
         return _guarded_hegemony(
-            f"change_variable = {{ name = ywc_hegemony_{op['name']} add = {sign}{op['delta']} }}"
+            f"change_variable = {{ name = ywc_hegemony_{op['name']} add = {sign}{delta} }}"
         )
     if kind == "treasury":
         return f"add_treasury = {op['amount']}"

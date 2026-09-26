@@ -292,7 +292,7 @@ def final_option_effects(event: dict, direction_index: int) -> list[str]:
         settle = "ywc_campaign_settle_final" if chapter == 3 else "ywc_campaign_settle_mid"
         lines.append(
             f"{settle} = {{ SHORT = {short} CH = {chapter} "
-            f'GATE = "{gate}" FLAVOR = {config["flavor"]} }}'
+            f'GATE = "{gate}" }}'
         )
         lines.extend(chapter_marker_lines(event))
     else:
