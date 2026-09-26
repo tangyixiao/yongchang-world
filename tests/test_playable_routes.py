@@ -12,6 +12,24 @@ BOOTSTRAP_JOURNAL = ROOT / "yongchang_world/common/journal_entries/ywc_bootstrap
 EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_shared_effects.txt"
 TRIGGERS = ROOT / "yongchang_world/common/scripted_triggers/ywc_shared_triggers.txt"
 MODIFIERS = ROOT / "yongchang_world/common/static_modifiers/ywc_static_modifiers.txt"
+ROUTE_EVENT_FILES = (
+    ROOT / "yongchang_world/events/ywc_shu_jhg_events.txt",
+    ROOT / "yongchang_world/events/ywc_dmg_nqg_events.txt",
+    ROOT / "yongchang_world/events/ywc_steppe_highland_events.txt",
+    ROOT / "yongchang_world/events/ywc_kor_lan_nmg_events.txt",
+)
+ROUTE_JOURNAL_FILES = (
+    ROOT / "yongchang_world/common/journal_entries/ywc_shu.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_jhg.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_dmg.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_nqg.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_oir.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_mng.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_tib.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_kor.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_lan.txt",
+    ROOT / "yongchang_world/common/journal_entries/ywc_nmg.txt",
+)
 
 
 def block_for(text: str, key: str) -> str:
@@ -26,6 +44,19 @@ def block_for(text: str, key: str) -> str:
             if depth == 0:
                 return text[start : index + 1]
     raise AssertionError(f"unclosed block: {key}")
+
+
+def block_at(text: str, start: int) -> str:
+    opening = text.index("{", start)
+    depth = 0
+    for index in range(opening, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+    raise AssertionError("unclosed block")
 
 
 def outcome_branch(event: str, outcome: str) -> str:
@@ -164,6 +195,48 @@ class PlayableRouteTest(unittest.TestCase):
             self.assertIn(f"has_variable = {cooldown}", journal)
             self.assertIn(f"NOT = {{ has_variable = {cooldown} }}", journal)
 
+    def test_route_start_is_blocked_by_any_active_abandonment_cooldown(self):
+        route_count = 0
+        for path in ROUTE_EVENT_FILES:
+            text = path.read_text("utf-8")
+            for match in re.finditer(
+                r"set_variable = \{ name = (ywc_route_[a-z0-9_]+)_active value = 1 \}",
+                text,
+            ):
+                route_count += 1
+                option_start = text.rfind("option = {", 0, match.start())
+                option_text = text[option_start:]
+                trigger_start = option_text.index("trigger = {\n            NOT =")
+                trigger = block_at(option_text, trigger_start)
+                cooldown = f"{match.group(1)}_abandonment_cooldown"
+                self.assertIn(
+                    f"NOT = {{ has_variable = {cooldown} }}",
+                    trigger,
+                    match.group(1),
+                )
+                self.assertNotIn("OR = {", trigger, match.group(1))
+        self.assertEqual(route_count, 20)
+
+    def test_route_monthly_pulse_is_blocked_by_any_active_abandonment_cooldown(self):
+        route_count = 0
+        for path in ROUTE_JOURNAL_FILES:
+            text = path.read_text("utf-8")
+            for match in re.finditer(
+                r"(?m)^(ywc_route_[a-z0-9_]+) = \{", text
+            ):
+                route_count += 1
+                route_block = block_at(text, match.start())
+                monthly_pulse = block_for(route_block, "on_monthly_pulse")
+                limit = block_for(monthly_pulse, "limit")
+                cooldown = f"{match.group(1)}_abandonment_cooldown"
+                self.assertIn(
+                    f"NOT = {{ has_variable = {cooldown} }}",
+                    limit,
+                    match.group(1),
+                )
+                self.assertNotIn("OR = {", limit, match.group(1))
+        self.assertEqual(route_count, 20)
+
     def test_route_modifiers_are_defined(self):
         modifiers = MODIFIERS.read_text("utf-8")
         for name in (
@@ -175,6 +248,21 @@ class PlayableRouteTest(unittest.TestCase):
             "ywc_route_abandonment_recovery",
         ):
             self.assertRegex(modifiers, rf"(?m)^{re.escape(name)}\s*=\s*\{{")
+
+    def test_jhg_naval_tributary_route_has_an_explicit_fiscal_cost(self):
+        modifiers = MODIFIERS.read_text("utf-8")
+        naval_modifier = block_for(modifiers, "ywc_jhg_naval_tributary")
+        self.assertIn("country_loan_interest_rate_mult = 0.05", naval_modifier)
+
+        event = block_for(self.events, "ywc_jhg.4")
+        self.assertIn(
+            "add_modifier = { name = ywc_jhg_naval_tributary months = 12 }",
+            event,
+        )
+        self.assertIn(
+            "add_modifier = { name = ywc_jhg_naval_tributary months = 120 }",
+            event,
+        )
 
 
 if __name__ == "__main__":

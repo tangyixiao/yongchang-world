@@ -53,7 +53,21 @@ def _load_rows(path: Path) -> list[dict]:
     return data
 
 
-def _validate_rows(path: Path, rows: list[dict]) -> tuple[list[int], list[str]]:
+def _require_nonnegative_integer(path: Path, index: int, field: str, value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{path}:{index}: {field} must be a non-negative integer")
+    if value < 0:
+        raise ValueError(f"{path}:{index}: negative {field}")
+    return value
+
+
+def validate_checkpoint_rows(path: Path, rows: list[dict]) -> tuple[list[int], list[str]]:
+    """Validate the canonical 30-row observation checkpoint schema.
+
+    Status, recording, and final release tools share this function so a run
+    cannot be considered ready by one layer and rejected as malformed by the
+    next.
+    """
     if len(rows) != len(CHECKPOINT_YEARS) * len(CORE_COUNTRIES):
         raise ValueError(f"{path}: expected 30 unique checkpoints, got {len(rows)}")
     pairs = [(row.get("year"), row.get("country")) for row in rows]
@@ -65,13 +79,13 @@ def _validate_rows(path: Path, rows: list[dict]) -> tuple[list[int], list[str]]:
             raise ValueError(f"{path}:{index}: missing fields: {sorted(missing)}")
         if row["country"] not in CORE_COUNTRIES:
             raise ValueError(f"{path}:{index}: unknown country {row['country']}")
-        if not isinstance(row["year"], int):
+        if isinstance(row["year"], bool) or not isinstance(row["year"], int):
             raise ValueError(f"{path}:{index}: year must be an integer")
-        if row["population"] < 0:
-            raise ValueError(f"{path}:{index}: negative population")
-        if row["wars"] < 0 or row["subjects"] < 0:
-            raise ValueError(f"{path}:{index}: negative wars or subjects")
-        if row["error_count"] > 0:
+        _require_nonnegative_integer(path, index, "population", row["population"])
+        _require_nonnegative_integer(path, index, "wars", row["wars"])
+        _require_nonnegative_integer(path, index, "subjects", row["subjects"])
+        error_count = _require_nonnegative_integer(path, index, "error_count", row["error_count"])
+        if error_count > 0:
             raise ValueError(f"{path}:{index}: error_count > 0")
         if "capital_count" in row and row["capital_count"] != 1:
             raise ValueError(f"{path}:{index}: multiple capitals")
@@ -86,13 +100,8 @@ def _validate_rows(path: Path, rows: list[dict]) -> tuple[list[int], list[str]]:
     return years, countries
 
 
-def _load_run(path: Path) -> dict:
-    run_path = path.parent / "run.json"
-    if not run_path.is_file():
-        raise ValueError(f"{path}: missing run.json evidence")
-    metadata = _load_json(run_path)
-    if not isinstance(metadata, dict):
-        raise ValueError(f"{run_path}: expected an object")
+def validate_run_metadata(run_path: Path, metadata: dict) -> dict:
+    """Validate the evidence contract shared by status and release tools."""
     required = {
         "config",
         "run_id",
@@ -131,7 +140,10 @@ def _load_run(path: Path) -> dict:
         raise ValueError(f"{run_path}: DLC state does not match config")
     if not isinstance(metadata["evidence"], dict) or not metadata["evidence"]:
         raise ValueError(f"{run_path}: missing campaign evidence")
-    if metadata["evidence"].get("campaign") == "not_recorded_until_campaign_checkpoint_export":
+    campaign_evidence = metadata["evidence"].get("campaign")
+    if not isinstance(campaign_evidence, str) or not campaign_evidence.strip():
+        raise ValueError(f"{run_path}: campaign evidence must be non-empty text")
+    if campaign_evidence == "not_recorded_until_campaign_checkpoint_export":
         raise ValueError(f"{run_path}: preload metadata cannot be used as campaign evidence")
     if metadata["observed_seed"] is not None:
         if metadata["observed_seed"] not in SEEDS:
@@ -139,6 +151,16 @@ def _load_run(path: Path) -> dict:
         if metadata["evidence"].get("observed_seed") != metadata["observed_seed"]:
             raise ValueError(f"{run_path}: observed_seed lacks matching evidence")
     return metadata
+
+
+def _load_run(path: Path) -> dict:
+    run_path = path.parent / "run.json"
+    if not run_path.is_file():
+        raise ValueError(f"{path}: missing run.json evidence")
+    metadata = _load_json(run_path)
+    if not isinstance(metadata, dict):
+        raise ValueError(f"{run_path}: expected an object")
+    return validate_run_metadata(run_path, metadata)
 
 
 def summarize(input_path: Path) -> dict:
@@ -149,7 +171,7 @@ def summarize(input_path: Path) -> dict:
     identities: set[tuple[str, str]] = set()
     for path in files:
         rows = _load_rows(path)
-        years, countries = _validate_rows(path, rows)
+        years, countries = validate_checkpoint_rows(path, rows)
         metadata = _load_run(path)
         identity = (metadata["config"], metadata["run_id"])
         if identity in identities:
@@ -172,6 +194,7 @@ def summarize(input_path: Path) -> dict:
                     "run_metadata": str(path.parent / "run.json"),
                 },
                 "game_version": metadata["game_version"],
+                "version_match_evidence": metadata["version_match_evidence"],
                 "mod_mount": metadata["mod_mount"],
                 "expected_mounted_dlc": metadata["expected_mounted_dlc"],
                 "observed_mounted_dlc": metadata["observed_mounted_dlc"],

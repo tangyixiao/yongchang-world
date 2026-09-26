@@ -134,6 +134,98 @@ class ScriptStructureTest(unittest.TestCase):
             )
             self.assertEqual(validate(mod, game), [])
 
+    def test_validate_rejects_custom_journal_without_shared_reset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            history = root / "common/history/countries"
+            history.mkdir(parents=True)
+            (history / "ywc_ocean_countries.txt").write_text(
+                "COUNTRIES = {\n"
+                "    c:MHG ?= {\n"
+                "        add_journal_entry = { type = ywc_je_ocean_frontiers }\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            diagnostics = validate(root)
+            self.assertTrue(
+                any(
+                    "MHG" in diagnostic
+                    and "ywc_reset_shared_variables" in diagnostic
+                    and "ywc_ocean_countries.txt:3" in diagnostic
+                    for diagnostic in diagnostics
+                ),
+                diagnostics,
+            )
+
+    def test_validate_rejects_route_cooldown_bypass(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            events = root / "events"
+            events.mkdir(parents=True)
+            (events / "route.txt").write_text(
+                "ywc_test.4 = {\n"
+                "    option = {\n"
+                "        trigger = {\n"
+                "            OR = {\n"
+                "                NOT = { has_variable = ywc_route_demo_abandon }\n"
+                "                NOT = { has_variable = ywc_route_demo_abandonment_cooldown }\n"
+                "            }\n"
+                "        }\n"
+                "    }\n"
+                "}\n"
+                "ywc_test.5 = {\n"
+                "    option = {\n"
+                "        trigger = {\n"
+                "            OR = {\n"
+                "                NOT = { has_variable = ywc_route_reverse_abandonment_cooldown }\n"
+                "                NOT = { has_variable = ywc_route_reverse_abandon }\n"
+                "            }\n"
+                "        }\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            diagnostics = validate(root)
+            self.assertTrue(
+                any(
+                    "route cooldown guard" in diagnostic
+                    and "ywc_route_demo" in diagnostic
+                    for diagnostic in diagnostics
+                ),
+                diagnostics,
+            )
+            self.assertTrue(
+                any(
+                    "route cooldown guard" in diagnostic
+                    and "ywc_route_reverse" in diagnostic
+                    for diagnostic in diagnostics
+                ),
+                diagnostics,
+            )
+
+    def test_validate_rejects_legacy_scenario_tag_references(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            mod = root / "yongchang_world"
+            (root / "data/baseline").mkdir(parents=True)
+            (root / "data/scenario").mkdir(parents=True)
+            (mod / "common/history/countries").mkdir(parents=True)
+            (root / "data/baseline/vic3-1.13.11.json").write_text(
+                '{"country_tags": ["SHN"]}', encoding="utf-8"
+            )
+            (root / "data/scenario/tag_registry.json").write_text(
+                '{"countries": [{"tag": "SHD"}]}', encoding="utf-8"
+            )
+            (mod / "common/history/countries/example.txt").write_text(
+                "COUNTRIES = { c:SHN ?= { } }\n", encoding="utf-8"
+            )
+            diagnostics = validate(mod)
+            self.assertTrue(
+                any("legacy runtime tag SHN" in diagnostic for diagnostic in diagnostics),
+                diagnostics,
+            )
+
     def test_reports_duplicate_declared_keys(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
@@ -178,6 +270,73 @@ class ScriptStructureTest(unittest.TestCase):
             )
             self.assertEqual(find_duplicate_keys(root), set())
             self.assertEqual(collect_declared_keys(root), {"SHU"})
+
+    def test_validate_rejects_unreachable_content(self):
+        """ywc_check must surface reachability problems, not only model them."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            mod = root / "yongchang_world"
+            (root / "data/content").mkdir(parents=True)
+            (mod / "events").mkdir(parents=True)
+            (root / "data/content/reachability_allowlist.json").write_text(
+                '{"unused_scripted_helpers": {}}', encoding="utf-8"
+            )
+            (mod / "events/orphan.txt").write_text(
+                "namespace = ywc_test\n"
+                "ywc_test.1 = { type = country_event title = ywc_test.1.t desc = ywc_test.1.d "
+                "option = { name = ywc_test.1.a } }\n",
+                encoding="utf-8",
+            )
+            diagnostics = validate(mod)
+            self.assertTrue(
+                any("unreachable event ywc_test.1" in diagnostic for diagnostic in diagnostics),
+                diagnostics,
+            )
+
+    def test_validate_checks_on_action_hooks_against_vanilla(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            mod = root / "yongchang_world"
+            game = root / "game"
+            (mod / "common/on_actions").mkdir(parents=True)
+            (game / "common/on_actions").mkdir(parents=True)
+            (game / "common/on_actions/00_code_on_actions.txt").write_text(
+                "on_game_started_after_lobby = {\n\teffect = {}\n}\n", encoding="utf-8"
+            )
+            (mod / "common/on_actions/ywc_hooks.txt").write_text(
+                "on_game_started_after_lobby = {\n\ton_actions = { ywc_on_start ywc_missing }\n}\n"
+                "ywc_on_start = {\n\teffect = {}\n}\n"
+                "on_not_a_real_hook = {\n\teffect = {}\n}\n",
+                encoding="utf-8",
+            )
+            diagnostics = validate(mod, game)
+            self.assertTrue(
+                any("on_action ywc_missing is not declared" in item for item in diagnostics),
+                diagnostics,
+            )
+            self.assertTrue(
+                any("on_not_a_real_hook" in item and "neither a vanilla hook" in item for item in diagnostics),
+                diagnostics,
+            )
+            self.assertFalse(
+                any("on_action ywc_on_start " in item for item in diagnostics), diagnostics
+            )
+            self.assertFalse(
+                any("on_action on_game_started_after_lobby " in item for item in diagnostics),
+                diagnostics,
+            )
+
+    def test_on_action_hook_check_is_skipped_without_a_game_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            mod = root / "yongchang_world"
+            (mod / "common/on_actions").mkdir(parents=True)
+            (mod / "common/on_actions/ywc_hooks.txt").write_text(
+                "on_not_a_real_hook = {\n\teffect = {}\n}\n", encoding="utf-8"
+            )
+            diagnostics = validate(mod)
+            self.assertFalse(any("neither a vanilla hook" in item for item in diagnostics))
 
     def test_repo_fixtures_are_available(self):
         self.assertTrue((ROOT / "tests/fixtures/broken_brace.txt").exists())

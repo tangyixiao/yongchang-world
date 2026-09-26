@@ -3,6 +3,13 @@ import pathlib
 import re
 import unittest
 
+try:
+    import numpy as np
+    from PIL import Image
+except ImportError:  # pragma: no cover - the installed game test environment has both.
+    np = None
+    Image = None
+
 
 ROOT = pathlib.Path(__file__).parents[1]
 REGISTRY_FILE = ROOT / "data/scenario/tag_registry.json"
@@ -29,6 +36,21 @@ OCEAN_POP_FILE = ROOT / "yongchang_world/common/history/pops/ywc_ocean_pops.txt"
 OCEAN_BUILDING_FILE = ROOT / "yongchang_world/common/history/buildings/ywc_ocean_buildings.txt"
 OCEAN_JOURNAL_FILE = ROOT / "yongchang_world/common/journal_entries/ywc_ocean_journal.txt"
 REGIONAL_COUNTRY_HISTORY_FILE = ROOT / "yongchang_world/common/history/countries/ywc_regional_countries.txt"
+PROVINCES_MAP_FILE = pathlib.Path(r"E:/SteamLibrary/steamapps/common/Victoria 3/game/map_data/provinces.png")
+
+
+def balanced_block(text, marker):
+    start = text.index(marker)
+    opening = text.index("{", start)
+    depth = 0
+    for index in range(opening, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+    raise AssertionError(f"unclosed block: {marker}")
 
 
 def load_authority():
@@ -187,6 +209,47 @@ class InnerAsiaTest(unittest.TestCase):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
 
+    def test_tianshan_oasis_groups_are_map_connected(self):
+        if np is None or Image is None or not PROVINCES_MAP_FILE.exists():
+            self.skipTest("Pillow, NumPy, and the installed Victoria 3 provinces map are required")
+
+        state = "STATE_TIANSHAN"
+        groups = {
+            group["owner"]: set(group["owned_provinces"])
+            for group in self.authority[state]
+        }
+        expected_counts = {"HMI": 24, "TRF": 36, "KUC": 60, "KSH": 40, "YRK": 36, "KHT": 40}
+        self.assertEqual({owner: len(provinces) for owner, provinces in groups.items()}, expected_counts)
+
+        pixels = np.asarray(Image.open(PROVINCES_MAP_FILE).convert("RGB"), dtype=np.uint32)
+        encoded = pixels[:, :, 0] * 65536 + pixels[:, :, 1] * 256 + pixels[:, :, 2]
+        province_codes = {int(province[1:], 16): province for province in self.baseline["state_regions"][state]}
+        target_codes = np.array(list(province_codes), dtype=np.uint32)
+        adjacency = {province: set() for province in province_codes.values()}
+        for first, second in ((encoded[:, :-1], encoded[:, 1:]), (encoded[:-1, :], encoded[1:, :])):
+            changed = first != second
+            first_values = first[changed]
+            second_values = second[changed]
+            target = np.isin(first_values, target_codes) & np.isin(second_values, target_codes)
+            pairs = np.unique(np.stack((first_values[target], second_values[target]), axis=1), axis=0)
+            for first_code, second_code in pairs:
+                first_province = province_codes[int(first_code)]
+                second_province = province_codes[int(second_code)]
+                adjacency[first_province].add(second_province)
+                adjacency[second_province].add(first_province)
+
+        for owner, provinces in groups.items():
+            unseen = set(provinces)
+            component = {next(iter(unseen))}
+            frontier = list(component)
+            while frontier:
+                province = frontier.pop()
+                for neighbor in adjacency[province] & unseen:
+                    unseen.remove(neighbor)
+                    component.add(neighbor)
+                    frontier.append(neighbor)
+            self.assertEqual(component, provinces, owner)
+
 
 class SouthwestTest(unittest.TestCase):
     def setUp(self):
@@ -210,6 +273,12 @@ class SouthwestTest(unittest.TestCase):
         self.assertNotIn("AMD", self.ledger["starting_tags"])
         self.assertNotIn("DLI", self.ledger["starting_tags"])
         self.assertEqual(set(self.ledger["releasable_tags"]), {"AMD", "DLI"})
+
+    def test_shan_confederation_uses_runtime_shd_tag(self):
+        self.assertIn("SHD", self.ledger["starting_tags"])
+        self.assertNotIn("SHN", self.ledger["starting_tags"])
+        self.assertEqual(self.ledger["country_population"]["SHD"], 125000)
+        self.assertNotIn("SHN", self.ledger["country_population"])
 
     def test_southwest_groups_cover_source_states_without_overlap(self):
         grouped = {state: [] for state in self.ledger["source_states"]}
@@ -285,6 +354,18 @@ class OceanTest(unittest.TestCase):
             self.assertIn(f"region_state:{country}", building_text)
         self.assertIn("ywc_je_ocean_frontiers =", journal_text)
 
+    def test_ocean_journal_countries_initialize_shared_variables_before_journal(self):
+        country_text = (ROOT / "yongchang_world/common/history/countries/ywc_ocean_countries.txt").read_text("utf-8")
+        for tag in ("MHG", "NMG"):
+            match = re.search(rf"(?ms)c:{tag}\s*\?=\s*\{{.*?^\s*\}}", country_text)
+            self.assertIsNotNone(match, tag)
+            block = match.group(0)
+            reset = "ywc_reset_shared_variables = yes"
+            journal = "add_journal_entry = { type = ywc_je_ocean_frontiers }"
+            self.assertIn(reset, block, tag)
+            self.assertIn(journal, block, tag)
+            self.assertLess(block.index(reset), block.index(journal), tag)
+
 
 class RegionalCountryHistoryTest(unittest.TestCase):
     def test_new_regional_countries_have_market_and_basic_laws(self):
@@ -301,6 +382,43 @@ class RegionalCountryHistoryTest(unittest.TestCase):
             self.assertIn("set_market_capital", block)
             self.assertIn("activate_law", block)
             self.assertIn("set_tax_level", block)
+
+        shd = re.search(r"(?ms)c:SHD\s*\?=\s*\{.*?^\s*\}", text)
+        self.assertIsNotNone(shd)
+        self.assertIn("activate_law = law_type:law_censorship", shd.group(0))
+
+
+class RuntimeCapacityRegressionTest(unittest.TestCase):
+    def test_known_zero_capacity_startup_buildings_are_not_created(self):
+        inner_asia = INNER_ASIA_BUILDING_FILE.read_text("utf-8")
+        northern_manchuria = NORTHEAST_BUILDING_FILE.read_text("utf-8")
+        ocean = OCEAN_BUILDING_FILE.read_text("utf-8")
+
+        self.assertNotIn(
+            "building_logging_camp",
+            balanced_block(balanced_block(inner_asia, "s:STATE_TIANSHAN"), "region_state:KUC"),
+        )
+        self.assertNotIn(
+            "building_wheat_farm",
+            balanced_block(
+                balanced_block(northern_manchuria, "s:STATE_NORTHERN_MANCHURIA"),
+                "region_state:SHU",
+            ),
+        )
+        self.assertNotIn(
+            "building_wheat_farm",
+            balanced_block(
+                balanced_block(northern_manchuria, "s:STATE_OUTER_MANCHURIA"),
+                "region_state:SHU",
+            ),
+        )
+        self.assertNotIn(
+            "building_fishing_wharf",
+            balanced_block(
+                balanced_block(ocean, "s:STATE_WESTERN_AUSTRALIA"),
+                "region_state:MRG",
+            ),
+        )
 
 
 class StateHistoryVanillaCoverageTest(unittest.TestCase):

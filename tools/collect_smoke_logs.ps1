@@ -2,6 +2,7 @@
 param(
     [string]$GameRoot = 'E:\SteamLibrary\steamapps\common\Victoria 3',
     [string]$UserDataRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Paradox Interactive\Victoria 3'),
+    [string]$SummaryPath = '',
     [switch]$NoLaunch,
     [switch]$RequireScriptedTests
 )
@@ -9,6 +10,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts\smoke'
+$summaryPathToWrite = if ([string]::IsNullOrWhiteSpace($SummaryPath)) {
+    Join-Path $artifactRoot 'latest-summary.txt'
+} else {
+    [System.IO.Path]::GetFullPath($SummaryPath)
+}
 $logRoot = Join-Path $UserDataRoot 'logs'
 $logPaths = @(
     (Join-Path $logRoot 'error.log'),
@@ -60,7 +66,8 @@ if (Test-Path -LiteralPath $debugLogPath -PathType Leaf) {
         'Invalid database object',
         'missing localization',
         'Duplicate localization key',
-        'Failed to parse'
+        'Failed to parse',
+        'PostValidate of effect'
     )
     foreach ($line in Get-Content -LiteralPath $debugLogPath) {
         $lineNumber++
@@ -75,21 +82,42 @@ if (Test-Path -LiteralPath $debugLogPath -PathType Leaf) {
 
 # Scripted-test output is written beside the isolated user data when the game
 # is launched with -userdir.  A file containing only the header means that the
-# engine's test mode was enabled but no suite completed; it is not a pass.
+# engine's test mode was enabled but no suite completed; a non-empty file is
+# not enough either.  Require an explicit PASS token, and prefer FAIL when a
+# file contains both per-test PASS and FAIL lines.
 $scriptedTestStatus = 'not_requested'
 $scriptedTestResultsPath = Join-Path $UserDataRoot 'tests.txt'
 if (Test-Path -LiteralPath $scriptedTestResultsPath -PathType Leaf) {
     $scriptedTestText = (Get-Content -LiteralPath $scriptedTestResultsPath -Raw) -replace '^\uFEFF', ''
     $scriptedTestPayload = $scriptedTestText -replace '^\s*Tests:\s*', ''
-    $scriptedTestStatus = if ([string]::IsNullOrWhiteSpace($scriptedTestPayload)) { 'empty' } else { 'present' }
+    if ([string]::IsNullOrWhiteSpace($scriptedTestPayload)) {
+        $scriptedTestStatus = 'empty'
+    } else {
+        $scriptedTestLines = @($scriptedTestPayload -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        $hasFailure = @($scriptedTestLines | Where-Object {
+                ($_ -notmatch '(?i)(?:FAIL(?:ED|URE)?|ERROR)\s*[:=]\s*0\b') -and
+                ($_ -match '(?i)(?:^|[\[\s:=])(?:FAIL(?:ED|URE)?|ERROR)(?:$|[\]\s:=])')
+            }).Count -gt 0
+        $hasPass = @($scriptedTestLines | Where-Object {
+                ($_ -notmatch '(?i)(?:PASS(?:ED)?|SUCCESS(?:FUL)?)\s*[:=]\s*0\b') -and
+                ($_ -match '(?i)(?:^|[\[\s:=])(?:PASS(?:ED)?|SUCCESS(?:FUL)?)(?:$|[\]\s:=])')
+            }).Count -gt 0
+        $scriptedTestStatus = if ($hasFailure) { 'fail' } elseif ($hasPass) { 'pass' } else { 'present' }
+    }
 } elseif ($RequireScriptedTests) {
     $scriptedTestStatus = 'missing'
 }
-if ($RequireScriptedTests -and $scriptedTestStatus -ne 'present') {
+if ($RequireScriptedTests -and $scriptedTestStatus -ne 'pass') {
     $findings.Add("$scriptedTestResultsPath:1: scripted test results are $scriptedTestStatus")
 }
 
 New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
+if ($summaryPathToWrite -ne (Join-Path $artifactRoot 'latest-summary.txt')) {
+    $summaryParent = Split-Path -Parent $summaryPathToWrite
+    if (-not [string]::IsNullOrWhiteSpace($summaryParent)) {
+        New-Item -ItemType Directory -Force -Path $summaryParent | Out-Null
+    }
+}
 $status = if ($findings.Count -eq 0) { 'clean' } else { 'error' }
 
 # The summary reports whether the mod actually mounted, taken only from the
@@ -117,13 +145,13 @@ if ($findings.Count -gt 0) {
     $summary += 'findings:'
     $summary += $findings
 }
-Set-Content -LiteralPath (Join-Path $artifactRoot 'latest-summary.txt') -Value $summary -Encoding UTF8
+Set-Content -LiteralPath $summaryPathToWrite -Value $summary -Encoding UTF8
 
 foreach ($finding in $findings) {
     Write-Output $finding
 }
 if ($findings.Count -eq 0) {
-    Write-Output "Smoke logs are clean. Summary: $(Join-Path $artifactRoot 'latest-summary.txt')"
+    Write-Output "Smoke logs are clean. Summary: $summaryPathToWrite"
     exit 0
 }
 exit 1

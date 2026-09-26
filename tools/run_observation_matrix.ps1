@@ -113,6 +113,21 @@ if ($launchStatus -ne 'prepared_no_launch') {
     }
 }
 
+# Keep a run-local smoke summary beside the launch metadata. This is only
+# parser/log evidence: it never upgrades a preload into a campaign run.
+$smokeSummaryPath = Join-Path $runRoot 'smoke-summary.txt'
+$smokeStatus = 'not_collected_no_launch'
+$smokeCollector = Join-Path $projectRoot 'tools\collect_smoke_logs.ps1'
+if ($launchStatus -ne 'prepared_no_launch') {
+    if (Test-Path -LiteralPath $smokeCollector -PathType Leaf) {
+        $null = @(& $smokeCollector -NoLaunch -UserDataRoot $isolatedUserDataRoot -SummaryPath $smokeSummaryPath 2>&1)
+        $smokeStatus = if ($LASTEXITCODE -eq 0) { 'clean' } else { 'error' }
+    }
+    else {
+        $smokeStatus = 'collector_missing'
+    }
+}
+
 # The recorder never edits the supplied user-data root. A real observation
 # import is placed beside this run metadata as checkpoints.json after a game
 # session has been manually or externally exported. A preload run with a
@@ -142,9 +157,12 @@ $metadata = [ordered]@{
     dlc_ownership_backend = $dlcOwnershipBackend
     store_backend_failure_count = $storeBackendFailureCount
     dlc_state_matches_config = $dlcStateMatchesConfig
+    smoke_summary = $smokeSummaryPath
+    smoke_status = $smokeStatus
     evidence = [ordered]@{
         campaign = 'not_recorded_until_campaign_checkpoint_export'
         logs = $debugLogPath
+        smoke_summary = $smokeSummaryPath
     }
     checkpoints = (Join-Path $runRoot 'checkpoints.json')
 }

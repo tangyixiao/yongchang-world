@@ -5,6 +5,8 @@ import sys
 import tempfile
 import unittest
 
+from tools.summarize_observation import _load_run
+
 
 ROOT = pathlib.Path(__file__).parents[1]
 SUMMARIZER = ROOT / "tools/summarize_observation.py"
@@ -45,6 +47,13 @@ class ObservationSchemaTest(unittest.TestCase):
         self.assertIn("dlc_state_matches_config", text)
         self.assertIn("dlc_ownership_backend", text)
         self.assertIn("store backend", text)
+
+    def test_runner_records_run_specific_smoke_summary_after_launch(self):
+        text = (ROOT / "tools/run_observation_matrix.ps1").read_text("utf-8")
+        self.assertIn("smoke-summary.txt", text)
+        self.assertIn("smoke_status", text)
+        self.assertIn("collect_smoke_logs.ps1", text)
+        self.assertIn("-SummaryPath", text)
 
     def test_runner_preserves_live_evidence_on_nolaunch_rerun(self):
         """A -NoLaunch rerun over an already-verified config/seed must not
@@ -186,6 +195,61 @@ class ObservationSchemaTest(unittest.TestCase):
             )
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("negative population", result.stdout)
+
+    def test_summarizer_rejects_non_numeric_checkpoint_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = pathlib.Path(directory) / "checkpoints.json"
+            output = pathlib.Path(directory) / "summary.json"
+            rows = [
+                {
+                    "year": year,
+                    "country": country,
+                    "rank": "minor_power",
+                    "population": 100000,
+                    "market": country,
+                    "wars": 0,
+                    "subjects": 0,
+                    "error_count": 0,
+                }
+                for year in (1846, 1866, 1900)
+                for country in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG")
+            ]
+            rows[0]["population"] = "100000"
+            input_path.write_text(json.dumps(rows), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(SUMMARIZER), "--input", str(input_path), "--output", str(output)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("population must be a non-negative integer", result.stdout)
+
+    def test_run_evidence_rejects_empty_campaign_description(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory) / "none" / "run-11"
+            run_root.mkdir(parents=True)
+            (run_root / "run.json").write_text(
+                json.dumps(
+                    {
+                        "config": "none",
+                        "run_id": "run-11",
+                        "requested_seed": 11,
+                        "observed_seed": None,
+                        "status": "observed_to_checkpoint",
+                        "game_version": "1.13.11 (Matcha)",
+                        "mod_mount": "mounted",
+                        "version_match_evidence": ["matched"],
+                        "expected_mounted_dlc": [],
+                        "observed_mounted_dlc": [],
+                        "dlc_state_matches_config": "yes",
+                        "evidence": {"campaign": "", "logs": "debug.log"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "campaign evidence must be non-empty"):
+                _load_run(run_root / "checkpoints.json")
 
 
 if __name__ == "__main__":

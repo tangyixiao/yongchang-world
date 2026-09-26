@@ -20,6 +20,17 @@ EXPECTED_DLC = {
     "wave": ["dlc018_ep2"],
     "all": ["dlc010_ep1", "dlc013_mp1", "dlc018_ep2"],
 }
+CHECKPOINT_NUMERIC_FIELDS = ("population", "wars", "subjects", "error_count")
+CHECKPOINT_REQUIRED_FIELDS = {
+    "year",
+    "country",
+    "rank",
+    "population",
+    "market",
+    "wars",
+    "subjects",
+    "error_count",
+}
 
 
 def _require(run: dict, field: str, errors: list[str], index: int) -> object:
@@ -27,6 +38,17 @@ def _require(run: dict, field: str, errors: list[str], index: int) -> object:
         errors.append(f"run {index} missing {field}")
         return None
     return run[field]
+
+
+def _resolve_evidence_path(matrix_path: Path, value: str) -> Path:
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    candidates = (Path.cwd() / path, matrix_path.parent / path)
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 def check(matrix_path: Path, mod_root: Path) -> list[str]:
@@ -84,9 +106,112 @@ def check(matrix_path: Path, mod_root: Path) -> list[str]:
             errors.append(f"run {index} does not contain all ten countries")
         if not isinstance(run.get("source"), str) or not run["source"]:
             errors.append(f"run {index} missing checkpoint source")
-        if not isinstance(run.get("evidence"), dict) or not run["evidence"]:
+        version_match_evidence = run.get("version_match_evidence")
+        if (
+            not isinstance(version_match_evidence, list)
+            or not any(isinstance(item, str) and item.strip() for item in version_match_evidence)
+        ):
+            errors.append(f"run {index} missing version-match evidence")
+        evidence = run.get("evidence")
+        if not isinstance(evidence, dict) or not evidence:
             errors.append(f"run {index} missing evidence")
-        if run.get("observed_seed") is not None and run.get("evidence", {}).get("observed_seed") != run.get("observed_seed"):
+        else:
+            campaign = evidence.get("campaign")
+            if not isinstance(campaign, str) or not campaign.strip():
+                errors.append(f"run {index} missing campaign evidence")
+            elif campaign == "not_recorded_until_campaign_checkpoint_export":
+                errors.append(f"run {index} has preload-only campaign evidence")
+            resolved_paths: dict[str, Path] = {}
+            for field in ("logs", "checkpoint_file", "run_metadata"):
+                value = evidence.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    errors.append(f"run {index} missing evidence path {field}")
+                    continue
+                resolved = _resolve_evidence_path(matrix_path, value)
+                if not resolved.is_file():
+                    errors.append(f"run {index} evidence path does not exist: {field}={value}")
+                else:
+                    resolved_paths[field] = resolved
+            metadata_path = resolved_paths.get("run_metadata")
+            if metadata_path is not None:
+                try:
+                    metadata = json.loads(metadata_path.read_text("utf-8"))
+                except (OSError, json.JSONDecodeError) as error:
+                    errors.append(f"run {index} run metadata is not valid JSON: {error}")
+                else:
+                    if not isinstance(metadata, dict):
+                        errors.append(f"run {index} run metadata is not an object")
+                    else:
+                        for field in (
+                            "config",
+                            "run_id",
+                            "requested_seed",
+                            "observed_seed",
+                            "game_version",
+                            "mod_mount",
+                            "version_match_evidence",
+                            "expected_mounted_dlc",
+                            "observed_mounted_dlc",
+                            "dlc_state_matches_config",
+                        ):
+                            if metadata.get(field) != run.get(field):
+                                errors.append(f"run {index} run metadata {field} does not match")
+                        if metadata.get("version_match_evidence") != run.get("version_match_evidence"):
+                            errors.append(f"run {index} run metadata version_match_evidence does not match")
+                        if metadata.get("status") != "observed_to_checkpoint":
+                            errors.append(f"run {index} run metadata is not an observed checkpoint")
+            checkpoint_path = resolved_paths.get("checkpoint_file")
+            if checkpoint_path is not None:
+                if run.get("source") != evidence.get("checkpoint_file"):
+                    errors.append(f"run {index} checkpoint source does not match evidence")
+                try:
+                    checkpoint_data = json.loads(checkpoint_path.read_text("utf-8"))
+                except (OSError, json.JSONDecodeError) as error:
+                    errors.append(f"run {index} checkpoint evidence is not valid JSON: {error}")
+                else:
+                    rows = checkpoint_data
+                    if isinstance(checkpoint_data, dict):
+                        rows = checkpoint_data.get("checkpoints")
+                    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+                        errors.append(f"run {index} checkpoint evidence is not a list of objects")
+                    elif len(rows) != 30:
+                        errors.append(f"run {index} checkpoint evidence must contain 30 rows")
+                    else:
+                        for row_number, row in enumerate(rows, 1):
+                            missing_fields = CHECKPOINT_REQUIRED_FIELDS - set(row)
+                            if missing_fields:
+                                errors.append(
+                                    f"run {index} checkpoint evidence row {row_number} missing {', '.join(sorted(missing_fields))}"
+                                )
+                                continue
+                            for field in CHECKPOINT_NUMERIC_FIELDS:
+                                value = row.get(field)
+                                if isinstance(value, bool) or not isinstance(value, int):
+                                    errors.append(
+                                        f"run {index} checkpoint evidence row {row_number} {field} must be a non-negative integer"
+                                    )
+                                elif value < 0:
+                                    errors.append(
+                                        f"run {index} checkpoint evidence row {row_number} negative {field}"
+                                    )
+                            if row.get("error_count") != 0:
+                                errors.append(
+                                    f"run {index} checkpoint evidence row {row_number} error_count must be 0"
+                                )
+                        pairs = {(row.get("year"), row.get("country")) for row in rows}
+                        years = sorted({row.get("year") for row in rows})
+                        countries = sorted({row.get("country") for row in rows})
+                        if len(pairs) != 30:
+                            errors.append(f"run {index} checkpoint evidence has duplicate year/country pairs")
+                        if years != YEARS:
+                            errors.append(f"run {index} checkpoint evidence has invalid years")
+                        if countries != sorted(COUNTRIES):
+                            errors.append(f"run {index} checkpoint evidence does not cover all ten countries")
+        if (
+            run.get("observed_seed") is not None
+            and isinstance(evidence, dict)
+            and evidence.get("observed_seed") != run.get("observed_seed")
+        ):
             errors.append(f"run {index} observed_seed lacks matching evidence")
         if run.get("game_version") != GAME_VERSION:
             errors.append(f"run {index} has incompatible game version")
