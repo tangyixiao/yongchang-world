@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+
+## Unreleased — world repair: the 1836 lobby actually inspected
+
+The first real look at the 1836 selection screen exposed long-standing scenario defects on top of the v0.2 content. All are fixed and locked by tests:
+
+- **Vanilla Qing no longer survives on the map.** The state ledger never reassigned seven former-Qing states (Southern Manchuria, Hinggan, Amur, Alxa, Tuva, Altai, Jetisy), so vanilla CHI kept 13204 provinces of the north while SHU showed 17.3M people. They now go to the design owners — Shun (Liaoning/Jilin-south migration area), the Amur/ Solon/ Hulun banners, Khoshut-Qinghai (Alxa), Khalkha (Tannu-Uriankhai and Altai), and Great Juz (Semirechye). CHI owns nothing at 1836 and disappears.
+- **The 20-million-person Sichuan basin and the Yunnan core belong to Shun.** The basin city provinces (Chengdu x60E0D5, Kunming x78DC66) moved from the highland fragments to new SHU create_state blocks, and ownership_overrides/southwest_states.json now declare the SHU shares so the coverage contract holds.
+- **Pops restored for every reassigned state.** The big regional pops files were authored against vanilla owners, so China's states lost their population when the ledger reassigned them. A new `ywc_china_pops.txt` authors the 23 uncovered SHU states at historical 1836 scale (~355M total for China proper), plus pops for the seven reassigned periphery states and their new owners, and x4 scale-ups for the thin southwest fragments (Sipsongpanna 68K -> 272K, Lijiang 80K -> 320K, etc.).
+- **Arakan is no longer Arabia.** The registry had claimed `ARA` as a vanilla reuse, but vanilla ARA is Arabia — the Mandalay state rendered as 阿拉伯 with the Arab flag. Arakan is now the genuinely new tag `RKN` with its own definition, flag, CoA, loc, pops, buildings and v0.2 line (ywc_rkn.1-.3); the southwest catalog, starts, and tests follow.
+- **Regional countries got real flags.** 35 new-tag countries had no flag definition and rendered with the engine default tricolor. They now carry geometric CoAs from the vanilla atlas in a separate `ywc_regional_coas.txt` (the core CoA count contract stays at 20), plus flag definitions per tag.
+- **Dynamic country names no longer hijack the start.** The always-true "heritage" dynamic names (大顺礼制国, 吐蕃承统国, 西域承统国...) fired from day one; they are deleted, so the tags display their proper names (大顺, 西藏...). The dead MNG-keyed block (MNG is not a runtime tag) was removed; the guardrail test against redeclaring vanilla lists stays green.
+- New `tests/test_scenario_integrity.py` locks the whole class: no CHI ownership, pops coverage for every mod-owned state, pops state names must exist, every new tag has a flag, and new-tag claims must not collide with vanilla.
+
+Static gates on this tree: 395/395 unit tests, `ywc_check` (game root) clean, all four content checkers clean, preflight static ok (content_reachability events=323 journals=86, startup_data pops fields=2222), `git diff --check` clean. Live verification still pending per the playbook — and old autosaves from before these fixes are incompatible with the new ledger.
+
+## Unreleased — v0.2 六六大顺: the six southwest countries
+
 ## Unreleased — v0.2 六六大顺: the six southwest countries
 
 - Gave six southwest countries their first playable lines (one core journal plus three bilingual events each, 18 events total): Lijiang 茶马引盐 (salt-permit reform, Tibetan merchants, the Mu succession), Sipsongpanna 十二版纳 (tea-hill leases, the Burmese envoy, shared levies), Derge 印经银钱 (printing-house debt, caravan escort, monks versus ministers), Gyalrong 戎马屯田 (farm colonies, the drill request, the league chair), the Shan confederation 三十七土司 (tribute shares, the magistrate request, tea versus poppy) and Arakan 两属之邦 (the Resident's bill, the Burmese exiles, the rice contract). Each line's last event settles into a resolved/failed pair and closes the journal; every summon is written to that country's own situation rather than a re-skinned template.
