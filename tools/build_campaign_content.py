@@ -44,6 +44,29 @@ CRISIS_SETTLE_MODIFIERS = {
     2: ("ywc_campaign_crisis_limited", 18, 10),
     3: ("ywc_campaign_crisis_fallout", 18, -15),
 }
+# v0.2 hook: the hegemony layer (顺我者昌，逆我者亡) starts from a settled
+# chapter-three mandate or a fully ratified suzerainty crisis. The block is
+# emitted into those exact settlement options so the two content packs stay
+# wired without cross-pack runtime lookups.
+HEGEMONY_START_OUTCOME_GATES = {
+    "shu_ch3": "var:ywc_campaign_shu_c3_outcome = 1",
+    "crisis1": "var:ywc_campaign_crisis1_outcome = 1 c:SHU ?= this",
+}
+HEGEMONY_START_BLOCK = """if = {{
+            limit = {{
+                {gate}
+                var:ywc_heritage_legitimacy >= 60
+                exists = c:JHG
+                exists = c:KOR
+                OR = {{ exists = c:LAN exists = c:NQG }}
+                OR = {{ exists = c:DMG exists = c:MGL }}
+                NOT = {{ has_variable = ywc_hegemony_started }}
+            }}
+            set_variable = {{ name = ywc_hegemony_started value = 1 }}
+            add_journal_entry = {{ type = ywc_je_hegemony_order }}
+            set_variable = {{ name = ywc_hegemony_stage value = 1 }}
+            set_variable = {{ name = ywc_hegemony_age value = 0 }}
+        }}"""
 
 
 def yaml_quote(value: str) -> str:
@@ -291,6 +314,10 @@ def final_option_effects(event: dict, direction_index: int) -> list[str]:
             lines.append(f"set_variable = {{ name = {stem}_resolved value = 1 }}")
     lines.extend(next_chapter_journal_lines(event))
     lines.extend(crisis_start_lines(event))
+    if short == "shu" and chapter == 3:
+        lines.append(
+            HEGEMONY_START_BLOCK.format(gate=HEGEMONY_START_OUTCOME_GATES["shu_ch3"])
+        )
     return lines
 
 
@@ -384,6 +411,10 @@ def render_settlement_option(event: dict, index: int) -> list[str]:
         )
     if event["choices"][index].get("cost"):
         lines.append(f"        add_treasury = -{event['choices'][index]['cost']}")
+    if crisis == 1 and outcome == 1:
+        lines.append(
+            HEGEMONY_START_BLOCK.format(gate=HEGEMONY_START_OUTCOME_GATES["crisis1"])
+        )
     lines.append("    }")
     return lines
 

@@ -1,0 +1,287 @@
+﻿# Shared effects for the v0.2 hegemony layer (顺我者昌，逆我者亡).
+# The holder pulse drives ywc_je_hegemony_order stage by stage; answers live
+# on the participant countries as ywc_tribute_answer (1 enrolled, 2 hedging,
+# 3 defiant) and the court keeps ywc_hegemony_authority plus the
+# compliant/defiant/hedging counters on SHU.
+
+# Bounded legitimacy shift for tribute decisions. Events must not mutate
+# ywc_heritage_legitimacy directly: this wrapper keeps the clamp and routes
+# through the shared refresh so the high/low legitimacy modifiers stay in step.
+ywc_shift_heritage_legitimacy = {
+    change_variable = { name = ywc_heritage_legitimacy add = $DELTA$ }
+    clamp_variable = { name = ywc_heritage_legitimacy min = 0 max = 100 }
+    ywc_refresh_heritage_legitimacy_modifier = yes
+}
+
+ywc_hegemony_pulse = {
+    # Holder pulse for ywc_je_hegemony_order (scope: SHU).
+    # s1 proclamation, s2 quarterly summons loop, s3-s6 court politics,
+    # s7 settlement; silence past 12 months defaults each stage.
+    if = {
+            limit = { NOT = { has_variable = ywc_hegemony_outcome } }
+                if = {
+                        limit = { has_variable = ywc_hegemony_age }
+                            change_variable = { name = ywc_hegemony_age add = 1 }
+                    }
+                    else_if = {
+                            limit = {
+                                    var:ywc_hegemony_stage = 1
+                                    NOT = { has_variable = ywc_hegemony_asked }
+                                }
+                            set_variable = { name = ywc_hegemony_asked value = 1 }
+                            trigger_event = { id = ywc_hegemony.1 }
+                        }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 1
+                                        OR = { has_variable = ywc_hegemony_s1_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_s1_done } }
+                                            set_variable = { name = ywc_hegemony_authority value = 50 }
+                                            set_variable = { name = ywc_hegemony_compliant value = 0 }
+                                            set_variable = { name = ywc_hegemony_defiant value = 0 }
+                                            set_variable = { name = ywc_hegemony_hedging value = 0 }
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 2 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_jhg }
+                                    }
+                                set_variable = { name = ywc_trib_asked_jhg value = 1 }
+                                if = {
+                                        limit = { exists = c:JHG }
+                                            c:JHG = { trigger_event = { id = ywc_jhg.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_kor }
+                                    }
+                                set_variable = { name = ywc_trib_asked_kor value = 1 }
+                                if = {
+                                        limit = { exists = c:KOR }
+                                            c:KOR = { trigger_event = { id = ywc_kor.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_lan }
+                                    }
+                                set_variable = { name = ywc_trib_asked_lan value = 1 }
+                                if = {
+                                        limit = { exists = c:LAN }
+                                            c:LAN = { trigger_event = { id = ywc_lan.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_nqg }
+                                    }
+                                set_variable = { name = ywc_trib_asked_nqg value = 1 }
+                                if = {
+                                        limit = { exists = c:NQG }
+                                            c:NQG = { trigger_event = { id = ywc_nqg.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_dmg }
+                                    }
+                                set_variable = { name = ywc_trib_asked_dmg value = 1 }
+                                if = {
+                                        limit = { exists = c:DMG }
+                                            c:DMG = { trigger_event = { id = ywc_dmg.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_mgl }
+                                    }
+                                set_variable = { name = ywc_trib_asked_mgl value = 1 }
+                                if = {
+                                        limit = { exists = c:MGL }
+                                            c:MGL = { trigger_event = { id = ywc_mgl.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_tib }
+                                    }
+                                set_variable = { name = ywc_trib_asked_tib value = 1 }
+                                if = {
+                                        limit = { exists = c:TIB }
+                                            c:TIB = { trigger_event = { id = ywc_tib.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_oir }
+                                    }
+                                set_variable = { name = ywc_trib_asked_oir value = 1 }
+                                if = {
+                                        limit = { exists = c:OIR }
+                                            c:OIR = { trigger_event = { id = ywc_oir.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        NOT = { has_variable = ywc_trib_asked_nmg }
+                                    }
+                                set_variable = { name = ywc_trib_asked_nmg value = 1 }
+                                if = {
+                                        limit = { exists = c:NMG }
+                                            c:NMG = { trigger_event = { id = ywc_nmg.200 } }
+                                    }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 2
+                                        has_variable = ywc_trib_asked_nmg
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 3 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 3
+                                        NOT = { has_variable = ywc_hegemony_asked }
+                                    }
+                                set_variable = { name = ywc_hegemony_asked value = 1 }
+                                trigger_event = { id = ywc_hegemony.2 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 3
+                                        OR = { has_variable = ywc_hegemony_s3_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_s3_done } }
+                                            set_variable = { name = ywc_hegemony_s3_done value = 1 }
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 4 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 4
+                                        NOT = { has_variable = ywc_hegemony_asked }
+                                    }
+                                set_variable = { name = ywc_hegemony_asked value = 1 }
+                                trigger_event = { id = ywc_hegemony.3 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 4
+                                        OR = { has_variable = ywc_hegemony_s4_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_s4_done } }
+                                            set_variable = { name = ywc_hegemony_s4_done value = 1 }
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 5 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 5
+                                        NOT = { has_variable = ywc_hegemony_asked }
+                                    }
+                                set_variable = { name = ywc_hegemony_asked value = 1 }
+                                trigger_event = { id = ywc_hegemony.4 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 5
+                                        OR = { has_variable = ywc_hegemony_s5_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_s5_done } }
+                                            set_variable = { name = ywc_hegemony_s5_done value = 1 }
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 6 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 6
+                                        NOT = { has_variable = ywc_hegemony_asked }
+                                    }
+                                set_variable = { name = ywc_hegemony_asked value = 1 }
+                                trigger_event = { id = ywc_hegemony.5 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 6
+                                        OR = { has_variable = ywc_hegemony_s6_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_s6_done } }
+                                            set_variable = { name = ywc_hegemony_s6_done value = 1 }
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 7 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 7
+                                        NOT = { has_variable = ywc_hegemony_asked }
+                                    }
+                                set_variable = { name = ywc_hegemony_asked value = 1 }
+                                trigger_event = { id = ywc_hegemony.6 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 7
+                                        OR = { has_variable = ywc_hegemony_s7_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_s7_done } }
+                                            set_variable = { name = ywc_hegemony_s7_done value = 1 }
+                                    }
+                                set_variable = { name = ywc_hegemony_stage value = 8 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 7
+                                        NOT = { has_variable = ywc_hegemony_asked }
+                                    }
+                                set_variable = { name = ywc_hegemony_asked value = 1 }
+                                trigger_event = { id = ywc_hegemony.6 }
+                            }
+                        else_if = {
+                                limit = {
+                                        var:ywc_hegemony_stage = 7
+                                        OR = { has_variable = ywc_hegemony_s7_done var:ywc_hegemony_age >= 12 }
+                                    }
+                                if = {
+                                        limit = { NOT = { has_variable = ywc_hegemony_outcome } }
+                                            set_variable = { name = ywc_hegemony_outcome value = 2 }
+                                    }
+                                remove_variable = ywc_hegemony_asked
+                            }
+                        else_if = {
+                                limit = { NOT = { has_variable = ywc_hegemony_stage } }
+                                set_variable = { name = ywc_hegemony_stage value = 1 }
+                                set_variable = { name = ywc_hegemony_age value = 0 }
+                            }
+                }
+}

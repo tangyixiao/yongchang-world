@@ -23,6 +23,17 @@
 - `tools/ywc_campaign_check.py` 校验清单→事件→journal→效果→本地化的整条链：180 个唯一 ID、章节顺序、双语文案、选项数、章末门槛与结局写入、危机阶段可达、修正声明与生成文件新鲜度；`tests/test_campaign_content.py` 17 项覆盖清单不变量、生成器拒绝路径与校验器的变异测试。
 - 静态门禁全部通过（358 项单元测试、`ywc_check`、`content_reachability` events=272 journals=79、修正审计、preflight 四项静态检查）。新档三章推进、AI 应答、危机启动与长期平衡仍未有真实战局证据，按 [docs/release/manual-acceptance-playbook.md](docs/release/manual-acceptance-playbook.md) 的门槛二/三/四执行。
 
+## v0.2「顺我者昌，逆我者亡」：天命霸权层（2026-09-26）
+
+三章战役结算后的天下，进入天命霸权阶段。按 [2026-09-26 顺昌逆亡实施计划](docs/superpowers/plans/2026-09-26-顺昌逆亡实施计划.md)（设计见 [specs/2026-09-26-顺昌逆亡霸权秩序设计.md](docs/superpowers/specs/2026-09-26-顺昌逆亡霸权秩序设计.md)）：
+
+- **触发**：大顺第三章"制度确立"结算，或危机一"天下名分"全协议签订，且正统性 ≥60、核心参与国存续——满足即颁行朝贡新籍（钩子由生成器写入 `ywc_shu.114` 与 `ywc_crisis.6` 结算选项）。
+- **霸权线**（`ywc_hegemony.1`–`.6`）：颁诏（宽仁/威严定权威起点）→ 应答期（九国按季逐一接到各自成文的诏使事件）→ 四方震动 → 酬顺之政 → 问罪逆藩 → 朝会天宪 → 天命所归。
+- **参与国线**（每国 `.200`–`.202`，共 27 个）：诏使至国（入贡/观望/拒诏，三国抉择、按各国处境单独撰文）；顺服者收到"顺者之昌"（加贡请封或谨守本分），拒诏者收到"逆者之亡"（硬抗到底或转而入贡）。
+- **机制**：`ywc_hegemony_authority` 0–100 权威 + 顺/逆/观三计数；入贡是真实国库转移（按国规模分级）+ 自主压力；拒诏招致限时孤立修正与关系崩坏——**拒诏不产生征服权**，倾覆只经由既有外交博弈与战争系统；权威不足或逆多顺少时新制受挫乃至崩解，霸权承受余波修正。
+- `data/content/hegemony_event_catalog.json`（33 事件双语）为唯一实现输入，`tools/build_hegemony_content.py` 生成事件与双语文案；`tools/ywc_hegemony_check.py` 与 `tests/test_hegemony_content.py` 守门（可达性 events=305 / journals=80）。
+- 静态门禁全部通过（375 项单元测试、`ywc_check` 对照游戏根目录零诊断、preflight 四项静态 ok）；霸权节奏、AI 顺逆倾向与长期平衡仍无实机证据。
+
 ## 开发验证
 
 ```powershell
