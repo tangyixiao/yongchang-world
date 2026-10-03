@@ -108,3 +108,10 @@ python tools/observation_status.py --root artifacts/observe
 ## 当前边界
 
 此前批次和本次特色事件扩展已完成静态复核；HEAD `3cba19e` 的提交态隐藏预加载也已通过。当前未提交工作树尚无对应的隐藏或实机运行证据，完整 UI 逐国选国与 1836—1900 长期观察局仍未完成，因此不能宣称 AI 长期平衡或 v0.1 已通过发行验收。游戏脚本以本体 1.13.11（Build ID 24799966）为基线，Province ID 来自本体快照。
+
+## 可选服饰搭配
+
+永昌世界保留汉人文化，不打包第三方服饰模型，也不要求安装服饰模组。下面两款是检索到的高关注度参考；订阅与收藏数是 2026-10-03 页面快照，会变化。
+
+- [East Asian Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=3704408897)：覆盖中国、朝鲜、越南、日本和琉球的人物与人口服饰；页面称汉人为主流文化的中华帝国使用明风服饰。快照显示约 7,502 名订阅者、400 个收藏。Steam 页面目前同时标记为“已移除”和“与 Victoria 3 不兼容”，因此不能保证新玩家现在可订阅或正常运行。
+- [Chinese Uniform Pack (1.13)](https://steamcommunity.com/sharedfiles/filedetails/?id=3237422684)：提供不同历史时期的中国军服，不是民用服饰替代品。快照显示约 6,778 名订阅者、608 个收藏；前置为 [Miss Asset Framework](https://steamcommunity.com/sharedfiles/filedetails/?id=3296496664)、[Community Outfit Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3147725402) 和 [Western Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=2981574864)。该页面目前也标记为“已移除”和“不兼容”，此条只供已订阅玩家或页面恢复后参考。
