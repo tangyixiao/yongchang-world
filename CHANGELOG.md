@@ -15,14 +15,13 @@ The first real look at the 1836 selection screen exposed long-standing scenario 
 
 Static gates on this tree: 395/395 unit tests, `ywc_check` (game root) clean, all four content checkers clean, preflight static ok (content_reachability events=323 journals=86, startup_data pops fields=2222), `git diff --check` clean. Live verification still pending per the playbook — and old autosaves from before these fixes are incompatible with the new ledger.
 
-## Unreleased — v0.2 六六大顺: the six southwest countries
-
-## Unreleased — v0.2 六六大顺: the six southwest countries
+## v0.2.0 — 六六大顺：西南六国（2026-10-12）
 
 - Gave six southwest countries their first playable lines (one core journal plus three bilingual events each, 18 events total): Lijiang 茶马引盐 (salt-permit reform, Tibetan merchants, the Mu succession), Sipsongpanna 十二版纳 (tea-hill leases, the Burmese envoy, shared levies), Derge 印经银钱 (printing-house debt, caravan escort, monks versus ministers), Gyalrong 戎马屯田 (farm colonies, the drill request, the league chair), the Shan confederation 三十七土司 (tribute shares, the magistrate request, tea versus poppy) and Arakan 两属之邦 (the Resident's bill, the Burmese exiles, the rice contract). Each line's last event settles into a resolved/failed pair and closes the journal; every summon is written to that country's own situation rather than a re-skinned template.
 - Deliberately light mechanics for regional countries: effects are treasury, relations towards SHU/GBR/TIB/DER/BUR, event markers and eight new time-limited modifiers (茶马新章/互市开城/护商之约/练军之效/摊派之累/烟祸蔓延/稻米专约/流亡之累). The southwest never touches the shared legitimacy/maritime/autonomy variables, never grants cores, land or subject releases, and the shared-variable initialization gate is satisfied by mounting each journal after `ywc_reset_shared_variables` in the six country blocks.
 - `data/content/southwest_event_catalog.json` (18 events, bilingual) is the single input; `tools/build_southwest_content.py` renders the events, the six journals and both localizations with a `--check` drift gate; `tools/ywc_southwest_check.py` + `tests/test_southwest_content.py` (15 tests) verify the six lines, the start-block mounts, modifier declarations and bilingual coverage. Static gates: 390/390 unit tests, `ywc_check` (game root) clean, preflight static ok with `content_reachability` events=323 journals=86, `git diff --check` clean. Live evidence still pending per the playbook.
 - Version ladder renamed at the user's request: the hegemony batch is now the **v1.0「受命于天，既寿永昌」first layer** (design/plan docs renamed, journal display name updated, PR retitled), and **v0.2** is this southwest pack.
+- Release close: the ten mainline countries received a source-reviewed opening-law pass and one bilingual opening amendment each. Jinghai starts with eight frigates, four naval-administration levels (enough for all 4,000 sailors), a level-two shipyard, and an amendment that improves shipbuilding efficiency and reduces naval goods costs. MHG 明香's religion-law judgment is separately documented as state religious identity with freedom of conscience, not an established exclusive state church. Korea's Three Administrations amendment uses the vanilla `tax_land_add = 0.02` modifier at each tax setting.
 
 ## Unreleased — v1.0 受命于天，既寿永昌 (first layer): the hegemony system
 

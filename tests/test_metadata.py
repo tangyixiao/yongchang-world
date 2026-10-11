@@ -13,7 +13,7 @@ class MetadataTest(unittest.TestCase):
         )
         self.assertEqual(data["name"], "The Yongchang World")
         self.assertEqual(data["game_id"], "victoria3")
-        self.assertEqual(data["version"], "0.1.0")
+        self.assertEqual(data["version"], "0.2.0")
         self.assertEqual(data["supported_game_version"], "1.13.*")
         self.assertEqual(data["short_description"], "1836年永昌世界十国垂直切片")
         self.assertEqual(data["relationships"], [])
@@ -26,7 +26,7 @@ class MetadataTest(unittest.TestCase):
     def test_descriptor_has_launcher_identity(self):
         descriptor = (ROOT / "yongchang_world/descriptor.mod").read_text("utf-8")
         self.assertIn('name="The Yongchang World"', descriptor)
-        self.assertIn('version="0.1.0"', descriptor)
+        self.assertIn('version="0.2.0"', descriptor)
         self.assertIn('supported_version="1.13.*"', descriptor)
 
     def test_localization_files_have_utf8_bom(self):

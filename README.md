@@ -48,6 +48,8 @@ v0.2 给西南六国各补一条核心日志与三个双语事件（设计见 [s
 机制契约：区域国家保持轻量——效果只有国库、关系（大顺/英国/西藏/德格/缅甸）、事件标记与八个限时修正（茶马新章、互市开城、护商之约、练军之效、摊派之累、烟祸蔓延、稻米专约、流亡之累），不触碰共享三变量，不发核心不送地；六条日志开局即挂（先 `ywc_reset_shared_variables` 后挂日志），三节按序投递，末节写 resolved/failed 收束。`data/content/southwest_event_catalog.json` 唯一清单 → `tools/build_southwest_content.py` 生成 → `tools/ywc_southwest_check.py` 与 `tests/test_southwest_content.py` 守门（可达性 events=323 / journals=86）。
 静态门禁全部通过（390 项单元测试、`ywc_check` 对照游戏根目录零诊断、preflight 四项静态 ok）；西南节奏与 AI 行为仍无实机证据。
 
+**v0.2.0 于 2026-10-12 收官。** 除西南六国内容外，本轮也完成十个主线国家的开局法律史实复核，并按本体新版 amendment 结构为十国各配置一项双语特色修正案。靖海开局为 8 艘护卫舰、4 级海军行政和 2 级船坞，水手容量可覆盖舰队满编；其修正案另强化造船效率与海军商品成本。明香的宗教判断按现有项目设定记录为国家宗教身份加良心自由法，不推定为排他国教。四家开局王室人物按各自支系行辈与五行偏旁命名；普通角色仍用本体文化姓名池，未来世代的自动字辈轮转不在本次范围。静态内容校验与单元测试结果记录在 [v0.2 验收记录](docs/release/v0.2-acceptance.md)；游戏内完整战局、事件和长期平衡仍按人工验收手册待验证。
+
 ## 开发验证
 
 ```powershell
@@ -112,6 +114,8 @@ python tools/observation_status.py --root artifacts/observe
 ## 可选服饰搭配
 
 永昌世界保留汉人文化，不打包第三方服饰模型，也不要求安装服饰模组。下面两款是检索到的高关注度参考；订阅与收藏数是 2026-10-03 页面快照，会变化。
+
+只把角色文化设为 Han 不会自动换成明制服装：本体肖像触发器会给本国君主制下的汉人君主套用 `chinese_imperial_outfits`，这组原版帝王服看起来偏清式；东亚人口的服饰也仍走本体的阶层规则。永昌世界没有覆盖这些触发器或自带替代服装模型。`East Asian Clothes: Redux` 的 [1.0.1 更新记录](https://steamcommunity.com/sharedfiles/filedetails/changelog/3704408897)曾专门处理 Ming/Han China 的 Executives 误穿清廷服饰，但无法据此确认自定义国家君主也兼容；Steam 工坊页面当前显示该项已移除/不兼容，本机没有安装副本。因此单独启用永昌世界时仍会看到本体服饰。这里保留它作为调研记录，不代表新玩家当前可安装或本模组已完成汉服视觉兼容。
 
 - [East Asian Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=3704408897)：覆盖中国、朝鲜、越南、日本和琉球的人物与人口服饰；页面称汉人为主流文化的中华帝国使用明风服饰。快照显示约 7,502 名订阅者、400 个收藏。Steam 页面目前同时标记为“已移除”和“与 Victoria 3 不兼容”，因此不能保证新玩家现在可订阅或正常运行。
 - [Chinese Uniform Pack (1.13)](https://steamcommunity.com/sharedfiles/filedetails/?id=3237422684)：提供不同历史时期的中国军服，不是民用服饰替代品。快照显示约 6,778 名订阅者、608 个收藏；前置为 [Miss Asset Framework](https://steamcommunity.com/sharedfiles/filedetails/?id=3296496664)、[Community Outfit Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3147725402) 和 [Western Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=2981574864)。该页面目前也标记为“已移除”和“不兼容”，此条只供已订阅玩家或页面恢复后参考。
