@@ -161,6 +161,7 @@ def bring_to_front(hwnd: int) -> None:
         if user32.GetForegroundWindow() == hwnd:
             return
         time.sleep(0.1)
+    raise RuntimeError("Victoria 3 did not become the foreground window; refusing desktop input")
 
 
 def take_shot(hwnd: int | None, label: str) -> list[pathlib.Path]:

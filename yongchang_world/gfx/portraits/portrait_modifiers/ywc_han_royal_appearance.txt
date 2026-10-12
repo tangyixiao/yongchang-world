@@ -1,0 +1,84 @@
+﻿# Yongchang World - Han-court appearance selectors
+# Re-styles the three Han royal houses (SHU / DMG / NMG) so their monarchs stop
+# receiving the vanilla Qing-imperial regalia that chinese_imperial_clothes_trigger
+# grants every Han-heritage monarch of a monarchy.
+# Evidence: game/gfx/portraits/portrait_modifiers/01_clothes.txt:4679
+# (chinese_imperial_clothes, weight add=1100, template chinese_imperial_outfits)
+# and 01_headgear.txt:1001 (chinese_imperial_headgear, weight add=100), both
+# gated by game/common/scripted_triggers/00_clothes_triggers.txt:1121.
+#
+# Mechanism: refs/v3_mod_guide_cn/v3_wiki_docs/Other/Mod_compatibility.md lists
+# gfx/portraits/portrait_modifiers on the INJECT whitelist, and INJECT: appends
+# to an existing top-level entry, so these blocks extend the vanilla clothes /
+# headgear / hairstyles containers instead of overwriting the files.  Portraits
+# pick ONE entry per container by selection_behavior = weighted_random, and a
+# larger weight beats a smaller one (vanilla: imperial add=1100 beats court
+# add=1000), so a weight of 2100 deterministically wins for the three royal tags.
+#
+# MHG is deliberately excluded: it is an overseas rump state whose presentation
+# stays untouched until there is art evidence for it.
+#
+# Outfit choice: the game ships no Ming-era Chinese outfit (male_outfit_chinese_*
+# is the whole set, all Qing-era designs), so the highest non-imperial Chinese
+# template, chinese_court_outfits, replaces the dragon robe; no_headgear drops
+# the Qing court cap; the queue hairstyle is pre-empted by east_asian_hairstyles.
+
+INJECT:clothes = {
+    ywc_han_royal_court_clothes = {
+        dna_modifiers = {
+            accessory = {
+                mode = add
+                gene = outfits
+                template = chinese_court_outfits
+                range = { 0 1 } # For the randomness to work correctly
+            }
+        }
+        weight = {
+            base = 0
+            modifier = {
+                add = 2100
+                ywc_han_royal_appearance_trigger = yes
+            }
+        }
+    }
+}
+
+INJECT:headgear = {
+    ywc_han_royal_no_headgear = {
+        dna_modifiers = {
+            accessory = {
+                mode = add
+                gene = headgear
+                template = no_headgear
+                range = { 0 1 } # For the randomness to work correctly
+            }
+        }
+        weight = {
+            base = 0
+            modifier = {
+                add = 2100
+                ywc_han_royal_appearance_trigger = yes
+            }
+        }
+    }
+}
+
+INJECT:hairstyles = {
+    ywc_han_royal_east_asian_hair = {
+        dna_modifiers = {
+            accessory = {
+                mode = replace
+                gene = hairstyles
+                template = east_asian_hairstyles
+                range = { 0 1 } # For the randomness to work correctly
+            }
+        }
+        weight = {
+            base = 0
+            modifier = {
+                add = 2100
+                ywc_han_royal_appearance_trigger = yes
+            }
+        }
+    }
+}

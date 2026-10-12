@@ -158,29 +158,66 @@ def override_map(overrides: dict) -> dict[str, list[dict]]:
 
 def replace_state_block(block: str, groups: list[dict]) -> str:
     matches = list(CREATE_STATE_RE.finditer(block))
-    if len(matches) != len(groups):
-        raise ValueError(f"runtime group count {len(matches)} differs from override count {len(groups)}")
-    replacements = []
-    for match, group in zip(matches, groups):
+
+    if not matches:
+        raise ValueError("state has no create_state block")
+
+    templates = []
+    for match in matches:
         opening = block.find("{", match.start(), match.end())
         end = balanced_end(block, opening)
-        create = block[match.start() : end + 1]
-        country = COUNTRY_RE.search(create)
-        provinces = PROVINCE_OPEN_RE.search(create)
+        template = block[match.start() : end + 1]
+        country = COUNTRY_RE.search(template)
+        if country is None or PROVINCE_OPEN_RE.search(template) is None:
+            raise ValueError("create_state must contain country and owned_provinces")
+
+        templates.append((country.group(2), template))
+
+    available: dict[str, list[str]] = {}
+    for owner, template in templates:
+        available.setdefault(owner, []).append(template)
+
+    generated = []
+    fallback = templates[0][1]
+    for group in groups:
+        candidates = available.get(group["owner"], [])
+        if candidates:
+            template = candidates.pop(0)
+        elif templates:
+            # New owner groups inherit the state's existing create_state
+            # metadata; ownership and province scope are replaced below.
+            template = templates[0][1]
+        else:  # pragma: no cover - guarded by the check above.
+            template = fallback
+
+        country = COUNTRY_RE.search(template)
+        provinces = PROVINCE_OPEN_RE.search(template)
         if country is None or provinces is None:
             raise ValueError("create_state must contain country and owned_provinces")
-        create = create[: country.start(2)] + group["owner"] + create[country.end(2) :]
+
+        create = template[: country.start(2)] + group["owner"] + template[country.end(2) :]
         provinces = PROVINCE_OPEN_RE.search(create)
         province_opening = create.find("{", provinces.start(), provinces.end())
         province_end = balanced_end(create, province_opening)
         indent = provinces.group(1)
         replacement = f"{indent}owned_provinces = {{ {' '.join(group['owned_provinces'])} }}"
         create = create[: provinces.start()] + replacement + create[province_end + 1 :]
-        replacements.append((match.start(), end + 1, create))
-    result = block
-    for start, end, replacement in reversed(replacements):
-        result = result[:start] + replacement + result[end:]
-    return result
+        # Reusing an already generated state can carry mixed whitespace from
+        # an older template. Keep repeated generation stable and diff-clean.
+        create = re.sub(r"(?m)^(\t*) +\t", lambda match: match.group(1) + "\t", create)
+        generated.append(create)
+
+    first = matches[0]
+    last = matches[-1]
+    last_end = balanced_end(block, block.find("{", last.start(), last.end()))
+    prefix = block[: first.start()]
+    suffix = block[last_end + 1 :]
+    if len(matches) > 1:
+        first_end = balanced_end(block, block.find("{", first.start(), first.end()))
+        separator = block[first_end + 1 : matches[1].start()]
+    else:
+        separator = "\n"
+    return prefix + separator.join(generated) + suffix
 
 
 def apply_overrides(template: str, baseline: dict, overrides: dict) -> str:

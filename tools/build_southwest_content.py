@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Build the v0.2 六六大顺 southwest layer (18 events) from the catalog.
 
 ``data/content/southwest_event_catalog.json`` is the single implementation
@@ -53,6 +53,8 @@ def validate(catalog: dict) -> list[dict]:
         short, tag = line.get("short"), line.get("tag")
         if not str(short).strip() or not re.fullmatch(r"[A-Z]{3}", str(tag)):
             raise ValueError(f"line needs a short and a three-letter tag: {line!r}")
+        if "show_in_lobby" in line and not isinstance(line["show_in_lobby"], bool):
+            raise ValueError(f"{tag}: show_in_lobby must be boolean")
         journal = line.get("journal", "")
         if journal != f"ywc_je_sw_{short}":
             raise ValueError(f"{tag}: journal must be ywc_je_sw_{short}")
@@ -113,6 +115,7 @@ def render_event(event: dict) -> list[str]:
         f"    title = {event['id']}.t",
         f"    desc = {event['id']}.d",
         "    duration = 1",
+        '    event_image = { video = "asia_sepoy_mutiny" }',
     ]
     for index, choice in enumerate(event["choices"]):
         lines += [
@@ -144,8 +147,12 @@ def render_journal_file(catalog: dict) -> str:
     blocks = []
     for line in catalog["lines"]:
         short, tag = line["short"], line["tag"]
+        lobby_visibility = ""
+        if line.get("show_in_lobby", False):
+            lobby_visibility = f"    is_shown_in_lobby = {{ c:{tag} ?= THIS }}\n"
         blocks.append(
             f"{line['journal']} = {{\n"
+            f"{lobby_visibility}"
             f"    icon = \"gfx/interface/icons/event_icons/event_portrait.dds\"\n"
             f"    group = je_group_internal_affairs\n"
             f"    on_monthly_pulse = {{\n"

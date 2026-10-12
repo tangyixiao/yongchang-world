@@ -15,17 +15,6 @@ ywc_campaign_tick_national_wait = {
     }
 }
 
-ywc_campaign_tick_dialogue_cooldown = {
-    if = {
-        limit = { has_variable = ywc_campaign_dialogue_cooldown }
-        change_variable = { name = ywc_campaign_dialogue_cooldown add = -1 }
-        if = {
-            limit = { var:ywc_campaign_dialogue_cooldown <= 0 }
-            remove_variable = ywc_campaign_dialogue_cooldown
-        }
-    }
-}
-
 # Chapter settlement for the bold option of the chapter's last event.
 # Outcome 1 needs a positive campaign record plus the real-world gate passed
 # in $GATE$; the gate alone still secures a compromise; a negative record with
@@ -85,11 +74,10 @@ ywc_campaign_settle_final = {
 
 # Records a crisis stage answer on the answering country. 1 agree, 2 refuse,
 # 3 rupture confirmation at stage six; the holder records 0 for "no
-# representative". The dialogue cooldown keeps one active crisis card per
-# quarter at most.
+# representative". Delivery reserves the actual recipient for three months;
+# answering does not restart that delivery clock.
 ywc_campaign_crisis_answer = {
     set_variable = { name = ywc_campaign_crisis$CRISIS$_s$STAGE$_answer value = $ANSWER$ }
-    set_variable = { name = ywc_campaign_dialogue_cooldown value = 3 }
 }
 
 
@@ -100,16 +88,21 @@ ywc_crisis_pulse_suzerainty = {
     if = {
             limit = { NOT = { has_variable = ywc_campaign_crisis1_outcome } }
                 if = {
-                        limit = { has_variable = ywc_campaign_crisis1_age }
+                        limit = { has_variable = ywc_campaign_crisis1_age has_variable = ywc_campaign_crisis1_asked }
                             change_variable = { name = ywc_campaign_crisis1_age add = 1 }
                     }
-                else_if = {
+                if = {
                         limit = {
                                 var:ywc_campaign_crisis1_stage = 1
                                 NOT = { has_variable = ywc_campaign_crisis1_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.1 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis1_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.1 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -126,10 +119,14 @@ ywc_crisis_pulse_suzerainty = {
                                 var:ywc_campaign_crisis1_stage = 2
                                 NOT = { has_variable = ywc_campaign_crisis1_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
                         if = {
                                 limit = { exists = c:JHG }
-                                c:JHG = { trigger_event = { id = ywc_crisis.2 } }
+                                if = {
+                                    limit = { c:JHG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis1_age value = 0 }
+                                    c:JHG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.2 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis1_s2_answer value = 0 }
@@ -153,10 +150,14 @@ ywc_crisis_pulse_suzerainty = {
                                 var:ywc_campaign_crisis1_stage = 3
                                 NOT = { has_variable = ywc_campaign_crisis1_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
                         if = {
                                 limit = { exists = c:KOR }
-                                c:KOR = { trigger_event = { id = ywc_crisis.3 } }
+                                if = {
+                                    limit = { c:KOR = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis1_age value = 0 }
+                                    c:KOR = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.3 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis1_s3_answer value = 0 }
@@ -180,10 +181,14 @@ ywc_crisis_pulse_suzerainty = {
                                 var:ywc_campaign_crisis1_stage = 4
                                 NOT = { has_variable = ywc_campaign_crisis1_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
                         if = {
                                 limit = { exists = c:SHU }
-                                c:SHU = { trigger_event = { id = ywc_crisis.4 } }
+                                if = {
+                                    limit = { c:SHU = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis1_age value = 0 }
+                                    c:SHU = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.4 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis1_s4_answer value = 0 }
@@ -207,10 +212,14 @@ ywc_crisis_pulse_suzerainty = {
                                 var:ywc_campaign_crisis1_stage = 5
                                 NOT = { has_variable = ywc_campaign_crisis1_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
                         if = {
                                 limit = { exists = c:JHG }
-                                c:JHG = { trigger_event = { id = ywc_crisis.5 } }
+                                if = {
+                                    limit = { c:JHG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis1_age value = 0 }
+                                    c:JHG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.5 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis1_s5_answer value = 0 }
@@ -234,8 +243,13 @@ ywc_crisis_pulse_suzerainty = {
                                 var:ywc_campaign_crisis1_stage = 6
                                 NOT = { has_variable = ywc_campaign_crisis1_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.6 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis1_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis1_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.6 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -263,16 +277,21 @@ ywc_crisis_pulse_blackwater = {
     if = {
             limit = { NOT = { has_variable = ywc_campaign_crisis2_outcome } }
                 if = {
-                        limit = { has_variable = ywc_campaign_crisis2_age }
+                        limit = { has_variable = ywc_campaign_crisis2_age has_variable = ywc_campaign_crisis2_asked }
                             change_variable = { name = ywc_campaign_crisis2_age add = 1 }
                     }
-                else_if = {
+                if = {
                         limit = {
                                 var:ywc_campaign_crisis2_stage = 1
                                 NOT = { has_variable = ywc_campaign_crisis2_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.7 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis2_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.7 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -289,10 +308,14 @@ ywc_crisis_pulse_blackwater = {
                                 var:ywc_campaign_crisis2_stage = 2
                                 NOT = { has_variable = ywc_campaign_crisis2_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
                         if = {
                                 limit = { exists = c:SHU }
-                                c:SHU = { trigger_event = { id = ywc_crisis.8 } }
+                                if = {
+                                    limit = { c:SHU = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis2_age value = 0 }
+                                    c:SHU = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.8 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis2_s2_answer value = 0 }
@@ -316,10 +339,14 @@ ywc_crisis_pulse_blackwater = {
                                 var:ywc_campaign_crisis2_stage = 3
                                 NOT = { has_variable = ywc_campaign_crisis2_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
                         if = {
                                 limit = { exists = c:MGL }
-                                c:MGL = { trigger_event = { id = ywc_crisis.9 } }
+                                if = {
+                                    limit = { c:MGL = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis2_age value = 0 }
+                                    c:MGL = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.9 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis2_s3_answer value = 0 }
@@ -343,10 +370,14 @@ ywc_crisis_pulse_blackwater = {
                                 var:ywc_campaign_crisis2_stage = 4
                                 NOT = { has_variable = ywc_campaign_crisis2_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
                         if = {
                                 limit = { exists = c:NQG }
-                                c:NQG = { trigger_event = { id = ywc_crisis.10 } }
+                                if = {
+                                    limit = { c:NQG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis2_age value = 0 }
+                                    c:NQG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.10 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis2_s4_answer value = 0 }
@@ -370,10 +401,14 @@ ywc_crisis_pulse_blackwater = {
                                 var:ywc_campaign_crisis2_stage = 5
                                 NOT = { has_variable = ywc_campaign_crisis2_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
                         if = {
                                 limit = { exists = c:SHU }
-                                c:SHU = { trigger_event = { id = ywc_crisis.11 } }
+                                if = {
+                                    limit = { c:SHU = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis2_age value = 0 }
+                                    c:SHU = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.11 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis2_s5_answer value = 0 }
@@ -397,8 +432,13 @@ ywc_crisis_pulse_blackwater = {
                                 var:ywc_campaign_crisis2_stage = 6
                                 NOT = { has_variable = ywc_campaign_crisis2_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.12 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis2_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis2_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.12 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -426,16 +466,21 @@ ywc_crisis_pulse_inner_asian_routes = {
     if = {
             limit = { NOT = { has_variable = ywc_campaign_crisis3_outcome } }
                 if = {
-                        limit = { has_variable = ywc_campaign_crisis3_age }
+                        limit = { has_variable = ywc_campaign_crisis3_age has_variable = ywc_campaign_crisis3_asked }
                             change_variable = { name = ywc_campaign_crisis3_age add = 1 }
                     }
-                else_if = {
+                if = {
                         limit = {
                                 var:ywc_campaign_crisis3_stage = 1
                                 NOT = { has_variable = ywc_campaign_crisis3_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.13 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis3_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.13 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -452,10 +497,14 @@ ywc_crisis_pulse_inner_asian_routes = {
                                 var:ywc_campaign_crisis3_stage = 2
                                 NOT = { has_variable = ywc_campaign_crisis3_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
                         if = {
                                 limit = { exists = c:SHU }
-                                c:SHU = { trigger_event = { id = ywc_crisis.14 } }
+                                if = {
+                                    limit = { c:SHU = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis3_age value = 0 }
+                                    c:SHU = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.14 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis3_s2_answer value = 0 }
@@ -479,10 +528,14 @@ ywc_crisis_pulse_inner_asian_routes = {
                                 var:ywc_campaign_crisis3_stage = 3
                                 NOT = { has_variable = ywc_campaign_crisis3_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
                         if = {
                                 limit = { exists = c:MGL }
-                                c:MGL = { trigger_event = { id = ywc_crisis.15 } }
+                                if = {
+                                    limit = { c:MGL = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis3_age value = 0 }
+                                    c:MGL = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.15 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis3_s3_answer value = 0 }
@@ -506,10 +559,14 @@ ywc_crisis_pulse_inner_asian_routes = {
                                 var:ywc_campaign_crisis3_stage = 4
                                 NOT = { has_variable = ywc_campaign_crisis3_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
                         if = {
                                 limit = { exists = c:TIB }
-                                c:TIB = { trigger_event = { id = ywc_crisis.16 } }
+                                if = {
+                                    limit = { c:TIB = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis3_age value = 0 }
+                                    c:TIB = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.16 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis3_s4_answer value = 0 }
@@ -533,10 +590,14 @@ ywc_crisis_pulse_inner_asian_routes = {
                                 var:ywc_campaign_crisis3_stage = 5
                                 NOT = { has_variable = ywc_campaign_crisis3_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
                         if = {
                                 limit = { exists = c:OIR }
-                                c:OIR = { trigger_event = { id = ywc_crisis.17 } }
+                                if = {
+                                    limit = { c:OIR = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis3_age value = 0 }
+                                    c:OIR = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.17 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis3_s5_answer value = 0 }
@@ -560,8 +621,13 @@ ywc_crisis_pulse_inner_asian_routes = {
                                 var:ywc_campaign_crisis3_stage = 6
                                 NOT = { has_variable = ywc_campaign_crisis3_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.18 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis3_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis3_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.18 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -589,16 +655,21 @@ ywc_crisis_pulse_south_seas = {
     if = {
             limit = { NOT = { has_variable = ywc_campaign_crisis4_outcome } }
                 if = {
-                        limit = { has_variable = ywc_campaign_crisis4_age }
+                        limit = { has_variable = ywc_campaign_crisis4_age has_variable = ywc_campaign_crisis4_asked }
                             change_variable = { name = ywc_campaign_crisis4_age add = 1 }
                     }
-                else_if = {
+                if = {
                         limit = {
                                 var:ywc_campaign_crisis4_stage = 1
                                 NOT = { has_variable = ywc_campaign_crisis4_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.19 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.19 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -615,10 +686,14 @@ ywc_crisis_pulse_south_seas = {
                                 var:ywc_campaign_crisis4_stage = 2
                                 NOT = { has_variable = ywc_campaign_crisis4_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
                         if = {
                                 limit = { exists = c:DMG }
-                                c:DMG = { trigger_event = { id = ywc_crisis.20 } }
+                                if = {
+                                    limit = { c:DMG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                                    c:DMG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.20 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis4_s2_answer value = 0 }
@@ -642,18 +717,32 @@ ywc_crisis_pulse_south_seas = {
                                 var:ywc_campaign_crisis4_stage = 3
                                 NOT = { has_variable = ywc_campaign_crisis4_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
                         if = {
                                 limit = { exists = c:SPA }
-                                c:SPA = { trigger_event = { id = ywc_crisis.21 } }
+                                if = {
+                                    limit = { c:SPA = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                                    c:SPA = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.21 } }
+                                }
                             }
                         else_if = {
                                 limit = { exists = c:HOL }
-                                c:HOL = { trigger_event = { id = ywc_crisis.21 } }
+                                if = {
+                                    limit = { c:HOL = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                                    c:HOL = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.21 } }
+                                }
                             }
                         else_if = {
                                 limit = { exists = c:LAN }
-                                c:LAN = { trigger_event = { id = ywc_crisis.21 } }
+                                if = {
+                                    limit = { c:LAN = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                                    c:LAN = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.21 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis4_s3_answer value = 0 }
@@ -682,10 +771,14 @@ ywc_crisis_pulse_south_seas = {
                                 var:ywc_campaign_crisis4_stage = 4
                                 NOT = { has_variable = ywc_campaign_crisis4_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
                         if = {
                                 limit = { exists = c:JHG }
-                                c:JHG = { trigger_event = { id = ywc_crisis.22 } }
+                                if = {
+                                    limit = { c:JHG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                                    c:JHG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.22 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis4_s4_answer value = 0 }
@@ -709,10 +802,14 @@ ywc_crisis_pulse_south_seas = {
                                 var:ywc_campaign_crisis4_stage = 5
                                 NOT = { has_variable = ywc_campaign_crisis4_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
                         if = {
                                 limit = { exists = c:LAN }
-                                c:LAN = { trigger_event = { id = ywc_crisis.23 } }
+                                if = {
+                                    limit = { c:LAN = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                                    c:LAN = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.23 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis4_s5_answer value = 0 }
@@ -736,8 +833,13 @@ ywc_crisis_pulse_south_seas = {
                                 var:ywc_campaign_crisis4_stage = 6
                                 NOT = { has_variable = ywc_campaign_crisis4_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.24 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis4_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis4_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.24 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -765,16 +867,21 @@ ywc_crisis_pulse_pacific_autonomy = {
     if = {
             limit = { NOT = { has_variable = ywc_campaign_crisis5_outcome } }
                 if = {
-                        limit = { has_variable = ywc_campaign_crisis5_age }
+                        limit = { has_variable = ywc_campaign_crisis5_age has_variable = ywc_campaign_crisis5_asked }
                             change_variable = { name = ywc_campaign_crisis5_age add = 1 }
                     }
-                else_if = {
+                if = {
                         limit = {
                                 var:ywc_campaign_crisis5_stage = 1
                                 NOT = { has_variable = ywc_campaign_crisis5_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.25 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis5_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.25 }
+                        }
                     }
                     else_if = {
                             limit = {
@@ -791,10 +898,14 @@ ywc_crisis_pulse_pacific_autonomy = {
                                 var:ywc_campaign_crisis5_stage = 2
                                 NOT = { has_variable = ywc_campaign_crisis5_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
                         if = {
                                 limit = { exists = c:MEX }
-                                c:MEX = { trigger_event = { id = ywc_crisis.26 } }
+                                if = {
+                                    limit = { c:MEX = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis5_age value = 0 }
+                                    c:MEX = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.26 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis5_s2_answer value = 0 }
@@ -818,10 +929,14 @@ ywc_crisis_pulse_pacific_autonomy = {
                                 var:ywc_campaign_crisis5_stage = 3
                                 NOT = { has_variable = ywc_campaign_crisis5_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
                         if = {
                                 limit = { exists = c:USA }
-                                c:USA = { trigger_event = { id = ywc_crisis.27 } }
+                                if = {
+                                    limit = { c:USA = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis5_age value = 0 }
+                                    c:USA = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.27 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis5_s3_answer value = 0 }
@@ -845,10 +960,14 @@ ywc_crisis_pulse_pacific_autonomy = {
                                 var:ywc_campaign_crisis5_stage = 4
                                 NOT = { has_variable = ywc_campaign_crisis5_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
                         if = {
                                 limit = { exists = c:NMG }
-                                c:NMG = { trigger_event = { id = ywc_crisis.28 } }
+                                if = {
+                                    limit = { c:NMG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis5_age value = 0 }
+                                    c:NMG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.28 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis5_s4_answer value = 0 }
@@ -872,10 +991,14 @@ ywc_crisis_pulse_pacific_autonomy = {
                                 var:ywc_campaign_crisis5_stage = 5
                                 NOT = { has_variable = ywc_campaign_crisis5_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
                         if = {
                                 limit = { exists = c:NMG }
-                                c:NMG = { trigger_event = { id = ywc_crisis.29 } }
+                                if = {
+                                    limit = { c:NMG = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } } }
+                                    set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
+                                    set_variable = { name = ywc_campaign_crisis5_age value = 0 }
+                                    c:NMG = { set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 } trigger_event = { id = ywc_crisis.29 } }
+                                }
                             }
                         else = {
                                 set_variable = { name = ywc_campaign_crisis5_s5_answer value = 0 }
@@ -899,8 +1022,13 @@ ywc_crisis_pulse_pacific_autonomy = {
                                 var:ywc_campaign_crisis5_stage = 6
                                 NOT = { has_variable = ywc_campaign_crisis5_asked }
                             }
-                        set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
-                        trigger_event = { id = ywc_crisis.30 }
+                        if = {
+                            limit = { NOT = { has_variable = ywc_campaign_crisis_card_cooldown } }
+                            set_variable = { name = ywc_campaign_crisis5_asked value = 1 }
+                            set_variable = { name = ywc_campaign_crisis5_age value = 0 }
+                            set_variable = { name = ywc_campaign_crisis_card_cooldown value = 1 months = 3 }
+                            trigger_event = { id = ywc_crisis.30 }
+                        }
                     }
                     else_if = {
                             limit = {

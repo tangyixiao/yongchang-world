@@ -1,4 +1,4 @@
-﻿# The Yongchang World
+# The Yongchang World
 
 《永昌世界》是面向 Victoria 3 1.13.11 的架空历史 Mod。当前仓库已经完成十国内容垂直切片：大顺（SHU）、靖海国（JHG）、东明（DMG）、北清（NQG）、卫拉特（OIR）、喀尔喀（场景逻辑名 MNG，本体运行标签 MGL）、吐蕃（TIB）、朝鲜（KOR）、兰芳（LAN）和新明（NMG）。每国都有 1836 内容入口、主/辅助日志、事件、两条路线、AI 策略、双语文本、政治身份、动态国名与地图颜色；六国使用复用本体纹样图集的几何 CoA，MNG/TIB/KOR/LAN 沿用本体旗帜定义，避免重复数据库键。MNG 复用本体 MGL 的国家定义和动态国名列表，避免与本体 Minas Gerais 标签 MNG 冲突。
 
@@ -33,6 +33,10 @@
 - **机制**：`ywc_hegemony_authority` 0–100 权威 + 顺/逆/观三计数；入贡是真实国库转移（按国规模分级）+ 自主压力；拒诏招致限时孤立修正与关系崩坏——**拒诏不产生征服权**，倾覆只经由既有外交博弈与战争系统；权威不足或逆多顺少时新制受挫乃至崩解，霸权承受余波修正。
 - `data/content/hegemony_event_catalog.json`（33 事件双语）为唯一实现输入，`tools/build_hegemony_content.py` 生成事件与双语文案；`tools/ywc_hegemony_check.py` 与 `tests/test_hegemony_content.py` 守门（可达性 events=305 / journals=80）。
 - 静态门禁全部通过（375 项单元测试、`ywc_check` 对照游戏根目录零诊断、preflight 四项静态 ok）；霸权节奏、AI 顺逆倾向与长期平衡仍无实机证据。
+
+2026-10-02 继续开发：修复霸权和五场跨国危机的月份计数阻断阶段推进问题；霸权使团按每三个月一国投递，末阶段无人应答时以五年受挫余波收束。启动资格按九国中任意四国存续计算，顺／逆／观望人数按存续国家的当前答复重核，避免灭亡国家或重复答复虚增票数。宽仁诏书提高 AI 入贡倾向，威严诏书提高拒诏倾向；九国入贡、加贡和补贡均等额转入大顺国库，宗主消失时不扣款。本轮仅做离线脚本回归与静态检查，不启动游戏；实机节奏和平衡仍待验收。
+
+同日后续修复五场危机的跨国投递冷却：在实际收件国收到事件时设置三个月自动过期标记，多场危机共用这一限制；答复不重新计时。等待投递不算沉默，十二个月答复超时从实际投递开始。南洋第三阶段仍按西班牙、荷兰、兰芳的存续顺序选收件国，优先国家冷却时等待，不改投。详情见 [跨国危机投递冷却开发记录](docs/development/2026-10-02-跨国危机投递冷却.md)。
 
 ## v0.2「六六大顺」：西南六国（2026-09-26）
 
@@ -109,13 +113,13 @@ python tools/observation_status.py --root artifacts/observe
 
 ## 当前边界
 
-此前批次和本次特色事件扩展已完成静态复核；HEAD `3cba19e` 的提交态隐藏预加载也已通过。当前未提交工作树尚无对应的隐藏或实机运行证据，完整 UI 逐国选国与 1836—1900 长期观察局仍未完成，因此不能宣称 AI 长期平衡或 v0.1 已通过发行验收。游戏脚本以本体 1.13.11（Build ID 24799966）为基线，Province ID 来自本体快照。
+此前批次和本次特色事件扩展已完成静态复核；HEAD `3cba19e` 的提交态隐藏预加载也已通过。当前未提交工作树尚无对应的隐藏或实机运行证据，完整 UI 逐国选国与 1836—1900 长期观察局仍未完成，因此不能宣称 AI 长期平衡或 v0.1 已通过发行验收。游戏脚本以本体 1.13.11（Build ID 24799966）为基线，Province ID 来自本体快照。汉人王室服制覆盖（SHU/DMG/NMG）已通过静态门禁，但尚未在实机目验肖像效果。
 
-## 可选服饰搭配
+## 服饰说明
 
-永昌世界保留汉人文化，不打包第三方服饰模型，也不要求安装服饰模组。下面两款是检索到的高关注度参考；订阅与收藏数是 2026-10-03 页面快照，会变化。
+永昌世界不打包任何第三方服饰模型，也不要求安装服饰模组。从 v0.2 起，模组内置一层脚本级「汉人王室服制」覆盖：`yongchang_world/gfx/portraits/portrait_modifiers/ywc_han_royal_appearance.txt` 用本体 `INJECT` 机制给 SHU、DMG、NMG 三国的在位君主加权选择本体已有的 `chinese_court_outfits`（中式朝服）、`no_headgear` 与 `east_asian_hairstyles`，权重高于本体的清式 `chinese_imperial_outfits` 触发器，因此三家汉人君主不再显示清式龙袍与朝冠。触发范围由 `yongchang_world/common/scripted_triggers/ywc_appearance_triggers.txt` 限定；MHG 明香（海外残存）暂不改动。人口服饰仍走本体阶层规则，其余国家的汉文化君主也保持本体行为。
 
-只把角色文化设为 Han 不会自动换成明制服装：本体肖像触发器会给本国君主制下的汉文化君主套用 `chinese_imperial_outfits`；另外，原版还对 `c:CHI` 有单独特例，即使不满足汉文化遗产条件也会命中。这组原版帝王服看起来偏清式；东亚人口的服饰也仍走本体的阶层规则。永昌世界没有覆盖这些触发器或自带替代服装模型。`East Asian Clothes: Redux` 的 [1.0.1 更新记录](https://steamcommunity.com/sharedfiles/filedetails/changelog/3704408897)曾专门处理 Ming/Han China 的 Executives 误穿清廷服饰，但无法据此确认自定义国家君主也兼容；Steam 工坊页面当前显示该项已移除/不兼容，本机没有安装副本。因此单独启用永昌世界时仍会看到本体服饰。这里保留它作为调研记录，不代表新玩家当前可安装或本模组已完成汉服视觉兼容。
+背景调研：只把角色文化设为 Han 并不会自动换成明制服装——本体 `chinese_imperial_clothes_trigger` 给本国君主制下的汉文化君主套用 `chinese_imperial_outfits`，并对 `c:CHI` 有单独特例；这组原版帝王服看起来偏清式。`East Asian Clothes: Redux` 的 [1.0.1 更新记录](https://steamcommunity.com/sharedfiles/filedetails/changelog/3704408897)曾专门处理 Ming/Han China 的 Executives 误穿清廷服饰，但该 Steam 工坊页面当前显示已移除/不兼容，本机没有安装副本，以下两条仅作调研记录保留：
 
 - [East Asian Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=3704408897)：覆盖中国、朝鲜、越南、日本和琉球的人物与人口服饰；页面称汉人为主流文化的中华帝国使用明风服饰。快照显示约 7,502 名订阅者、400 个收藏。Steam 页面目前同时标记为“已移除”和“与 Victoria 3 不兼容”，因此不能保证新玩家现在可订阅或正常运行。
 - [Chinese Uniform Pack (1.13)](https://steamcommunity.com/sharedfiles/filedetails/?id=3237422684)：提供不同历史时期的中国军服，不是民用服饰替代品。快照显示约 6,778 名订阅者、608 个收藏；前置为 [Miss Asset Framework](https://steamcommunity.com/sharedfiles/filedetails/?id=3296496664)、[Community Outfit Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3147725402) 和 [Western Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=2981574864)。该页面目前也标记为“已移除”和“不兼容”，此条只供已订阅玩家或页面恢复后参考。

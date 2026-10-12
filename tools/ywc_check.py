@@ -122,6 +122,7 @@ def _declaration_namespace(path: Path) -> str:
         "dynamic_country_map_colors",
         "flag_definitions",
         "coat_of_arms",
+        "character_templates",
         "on_actions",
     ):
         if namespace in parts:
@@ -140,6 +141,7 @@ def _is_localization_bearing(path: Path) -> bool:
             "dynamic_country_map_colors",
             "flag_definitions",
             "coat_of_arms",
+            "character_templates",
             "on_actions",
         }
     )
@@ -561,6 +563,19 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
         report = audit_modifiers(mod_root, Path(game_root))
         diagnostics.extend(report["unknown_modifier_types"])
         diagnostics.extend(report["undeclared_modifier_references"])
+
+    # Amendments attach to an *active law* at script level, and the engine
+    # ignores a country/group mismatch silently, so the parent law is checked
+    # against the country history that actually loads.
+    if game_root is not None and (Path(game_root) / "common/laws").is_dir():
+        try:
+            from tools.amendment_audit import audit as audit_amendments
+        except ModuleNotFoundError:  # Running this file directly puts ``tools`` on sys.path.
+            from amendment_audit import audit as audit_amendments
+
+        if (mod_root / "common/amendments").is_dir():
+            report = audit_amendments(mod_root, Path(game_root))
+            diagnostics.extend(report["problems"])
 
     # Imported lazily: the reachability audit reuses this module's script
     # readers, so a top-level import would be circular.

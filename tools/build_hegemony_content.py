@@ -28,7 +28,7 @@ KNOWN_OPS = {
     "stance", "counter", "treasury", "tribute_to_hegemon", "authority",
     "relations_hegemon", "legitimacy", "subject_pressure", "modifier",
     "modifier_on_stance", "relations_on_stance", "fire_stance", "stage_done",
-    "authority_init", "outcome",
+    "authority_init", "outcome", "edict_policy",
 }
 
 
@@ -78,6 +78,12 @@ def validate(catalog: dict) -> list[dict]:
             for op in choice.get("ops", []):
                 if op.get("op") not in KNOWN_OPS:
                     raise ValueError(f"{event_id}: unknown op {op!r}")
+            if event.get("kind") == "participant":
+                debits = [op["amount"] for op in choice["ops"] if op["op"] == "treasury"]
+                credits = [op["amount"] for op in choice["ops"] if op["op"] == "tribute_to_hegemon"]
+                if debits or credits:
+                    if len(debits) != 1 or len(credits) != 1 or debits[0] >= 0 or debits[0] + credits[0] != 0:
+                        raise ValueError(f"{event_id}: tribute must have one equal debit and credit")
         if event.get("kind") == "hegemon":
             number = int(event_id.rsplit(".", 1)[1])
             if not event_id.startswith("ywc_hegemony.") or not 1 <= number <= 6:
@@ -120,14 +126,19 @@ def _guarded_relations(value: int) -> str:
 
 
 def _stance_guard(short: str, stance: int) -> str:
-    return f"c:{short.upper()} ?= {{ var:ywc_tribute_answer = {stance} }}"
+    return (f"c:{short.upper()} ?= {{ has_variable = ywc_tribute_answer "
+            f"trigger_if = {{ limit = {{ has_variable = ywc_tribute_answer }} "
+            f"var:ywc_tribute_answer = {stance} }} }}")
 
 
 def render_op(op: dict, catalog: dict) -> str:
     kind = op["op"]
     hegemon_var = catalog["hegemon"]["authority_var"]
     if kind == "stance":
-        return f"set_variable = {{ name = ywc_tribute_answer value = {op['value']} }}"
+        return (f"set_variable = {{ name = ywc_tribute_answer value = {op['value']} }}\n"
+                + _guarded_hegemony("ywc_hegemony_recount = yes"))
+    if kind == "edict_policy":
+        return f"set_variable = {{ name = ywc_hegemony_edict value = {op['value']} }}"
     if kind == "counter":
         sign = "" if op["delta"] >= 0 else "-"
         delta = abs(op["delta"])
@@ -206,6 +217,7 @@ def render_event(event: dict, catalog: dict) -> list[str]:
         f"    title = {event['id']}.t",
         f"    desc = {event['id']}.d",
         "    duration = 1",
+        '    event_image = { video = "unspecific_politicians_arguing" }',
     ]
     if event.get("trigger"):
         lines.append(f"    # full-ratification gate; option a repeats it")
@@ -215,11 +227,35 @@ def render_event(event: dict, catalog: dict) -> list[str]:
             "    option = {",
             f"        name = {event['id']}.{chr(ord('a') + index)}",
             *(["        default_option = yes"] if index == 0 else []),
-            f"        ai_chance = {{ base = {base} }}",
         ]
+        if event.get("slot") == "summon":
+            # A stern proclamation buys authority at the cost of resistance.
+            # Optional variables are read only inside a has_variable gate.
+            shifts = ((15, -18), (0, 5), (-5, 12))[index]
+            lines.append(f"        ai_chance = {{ base = {base}")
+            for policy, shift in enumerate(shifts, 1):
+                lines.append(
+                    "            modifier = { trigger = { c:SHU ?= { "
+                    "has_variable = ywc_hegemony_edict trigger_if = { "
+                    "limit = { has_variable = ywc_hegemony_edict } "
+                    f"var:ywc_hegemony_edict = {policy} }} }} }} add = {shift} }}"
+                )
+            lines.append("        }")
+        else:
+            lines.append(f"        ai_chance = {{ base = {base} }}")
         if index == 0 and event.get("trigger"):
             lines.append(f"        trigger = {{ {event['trigger']} }}")
         for op in choice["ops"]:
+            if event["kind"] == "participant" and op["op"] == "treasury":
+                # Both legs share one existence guard: if SHU disappears,
+                # the outstanding gift cannot silently destroy money.
+                lines.append(
+                    f"        if = {{ limit = {{ exists = c:SHU }} add_treasury = {op['amount']} "
+                    f"c:SHU = {{ add_treasury = {-op['amount']} }} }}"
+                )
+                continue
+            if event["kind"] == "participant" and op["op"] == "tribute_to_hegemon":
+                continue
             for line in render_op(op, catalog).split("\n"):
                 lines.append(f"        {line}")
         lines.append("    }")

@@ -66,6 +66,17 @@ class SouthwestGeneratorTest(unittest.TestCase):
         for path, text in builder.render_all(ROOT).items():
             self.assertEqual(path.read_text(encoding="utf-8-sig"), text, str(path))
 
+    def test_lobby_start_journals_are_visible_in_the_country_select_screen(self):
+        text = builder.render_journal_file(CATALOG)
+        for line in CATALOG["lines"]:
+            with self.subTest(tag=line["tag"]):
+                self.assertTrue(line["show_in_lobby"])
+                self.assertIn(
+                    f"{line['journal']} = {{\n    is_shown_in_lobby = {{ c:{line['tag']} ?= THIS }}",
+                    text,
+                )
+                self.assertNotIn(f"is_shown_in_lobby = {{ c:{line['tag']} = THIS }}", text)
+
     def test_validator_rejects_duplicate_ids(self):
         catalog = json.loads(json.dumps(CATALOG))
         catalog["lines"][0]["events"].append(dict(catalog["lines"][0]["events"][0]))

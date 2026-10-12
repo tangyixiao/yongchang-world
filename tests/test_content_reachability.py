@@ -128,10 +128,10 @@ class ContentReachabilityTest(unittest.TestCase):
         self.assertEqual(report["unreferenced_events"], [])
         self.assertEqual(report["unreferenced_journals"], [])
         self.assertEqual(report["unused_scripted_helpers"], [])
-        # 272 through the large campaign, +33 v1.0 hegemony events, +18 v0.2
-        # southwest events; 80 journals + the six southwest line journals.
-        self.assertEqual(report["event_count"], 323)
-        self.assertEqual(report["journal_count"], 86)
+        # 272 through the large campaign, +33 hegemony, +18 southwest, and
+        # 180 frontier polity events; prior journals plus 60 frontier starts.
+        self.assertEqual(report["event_count"], 491)
+        self.assertEqual(report["journal_count"], 142)
 
 
 if __name__ == "__main__":

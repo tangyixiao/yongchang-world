@@ -56,10 +56,18 @@ HEGEMONY_START_BLOCK = """if = {{
             limit = {{
                 {gate}
                 var:ywc_heritage_legitimacy >= 60
-                exists = c:JHG
-                exists = c:KOR
-                OR = {{ exists = c:LAN exists = c:NQG }}
-                OR = {{ exists = c:DMG exists = c:MGL }}
+                calc_true_if = {{
+                    amount >= 4
+                    exists = c:JHG
+                    exists = c:KOR
+                    exists = c:LAN
+                    exists = c:NQG
+                    exists = c:DMG
+                    exists = c:MGL
+                    exists = c:TIB
+                    exists = c:OIR
+                    exists = c:NMG
+                }}
                 NOT = {{ has_variable = ywc_hegemony_started }}
             }}
             set_variable = {{ name = ywc_hegemony_started value = 1 }}
@@ -187,6 +195,7 @@ def national_regular_effect(event: dict, choice: dict, config: dict, direction_i
     modifier, months = CHOICE_MODIFIERS["bold" if sign > 0 else "cautious"]
     lines = [
         f"set_variable = {{ name = ywc_campaign_{short}_c{chapter}_e{event['id'].rsplit('.', 1)[1]}_done value = 1 }}",
+        f"if = {{ limit = {{ NOT = {{ has_variable = ywc_campaign_{short}_c{chapter}_score }} }} set_variable = {{ name = ywc_campaign_{short}_c{chapter}_score value = 0 }} }}",
         f"change_variable = {{ name = ywc_campaign_{short}_c{chapter}_score add = {sign} }}",
         f"change_variable = {{ name = {config['flavor']} add = {5 * sign} }}",
         f"clamp_variable = {{ name = {config['flavor']} min = 0 max = 100 }}",
@@ -344,6 +353,7 @@ def render_event_script(events: list[dict]) -> str:
             f"    title = {event['id']}.t",
             f"    desc = {event['id']}.d",
             "    duration = 1",
+            '    event_image = { video = "unspecific_politicians_arguing" }',
         ]
         for index, choice in enumerate(event["choices"]):
             letter = chr(ord("a") + index)
@@ -365,6 +375,9 @@ def render_event_script(events: list[dict]) -> str:
                 for effect in final_option_effects(event, index):
                     lines.append("        " + effect.replace("\n", "\n        "))
             else:
+                lines.append(
+                    f"        set_variable = {{ name = ywc_campaign_crisis{event['crisis']}_s{event['stage']}_answer value = {index + 1} }}"
+                )
                 lines.append(
                     f"        ywc_campaign_crisis_answer = {{ CRISIS = {event['crisis']} "
                     f"STAGE = {event['stage']} ANSWER = {index + 1} }}"
@@ -397,11 +410,13 @@ def render_settlement_option(event: dict, index: int) -> list[str]:
     lines = [
         "    option = {",
         f"        name = {event['id']}.{letter}",
+        *( ["        default_option = yes"] if index == 0 else [] ),
         f"        ai_chance = {{ base = {base} }}",
     ]
     if outcome == 1:
         lines.append(f"        trigger = {{ {config['settle_full']} }}")
     lines += [
+        f"        set_variable = {{ name = ywc_campaign_crisis{crisis}_s6_answer value = {outcome} }}",
         f"        ywc_campaign_crisis_answer = {{ CRISIS = {crisis} STAGE = 6 ANSWER = {outcome} }}",
         f"        set_variable = {{ name = {outcome_var} value = {outcome} }}",
     ]

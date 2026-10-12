@@ -264,6 +264,32 @@ class PlayableRouteTest(unittest.TestCase):
             event,
         )
 
+    def test_bootstrap_events_cannot_queue_duplicates_and_have_a_live_fallback(self):
+        for je_id, pending, event_id in (
+            ("ywc_je_eternal_yongchang", "ywc_eternal_yongchang_pending", "ywc_bootstrap.1"),
+            ("ywc_je_jinghai_autonomy", "ywc_jinghai_autonomy_pending", "ywc_bootstrap.2"),
+            ("ywc_je_dongming_survival", "ywc_dongming_survival_pending", "ywc_bootstrap.3"),
+            ("ywc_je_blackwater_century", "ywc_blackwater_century_pending", "ywc_bootstrap.4"),
+        ):
+            journal = block_for(self.bootstrap_journal, je_id)
+            self.assertIn(f"NOT = {{ has_variable = {pending} }}", journal)
+            self.assertIn(f"set_variable = {{ name = {pending} value = 1 }}", journal)
+            event = block_for(self.bootstrap_events, event_id)
+            self.assertIn("duration = 1", event)
+            self.assertIn(f"remove_variable = {pending}", event)
+        autonomy = block_for(self.bootstrap_events, "ywc_bootstrap.2")
+        self.assertIn("name = ywc_bootstrap.2.e", autonomy)
+        self.assertRegex(autonomy, r"(?s)name = ywc_bootstrap\.2\.e\s+default_option = yes")
+        self.assertIn("ywc_jinghai_autonomy_defer_cooldown days = 30", autonomy)
+        self.assertNotRegex(autonomy, r"(?s)name = ywc_bootstrap\.2\.a\s+default_option = yes")
+        self.assertIn("ywc_bootstrap.2.e:", (ROOT / "yongchang_world/localization/english/ywc_core_l_english.yml").read_text("utf-8-sig"))
+        self.assertIn("ywc_bootstrap.2.e:", (ROOT / "yongchang_world/localization/simp_chinese/ywc_core_l_simp_chinese.yml").read_text("utf-8-sig"))
+
+    def test_custom_journal_lobby_country_checks_are_nullable(self):
+        for journal_path in (ROOT / "yongchang_world/common/journal_entries").glob("*.txt"):
+            text = journal_path.read_text("utf-8-sig")
+            self.assertNotRegex(text, r"is_shown_in_lobby\s*=\s*\{\s*c:[A-Z0-9]+\s*=\s*THIS")
+
 
 if __name__ == "__main__":
     unittest.main()

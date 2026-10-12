@@ -1,5 +1,28 @@
-﻿# Changelog
+# Changelog
 
+## Unreleased — 2026-10-12：v0.2 收官批次（修正案审计工具 + 汉人王室服制覆盖）
+
+- **修正案审计固化**：新增 `tools/amendment_audit.py`（六个检查组：modifier 键位、parent/allowed_laws、possible 国家限定与 would_sponsor、挂接完整性、lawgroup 开局法律一致——按完整加载顺序回放本体与 mod history、双语 `_desc` 齐全），配 `tests/test_amendment_audit.py` 十一个测试；`tools/ywc_check.py` 自动接入。此前临时脚本核验的十项修正案结论现在可一键复跑。工具修出并记录三个真 bug：正则漏 `re.MULTILINE`、嵌套块被当顶层条目、开局法律按 law 而非 lawgroup 建索引。
+- **汉人王室服制覆盖（不打包第三方资产）**：新增 `yongchang_world/gfx/portraits/portrait_modifiers/ywc_han_royal_appearance.txt`，用本体 `INJECT` 机制给 SHU/DMG/NMG 三国在位君主加权选择本体已有的 `chinese_court_outfits` + `no_headgear` + `east_asian_hairstyles`（权重 add=2100 > 本体 imperial 1100 / court 1000），由 `yongchang_world/common/scripted_triggers/ywc_appearance_triggers.txt` 的 `ywc_han_royal_appearance_trigger` 门控；三家汉人君主不再穿清式龙袍朝冠，MHG 明香（海外残存）保持本体规则。触发器键补双语本地化（`ywc_han_royal_appearance_trigger`）。
+- **遗留处置**：`yongchang_world/common/history/countries/chi - china.txt` 按测试合同（`tests/test_user_map_corrections.py:193`）git add 入库（文件名带空格与本体同目录同风格，非笔误）；`ywc_dynasties` 本地化文件补齐 UTF-8 BOM（`tests/test_metadata.py` 要求全部 .yml 带 BOM）；`.gitignore` 排除 `artifacts/automation/`（853MB 截图证据与一次性探针）与 `artifacts/exe_kw_context.txt`（exe 字符串转储）。
+- 静态门禁：494 tests OK（367.6s），`ywc_check` clean，`amendment_audit` consistent（10 amendments / 10 attachments / 138 laws / 8 IG / 2364 modifier types），content reachability 491 events / 142 journals / 65 helpers clean。实机肖像目验仍缺，见 `docs/release/v0.2-acceptance.md`。
+
+## Unreleased — 2026-10-02：跨国危机投递冷却
+
+- 五场危机的三十个阶段均在实际收件国投递时占用三个月自动过期冷却，阻止不同持有人向同一国家连续投递危机卡。
+- 移除持有人日志扣减和门控冷却的旧逻辑；已经答复的阶段可正常推进，答复不延长投递冷却。旧存档中的数字冷却不再参与门控。
+- 等待收件国冷却时不计答复超时；实际投递后才开始十二个月等待，缺席国家仍立即跳过并记为无人代表。
+- 保留南洋第三阶段西班牙、荷兰、兰芳的存续优先级，冷却不触发改投；新增直接执行实际脚本的跨危机回归。验证记录见 `docs/development/2026-10-02-跨国危机投递冷却.md`，实机证据仍待补齐。
+
+## Unreleased — 2026-10-02：十国主线与天命霸权推进修复
+
+- 分离霸权与五场跨国危机的计时、阶段分支，避免计时变量存在后永远无法投递下一事件。
+- 霸权应答期按季度依次投递九国使团，最后一国也保留一个季度应答期；各朝廷阶段保留十二个月超时，最终无人答复写入受挫结局及五年余波。兼容旧存档卡在第八阶段的情况。
+- 霸权启动要求九国中任意四国存续；原有三章结算、危机全协议、正统性和单次启动门槛继续生效。
+- 顺服、拒诏、观望人数从存续国家的当前立场重核，答复变更即时更新，不再靠累加计数。
+- 九国入贡、加贡、补贡采用等额国库转移，两端共用宗主存续检查；生成器拒绝不守恒的贡赋清单。
+- 宽仁与威严诏书记录为不同政策，按本体 `ai_chance` 的 `modifier/trigger/add` 写法调整九国顺逆倾向。
+- 新增直接执行脚本条件与变量操作的离线回归，覆盖推进、季度间隔、灭亡国家、超时、启动和贡赋；离线解释器只覆盖测试所需的脚本子集，不替代游戏验收。本轮没有启动游戏。
 
 ## Unreleased — world repair: the 1836 lobby actually inspected
 
@@ -13,7 +36,7 @@ The first real look at the 1836 selection screen exposed long-standing scenario 
 - **Dynamic country names no longer hijack the start.** The always-true "heritage" dynamic names (大顺礼制国, 吐蕃承统国, 西域承统国...) fired from day one; they are deleted, so the tags display their proper names (大顺, 西藏...). The dead MNG-keyed block (MNG is not a runtime tag) was removed; the guardrail test against redeclaring vanilla lists stays green.
 - New `tests/test_scenario_integrity.py` locks the whole class: no CHI ownership, pops coverage for every mod-owned state, pops state names must exist, every new tag has a flag, and new-tag claims must not collide with vanilla.
 
-Static gates on this tree: 395/395 unit tests, `ywc_check` (game root) clean, all four content checkers clean, preflight static ok (content_reachability events=323 journals=86, startup_data pops fields=2222), `git diff --check` clean. Live verification still pending per the playbook — and old autosaves from before these fixes are incompatible with the new ledger.
+Static gates on this tree: 395/395 unit tests, `ywc_check` (game root) clean, all four content checkers clean, preflight static ok (content_reachability events=323 journals=86, startup_data pops fields=2222), `git diff --check` clean. Live verification still pending per the playbook — and old autosaves from before these fixes are incompatible with the new ledger. (The 395/395 figure is the count at that revision; the suite has since grown — see the v0.2 close entry below.)
 
 ## v0.2.0 — 六六大顺：西南六国（2026-10-12）
 

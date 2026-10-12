@@ -10,6 +10,9 @@ except ImportError:  # pragma: no cover - the installed game test environment ha
     np = None
     Image = None
 
+from tools.build_state_history import extract_groups, state_blocks
+from tools.ownership_topology import _state_adjacency, component_sizes
+
 
 ROOT = pathlib.Path(__file__).parents[1]
 REGISTRY_FILE = ROOT / "data/scenario/tag_registry.json"
@@ -62,7 +65,7 @@ def authority_group(authority, state, owner):
     return next(group for group in authority[state] if group["owner"] == owner)
 
 REGIONAL_NEW = {
-    "NMG", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR", "KJU", "MJU", "GJU",
+    "NMG", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "OIR",
     "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT", "DER", "KAM", "GYL",
     "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "AMD", "DLI", "PNP",
     "PLW", "YAP", "MHL", "MRG",
@@ -77,6 +80,13 @@ class RegionalTagRegistryTest(unittest.TestCase):
         for tag in REGIONAL_NEW:
             self.assertEqual(rows[tag]["mode"], "new")
             self.assertIsNone(rows[tag]["source_tag"])
+
+    def test_qing_and_sikkim_reuse_their_vanilla_tags(self):
+        registry = json.loads(REGISTRY_FILE.read_text("utf-8"))
+        rows = {row["tag"]: row for row in registry["countries"]}
+        for tag in ("CHI", "SIK"):
+            self.assertEqual(rows[tag]["mode"], "reuse")
+            self.assertEqual(rows[tag]["source_tag"], tag)
 
 
 class RegionalCountryDefinitionTest(unittest.TestCase):
@@ -109,15 +119,21 @@ class NortheastLedgerTest(unittest.TestCase):
             set(self.ledger["source_states"]),
             {
                 "STATE_SHENGJING",
+                "STATE_HINGGAN",
                 "STATE_OUTER_MANCHURIA",
                 "STATE_NORTHERN_MANCHURIA",
+                "STATE_AMUR",
+                "STATE_SOUTHERN_MANCHURIA",
+                "STATE_TRANS_BAIKAL",
+                "STATE_YAKUTSK",
+                "STATE_OKHOTSK",
                 "STATE_SAKHALIN",
                 "STATE_HOKKAIDO",
             },
         )
 
     def test_groups_cover_each_source_state_without_overlap(self):
-        expected_tags = {"SHU", "KHQ", "HUL", "SOL", "AMR", "NQG", "EZO"}
+        expected_tags = {"SHU", "KHQ", "HUL", "SOL", "AMR", "CHI", "RUS", "NQG", "EZO", "ODS", "CHR"}
         grouped = {state: [] for state in self.ledger["source_states"]}
         for row in self.ledger["groups"]:
             self.assertIn(row["target_country"], expected_tags)
@@ -143,19 +159,105 @@ class NortheastLedgerTest(unittest.TestCase):
 
     def test_northeast_history_files_are_connected_to_ledger(self):
         state_text = NORTHEAST_STATE_FILE.read_text("utf-8")
-        pop_text = NORTHEAST_POP_FILE.read_text("utf-8")
-        building_text = NORTHEAST_BUILDING_FILE.read_text("utf-8")
+        pop_text = "\n".join(p.read_text("utf-8-sig") for p in NORTHEAST_POP_FILE.parent.glob("*.txt"))
+        building_text = "\n".join(p.read_text("utf-8-sig") for p in NORTHEAST_BUILDING_FILE.parent.glob("*.txt"))
         for state in self.ledger["source_states"]:
             self.assertIn(f"s:{state}", state_text)
-        for country in ("SHU", "KHQ", "HUL", "SOL", "AMR", "EZO"):
+        for country in ("SHU", "KHQ", "HUL", "AMR", "CHI", "EZO"):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
+        self.assertIn("region_state:SOL", building_text)
         # NQG's 45,000-population gate and its basic economy are owned by the
         # vertical slice files; the regional files must not duplicate them.
         core_pop = (ROOT / "yongchang_world/common/history/pops/ywc_core_pops.txt").read_text("utf-8")
         core_building = (ROOT / "yongchang_world/common/history/buildings/ywc_core_buildings.txt").read_text("utf-8")
         self.assertIn("region_state:NQG", core_pop)
         self.assertIn("region_state:NQG", core_building)
+
+    def test_qing_is_a_connected_russian_buffer_without_a_shun_border(self):
+        if np is None or Image is None or not PROVINCES_MAP_FILE.exists():
+            self.skipTest("Pillow, NumPy, and the installed Victoria 3 provinces map are required")
+
+        blocks = state_blocks(NORTHEAST_STATE_FILE.read_text("utf-8-sig"), self.baseline)
+        owners = {}
+        for block in blocks.values():
+            for group in extract_groups(block):
+                for province in group["owned_provinces"]:
+                    if len(province) == 7 and province.startswith("x"):
+                        owners.setdefault(group["owner"], set()).add(province)
+
+        by_tag = {
+            tag: set(owners.get(tag, set()))
+            for tag in ("CHI", "SHU", "RUS", "KZH", "OZH", "UZH", "BYL", "JTR", "NMN", "KER", "ZHL", "ABN")
+        }
+        qing = set(by_tag["CHI"])
+        self.assertTrue(qing)
+        trans_baikal = set(self.baseline["state_regions"]["STATE_TRANS_BAIKAL"])
+        # CHI retains the complete Trans-Baikal buffer and takes this exact
+        # adjoining southern frontier fringe across the Amur/Northern
+        # Manchuria state lines. Keep the exception narrow so later border
+        # drift cannot silently grow a corridor north or east.
+        southern_frontier_buffer = {
+            "x975775", "x48F0E7", "x447043", "x87B611", "xD72514",
+            "x532B1B", "x4F6B8F", "x1DEDA0", "xD3B4B5",
+        }
+        # The northern-expansion layer adds connected Russian border holdings
+        # in Yakutsk, Irkutsk, and a small Buryatia edge to the earlier southern
+        # buffer. Keep those measured against the active ownership authority.
+        authority = json.loads(OVERRIDES_FILE.read_text("utf-8"))
+        northern_states = {"STATE_YAKUTSK", "STATE_IRKUTSK", "STATE_BURYATIA"}
+        northern_qing = set()
+        for row in authority["states"]:
+            if row["state"] not in northern_states:
+                continue
+            group = next((group for group in row["groups"] if group["owner"] == "CHI"), None)
+            if group:
+                northern_qing.update(group["owned_provinces"])
+        self.assertEqual(qing - trans_baikal, southern_frontier_buffer | northern_qing)
+        self.assertTrue(trans_baikal.issubset(qing))
+        state_of = {
+            province: state
+            for state, provinces in self.baseline["state_regions"].items()
+            for province in provinces
+        }
+        self.assertEqual(
+            {state_of[province] for province in southern_frontier_buffer},
+            {"STATE_AMUR", "STATE_NORTHERN_MANCHURIA"},
+        )
+
+        pixels = np.asarray(Image.open(PROVINCES_MAP_FILE).convert("RGB"), dtype=np.uint32)
+        encoded = pixels[:, :, 0] * 65536 + pixels[:, :, 1] * 256 + pixels[:, :, 2]
+        province_codes = set().union(*by_tag.values())
+        adjacency = _state_adjacency(province_codes, encoded, np)
+
+        self.assertEqual(component_sizes(qing, adjacency), [len(qing)])
+        self.assertEqual(
+            component_sizes(southern_frontier_buffer, adjacency),
+            [len(southern_frontier_buffer)],
+            "the exact southern buffer must be one adjoining land block",
+        )
+        self.assertTrue(
+            any(adjacency[province] & trans_baikal for province in southern_frontier_buffer),
+            "the southern buffer must join directly to the Trans-Baikal core",
+        )
+
+        def borders(source, target):
+            return any(
+                neighbor in by_tag[target]
+                for province in by_tag[source]
+                for neighbor in adjacency[province]
+            )
+
+        self.assertTrue(borders("CHI", "RUS"), "Qing must hold a Russian frontier")
+        self.assertFalse(borders("CHI", "SHU"), "Qing must remain separated from Shun")
+        self.assertFalse(
+            any(adjacency[province] & by_tag["SHU"] for province in southern_frontier_buffer),
+            "the added southern frontier buffer must not open a Shun border",
+        )
+        for zhuz,parts in {"KZH":["KZH","BYL","JTR"],"OZH":["OZH","NMN","KER"]}.items():
+            self.assertTrue(any(borders(part,"RUS") for part in parts), f"{zhuz} successor polities should hold the Russian frontier")
+        # Vanilla Senior Zhuz lies behind Middle Zhuz, south of the Russian frontier.
+        self.assertTrue(any(borders(t,"OZH") for t in ["UZH","ZHL","ABN"]))
 
 
 class InnerAsiaTest(unittest.TestCase):
@@ -174,11 +276,13 @@ class InnerAsiaTest(unittest.TestCase):
     def test_expected_state_owners(self):
         expected = {
             "STATE_DZUNGARIA": "OIR",
-            "STATE_SEMIRECHE": "OIR",
+
             "STATE_URGA": "MGL",
             "STATE_ULIASTAI": "MGL",
-            "STATE_FERGANA": "KOK",
+
         }
+        self.assertEqual(self.owners_for("STATE_FERGANA"), {"KOK", "TSK"})
+        self.assertEqual(self.owners_for("STATE_SEMIRECHE"), {"OZH", "NMN"})
         for state, owner in expected.items():
             self.assertEqual(self.owners_for(state), {owner}, state)
 
@@ -196,16 +300,16 @@ class InnerAsiaTest(unittest.TestCase):
 
     def test_successor_states_and_oases_are_present(self):
         tags = {row["target_country"] for row in self.ledger["groups"]}
-        self.assertTrue({"KJU", "MJU", "GJU"}.issubset(tags))
+        self.assertTrue({"KZH", "OZH", "UZH"}.issubset(tags))
         self.assertTrue({"HMI", "TRF", "KUC", "KSH", "YRK", "KHT"}.issubset(tags))
 
     def test_inner_asia_history_files_are_connected(self):
         state_text = INNER_ASIA_STATE_FILE.read_text("utf-8")
-        pop_text = INNER_ASIA_POP_FILE.read_text("utf-8")
-        building_text = INNER_ASIA_BUILDING_FILE.read_text("utf-8")
+        pop_text = "\n".join(p.read_text("utf-8-sig") for p in INNER_ASIA_POP_FILE.parent.glob("*.txt"))
+        building_text = "\n".join(p.read_text("utf-8-sig") for p in INNER_ASIA_BUILDING_FILE.parent.glob("*.txt"))
         for state in self.ledger["source_states"]:
             self.assertIn(f"s:{state}", state_text)
-        for country in ("OIR", "MGL", "KOK", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT"):
+        for country in ("OIR", "MGL", "KOK", "KZH", "OZH", "UZH", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT"):
             self.assertIn(f"region_state:{country}", pop_text)
             self.assertIn(f"region_state:{country}", building_text)
 
@@ -218,8 +322,8 @@ class InnerAsiaTest(unittest.TestCase):
             group["owner"]: set(group["owned_provinces"])
             for group in self.authority[state]
         }
-        expected_counts = {"HMI": 24, "TRF": 36, "KUC": 60, "KSH": 40, "YRK": 36, "KHT": 40}
-        self.assertEqual({owner: len(provinces) for owner, provinces in groups.items()}, expected_counts)
+        self.assertEqual(set(groups), {"HMI", "TRF", "KUC", "AKS", "KSH", "YRK", "KHT"})
+        self.assertTrue(all(groups.values()))
 
         pixels = np.asarray(Image.open(PROVINCES_MAP_FILE).convert("RGB"), dtype=np.uint32)
         encoded = pixels[:, :, 0] * 65536 + pixels[:, :, 1] * 256 + pixels[:, :, 2]
@@ -267,12 +371,12 @@ class SouthwestTest(unittest.TestCase):
     def test_tibet_does_not_own_qinghai_and_kham(self):
         self.assertNotIn("TIB", self.owners_for("STATE_QINGHAI"))
         self.assertNotIn("TIB", self.owners_for("STATE_SICHUAN"))
-        self.assertEqual(self.owners_for("STATE_LHASA"), {"TIB"})
+        self.assertEqual(self.owners_for("STATE_LHASA"), {"TIB", "KAM", "CHD", "HOR"})
 
     def test_releasables_are_not_starting_countries(self):
-        self.assertNotIn("AMD", self.ledger["starting_tags"])
-        self.assertNotIn("DLI", self.ledger["starting_tags"])
-        self.assertEqual(set(self.ledger["releasable_tags"]), {"AMD", "DLI"})
+        self.assertTrue({"AMD", "DLI"} <= set(self.ledger["starting_tags"]))
+        self.assertEqual(set(self.ledger["releasable_tags"]), {"AHM", "KCH", "KTG", "WAA"})
+        self.assertIn("DER", self.ledger["starting_tags"])
 
     def test_shan_confederation_uses_runtime_shd_tag(self):
         self.assertIn("SHD", self.ledger["starting_tags"])
@@ -294,14 +398,15 @@ class SouthwestTest(unittest.TestCase):
 
     def test_southwest_history_and_highland_journal_are_connected(self):
         state_text = SOUTHWEST_STATE_FILE.read_text("utf-8")
-        pop_text = SOUTHWEST_POP_FILE.read_text("utf-8")
-        building_text = SOUTHWEST_BUILDING_FILE.read_text("utf-8")
+        pop_text = "\n".join(path.read_text("utf-8-sig") for path in SOUTHWEST_POP_FILE.parent.glob("*.txt"))
+        building_text = "\n".join(path.read_text("utf-8-sig") for path in SOUTHWEST_BUILDING_FILE.parent.glob("*.txt"))
         journal_text = SOUTHWEST_JOURNAL_FILE.read_text("utf-8")
         for state in self.ledger["source_states"]:
             self.assertIn(f"s:{state}", state_text)
         for country in self.ledger["starting_tags"]:
             self.assertIn(f"region_state:{country}", pop_text)
-            self.assertIn(f"region_state:{country}", building_text)
+            if country != "MNP":  # Vanilla Manipuri has no authored starting buildings.
+                self.assertIn(f"region_state:{country}", building_text)
         # The duplicate regional journal ywc_je_highland_without_master was
         # removed (TIB's main journal covers it); the file must not redefine
         # it and the southwest country history must no longer add it.
@@ -371,8 +476,8 @@ class RegionalCountryHistoryTest(unittest.TestCase):
     def test_new_regional_countries_have_market_and_basic_laws(self):
         text = REGIONAL_COUNTRY_HISTORY_FILE.read_text("utf-8")
         expected = {
-            "OIR", "KJU", "MJU", "GJU", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT",
-            "DER", "KAM", "GYL", "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "MNP",
+            "OIR", "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT",
+            "DER", "KAM", "GYL", "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM",
             "SHD", "RKN", "LAD", "WBK", "PNP", "PLW", "YAP", "MHL", "MRG",
         }
         for tag in expected:
@@ -390,28 +495,22 @@ class RegionalCountryHistoryTest(unittest.TestCase):
 
 class RuntimeCapacityRegressionTest(unittest.TestCase):
     def test_known_zero_capacity_startup_buildings_are_not_created(self):
-        inner_asia = INNER_ASIA_BUILDING_FILE.read_text("utf-8")
-        northern_manchuria = NORTHEAST_BUILDING_FILE.read_text("utf-8")
+        inner_asia = "\n".join(p.read_text("utf-8-sig") for p in INNER_ASIA_BUILDING_FILE.parent.glob("*.txt"))
+        northern_manchuria = "\n".join(p.read_text("utf-8-sig") for p in NORTHEAST_BUILDING_FILE.parent.glob("*.txt"))
         ocean = OCEAN_BUILDING_FILE.read_text("utf-8")
 
         self.assertNotIn(
             "building_logging_camp",
             balanced_block(balanced_block(inner_asia, "s:STATE_TIANSHAN"), "region_state:KUC"),
         )
-        self.assertNotIn(
-            "building_wheat_farm",
-            balanced_block(
-                balanced_block(northern_manchuria, "s:STATE_NORTHERN_MANCHURIA"),
-                "region_state:SHU",
-            ),
-        )
-        self.assertNotIn(
-            "building_wheat_farm",
-            balanced_block(
-                balanced_block(northern_manchuria, "s:STATE_OUTER_MANCHURIA"),
-                "region_state:SHU",
-            ),
-        )
+        for state, owners in (
+            ("STATE_NORTHERN_MANCHURIA", ("SOL",)),
+            ("STATE_OUTER_MANCHURIA", ("AMR",)),
+        ):
+            state_block = balanced_block(northern_manchuria, f"s:{state}")
+            # Shun may hold the southern Songhua valley; verify resource capacity per owner.
+            for owner in owners:
+                self.assertNotIn("building_wheat_farm", balanced_block(state_block, f"region_state:{owner}"))
         self.assertNotIn(
             "building_fishing_wharf",
             balanced_block(

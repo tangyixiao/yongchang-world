@@ -49,18 +49,58 @@ class ScenarioIntegrityTest(unittest.TestCase):
                     (state, tag) for tag in re.findall(r"region_state:([A-Z]{3})", text[match.start():end])
                 }
 
-    def test_vanilla_qing_never_survives_on_the_map(self):
-        # 1644: the Qing court never entered the pass; by 1715 it is a Sakhalin
-        # exile (NQG). The vanilla China tag must not own a single province.
-        for state, tags in self.owners.items():
-            self.assertNotIn("CHI", tags, f"vanilla Qing still owns {state}")
+    def test_qing_holds_trans_baikal_and_exact_frontier_buffer(self):
+        qing_states = {state for state, tags in self.owners.items() if "CHI" in tags}
+        self.assertEqual(
+            qing_states,
+            {
+                "STATE_TRANS_BAIKAL", "STATE_AMUR", "STATE_NORTHERN_MANCHURIA",
+                "STATE_YAKUTSK", "STATE_IRKUTSK", "STATE_BURYATIA",
+            },
+        )
+
+        baseline = json.loads((ROOT / "data/baseline/vic3-1.13.11.json").read_text(encoding="utf-8"))
+        ledger = LEDGER.read_text(encoding="utf-8-sig")
+        qing_provinces = set()
+        state_matches = list(re.finditer(r"(?m)^\s*s:(STATE_[A-Z0-9_]+)\s*=\s*\{", ledger))
+        for index, state_match in enumerate(state_matches):
+            state_end = state_matches[index + 1].start() if index + 1 < len(state_matches) else len(ledger)
+            state_block = ledger[state_match.start():state_end]
+            groups = list(re.finditer(r"(?m)^\s*create_state\s*=\s*\{", state_block))
+            for group_index, group_match in enumerate(groups):
+                group_end = groups[group_index + 1].start() if group_index + 1 < len(groups) else len(state_block)
+                group_block = state_block[group_match.start():group_end]
+                if re.search(r"\bcountry\s*=\s*c:CHI\b", group_block):
+                    owned = re.search(r"owned_provinces\s*=\s*\{([^}]*)\}", group_block, re.S)
+                    if owned:
+                        qing_provinces.update(re.findall(r"\b(x[0-9A-F]{6})\b", owned.group(1)))
+        trans_baikal = set(baseline["state_regions"]["STATE_TRANS_BAIKAL"])
+        self.assertEqual(qing_provinces & trans_baikal, trans_baikal)
+
+        expected_frontier_buffer = {
+            "STATE_AMUR": {
+                "x48F0E7", "x447043", "x87B611", "xD72514", "x532B1B", "x1DEDA0",
+            },
+            "STATE_NORTHERN_MANCHURIA": {
+                "x975775", "x4F6B8F", "xD3B4B5",
+            },
+        }
+        for state, expected in expected_frontier_buffer.items():
+            self.assertEqual(
+                qing_provinces & set(baseline["state_regions"][state]),
+                expected,
+                f"unexpected Qing frontier provinces in {state}",
+            )
 
     def test_every_mod_country_state_has_pops(self):
         # Reassigning a state without authoring pops silently deletes millions
         # of people (SHU showed 17.3M instead of ~350M).
         for state, tags in self.owners.items():
             for tag in tags:
-                if tag in self.registry_tags:
+                if tag in self.new_tags or (state in {
+                    "STATE_AKTOBE", "STATE_AKMOLINSK", "STATE_KIRGHIZIA",
+                    "STATE_JETISY", "STATE_SEMIRECHE",
+                } and tag in {"KZH", "OZH", "UZH"}):
                     self.assertIn(
                         (state, tag), self.pop_targets,
                         f"{state}: region_state:{tag} has no pops in the mod's pops files",

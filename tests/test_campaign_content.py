@@ -62,6 +62,23 @@ class CampaignCatalogTest(unittest.TestCase):
                 continue
             self.assertTrue(event["answerer"], event["id"])
 
+    def test_full_settlement_gates_use_real_answer_stages_and_answerers(self):
+        for crisis, config in self.catalog["crises"].items():
+            references = re.findall(
+                rf"c:([A-Z0-9]+)\s*\?=\s*\{{\s*var:ywc_campaign_crisis{crisis}_s(\d+)_answer = 1\s*\}}",
+                config["settle_full"],
+            )
+            self.assertEqual(len(references), 2, crisis)
+            for tag, stage_text in references:
+                stage = int(stage_text)
+                self.assertIn(stage, range(1, 6), f"crisis {crisis}: impossible stage {stage}")
+                matches = [
+                    event for event in self.catalog["events"]
+                    if event.get("crisis") == int(crisis) and event.get("stage") == stage
+                ]
+                self.assertEqual(len(matches), 1, (crisis, stage))
+                self.assertEqual(matches[0]["answerer"], tag, f"crisis {crisis} stage {stage}")
+
     def test_chapter_settlements_never_grant_territory_or_subject_freedoms(self):
         forbidden = ("set_key = ", "annex", "release_subject", "add_claim", "own_manila")
         script = (ROOT / "yongchang_world/events/ywc_large_campaign_events.txt").read_text(encoding="utf-8-sig")
