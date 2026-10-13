@@ -113,13 +113,24 @@ python tools/observation_status.py --root artifacts/observe
 
 ## 当前边界
 
-此前批次和本次特色事件扩展已完成静态复核；HEAD `3cba19e` 的提交态隐藏预加载也已通过。当前未提交工作树尚无对应的隐藏或实机运行证据，完整 UI 逐国选国与 1836—1900 长期观察局仍未完成，因此不能宣称 AI 长期平衡或 v0.1 已通过发行验收。游戏脚本以本体 1.13.11（Build ID 24799966）为基线，Province ID 来自本体快照。汉人王室服制覆盖（SHU/DMG/NMG）已通过静态门禁，但尚未在实机目验肖像效果。
+此前批次和本次特色事件扩展已完成静态复核；HEAD `3cba19e` 的提交态隐藏预加载也已通过。当前未提交工作树尚无对应的隐藏或实机运行证据，完整 UI 逐国选国与 1836—1900 长期观察局仍未完成，因此不能宣称 AI 长期平衡或 v0.1 已通过发行验收。游戏脚本以本体 1.13.11（Build ID 24799966）为基线，Province ID 来自本体快照。汉人王室服饰规则已扩至 SHU/DMG/NMG/MHG，并有静态回归检查；仍未实机目验。
 
 ## 服饰说明
 
-永昌世界不打包任何第三方服饰模型，也不要求安装服饰模组。从 v0.2 起，模组内置一层脚本级「汉人王室服制」覆盖：`yongchang_world/gfx/portraits/portrait_modifiers/ywc_han_royal_appearance.txt` 用本体 `INJECT` 机制给 SHU、DMG、NMG 三国的在位君主加权选择本体已有的 `chinese_court_outfits`（中式朝服）、`no_headgear` 与 `east_asian_hairstyles`，权重高于本体的清式 `chinese_imperial_outfits` 触发器，因此三家汉人君主不再显示清式龙袍与朝冠。触发范围由 `yongchang_world/common/scripted_triggers/ywc_appearance_triggers.txt` 限定；MHG 明香（海外残存）暂不改动。人口服饰仍走本体阶层规则，其余国家的汉文化君主也保持本体行为。
+永昌世界不打包第三方服饰资产。可选 companion East Asian Clothes: Redux（EACR）需单独安装。官方源码 [1230james/vic3-east-asian-clothes @ `8b9083d00ca10c58683664b6d2970ed019899445`](https://github.com/1230james/vic3-east-asian-clothes/tree/8b9083d00ca10c58683664b6d2970ed019899445) 的汉文化国家判断覆盖 CHI、TPG，以及主流文化符合其中文文化 predicate 的非清国；服饰选择器适用于部分君主、继承人、附庸王室、朝臣和人口阶层，不代表所有相关角色或居民都会穿到明式服装。源码 Ming 基因表将女性映射到 `female_outfit_chinese_01_high`，没有 Ming 专用女性服装；部分王室头饰复用朝鲜模型，发型为通用东亚顶髻，因此整套造型并非完整明制复原。以上基于代码检查，尚未实机验证。
 
-背景调研：只把角色文化设为 Han 并不会自动换成明制服装——本体 `chinese_imperial_clothes_trigger` 给本国君主制下的汉文化君主套用 `chinese_imperial_outfits`，并对 `c:CHI` 有单独特例；这组原版帝王服看起来偏清式。`East Asian Clothes: Redux` 的 [1.0.1 更新记录](https://steamcommunity.com/sharedfiles/filedetails/changelog/3704408897)曾专门处理 Ming/Han China 的 Executives 误穿清廷服饰，但该 Steam 工坊页面当前显示已移除/不兼容，本机没有安装副本，以下两条仅作调研记录保留：
+EACR 已在本机单独安装，并注册到两个启用 Yongchang World 的 launcher playset；目前没有启动游戏或验证肖像画面。其他机器可按需运行以下安装和配置命令：
+
+```powershell
+.\tools\install_eacr_companion.ps1
+python tools/configure_eacr_companion.py --user-data-dir "D:\Documents\Paradox Interactive\Victoria 3"
+```
+
+第二条命令使用本机实际 launcher user-data 路径；它是机器特定示例，其他机器请换成自己的 Paradox Launcher user-data 目录。Steam Workshop 不可用时，可从上面的固定官方源码版本获取 companion。
+
+四国 SHU/DMG/NMG/MHG 的汉人君主与继承人身份 gate 独立于 fallback。显式 `REPLACE:` 保留原版 `chinese_imperial_clothes_trigger` 与 `chinese_court_clothes_trigger` 的条件，并持续排除该王室身份，避免清式帝王服或普通朝帽候选；只有 EACR 未启用时，本体 `INJECT` 才提供 `chinese_court_outfits` 和 `no_headgear` 加权 fallback。权重不保证选中，fallback 不是完整明制汉服，也没有实机目验。未启用 EACR 时，头发仍走本体规则。
+
+背景调研：只把角色文化设为 Han 并不会自动换成明制服装——本体 `chinese_imperial_clothes_trigger` 给本国君主制下的汉文化君主套用 `chinese_imperial_outfits`，并对 `c:CHI` 有单独特例；这组原版帝王服看起来偏清式。`East Asian Clothes: Redux` 的 [1.0.1 更新记录](https://steamcommunity.com/sharedfiles/filedetails/changelog/3704408897)曾专门处理 Ming/Han China 的 Executives 误穿清廷服饰；该 Steam 工坊页面快照显示已移除/不兼容，本机是否能从工坊订阅可能受限。EACR 的[官方源码仓库固定版本](https://github.com/1230james/vic3-east-asian-clothes/tree/8b9083d00ca10c58683664b6d2970ed019899445)可作为替代获取来源。以下两条仅作背景调研记录保留：
 
 - [East Asian Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=3704408897)：覆盖中国、朝鲜、越南、日本和琉球的人物与人口服饰；页面称汉人为主流文化的中华帝国使用明风服饰。快照显示约 7,502 名订阅者、400 个收藏。Steam 页面目前同时标记为“已移除”和“与 Victoria 3 不兼容”，因此不能保证新玩家现在可订阅或正常运行。
 - [Chinese Uniform Pack (1.13)](https://steamcommunity.com/sharedfiles/filedetails/?id=3237422684)：提供不同历史时期的中国军服，不是民用服饰替代品。快照显示约 6,778 名订阅者、608 个收藏；前置为 [Miss Asset Framework](https://steamcommunity.com/sharedfiles/filedetails/?id=3296496664)、[Community Outfit Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3147725402) 和 [Western Clothes: Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=2981574864)。该页面目前也标记为“已移除”和“不兼容”，此条只供已订阅玩家或页面恢复后参考。
