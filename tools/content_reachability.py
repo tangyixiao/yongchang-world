@@ -80,6 +80,75 @@ def _journal_declarations(texts: dict[Path, str], pattern: re.Pattern[str]) -> d
     return _declarations(journal_texts, pattern)
 
 
+def _extract_block(text: str, start: int) -> str | None:
+    """Return a balanced Clausewitz block beginning at its opening brace."""
+    if start >= len(text) or text[start] != "{":
+        return None
+    depth = 0
+    for index in range(start, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:index]
+    return None
+
+
+def _named_blocks(text: str, name: str) -> list[str]:
+    blocks = []
+    pattern = re.compile(rf"\b{re.escape(name)}\s*=\s*\{{")
+    for match in pattern.finditer(text):
+        # JE activation fields must be direct members of the JE declaration;
+        # a similarly named field buried in an unrelated effect is not a gate.
+        if text[:match.start()].count("{") != text[:match.start()].count("}"):
+            continue
+        block = _extract_block(text, match.end() - 1)
+        if block is not None:
+            blocks.append(block)
+    return blocks
+
+
+COUNTRY_FILTER = re.compile(
+    r"\bc:([A-Z0-9]{2,4})\s*\??=\s*(?:this|root|\{)|"
+    r"\b(?:this|root)\s*=\s*c:([A-Z0-9]{2,4})\b"
+)
+
+
+def _country_filter_tags(blocks: list[str]) -> set[str]:
+    return {
+        tag
+        for block in blocks
+        for match in COUNTRY_FILTER.finditer(block)
+        for tag in match.groups()
+        if tag is not None
+    }
+
+
+def _auto_journal_entries(texts: dict[Path, str]) -> set[str]:
+    """Recognize explicit country-scoped JE self-activation conditions.
+
+    Victoria 3 activates an inactive JE when both `is_shown_when_inactive`
+    and `possible` pass. Require a country filter in both blocks so generic
+    always-true entries cannot bypass reachability review.
+    """
+    journal_texts = {
+        path: text for path, text in texts.items()
+        if "journal_entries" in {part.lower() for part in path.parts}
+    }
+    result: set[str] = set()
+    for path, text in journal_texts.items():
+        for match in JOURNAL_DECLARATION.finditer(text):
+            entry = _extract_block(text, match.end() - 1)
+            if entry is None:
+                continue
+            shown = _named_blocks(entry, "is_shown_when_inactive")
+            possible = _named_blocks(entry, "possible")
+            if _country_filter_tags(shown) & _country_filter_tags(possible):
+                result.add(match.group(1))
+    return result
+
+
 def _referenced_names(texts: dict[Path, str]) -> set[str]:
     names: set[str] = set()
     for text in texts.values():
@@ -109,6 +178,7 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
     events = _declarations(texts, EVENT_DECLARATION)
     journals = _journal_declarations(texts, JOURNAL_DECLARATION)
     routes = _journal_declarations(texts, ROUTE_DECLARATION)
+    auto_journals = _auto_journal_entries(texts)
     helpers = {
         name: path
         for name, path in _declarations(texts, HELPER_DECLARATION).items()
@@ -117,7 +187,9 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
     referenced = _referenced_names(texts)
 
     unreferenced_events = sorted(name for name in events if counts[name] <= 1)
-    unreferenced_journals = sorted(name for name in journals if counts[name] <= 1)
+    unreferenced_journals = sorted(
+        name for name in journals if counts[name] <= 1 and name not in auto_journals
+    )
     dangling = sorted(
         name
         for name in referenced

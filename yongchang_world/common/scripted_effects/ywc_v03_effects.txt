@@ -1,0 +1,46 @@
+# Shared v0.3 lifecycle counters. Country-specific JE conditions remain in
+# each catalog-generated JE; these effects only own version and active slots.
+
+ywc_v03_initialize_country = {
+	if = {
+		limit = { NOT = { has_variable = ywc_v03_initialized } }
+		set_variable = { name = ywc_v03_initialized value = 1 }
+		set_variable = { name = ywc_v03_release_version value = 3 }
+		set_variable = { name = ywc_v03_active_arc_count value = 0 }
+		set_variable = { name = ywc_v03_visible_task_count value = 0 }
+	}
+}
+
+# Called by the first JE's immediate effect, after its possible trigger has
+# verified capacity. The second guard makes the claim safe under manual entry.
+ywc_v03_claim_arc_shu_v03_shu_fiscal_register = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_started }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+		}
+		set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_started value = 1 }
+		set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 0 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	}
+}
+
+# Called only after the country-specific result has been computed and stored.
+# This effect never manufactures an outcome or touches the legacy result flags.
+ywc_v03_release_arc_shu_v03_shu_fiscal_register = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_shu_v03_shu_fiscal_register_started
+			NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled }
+			var:ywc_v03_shu_v03_shu_fiscal_register_outcome > 0
+		}
+		set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}

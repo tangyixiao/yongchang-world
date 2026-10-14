@@ -76,6 +76,48 @@ class ContentReachabilityTest(unittest.TestCase):
             report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
             self.assertEqual(report["unreferenced_journals"], ["ywc_je_orphan"])
 
+    def test_country_filtered_auto_journal_is_a_valid_entry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            files = dict(CLEAN_FIXTURE)
+            files["common/journal_entries/ywc_test_journal.txt"] = (
+                "ywc_je_auto = {\n"
+                "  is_shown_when_inactive = { c:SHU ?= this }\n"
+                "  possible = { c:SHU ?= this }\n"
+                "  complete = { always = yes }\n"
+                "}\n"
+            )
+            base = build_fixture(pathlib.Path(directory) / "mod", files)
+            report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
+            self.assertEqual(report["unreferenced_journals"], [])
+
+    def test_auto_journal_without_country_filter_stays_unreferenced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            files = dict(CLEAN_FIXTURE)
+            files["common/journal_entries/ywc_test_journal.txt"] = (
+                "ywc_je_auto = {\n"
+                "  is_shown_when_inactive = { always = yes }\n"
+                "  possible = { always = yes }\n"
+                "  complete = { always = yes }\n"
+                "}\n"
+            )
+            base = build_fixture(pathlib.Path(directory) / "mod", files)
+            report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
+            self.assertEqual(report["unreferenced_journals"], ["ywc_je_auto"])
+
+    def test_auto_journal_requires_the_same_current_country_in_both_gates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            files = dict(CLEAN_FIXTURE)
+            files["common/journal_entries/ywc_test_journal.txt"] = (
+                "ywc_je_auto = {\n"
+                "  is_shown_when_inactive = { c:SHU = this }\n"
+                "  possible = { c:DMG = this }\n"
+                "  immediate = { is_shown_when_inactive = { c:SHU = this } }\n"
+                "}\n"
+            )
+            base = build_fixture(pathlib.Path(directory) / "mod", files)
+            report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
+            self.assertEqual(report["unreferenced_journals"], ["ywc_je_auto"])
+
     def test_route_reference_is_counted_and_dangling_route_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             files = dict(CLEAN_FIXTURE)

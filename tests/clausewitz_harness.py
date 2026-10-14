@@ -76,6 +76,21 @@ class PulseWorld:
             return value.removeprefix("c:") in self.countries
         if key == "always":
             return value == "yes"
+        if key in ("net_fixed_income", "bureaucracy", "gold_reserves", "in_default", "is_at_war"):
+            left = variables.get(key, 0)
+            if isinstance(value, list):
+                fields = {name: field for name, _, field in value}
+                raw_value = fields["value"]
+                right = variables.get(raw_value[4:], 0) if raw_value.startswith("var:") else float(raw_value)
+                right *= float(fields.get("multiply", 1))
+            elif value.startswith("var:"):
+                right = variables.get(value[4:], 0)
+            elif value in ("yes", "no"):
+                right = value == "yes"
+            else:
+                right = float(value)
+            return {"=": operator.eq, ">=": operator.ge, "<=": operator.le,
+                    ">": operator.gt, "<": operator.lt, "!=": operator.ne}[comparison](left, right)
         if key.startswith("c:"):
             other = key[2:]
             if other not in self.countries:
@@ -133,13 +148,35 @@ class PulseWorld:
                 fields = {name: value for name, _, value in body}
                 name = fields["name"]
                 if key == "set_variable":
-                    variables[name] = float(fields["value"])
+                    raw_value = fields["value"]
+                    if raw_value.startswith("var:"):
+                        resolved_value = variables.get(raw_value[4:], 0)
+                    elif raw_value.startswith("this."):
+                        resolved_value = variables.get(raw_value[5:], 0)
+                    else:
+                        try:
+                            resolved_value = float(raw_value)
+                        except ValueError:
+                            resolved_value = raw_value == "yes"
+                    variables[name] = resolved_value
                     if "months" in fields:
                         self.months_until_expiry.setdefault(tag, {})[name] = int(float(fields["months"]))
                     else:
                         self.months_until_expiry.setdefault(tag, {}).pop(name, None)
                 elif key == "change_variable":
-                    variables[name] = variables.get(name, 0) + float(fields["add"])
+                    if "multiply" in fields:
+                        variables[name] = variables.get(name, 0) * float(fields["multiply"])
+                    elif "add" in fields:
+                        raw_add = fields["add"]
+                        if raw_add.startswith("var:"):
+                            amount = variables.get(raw_add[4:], 0)
+                        elif raw_add.startswith("this."):
+                            amount = variables.get(raw_add[5:], 0)
+                        else:
+                            amount = float(raw_add)
+                        variables[name] = variables.get(name, 0) + amount
+                    else:
+                        raise AssertionError(f"unsupported change_variable fields: {fields}")
                 else:
                     variables[name] = min(float(fields["max"]), max(float(fields["min"]), variables[name]))
             elif key == "remove_variable":
@@ -150,7 +187,19 @@ class PulseWorld:
             elif key == "add_modifier":
                 self.modifiers.append((tag, dict((name, value) for name, _, value in body)))
             elif key == "add_treasury":
-                self.treasury[tag] += float(body)
+                if isinstance(body, list):
+                    fields = {name: value for name, _, value in body}
+                    raw_value = fields["value"]
+                    if raw_value.startswith("var:"):
+                        amount = variables.get(raw_value[4:], 0)
+                    elif raw_value.startswith("this."):
+                        amount = variables.get(raw_value[5:], 0)
+                    else:
+                        amount = float(raw_value)
+                    amount *= float(fields.get("multiply", 1))
+                else:
+                    amount = float(body)
+                self.treasury[tag] += amount
             elif key == "add_journal_entry":
                 self.journals.append((tag, body))
             elif key.startswith("c:"):
