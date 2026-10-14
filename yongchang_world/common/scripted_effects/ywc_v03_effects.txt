@@ -29,7 +29,35 @@ ywc_v03_claim_arc_shu_v03_shu_fiscal_register = {
 }
 
 # Called only after the country-specific result has been computed and stored.
-# This effect never manufactures an outcome or touches the legacy result flags.
+# The bridge maps that actual result into the legacy chapter-one interface.
+ywc_v03_bridge_shu_court_one = {
+	if = {
+		limit = { NOT = { has_variable = ywc_campaign_shu_c1_outcome } }
+		if = {
+			limit = { var:ywc_v03_shu_v03_shu_fiscal_register_outcome = 1 }
+			set_variable = { name = ywc_campaign_shu_c1_outcome value = 1 }
+			set_variable = { name = ywc_je_flavor_shu_court_1_resolved value = 1 }
+		}
+		else_if = {
+			limit = { var:ywc_v03_shu_v03_shu_fiscal_register_outcome <= 3 }
+			set_variable = { name = ywc_campaign_shu_c1_outcome value = 2 }
+			set_variable = { name = ywc_je_flavor_shu_court_1_resolved value = 1 }
+		}
+		else = {
+			set_variable = { name = ywc_campaign_shu_c1_outcome value = 3 }
+			set_variable = { name = ywc_je_flavor_shu_court_1_failed value = 1 }
+		}
+	}
+	if = {
+		limit = {
+			NOT = { has_journal_entry = ywc_je_flavor_shu_court_2 }
+			NOT = { has_variable = ywc_je_flavor_shu_court_2_resolved }
+			NOT = { has_variable = ywc_je_flavor_shu_court_2_failed }
+		}
+		add_journal_entry = { type = ywc_je_flavor_shu_court_2 }
+	}
+}
+
 ywc_v03_release_arc_shu_v03_shu_fiscal_register = {
 	if = {
 		limit = {
@@ -42,5 +70,6 @@ ywc_v03_release_arc_shu_v03_shu_fiscal_register = {
 		change_variable = { name = ywc_v03_visible_task_count add = -1 }
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		ywc_v03_bridge_shu_court_one = yes
 	}
 }

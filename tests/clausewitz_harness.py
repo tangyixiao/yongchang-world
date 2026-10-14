@@ -72,6 +72,12 @@ class PulseWorld:
                     "OR": any, "NOR": lambda xs: not any(xs)}[key](results)
         if key == "has_variable":
             return value in variables
+        if key == "has_journal_entry":
+            return any(
+                entry_tag == tag
+                and dict((name, field) for name, _, field in body).get("type") == value
+                for entry_tag, body in self.journals
+            )
         if key == "exists":
             return value.removeprefix("c:") in self.countries
         if key == "always":

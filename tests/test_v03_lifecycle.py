@@ -13,6 +13,7 @@ TRIGGERS = ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_triggers.txt
 SHU_EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_shu_effects.txt"
 STARTUP = ROOT / "yongchang_world/common/on_actions/ywc_v03_startup.txt"
 MIGRATION = ROOT / "yongchang_world/common/decisions/ywc_v03_migration.txt"
+LEGACY_SHU_JOURNAL = ROOT / "yongchang_world/common/journal_entries/ywc_shu.txt"
 
 
 class V03LifecycleTest(unittest.TestCase):
@@ -105,6 +106,43 @@ class V03LifecycleTest(unittest.TestCase):
             data = (ROOT / relative).read_bytes()
             self.assertTrue(data.startswith(b"\xef\xbb\xbf"), relative)
             self.assertIn("not refunded".encode() if "english" in relative else "不会退还".encode(), data)
+
+    def test_legacy_court_one_stops_only_after_this_arc_starts(self):
+        from clausewitz_harness import parse
+
+        old_script = LEGACY_SHU_JOURNAL.read_text(encoding="utf-8-sig")
+        journal = next(body for key, _, body in parse(old_script)
+                       if key == "ywc_je_flavor_shu_court_1")
+        pulse = next(body for key, _, body in journal if key == "on_monthly_pulse")
+        pulse_effect = next(body for key, _, body in pulse if key == "effect")
+        first_limit = next(body for key, _, body in pulse_effect if key == "if")
+        first_limit = next(body for key, _, body in first_limit if key == "limit")
+
+        world = self.world()
+        world.run("ywc_v03_initialize_country")
+        self.assertTrue(world.conditions(first_limit, "SHU"), "init must leave the old arc dispatchable")
+        world.run("ywc_v03_claim_arc_shu_v03_shu_fiscal_register")
+        self.assertFalse(world.conditions(first_limit, "SHU"), "started marker must stop old c1 dispatch")
+
+    def test_real_outcomes_bridge_once_to_old_court_chapter_and_continue_court_two(self):
+        for new_result, old_result, legacy_terminal in (
+            (1, 1, "resolved"), (2, 2, "resolved"), (3, 2, "resolved"), (4, 3, "failed"),
+        ):
+            with self.subTest(new_result=new_result):
+                world = self.world()
+                world.run("ywc_v03_claim_arc_shu_v03_shu_fiscal_register")
+                world.countries["SHU"]["ywc_v03_shu_v03_shu_fiscal_register_outcome"] = new_result
+                world.run("ywc_v03_release_arc_shu_v03_shu_fiscal_register")
+                world.run("ywc_v03_release_arc_shu_v03_shu_fiscal_register")
+                state = world.countries["SHU"]
+                self.assertEqual(state["ywc_campaign_shu_c1_outcome"], old_result)
+                self.assertEqual(state[f"ywc_je_flavor_shu_court_1_{legacy_terminal}"], 1)
+                other = "failed" if legacy_terminal == "resolved" else "resolved"
+                self.assertNotIn(f"ywc_je_flavor_shu_court_1_{other}", state)
+                court_two_adds = [item for item in world.journals
+                                  if dict((key, value) for key, _, value in item[1]).get("type")
+                                  == "ywc_je_flavor_shu_court_2"]
+                self.assertEqual(len(court_two_adds), 1)
 
     def _trigger_body(self, name):
         from clausewitz_harness import parse
