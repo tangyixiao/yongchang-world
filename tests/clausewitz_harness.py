@@ -46,9 +46,10 @@ class PulseWorld:
         self.treasury = {tag: 0 for tag in countries}
         self.journals = []
         self.months_until_expiry = {tag: {} for tag in countries}
+        self.days_until_expiry = {tag: {} for tag in countries}
 
     def advance_months(self, months=1):
-        """Advance explicit engine-time expiry for months-based variables."""
+        """Advance calendar months; Clausewitz day timers age by 30 days here."""
         for _ in range(months):
             for tag, timers in self.months_until_expiry.items():
                 expired = []
@@ -59,6 +60,19 @@ class PulseWorld:
                 for name in expired:
                     timers.pop(name)
                     self.countries[tag].pop(name, None)
+            self.advance_days(30)
+
+    def advance_days(self, days=1):
+        """Advance explicit days-based variable expiry used by authored effects."""
+        for tag, timers in self.days_until_expiry.items():
+            expired = []
+            for name in list(timers):
+                timers[name] -= days
+                if timers[name] <= 0:
+                    expired.append(name)
+            for name in expired:
+                timers.pop(name)
+                self.countries[tag].pop(name, None)
 
     def conditions(self, nodes, tag):
         return all(self.condition(node, tag) for node in nodes)
@@ -171,6 +185,10 @@ class PulseWorld:
                         self.months_until_expiry.setdefault(tag, {})[name] = int(float(fields["months"]))
                     else:
                         self.months_until_expiry.setdefault(tag, {}).pop(name, None)
+                    if "days" in fields:
+                        self.days_until_expiry.setdefault(tag, {})[name] = int(float(fields["days"]))
+                    else:
+                        self.days_until_expiry.setdefault(tag, {}).pop(name, None)
                 elif key == "change_variable":
                     if "multiply" in fields:
                         variables[name] = variables.get(name, 0) * float(fields["multiply"])
@@ -190,6 +208,7 @@ class PulseWorld:
             elif key == "remove_variable":
                 variables.pop(body, None)
                 self.months_until_expiry.setdefault(tag, {}).pop(body, None)
+                self.days_until_expiry.setdefault(tag, {}).pop(body, None)
             elif key == "trigger_event":
                 self.events.append((tag, dict((name, value) for name, _, value in body)["id"]))
             elif key == "add_modifier":

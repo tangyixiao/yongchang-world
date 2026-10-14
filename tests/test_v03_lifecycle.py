@@ -58,6 +58,19 @@ class V03LifecycleTest(unittest.TestCase):
                                "ywc_v03_visible_task_count": 2})
         self.assertFalse(arc_full.conditions(self._trigger_body("ywc_v03_has_capacity"), "SHU"))
 
+    def test_major_delivery_cooldown_is_shared_idempotent_and_expires_after_three_months(self):
+        world = self.world()
+        can_deliver = self._trigger_body("ywc_v03_can_deliver_major")
+        self.assertTrue(world.conditions(can_deliver, "SHU"))
+        world.run("ywc_v03_mark_major_delivered")
+        world.advance_months(1)
+        world.run("ywc_v03_mark_major_delivered")
+        self.assertFalse(world.conditions(can_deliver, "SHU"))
+        self.assertEqual(world.days_until_expiry["SHU"]["ywc_v03_major_event_cooldown"], 60)
+        world.advance_months(2)
+        self.assertTrue(world.conditions(can_deliver, "SHU"))
+        self.assertNotIn("ywc_v03_major_event_cooldown", world.countries["SHU"])
+
     def test_release_requires_a_real_outcome_and_only_decrements_once(self):
         world = self.world({"ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
                             "ywc_v03_active_arc_count": 1,
