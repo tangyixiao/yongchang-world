@@ -34,7 +34,8 @@ from tools.ywc_check import _script_files, _without_comments_and_strings  # noqa
 
 ALLOWLIST_PATH = Path("data/content/reachability_allowlist.json")
 EVENT_DECLARATION = re.compile(r"^\s*(ywc_[a-z_]+\.\d+)\s*=\s*\{", re.M)
-JOURNAL_DECLARATION = re.compile(r"^\s*(ywc_je_[a-z0-9_]+)\s*=\s*\{", re.M)
+JOURNAL_DECLARATION = re.compile(r"^\s*(ywc_(?:je|route)_[a-z0-9_]+)\s*=\s*\{", re.M)
+ROUTE_DECLARATION = re.compile(r"^\s*(ywc_route_[a-z0-9_]+)\s*=\s*\{", re.M)
 HELPER_DECLARATION = re.compile(r"^\s*(ywc_[a-z0-9_]+)\s*=\s*\{", re.M)
 REFERENCE_PATTERNS = (
     re.compile(r"trigger_event\s*=\s*\{\s*id\s*=\s*([A-Za-z0-9_.]+)"),
@@ -71,6 +72,14 @@ def _declarations(texts: dict[Path, str], pattern: re.Pattern[str]) -> dict[str,
     return declared
 
 
+def _journal_declarations(texts: dict[Path, str], pattern: re.Pattern[str]) -> dict[str, Path]:
+    journal_texts = {
+        path: text for path, text in texts.items()
+        if "journal_entries" in {part.lower() for part in path.parts}
+    }
+    return _declarations(journal_texts, pattern)
+
+
 def _referenced_names(texts: dict[Path, str]) -> set[str]:
     names: set[str] = set()
     for text in texts.values():
@@ -98,7 +107,8 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
     texts = _script_texts(root)
     counts = _token_counts("\n".join(texts.values()))
     events = _declarations(texts, EVENT_DECLARATION)
-    journals = _declarations(texts, JOURNAL_DECLARATION)
+    journals = _journal_declarations(texts, JOURNAL_DECLARATION)
+    routes = _journal_declarations(texts, ROUTE_DECLARATION)
     helpers = {
         name: path
         for name, path in _declarations(texts, HELPER_DECLARATION).items()
@@ -112,7 +122,7 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
         name
         for name in referenced
         if (name.startswith("ywc_") and "." in name and name not in events)
-        or (name.startswith("ywc_je_") and name not in journals)
+        or (name.startswith(("ywc_je_", "ywc_route_")) and name not in journals)
     )
     allowlist = load_allowlist(allowlist_path or (root.parent / ALLOWLIST_PATH))
     unused_helpers = sorted(
@@ -122,6 +132,7 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
         "root": str(root),
         "event_count": len(events),
         "journal_count": len(journals),
+        "route_count": len(routes),
         "helper_count": len(helpers),
         "dangling_references": dangling,
         "unreferenced_events": unreferenced_events,

@@ -76,6 +76,30 @@ class ContentReachabilityTest(unittest.TestCase):
             report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
             self.assertEqual(report["unreferenced_journals"], ["ywc_je_orphan"])
 
+    def test_route_reference_is_counted_and_dangling_route_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            files = dict(CLEAN_FIXTURE)
+            files["common/journal_entries/ywc_test_journal.txt"] += (
+                "ywc_route_test = { complete = { always = yes } }\n"
+            )
+            files["common/history/countries/ywc_test_start.txt"] += (
+                "c:SHU = { effect = { add_journal_entry = { type = ywc_route_test } } }\n"
+            )
+            base = build_fixture(pathlib.Path(directory) / "mod", files)
+            report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
+            self.assertEqual(report["journal_count"], 2)
+            self.assertEqual(report["dangling_references"], [])
+            self.assertEqual(report["unreferenced_journals"], [])
+
+            route_file = base / "common/journal_entries/ywc_test_journal.txt"
+            route_file.write_text(
+                route_file.read_text(encoding="utf-8").replace(
+                    "ywc_route_test = { complete = { always = yes } }\n", ""
+                ), encoding="utf-8"
+            )
+            report = audit(base, pathlib.Path(directory) / "missing-allowlist.json")
+            self.assertEqual(report["dangling_references"], ["ywc_route_test"])
+
     def test_unused_helper_requires_an_allowlist_entry(self):
         with tempfile.TemporaryDirectory() as directory:
             base = pathlib.Path(directory) / "mod"
@@ -131,7 +155,8 @@ class ContentReachabilityTest(unittest.TestCase):
         # 272 through the large campaign, +33 hegemony, +18 southwest, and
         # 180 frontier polity events; prior journals plus 60 frontier starts.
         self.assertEqual(report["event_count"], 491)
-        self.assertEqual(report["journal_count"], 142)
+        self.assertEqual(report["journal_count"], 162)
+        self.assertEqual(report["route_count"], 20)
 
 
 if __name__ == "__main__":
