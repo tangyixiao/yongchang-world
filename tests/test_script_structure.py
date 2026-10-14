@@ -253,6 +253,25 @@ class ScriptStructureTest(unittest.TestCase):
             )
             self.assertEqual(collect_declared_keys(root), set())
 
+    def test_character_template_ids_are_internal_database_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            templates = root / "common/character_templates"
+            events = root / "events"
+            templates.mkdir(parents=True)
+            events.mkdir(parents=True)
+            (templates / "generals.txt").write_text(
+                "ywc_shu_general_example = { is_general = yes }\n"
+                "ywc_shu_general_internal_only = { is_general = yes }\n",
+                encoding="utf-8",
+            )
+            (events / "generals.txt").write_text(
+                "ywc_shu_general_example = { title = ywc_shu_general_example.t }\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(collect_declared_keys(root), {"ywc_shu_general_example"})
+            self.assertEqual(find_duplicate_keys(root), set())
+
     def test_visual_database_tags_do_not_collide_with_country_definitions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

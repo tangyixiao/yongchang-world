@@ -32,6 +32,7 @@ STATE_REGION_DIRECTORY = "map_data/state_regions"
 CULTURE_DIRECTORY = "common/cultures"
 RELIGION_DIRECTORY = "common/religions"
 POP_TYPE_DIRECTORY = "common/pop_types"
+PRODUCTION_METHOD_DIRECTORY = "common/production_methods"
 VANILLA_BUILDING_HISTORY = "common/history/buildings"
 
 DECLARATION = re.compile(r"^([a-zA-Z][A-Za-z0-9_]*)\s*=\s*\{", re.MULTILINE)
@@ -158,6 +159,8 @@ def audit(mod_root: Path, game_root: Path) -> dict:
     vanilla_buildings = _declarations(game_root, BUILDING_DIRECTORY)
     mod_buildings = _declarations(mod_root, BUILDING_DIRECTORY)
     buildings = vanilla_buildings | mod_buildings
+    production_methods = (_declarations(game_root, PRODUCTION_METHOD_DIRECTORY)
+                          | _declarations(mod_root, PRODUCTION_METHOD_DIRECTORY))
     cultures = _declarations(game_root, CULTURE_DIRECTORY)
     religions = _declarations(game_root, RELIGION_DIRECTORY)
     pop_types = _declarations(game_root, POP_TYPE_DIRECTORY)
@@ -180,6 +183,10 @@ def audit(mod_root: Path, game_root: Path) -> dict:
             if state not in regions:
                 problems.append(f"{path}: unknown state region {state}")
             if is_buildings:
+                for activation in re.finditer(r'activate_production_methods\s*=\s*\{([^}]*)\}', body):
+                    for method in re.findall(r'\bpm_[A-Za-z0-9_]+\b', activation.group(1)):
+                        if method not in production_methods:
+                            problems.append(f"{path}: unknown production method {method} in {state}")
                 for building, levels in _buildings_in(body):
                     checked_buildings += 1
                     if building not in buildings:

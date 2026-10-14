@@ -1,5 +1,70 @@
 # Changelog
 
+## Unreleased — 2026-10-14：全模组开局法律巡检（草原迁徙锁修复）
+
+- **东北四国补齐主法律模板**：KHQ/HUL/SOL/AMR 此前只有科技挂接，政府/税制/官僚/土地法全吃引擎默认值；现按 MGL 模板显式挂满八法（monarchy/autocracy/per_capita_based_taxation/hereditary_bureaucrats/subjecthood/traditionalism/manorialism/peasant_levies）并补 set_market_capital。
+- **纯游牧国家农奴制换庄园制（13 国）**：mongol（ODS/CHR）、kazak（BKY/BYL/JTR/NMN/KER/ZHL/ABN）、turkmen（TKK/YMD/MEV）、kirgiz（KIR）+ 缺土地法的 KHO——`law_serfdom` 的农民迁徙锁与轮牧不相容（沿用 MGL 庄园制辨析的判定标准），统一换 `law_manorialism`；绿洲定居汗国（uzbek/tajik）、藏区庄园、汉地农业国保留农奴制（人身依附有据）。
+- 记录与判定标准落档 `docs/research/2026-10-03-十国开局法律史实对照.md`「全模组国家开局法律巡检」节；门禁 512 tests + ywc_check 全绿。
+
+## Unreleased — 2026-10-13：东北盟旗文化与盟旗共祭制
+
+- **SOL（索伦部盟）/AMR（黑水盟）不再是「西伯利亚文化国家」**：国家定义 cultures 从 `{ siberian }` 改为 `{ manchu siberian }`（满洲盟旗贵族主导、西伯利亚诸族并存，仿本体 CHI 满主汉次先例）；pop 层构成与国教（animist 萨满）不变。
+- **按奥斯曼的写法范式量身写国教法律（而非照搬米利特内容）**：新建 `yongchang_world/common/laws/ywc_laws.txt`，`law_ywc_banner_rites`（盟旗共祭制）学本体为奥斯曼写 `law_millet_system` 的范式——一条国教组专属法律表达该政权的宗教安排；但盟旗共祭制语义是「萨满信仰是共主主持的共同祭祀，各盟旗供奉各自的神灵，互不改宗，也无从强迫」，故**不含**米利特制的伊斯兰专属内容：无五档异教税（吉兹亚）、无强制改宗授权（allow_conversion 五档全 no）、无征兵/改宗惩罚。modifier：虔诚政治力量 +25%、权威 +100、国教接纳 +25、同宗教特质 +10、同特质组 +10、无共享特质 -15；icon 复用 state_religion.dds。开局经 profile 管线挂接：`opening_profiles.json` AMR/SOL 增 `laws` 字段，`build_opening_profiles.py` 重渲染 `zzz_ywc_opening_profiles.txt`（diff 恰为两行 activate_law）。HUL/KHQ 信藏传且已有国教法，不在此列。
+- **测试与文档**：`tests/test_northeast_banner_culture.py`（7 项）含反照搬断言（法律块内不得出现 tax_modifier_/tax_heathen_add/state_conversion_mult/state_conscription_rate_mult，改宗政策五档必须全 no）；`docs/research/2026-10-03-十国开局法律史实对照.md`「盟旗共祭制」一节记录范式与内容边界。
+## Unreleased — 2026-10-12：v0.2 收官批次（修正案审计工具 + 汉人王室服制覆盖）
+
+- **修正案审计固化**：新增 `tools/amendment_audit.py`（六个检查组：modifier 键位、parent/allowed_laws、possible 国家限定与 would_sponsor、挂接完整性、lawgroup 开局法律一致——按完整加载顺序回放本体与 mod history、双语 `_desc` 齐全），配 `tests/test_amendment_audit.py` 十一个测试；`tools/ywc_check.py` 自动接入。此前临时脚本核验的十项修正案结论现在可一键复跑。工具修出并记录三个真 bug：正则漏 `re.MULTILINE`、嵌套块被当顶层条目、开局法律按 law 而非 lawgroup 建索引。
+- **汉人王室服饰边界修正（不打包第三方资产）**：身份门槛覆盖 SHU/DMG/NMG/MHG 四国符合条件的在位汉人君主与继承人。使用 Clausewitz 显式 `REPLACE:` 覆盖原版 `chinese_imperial_clothes_trigger` 与 `chinese_court_clothes_trigger`，保留原条件，仅对该王室身份排除清式帝王服与普通朝帽候选。EACR 活跃时永昌 fallback 关闭，但排除仍有效。未安装 EACR 时，`chinese_court_outfits` 和 `no_headgear` 是加权而非必选的有限 fallback，不是完整明制汉服；移除了发型候选覆盖，且未做实机验证。
+- **EACR companion 兼容**：依据官方仓库固定源码 [1230james/vic3-east-asian-clothes @ `8b9083d00ca10c58683664b6d2970ed019899445`](https://github.com/1230james/vic3-east-asian-clothes/tree/8b9083d00ca10c58683664b6d2970ed019899445)，新增 EACR 作者推荐的 `EACR_is_active_trigger` 接口；EACR 启用时禁用本模组 fallback，交由其覆盖一般汉文化主流国家的君主/继承人、朝臣与人口规则。EACR 是单独安装的 companion，不打包其资产；兼容依据为源码检查，未做实机验证。该固定官方源码仓库也作为工坊不可用时的替代获取来源。
+- **遗留处置**：`yongchang_world/common/history/countries/chi - china.txt` 按测试合同（`tests/test_user_map_corrections.py:193`）git add 入库（文件名带空格与本体同目录同风格，非笔误）；`ywc_dynasties` 本地化文件补齐 UTF-8 BOM（`tests/test_metadata.py` 要求全部 .yml 带 BOM）；`.gitignore` 排除 `artifacts/automation/`（853MB 截图证据与一次性探针）与 `artifacts/exe_kw_context.txt`（exe 字符串转储）。
+- 静态门禁：494 tests OK（367.6s），`ywc_check` clean，`amendment_audit` consistent（10 amendments / 10 attachments / 138 laws / 8 IG / 2364 modifier types），content reachability 491 events / 142 journals / 65 helpers clean。实机肖像目验仍缺，见 `docs/release/v0.2-acceptance.md`。
+
+## Unreleased — 2026-10-02：跨国危机投递冷却
+
+- 五场危机的三十个阶段均在实际收件国投递时占用三个月自动过期冷却，阻止不同持有人向同一国家连续投递危机卡。
+- 移除持有人日志扣减和门控冷却的旧逻辑；已经答复的阶段可正常推进，答复不延长投递冷却。旧存档中的数字冷却不再参与门控。
+- 等待收件国冷却时不计答复超时；实际投递后才开始十二个月等待，缺席国家仍立即跳过并记为无人代表。
+- 保留南洋第三阶段西班牙、荷兰、兰芳的存续优先级，冷却不触发改投；新增直接执行实际脚本的跨危机回归。验证记录见 `docs/development/2026-10-02-跨国危机投递冷却.md`，实机证据仍待补齐。
+
+## Unreleased — 2026-10-02：十国主线与天命霸权推进修复
+
+- 分离霸权与五场跨国危机的计时、阶段分支，避免计时变量存在后永远无法投递下一事件。
+- 霸权应答期按季度依次投递九国使团，最后一国也保留一个季度应答期；各朝廷阶段保留十二个月超时，最终无人答复写入受挫结局及五年余波。兼容旧存档卡在第八阶段的情况。
+- 霸权启动要求九国中任意四国存续；原有三章结算、危机全协议、正统性和单次启动门槛继续生效。
+- 顺服、拒诏、观望人数从存续国家的当前立场重核，答复变更即时更新，不再靠累加计数。
+- 九国入贡、加贡、补贡采用等额国库转移，两端共用宗主存续检查；生成器拒绝不守恒的贡赋清单。
+- 宽仁与威严诏书记录为不同政策，按本体 `ai_chance` 的 `modifier/trigger/add` 写法调整九国顺逆倾向。
+- 新增直接执行脚本条件与变量操作的离线回归，覆盖推进、季度间隔、灭亡国家、超时、启动和贡赋；离线解释器只覆盖测试所需的脚本子集，不替代游戏验收。本轮没有启动游戏。
+
+## Unreleased — world repair: the 1836 lobby actually inspected
+
+The first real look at the 1836 selection screen exposed long-standing scenario defects on top of the v0.2 content. All are fixed and locked by tests:
+
+- **Vanilla Qing no longer survives on the map.** The state ledger never reassigned seven former-Qing states (Southern Manchuria, Hinggan, Amur, Alxa, Tuva, Altai, Jetisy), so vanilla CHI kept 13204 provinces of the north while SHU showed 17.3M people. They now go to the design owners — Shun (Liaoning/Jilin-south migration area), the Amur/ Solon/ Hulun banners, Khoshut-Qinghai (Alxa), Khalkha (Tannu-Uriankhai and Altai), and Great Juz (Semirechye). CHI owns nothing at 1836 and disappears.
+- **The 20-million-person Sichuan basin and the Yunnan core belong to Shun.** The basin city provinces (Chengdu x60E0D5, Kunming x78DC66) moved from the highland fragments to new SHU create_state blocks, and ownership_overrides/southwest_states.json now declare the SHU shares so the coverage contract holds.
+- **Pops restored for every reassigned state.** The big regional pops files were authored against vanilla owners, so China's states lost their population when the ledger reassigned them. A new `ywc_china_pops.txt` authors the 23 uncovered SHU states at historical 1836 scale (~355M total for China proper), plus pops for the seven reassigned periphery states and their new owners, and x4 scale-ups for the thin southwest fragments (Sipsongpanna 68K -> 272K, Lijiang 80K -> 320K, etc.).
+- **Arakan is no longer Arabia.** The registry had claimed `ARA` as a vanilla reuse, but vanilla ARA is Arabia — the Mandalay state rendered as 阿拉伯 with the Arab flag. Arakan is now the genuinely new tag `RKN` with its own definition, flag, CoA, loc, pops, buildings and v0.2 line (ywc_rkn.1-.3); the southwest catalog, starts, and tests follow.
+- **Regional countries got real flags.** 35 new-tag countries had no flag definition and rendered with the engine default tricolor. They now carry geometric CoAs from the vanilla atlas in a separate `ywc_regional_coas.txt` (the core CoA count contract stays at 20), plus flag definitions per tag.
+- **Dynamic country names no longer hijack the start.** The always-true "heritage" dynamic names (大顺礼制国, 吐蕃承统国, 西域承统国...) fired from day one; they are deleted, so the tags display their proper names (大顺, 西藏...). The dead MNG-keyed block (MNG is not a runtime tag) was removed; the guardrail test against redeclaring vanilla lists stays green.
+- New `tests/test_scenario_integrity.py` locks the whole class: no CHI ownership, pops coverage for every mod-owned state, pops state names must exist, every new tag has a flag, and new-tag claims must not collide with vanilla.
+
+Static gates on this tree: 395/395 unit tests, `ywc_check` (game root) clean, all four content checkers clean, preflight static ok (content_reachability events=323 journals=86, startup_data pops fields=2222), `git diff --check` clean. Live verification still pending per the playbook — and old autosaves from before these fixes are incompatible with the new ledger. (The 395/395 figure is the count at that revision; the suite has since grown — see the v0.2 close entry below.)
+
+## v0.2.0 — 六六大顺：西南六国（2026-10-12）
+
+- Gave six southwest countries their first playable lines (one core journal plus three bilingual events each, 18 events total): Lijiang 茶马引盐 (salt-permit reform, Tibetan merchants, the Mu succession), Sipsongpanna 十二版纳 (tea-hill leases, the Burmese envoy, shared levies), Derge 印经银钱 (printing-house debt, caravan escort, monks versus ministers), Gyalrong 戎马屯田 (farm colonies, the drill request, the league chair), the Shan confederation 三十七土司 (tribute shares, the magistrate request, tea versus poppy) and Arakan 两属之邦 (the Resident's bill, the Burmese exiles, the rice contract). Each line's last event settles into a resolved/failed pair and closes the journal; every summon is written to that country's own situation rather than a re-skinned template.
+- Deliberately light mechanics for regional countries: effects are treasury, relations towards SHU/GBR/TIB/DER/BUR, event markers and eight new time-limited modifiers (茶马新章/互市开城/护商之约/练军之效/摊派之累/烟祸蔓延/稻米专约/流亡之累). The southwest never touches the shared legitimacy/maritime/autonomy variables, never grants cores, land or subject releases, and the shared-variable initialization gate is satisfied by mounting each journal after `ywc_reset_shared_variables` in the six country blocks.
+- `data/content/southwest_event_catalog.json` (18 events, bilingual) is the single input; `tools/build_southwest_content.py` renders the events, the six journals and both localizations with a `--check` drift gate; `tools/ywc_southwest_check.py` + `tests/test_southwest_content.py` (15 tests) verify the six lines, the start-block mounts, modifier declarations and bilingual coverage. Static gates: 390/390 unit tests, `ywc_check` (game root) clean, preflight static ok with `content_reachability` events=323 journals=86, `git diff --check` clean. Live evidence still pending per the playbook.
+- Version ladder renamed at the user's request: the hegemony batch is now the **v1.0「受命于天，既寿永昌」first layer** (design/plan docs renamed, journal display name updated, PR retitled), and **v0.2** is this southwest pack.
+- Release close: the ten mainline countries received a source-reviewed opening-law pass and one bilingual opening amendment each. Jinghai starts with eight frigates, four naval-administration levels (enough for all 4,000 sailors), a level-two shipyard, and an amendment that improves shipbuilding efficiency and reduces naval goods costs. MHG 明香's religion-law judgment is separately documented as state religious identity with freedom of conscience, not an established exclusive state church. Korea's Three Administrations amendment uses the vanilla `tax_land_add = 0.02` modifier at each tax setting.
+
+## Unreleased — v1.0 受命于天，既寿永昌 (first layer): the hegemony system
+
+- Added the v1.0-first-layer hegemony system on top of the settled three-chapter campaign: once Shun's chapter three lands on "institution established", or the suzerainty crisis ratifies a full agreement (with legitimacy ≥60 and the core candidates alive), the generated settlement options start `ywc_je_hegemony_order` — the tribute registry. The hook is emitted by the campaign generator itself, so the two content packs stay wired without cross-pack runtime lookups, and an exclusion marker keeps the order unique.
+- Thirty-three bilingual events: the six-event hegemon line (`ywc_hegemony.1`–`.6`, proclamation with a lenient/stern choice setting the authority start, quarterly dispatch of summons, court rewards, censure, the summit, and the three-way mandate settlement) plus three per-participant events for the nine tribute candidates (`ywc_<tag>.200`–`.202`) — each summon is written to that country's own situation (Jinghai's old covenant, Korea's ritual quarrel, Lanfang's ocean haul, Northern Qing's exile dignity, Dongming's Spanish neighbour, Khalkha's two-sided steppe, Tibet's tea-horse bargain, Oirat's khanly pride, New Ming's Mexican objection). Compliance buys trade and protection at the cost of real treasury transfers and autonomy pressure; defiance brings time-limited isolation, relation collapse and censure — and never conquest: the fall of a defiant state still only happens through the game's own diplomatic plays and wars. Low authority or a defiant majority ends the order stalled or collapsed, with bounded aftermath modifiers on the hegemon.
+- Answers live on each participant as `ywc_tribute_answer` (1/2/3, with dead countries recorded as unrepresented); the court keeps `ywc_hegemony_authority` (0–100) plus compliant/defiant/hedging counters, all maintained by `ywc_hegemony_pulse` in `ywc_hegemony_effects.txt` with a 12-month timeout defaulting each stage to the safe branch. Legitimacy shifts route through the new `ywc_shift_heritage_legitimacy` wrapper so the clamp and the shared high/low legitimacy refresh stay intact (the pre-existing event-layer mutation gate caught the direct-mutation draft — it worked as designed).
+- `data/content/hegemony_event_catalog.json` (33 events, bilingual, per-country costs) is the single input; `tools/build_hegemony_content.py` renders the events and both localizations with a `--check` drift gate; `tools/ywc_hegemony_check.py` + `tests/test_hegemony_content.py` (17 tests) verify the catalog, the nine summons, the gated three-way settlement, the hooks, modifiers and bilingual coverage. Static gates on this tree: 375/375 unit tests, `ywc_check` (game root) clean, preflight static ok with `content_reachability` events=305 journals=80, `git diff --check` clean. Live evidence for hegemony pacing, AI stances and long-run balance remains pending per the playbook.
+
 ## Unreleased — large campaign: three chapters per country plus five cross-country crises
 
 - Implemented the 2026-09-25 large content pack end to end: 150 new national events (`ywc_<tag>.100`–`.114`, five per chapter × three chapters × ten countries) and 30 crisis events (`ywc_crisis.1`–`.30`, six stages × five crises). The 30 legacy flavor events stay on their original IDs and text but are demoted to chapter preludes: the legacy `ywc_je_flavor_*` journals no longer complete on the first popup, and their `resolved`/`failed` markers are now written by each chapter's last event, which reads real state (the country's flavor variable, the chapter's campaign record and the card spec's chapter gate) to land in one of three mutually exclusive outcomes — institution established / fragile compromise / frustrated detour — before opening the next chapter. Chapter three leaves only bounded aftermath modifiers. All outcome paths keep the next chapter reachable, a country that loses its gate still lands in a compromise, and nothing grants territory, cores, free industrialization, peace deals or subject releases.

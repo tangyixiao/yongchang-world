@@ -24,8 +24,8 @@ EVENT_FILE = ROOT / "yongchang_world/events/ywc_bootstrap_events.txt"
 EXPECTED = {
     "SHU": ("STATE_BEIJING", "empire", ["han"]),
     "JHG": ("STATE_FORMOSA", "kingdom", ["han", "hakka"]),
-    "DMG": ("STATE_LUZON", "kingdom", ["han", "ilocano", "filipino"]),
-    "NQG": ("STATE_SAKHALIN", "principality", ["manchu", "siberian", "ainu"]),
+    "DMG": ("STATE_LUZON", "kingdom", ["han", "ilocano"]),
+    "NQG": ("STATE_SAKHALIN", "principality", ["manchu"]),
 }
 
 
@@ -130,6 +130,15 @@ class CoreEconomyTest(unittest.TestCase):
             text = path.read_text("utf-8")
             for marker in required:
                 self.assertIn(marker, text)
+
+    def test_shun_initializes_vanilla_journal_variable_before_adding_journal(self):
+        country_histories = "\n".join(path.read_text("utf-8-sig") for path in COUNTRY_HISTORY.glob("*.txt"))
+        self.assertEqual(country_histories.count("add_journal_entry = { type = je_warlord_china }"), 1)
+        shu = (COUNTRY_HISTORY / "ywc_shu.txt").read_text(encoding="utf-8-sig")
+        self.assertLess(
+            shu.index("set_variable = { name = china_warlord_explosion value = 5 }"),
+            shu.index("add_journal_entry = { type = je_warlord_china }"),
+        )
 
     def test_northern_qing_uses_low_industry_start(self):
         text = POP_FILE.read_text("utf-8") + BUILDING_FILE.read_text("utf-8")

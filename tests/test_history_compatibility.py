@@ -1,6 +1,9 @@
+import re
 import unittest
+from pathlib import Path
 
 from tools.build_history_compatibility import (
+    ownership_by_state,
     strip_invalid_military_units,
     strip_invalid_region_states,
     strip_scenario_states,
@@ -35,6 +38,41 @@ class HistoryCompatibilityTest(unittest.TestCase):
         )
         self.assertEqual(removed, 0)
         self.assertEqual(result, source)
+
+
+    def test_mod_pop_and_building_region_states_match_the_final_state_ledger(self):
+        root = Path(__file__).resolve().parents[1]
+        history_root = root / "yongchang_world/common/history"
+        owners = ownership_by_state(
+            (history_root / "states/00_states.txt").read_text(encoding="utf-8-sig")
+        )
+        for group in ("pops", "buildings"):
+            for path in sorted((history_root / group).glob("*.txt")):
+                text = path.read_text(encoding="utf-8-sig")
+                _, removed = strip_invalid_region_states(text, owners)
+                self.assertEqual(removed, 0, f"invalid region_state in {path.name}")
+
+    def test_rehomed_arakan_and_transbaikal_history_keeps_pop_and_building_data(self):
+        root = Path(__file__).resolve().parents[1]
+        pops = (root / "yongchang_world/common/history/pops/11_east_asia.txt").read_text(encoding="utf-8-sig")
+        arakan = pops.split("s:STATE_ARAKAN = {", 1)[1].split("s:STATE_TOHOKU = {", 1)[0]
+        self.assertIn("region_state:RKN = {", arakan)
+        self.assertNotIn("region_state:BIC", arakan)
+        self.assertEqual(sum(map(int, re.findall(r"size = (\d+)", arakan))), 214204)
+
+        asia_buildings = (root / "yongchang_world/common/history/buildings/11_east_asia.txt").read_text(encoding="utf-8-sig")
+        arakan_buildings = asia_buildings.split("s:STATE_ARAKAN={", 1)[1].split("s:STATE_SEOUL={", 1)[0]
+        self.assertIn("region_state:RKN={", arakan_buildings)
+        self.assertIn('building="building_opium_plantation"', arakan_buildings)
+        self.assertIn('levels=1', arakan_buildings)
+
+        siberia = (root / "yongchang_world/common/history/buildings/14_siberia.txt").read_text(encoding="utf-8-sig")
+        self.assertNotIn("s:STATE_TUVA={", siberia)
+        transbaikal = siberia.split("s:STATE_TRANS_BAIKAL={", 1)[1].split("\n\t}", 1)[0]
+        self.assertIn("region_state:CHI", transbaikal)
+        self.assertIn('country="c:CHI"', transbaikal)
+        self.assertIn('region="STATE_TRANS_BAIKAL"', transbaikal)
+        self.assertIn('building="building_iron_mine"', transbaikal)
 
     def test_removes_history_for_unknown_dlc_feature(self):
         source = """BUILDINGS = {

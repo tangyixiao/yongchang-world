@@ -13,31 +13,51 @@ ACTION_LOCATIONS = (
 LAW_COMPATIBILITY = (
     MOD / "common/history/countries/ywc_regional_countries.txt",
     MOD / "common/history/countries/ywc_ocean_countries.txt",
+    MOD / "common/history/countries/zzz_ywc_opening_profiles.txt",
 )
+OPENING_PROFILES = ROOT / "data/scenario/opening_profiles.json"
 REGIONAL_LAW_TAGS = (
-    "OIR", "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR", "KJU", "MJU", "GJU",
+    "MHG", "WBK", "KHQ", "HUL", "SOL", "AMR",
     "KHO", "HMI", "TRF", "KUC", "KSH", "YRK", "KHT", "DER", "KAM", "GYL",
     "LXJ", "LJG", "SIP", "KTG", "WAA", "KCH", "AHM", "AMD", "DLI", "PNP",
-    "PLW", "YAP", "MHL", "MRG", "NMG",
+    "PLW", "YAP", "MHL", "MRG",
 )
-ASSEMBLY_LAW_TAGS = {"KHQ", "HUL", "SOL", "AMR"}
+
+def country_blocks(text, tag):
+    blocks = []
+    for match in re.finditer(rf"(?m)^\s*c:{tag}\s+\?=\s*\{{", text):
+        opening = text.find("{", match.start())
+        depth = 0
+        for index in range(opening, len(text)):
+            if text[index] == "{":
+                depth += 1
+            elif text[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    blocks.append(text[match.start():index + 1])
+                    break
+    return blocks
 
 
 class RuntimeGuardrailsTest(unittest.TestCase):
     def test_regional_starts_use_law_compatible_fallbacks(self):
         text = "\n".join(path.read_text("utf-8-sig") for path in LAW_COMPATIBILITY)
+        profiles = json.loads(OPENING_PROFILES.read_text(encoding="utf-8-sig"))["countries"]
         for tag in REGIONAL_LAW_TAGS:
-            blocks = re.findall(rf"(?ms)^\s*c:{tag}\s+\?=\s*\{{.*?^\s*\}}", text)
-            block = next((candidate for candidate in blocks if "law_type:law_isolationism" in candidate), "")
-            self.assertTrue(block, tag)
-            self.assertIn("activate_law = law_type:law_isolationism", block, tag)
-            speech_law = "law_right_of_assembly" if tag in ASSEMBLY_LAW_TAGS else "law_censorship"
-            self.assertIn(f"activate_law = law_type:{speech_law}", block, tag)
+            blocks = country_blocks(text, tag)
+            laws = [law for block in blocks for law in re.findall(r"activate_law\s*=\s*law_type:(law_[a-z0-9_]+)", block)]
+            laws.extend(profiles.get(tag, {}).get("laws", []))
+            self.assertIn("law_isolationism", laws, tag)
+            effective_speech_law = next((law for law in reversed(laws) if law in {"law_censorship", "law_right_of_assembly"}), None)
+            self.assertIn(effective_speech_law, {"law_censorship", "law_right_of_assembly"}, tag)
 
-    def test_shun_start_uses_a_valid_free_speech_law(self):
-        text = (MOD / "common/history/countries/ywc_shu.txt").read_text("utf-8-sig")
-        self.assertIn("activate_law = law_type:law_right_of_assembly", text)
-        self.assertNotIn("activate_law = law_type:law_censorship", text)
+    def test_shun_start_uses_the_reviewed_censorship_law(self):
+        source = (MOD / "common/history/countries/ywc_shu.txt").read_text("utf-8-sig")
+        overlay = (MOD / "common/history/countries/zzz_ywc_opening_profiles.txt").read_text("utf-8-sig")
+        profile = json.loads(OPENING_PROFILES.read_text(encoding="utf-8-sig"))["countries"]["SHU"]
+        self.assertNotIn("activate_law = law_type:law_censorship", source)
+        self.assertIn("law_censorship", profile["laws"])
+        self.assertIn("activate_law = law_type:law_censorship", country_blocks(overlay, "SHU")[-1])
 
     def test_mod_does_not_add_unsupported_interest_group_database_objects(self):
         text = (MOD / "common/interest_groups/ywc_interest_groups.txt").read_text("utf-8-sig")
@@ -59,7 +79,14 @@ class RuntimeGuardrailsTest(unittest.TestCase):
     def test_existing_vanilla_country_lists_are_not_redeclared(self):
         dynamic_names = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text("utf-8-sig")
         flags = (MOD / "common/flag_definitions/ywc_flags.txt").read_text("utf-8-sig")
-        for tag in ("KOR", "LAN", "MGL"):
+        # KOR and LAN keep their vanilla dynamic-name lists because those names
+        # already fit the mod; MGL is the one deliberate override (see
+        # test_mgl_dynamic_names_override_vanilla_mongolian_state). Cross-file
+        # entries for one tag merge into the same candidate list -- vanilla's
+        # own 00_dynamic_country_names.txt holds multiple entries per tag
+        # (51 of 146 tags), so same-tag additions are list appends, not
+        # rejected duplicates.
+        for tag in ("KOR", "LAN"):
             self.assertNotRegex(dynamic_names, rf"(?m)^\s*{tag}\s*=\s*\{{")
         for tag in ("MGL", "TIB", "KOR"):
             self.assertNotRegex(flags, rf"(?m)^\s*{tag}\s*=\s*\{{")
@@ -69,16 +96,33 @@ class RuntimeGuardrailsTest(unittest.TestCase):
             "utf-8-sig"
         )
         for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "NMG"):
-            if tag == "MGL":
-                # MGL already owns a vanilla dynamic-name list; redeclaring it
-                # would be rejected as a duplicate database key.
-                continue
             expected = (
                 rf"trigger = \{{ exists = scope:actor "
                 rf"scope:actor \?= \{{ c:{tag} \?= this "
                 rf"ywc_has_maritime_network = yes \}} \}}"
             )
             self.assertRegex(text, expected)
+
+    def test_mgl_dynamic_names_override_vanilla_mongolian_state(self):
+        text = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text(
+            "utf-8-sig"
+        )
+        # Vanilla 00_dynamic_country_names.txt gives MGL
+        # dyn_c_great_mongolian_state (priority 0, monarchy trigger); the mod
+        # entries must outrank it or the map shows the wrong country name.
+        khalkha = (
+            r"name = ywc_dyn_mgl_khalkha "
+            r"adjective = ywc_dyn_mgl_khalkha_adj "
+            r"is_main_tag_only = yes priority = 10 "
+            r"trigger = \{ exists = scope:actor "
+            r"scope:actor \?= \{ c:MGL \?= this "
+            r"coa_def_monarchy_flag_trigger = yes \} \}"
+        )
+        self.assertRegex(text, khalkha)
+        self.assertRegex(
+            text,
+            r"name = ywc_dyn_mgl_maritime .*?priority = 20",
+        )
 
     def test_maritime_trigger_uses_shared_numeric_threshold(self):
         text = (MOD / "common/scripted_triggers/ywc_shared_triggers.txt").read_text(

@@ -101,7 +101,7 @@ class ReferenceIntegrityTest(unittest.TestCase):
             loc = set()
             for path in (MOD / "localization" / language).glob("*.yml"):
                 loc.update(
-                    re.findall(r"^\s*(ywc_[a-z0-9_]+\.[0-9]+\.[abc]):\d+", path.read_text("utf-8-sig"), re.MULTILINE)
+                    re.findall(r"^\s*(ywc_[a-z0-9_]+\.[0-9]+\.[a-z]):\d+", path.read_text("utf-8-sig"), re.MULTILINE)
                 )
             missing = used - loc
             self.assertEqual(missing, set(), f"{language}: unlocalized options: {sorted(missing)[:8]}")

@@ -5,6 +5,8 @@ import sys
 import tempfile
 import unittest
 
+from tools.build_state_history import replace_state_block
+
 
 ROOT = pathlib.Path(__file__).parents[1]
 BASELINE_FILE = ROOT / "data/baseline/vic3-1.13.11.json"
@@ -111,6 +113,49 @@ class StateHistoryGenerationTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(output.read_bytes(), STATE_FILE.read_bytes())
+
+    def test_state_history_builder_adds_a_new_owner_group(self):
+        template = """s:STATE_TEST = {
+    create_state = {
+        country = c:AMR
+        owned_provinces = { x000001 }
+        state_type = unincorporated
+    }
+    add_homeland = cu:siberian
+}
+"""
+        result = replace_state_block(
+            template,
+            [
+                {"owner": "AMR", "owned_provinces": ["x000001"]},
+                {"owner": "CHI", "owned_provinces": ["x000002"]},
+            ],
+        )
+        self.assertEqual(result.count("create_state = {"), 2)
+        self.assertIn("country = c:AMR", result)
+        self.assertIn("country = c:CHI", result)
+        self.assertIn("owned_provinces = { x000002 }", result)
+        self.assertEqual(result.count("add_homeland = cu:siberian"), 1)
+
+    def test_state_history_builder_removes_owners_whose_region_was_absorbed(self):
+        template = """s:STATE_TEST = {
+    create_state = {
+        country = c:HUL
+        owned_provinces = { x000001 }
+    }
+    create_state = {
+        country = c:AMR
+        owned_provinces = { x000002 }
+    }
+}
+"""
+        result = replace_state_block(
+            template,
+            [{"owner": "HUL", "owned_provinces": ["x000001", "x000002"]}],
+        )
+        self.assertEqual(result.count("create_state = {"), 1)
+        self.assertIn("country = c:HUL", result)
+        self.assertNotIn("country = c:AMR", result)
 
     def test_han_core_has_no_chi_ownership_after_generation(self):
         text = STATE_FILE.read_text("utf-8")

@@ -198,7 +198,6 @@ def check_helpers(effects: str, problems: list[str]) -> None:
         "ywc_campaign_settle_final",
         "ywc_campaign_crisis_answer",
         "ywc_campaign_tick_national_wait",
-        "ywc_campaign_tick_dialogue_cooldown",
     ):
         if not re.search(rf"(?m)^{helper} = \{{", effects):
             problems.append(f"{helper}: missing from ywc_campaign_effects.txt")

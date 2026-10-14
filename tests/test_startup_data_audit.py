@@ -88,6 +88,18 @@ def build_fixture(base: pathlib.Path, files: dict[str, str]) -> tuple[pathlib.Pa
 
 
 class StartupDataAuditTest(unittest.TestCase):
+    def test_removed_military_production_method_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            mod, game = build_fixture(pathlib.Path(directory), {
+                'common/history/buildings/ywc_test.txt': VALID_BUILDINGS.replace(
+                    'building = "building_rye_farm"',
+                    'building = "building_rye_farm"\nactivate_production_methods = { "pm_irregular_infantry" }'
+                )
+            })
+            report = audit(mod, game)
+            self.assertTrue(any('unknown production method pm_irregular_infantry' in item
+                                for item in report['problems']), report['problems'])
+
     def test_valid_startup_data_is_accepted(self):
         with tempfile.TemporaryDirectory() as directory:
             mod, game = build_fixture(

@@ -44,6 +44,37 @@ CRISIS_SETTLE_MODIFIERS = {
     2: ("ywc_campaign_crisis_limited", 18, 10),
     3: ("ywc_campaign_crisis_fallout", 18, -15),
 }
+# v0.2 hook: the hegemony layer (顺我者昌，逆我者亡) starts from a settled
+# chapter-three mandate or a fully ratified suzerainty crisis. The block is
+# emitted into those exact settlement options so the two content packs stay
+# wired without cross-pack runtime lookups.
+HEGEMONY_START_OUTCOME_GATES = {
+    "shu_ch3": "var:ywc_campaign_shu_c3_outcome = 1",
+    "crisis1": "var:ywc_campaign_crisis1_outcome = 1 c:SHU ?= this",
+}
+HEGEMONY_START_BLOCK = """if = {{
+            limit = {{
+                {gate}
+                var:ywc_heritage_legitimacy >= 60
+                calc_true_if = {{
+                    amount >= 4
+                    exists = c:JHG
+                    exists = c:KOR
+                    exists = c:LAN
+                    exists = c:NQG
+                    exists = c:DMG
+                    exists = c:MGL
+                    exists = c:TIB
+                    exists = c:OIR
+                    exists = c:NMG
+                }}
+                NOT = {{ has_variable = ywc_hegemony_started }}
+            }}
+            set_variable = {{ name = ywc_hegemony_started value = 1 }}
+            add_journal_entry = {{ type = ywc_je_hegemony_order }}
+            set_variable = {{ name = ywc_hegemony_stage value = 1 }}
+            set_variable = {{ name = ywc_hegemony_age value = 0 }}
+        }}"""
 
 
 def yaml_quote(value: str) -> str:
@@ -164,6 +195,7 @@ def national_regular_effect(event: dict, choice: dict, config: dict, direction_i
     modifier, months = CHOICE_MODIFIERS["bold" if sign > 0 else "cautious"]
     lines = [
         f"set_variable = {{ name = ywc_campaign_{short}_c{chapter}_e{event['id'].rsplit('.', 1)[1]}_done value = 1 }}",
+        f"if = {{ limit = {{ NOT = {{ has_variable = ywc_campaign_{short}_c{chapter}_score }} }} set_variable = {{ name = ywc_campaign_{short}_c{chapter}_score value = 0 }} }}",
         f"change_variable = {{ name = ywc_campaign_{short}_c{chapter}_score add = {sign} }}",
         f"change_variable = {{ name = {config['flavor']} add = {5 * sign} }}",
         f"clamp_variable = {{ name = {config['flavor']} min = 0 max = 100 }}",
@@ -269,7 +301,7 @@ def final_option_effects(event: dict, direction_index: int) -> list[str]:
         settle = "ywc_campaign_settle_final" if chapter == 3 else "ywc_campaign_settle_mid"
         lines.append(
             f"{settle} = {{ SHORT = {short} CH = {chapter} "
-            f'GATE = "{gate}" FLAVOR = {config["flavor"]} }}'
+            f'GATE = "{gate}" }}'
         )
         lines.extend(chapter_marker_lines(event))
     else:
@@ -291,6 +323,10 @@ def final_option_effects(event: dict, direction_index: int) -> list[str]:
             lines.append(f"set_variable = {{ name = {stem}_resolved value = 1 }}")
     lines.extend(next_chapter_journal_lines(event))
     lines.extend(crisis_start_lines(event))
+    if short == "shu" and chapter == 3:
+        lines.append(
+            HEGEMONY_START_BLOCK.format(gate=HEGEMONY_START_OUTCOME_GATES["shu_ch3"])
+        )
     return lines
 
 
@@ -317,6 +353,7 @@ def render_event_script(events: list[dict]) -> str:
             f"    title = {event['id']}.t",
             f"    desc = {event['id']}.d",
             "    duration = 1",
+            '    event_image = { video = "unspecific_politicians_arguing" }',
         ]
         for index, choice in enumerate(event["choices"]):
             letter = chr(ord("a") + index)
@@ -338,6 +375,9 @@ def render_event_script(events: list[dict]) -> str:
                 for effect in final_option_effects(event, index):
                     lines.append("        " + effect.replace("\n", "\n        "))
             else:
+                lines.append(
+                    f"        set_variable = {{ name = ywc_campaign_crisis{event['crisis']}_s{event['stage']}_answer value = {index + 1} }}"
+                )
                 lines.append(
                     f"        ywc_campaign_crisis_answer = {{ CRISIS = {event['crisis']} "
                     f"STAGE = {event['stage']} ANSWER = {index + 1} }}"
@@ -370,11 +410,13 @@ def render_settlement_option(event: dict, index: int) -> list[str]:
     lines = [
         "    option = {",
         f"        name = {event['id']}.{letter}",
+        *( ["        default_option = yes"] if index == 0 else [] ),
         f"        ai_chance = {{ base = {base} }}",
     ]
     if outcome == 1:
         lines.append(f"        trigger = {{ {config['settle_full']} }}")
     lines += [
+        f"        set_variable = {{ name = ywc_campaign_crisis{crisis}_s6_answer value = {outcome} }}",
         f"        ywc_campaign_crisis_answer = {{ CRISIS = {crisis} STAGE = 6 ANSWER = {outcome} }}",
         f"        set_variable = {{ name = {outcome_var} value = {outcome} }}",
     ]
@@ -384,6 +426,10 @@ def render_settlement_option(event: dict, index: int) -> list[str]:
         )
     if event["choices"][index].get("cost"):
         lines.append(f"        add_treasury = -{event['choices'][index]['cost']}")
+    if crisis == 1 and outcome == 1:
+        lines.append(
+            HEGEMONY_START_BLOCK.format(gate=HEGEMONY_START_OUTCOME_GATES["crisis1"])
+        )
     lines.append("    }")
     return lines
 
