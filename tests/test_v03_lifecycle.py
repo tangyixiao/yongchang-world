@@ -1,4 +1,5 @@
 """Offline execution tests for the shared v0.3 lifecycle scripts."""
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -14,6 +15,7 @@ SHU_EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_shu_effect
 STARTUP = ROOT / "yongchang_world/common/on_actions/ywc_v03_startup.txt"
 MIGRATION = ROOT / "yongchang_world/common/decisions/ywc_v03_migration.txt"
 LEGACY_SHU_JOURNAL = ROOT / "yongchang_world/common/journal_entries/ywc_shu.txt"
+SHU_CATALOG = ROOT / "data/content/v03/countries/shu.json"
 
 
 class V03LifecycleTest(unittest.TestCase):
@@ -75,17 +77,47 @@ class V03LifecycleTest(unittest.TestCase):
         self.assertNotIn("ywc_je_shu_fiscal_register_failed", state)
 
     def test_shu_audit_charge_executes_once_from_the_authored_effect(self):
-        # GDP and gold reserves are injected facts. The cost formula, affordability
+        # Annual gross income and gold reserves are injected facts. The cost formula, affordability
         # guard, one-time flag, and treasury write run from the actual SHU script.
         world = PulseWorld(SHU_EFFECTS.read_text(encoding="utf-8-sig"),
-                           {"SHU": {"gdp": 2_000_000, "gold_reserves": 2_000}})
+                           {"SHU": {"yearly_gross_income": 52_000, "gold_reserves": 2_000}})
         before = world.treasury["SHU"]
         world.run("ywc_shu_pay_audit_half_once")
         charged = world.treasury["SHU"]
         world.run("ywc_shu_pay_audit_half_once")
-        self.assertEqual(charged - before, -500)
+        self.assertAlmostEqual(charged - before, -500, places=6)
         self.assertEqual(world.treasury["SHU"], charged)
         self.assertEqual(world.countries["SHU"]["ywc_shu_audit_installment_paid"], 1)
+
+    def test_shu_consolidation_review_resets_on_interruption_and_checks_real_conditions(self):
+        # Static contract check: the harness intentionally does not simulate Clausewitz days.
+        arc = json.loads(SHU_CATALOG.read_text(encoding="utf-8"))["arcs"][0]
+        journals = {row["id"]: row["script"] for row in arc["journals"]}
+        events = {row["id"]: row for row in arc["events"]}
+        settlement = journals["ywc_je_v03_shu_fiscal_settlement"]
+        shu_effects = SHU_EFFECTS.read_text(encoding="utf-8-sig")
+        start_review_effect = shu_effects.split("ywc_shu_start_settlement_review = {", 1)[1].split("\nywc_shu_choose_central_settlement", 1)[0]
+        self.assertIn("days = 180", start_review_effect)
+        shu_triggers = (ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_shu_triggers.txt").read_text(encoding="utf-8-sig")
+        self.assertIn("has_law_or_variant = law_type:law_land_based_taxation", shu_triggers)
+        self.assertIn("bureaucracy >= 0", shu_triggers)
+        self.assertIn("is_building_type = building_government_administration", shu_triggers)
+        self.assertIn("occupancy >= 0.8", shu_triggers)
+        self.assertIn("building_has_goods_shortage = no", shu_triggers)
+        for condition in (
+            "is_at_war = yes", "in_default = yes", "net_fixed_income < 0",
+            "NOT = { ywc_shu_v03_has_pilot_state = yes }",
+        ):
+            self.assertIn(condition, settlement)
+        interrupted = next(option["effect"] for option in events["ywc_shu.1008"]["options"]
+                           if option["key"] == "limit_for_war")
+        self.assertIn("remove_variable = ywc_shu_settlement_review_due", interrupted)
+        self.assertIn("remove_variable = ywc_shu_settlement_review", interrupted)
+        resume_gate = "has_variable = ywc_shu_wartime_deferral NOT = { is_at_war = yes } NOT = { in_default = yes } net_fixed_income >= 0 ywc_shu_v03_real_execution_ready = yes"
+        self.assertIn(resume_gate, settlement)
+        restart_choices = [option["effect"] for option in events["ywc_shu.1007"]["options"]]
+        self.assertTrue(any("ywc_shu_start_settlement_review = yes" in effect
+                            for effect in restart_choices))
 
     def test_startup_is_tag_scoped_and_migration_is_explicit_and_idempotent(self):
         startup = STARTUP.read_text(encoding="utf-8-sig")

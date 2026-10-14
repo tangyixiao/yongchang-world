@@ -82,7 +82,7 @@ class PulseWorld:
             return value.removeprefix("c:") in self.countries
         if key == "always":
             return value == "yes"
-        if key in ("net_fixed_income", "bureaucracy", "gold_reserves", "in_default", "is_at_war"):
+        if key in ("net_fixed_income", "bureaucracy", "gold_reserves", "yearly_gross_income", "in_default", "is_at_war"):
             left = variables.get(key, 0)
             if isinstance(value, list):
                 fields = {name: field for name, _, field in value}
@@ -159,6 +159,8 @@ class PulseWorld:
                         resolved_value = variables.get(raw_value[4:], 0)
                     elif raw_value.startswith("this."):
                         resolved_value = variables.get(raw_value[5:], 0)
+                    elif raw_value in ("yearly_gross_income", "gdp"):
+                        resolved_value = variables.get(raw_value, 0)
                     else:
                         try:
                             resolved_value = float(raw_value)
