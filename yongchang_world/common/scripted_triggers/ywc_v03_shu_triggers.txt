@@ -1,0 +1,44 @@
+# Local v0.3 SHU trigger vocabulary, limited to vanilla-supported country/state scopes.
+ywc_shu_v03_has_eligible_state = {
+	any_scope_state = {
+		is_owned_by = ROOT
+	}
+}
+
+ywc_shu_v03_has_pilot_state = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		has_variable = ywc_shu_v03_pilot_state
+	}
+}
+
+ywc_shu_v03_has_tax_register_law = {
+	OR = {
+		has_law_or_variant = law_type:law_land_based_taxation
+		has_law_or_variant = law_type:law_per_capita_based_taxation
+		has_law_or_variant = law_type:law_proportional_taxation
+	}
+}
+
+ywc_shu_v03_administration_ready = {
+	bureaucracy >= 0
+	ywc_shu_v03_has_tax_register_law = yes
+	any_scope_state = {
+		is_owned_by = ROOT
+		has_variable = ywc_shu_v03_pilot_state
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_shu_v03_real_execution_ready = {
+	ywc_shu_v03_has_pilot_state = yes
+	ywc_shu_v03_administration_ready = yes
+}
+
+ywc_shu_v03_unsettled = {
+	NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled }
+}
