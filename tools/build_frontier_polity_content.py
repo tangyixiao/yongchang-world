@@ -305,12 +305,29 @@ def assign_frontier_event_ids(
         raise ValueError(
             "frontier tags missing explicit legacy event ID mapping: " + ", ".join(missing)
         )
-    malformed = sorted(tag for tag in tags if len(frozen[tag]) != 3)
+    malformed = sorted(
+        tag for tag, ids in frozen.items()
+        if not isinstance(ids, list) or len(ids) != 3
+    )
     if malformed:
         raise ValueError(
             "frontier legacy mapping must contain exactly three event IDs: "
             + ", ".join(malformed)
         )
+    seen: dict[str, str] = {}
+    for tag in sorted(frozen):
+        for event_id in frozen[tag]:
+            if not isinstance(event_id, str) or not re.fullmatch(r"ywc_frontier\.[1-9][0-9]*", event_id):
+                raise ValueError(
+                    f"{tag}: invalid frontier event ID {event_id!r}; "
+                    "expected ywc_frontier.<positive integer>"
+                )
+            if event_id in seen:
+                raise ValueError(
+                    f"duplicate frontier event ID {event_id}: "
+                    f"mapped by both {seen[event_id]} and {tag}"
+                )
+            seen[event_id] = tag
     return {tag: list(frozen[tag]) for tag in tags}
 
 

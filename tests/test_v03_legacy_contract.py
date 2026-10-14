@@ -22,6 +22,12 @@ class LegacyFrontierIdContractTest(unittest.TestCase):
         self.assertEqual(resolved, old_ids)
         self.assertEqual(assign_frontier_event_ids(tags[1:], old_ids), old_ids)
 
+    def test_duplicate_frontier_ids_are_rejected(self):
+        frozen = json.loads(SNAPSHOT.read_text(encoding="utf-8"))["frontier_event_ids"]
+        frozen["AAA"] = list(frozen["ABN"])
+        with self.assertRaisesRegex(ValueError, "duplicate.*ywc_frontier\\.1|ywc_frontier\\.1.*duplicate"):
+            assign_frontier_event_ids(["AAA", "ABN"], frozen)
+
     def test_snapshot_records_current_definition_inventory(self):
         frozen = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
         self.assertEqual(len(frozen["events"]), 491)
