@@ -79,7 +79,14 @@ class RuntimeGuardrailsTest(unittest.TestCase):
     def test_existing_vanilla_country_lists_are_not_redeclared(self):
         dynamic_names = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text("utf-8-sig")
         flags = (MOD / "common/flag_definitions/ywc_flags.txt").read_text("utf-8-sig")
-        for tag in ("KOR", "LAN", "MGL"):
+        # KOR and LAN keep their vanilla dynamic-name lists because those names
+        # already fit the mod; MGL is the one deliberate override (see
+        # test_mgl_dynamic_names_override_vanilla_mongolian_state). Cross-file
+        # entries for one tag merge into the same candidate list -- vanilla's
+        # own 00_dynamic_country_names.txt holds multiple entries per tag
+        # (51 of 146 tags), so same-tag additions are list appends, not
+        # rejected duplicates.
+        for tag in ("KOR", "LAN"):
             self.assertNotRegex(dynamic_names, rf"(?m)^\s*{tag}\s*=\s*\{{")
         for tag in ("MGL", "TIB", "KOR"):
             self.assertNotRegex(flags, rf"(?m)^\s*{tag}\s*=\s*\{{")
@@ -89,16 +96,33 @@ class RuntimeGuardrailsTest(unittest.TestCase):
             "utf-8-sig"
         )
         for tag in ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "NMG"):
-            if tag == "MGL":
-                # MGL already owns a vanilla dynamic-name list; redeclaring it
-                # would be rejected as a duplicate database key.
-                continue
             expected = (
                 rf"trigger = \{{ exists = scope:actor "
                 rf"scope:actor \?= \{{ c:{tag} \?= this "
                 rf"ywc_has_maritime_network = yes \}} \}}"
             )
             self.assertRegex(text, expected)
+
+    def test_mgl_dynamic_names_override_vanilla_mongolian_state(self):
+        text = (MOD / "common/dynamic_country_names/ywc_dynamic_names.txt").read_text(
+            "utf-8-sig"
+        )
+        # Vanilla 00_dynamic_country_names.txt gives MGL
+        # dyn_c_great_mongolian_state (priority 0, monarchy trigger); the mod
+        # entries must outrank it or the map shows the wrong country name.
+        khalkha = (
+            r"name = ywc_dyn_mgl_khalkha "
+            r"adjective = ywc_dyn_mgl_khalkha_adj "
+            r"is_main_tag_only = yes priority = 10 "
+            r"trigger = \{ exists = scope:actor "
+            r"scope:actor \?= \{ c:MGL \?= this "
+            r"coa_def_monarchy_flag_trigger = yes \} \}"
+        )
+        self.assertRegex(text, khalkha)
+        self.assertRegex(
+            text,
+            r"name = ywc_dyn_mgl_maritime .*?priority = 20",
+        )
 
     def test_maritime_trigger_uses_shared_numeric_threshold(self):
         text = (MOD / "common/scripted_triggers/ywc_shared_triggers.txt").read_text(

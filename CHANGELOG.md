@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — 2026-10-14：全模组开局法律巡检（草原迁徙锁修复）
+
+- **东北四国补齐主法律模板**：KHQ/HUL/SOL/AMR 此前只有科技挂接，政府/税制/官僚/土地法全吃引擎默认值；现按 MGL 模板显式挂满八法（monarchy/autocracy/per_capita_based_taxation/hereditary_bureaucrats/subjecthood/traditionalism/manorialism/peasant_levies）并补 set_market_capital。
+- **纯游牧国家农奴制换庄园制（13 国）**：mongol（ODS/CHR）、kazak（BKY/BYL/JTR/NMN/KER/ZHL/ABN）、turkmen（TKK/YMD/MEV）、kirgiz（KIR）+ 缺土地法的 KHO——`law_serfdom` 的农民迁徙锁与轮牧不相容（沿用 MGL 庄园制辨析的判定标准），统一换 `law_manorialism`；绿洲定居汗国（uzbek/tajik）、藏区庄园、汉地农业国保留农奴制（人身依附有据）。
+- 记录与判定标准落档 `docs/research/2026-10-03-十国开局法律史实对照.md`「全模组国家开局法律巡检」节；门禁 512 tests + ywc_check 全绿。
+
+## Unreleased — 2026-10-13：东北盟旗文化与盟旗共祭制
+
+- **SOL（索伦部盟）/AMR（黑水盟）不再是「西伯利亚文化国家」**：国家定义 cultures 从 `{ siberian }` 改为 `{ manchu siberian }`（满洲盟旗贵族主导、西伯利亚诸族并存，仿本体 CHI 满主汉次先例）；pop 层构成与国教（animist 萨满）不变。
+- **按奥斯曼的写法范式量身写国教法律（而非照搬米利特内容）**：新建 `yongchang_world/common/laws/ywc_laws.txt`，`law_ywc_banner_rites`（盟旗共祭制）学本体为奥斯曼写 `law_millet_system` 的范式——一条国教组专属法律表达该政权的宗教安排；但盟旗共祭制语义是「萨满信仰是共主主持的共同祭祀，各盟旗供奉各自的神灵，互不改宗，也无从强迫」，故**不含**米利特制的伊斯兰专属内容：无五档异教税（吉兹亚）、无强制改宗授权（allow_conversion 五档全 no）、无征兵/改宗惩罚。modifier：虔诚政治力量 +25%、权威 +100、国教接纳 +25、同宗教特质 +10、同特质组 +10、无共享特质 -15；icon 复用 state_religion.dds。开局经 profile 管线挂接：`opening_profiles.json` AMR/SOL 增 `laws` 字段，`build_opening_profiles.py` 重渲染 `zzz_ywc_opening_profiles.txt`（diff 恰为两行 activate_law）。HUL/KHQ 信藏传且已有国教法，不在此列。
+- **测试与文档**：`tests/test_northeast_banner_culture.py`（7 项）含反照搬断言（法律块内不得出现 tax_modifier_/tax_heathen_add/state_conversion_mult/state_conscription_rate_mult，改宗政策五档必须全 no）；`docs/research/2026-10-03-十国开局法律史实对照.md`「盟旗共祭制」一节记录范式与内容边界。
 ## Unreleased — 2026-10-12：v0.2 收官批次（修正案审计工具 + 汉人王室服制覆盖）
 
 - **修正案审计固化**：新增 `tools/amendment_audit.py`（六个检查组：modifier 键位、parent/allowed_laws、possible 国家限定与 would_sponsor、挂接完整性、lawgroup 开局法律一致——按完整加载顺序回放本体与 mod history、双语 `_desc` 齐全），配 `tests/test_amendment_audit.py` 十一个测试；`tools/ywc_check.py` 自动接入。此前临时脚本核验的十项修正案结论现在可一键复跑。工具修出并记录三个真 bug：正则漏 `re.MULTILINE`、嵌套块被当顶层条目、开局法律按 law 而非 lawgroup 建索引。

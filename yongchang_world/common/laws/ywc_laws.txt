@@ -1,0 +1,78 @@
+﻿# Yongchang World regional laws.
+#
+# law_ywc_banner_rites is a bespoke establishment law for the Northeast
+# banner leagues (SOL/AMR), written the way vanilla writes country-specific
+# establishment laws (the Ottoman millet system being the pattern: one law
+# in lawgroup_church_and_state expressing how THIS polity arranges religion).
+# The shamanist cult is the shared state sacrifice presided over by the
+# suzerain; every banner league keeps its own rites and no conversion is
+# forced. Unlike the Ottoman template there is no jizya tier and no
+# conversion mandate - those belong to millet's Islamic context, not ours.
+# is_visible keeps the law country-specific; activate_law in country history
+# bypasses is_visible exactly as vanilla history files rely on.
+
+law_ywc_banner_rites = {
+	group = lawgroup_church_and_state
+	parent = law_state_religion
+
+	icon = "gfx/interface/icons/law_icons/state_religion.dds"
+
+	progressiveness = -50
+
+	requires_law_or = {
+		law_theocracy
+		law_monarchy
+		law_chiefdom
+	}
+
+	is_visible = {
+		OR = {
+			c:SOL ?= this
+			c:AMR ?= this
+		}
+	}
+
+	on_activate = {
+		recalculate_pop_ig_support = yes
+	}
+
+	modifier = {
+		interest_group_ig_devout_pol_str_mult = 0.25
+		country_authority_add = 100
+
+		country_acceptance_state_religion_add = 25
+		country_acceptance_shared_religious_trait_add = 10
+		country_acceptance_shared_religious_trait_group_add = 10
+		country_acceptance_no_shared_religious_trait_add = -15
+
+		country_allow_conversion_violent_hostility_bool = no
+		country_allow_conversion_cultural_erasure_bool = no
+		country_allow_conversion_open_prejudice_bool = no
+		country_allow_conversion_second_rate_citizen_bool = no
+		country_allow_conversion_full_acceptance_bool = no
+	}
+
+	can_impose = {
+		always = no
+	}
+
+	ai_will_do = {
+		exists = ruler
+		ruler = {
+			has_ideology = ideology:ideology_theocrat
+		}
+	}
+
+	ai_enact_weight_modifier = {
+		value = 0
+
+		if = {
+			limit = { ai_has_enact_weight_modifier_journal_entries = yes }
+			add = 750
+		}
+	}
+
+	ai_impose_chance = {
+		value = 0
+	}
+}
