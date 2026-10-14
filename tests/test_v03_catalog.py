@@ -159,10 +159,34 @@ class V03CatalogTests(unittest.TestCase):
         from tools.ywc_v03_check import check_root
 
         errors = check_root(ROOT, require_complete=True)
-        self.assertTrue(any("country" in error and "720" in error for error in errors), errors)
-        self.assertTrue(any("crisis" in error and "96" in error for error in errors), errors)
-        self.assertTrue(any("regional" in error and "378" in error for error in errors), errors)
-        self.assertTrue(any("theme" in error and "96" in error for error in errors), errors)
+        self.assertTrue(any("country owner" in error and "72" in error for error in errors), errors)
+        self.assertTrue(any("crisis owner" in error and "12" in error for error in errors), errors)
+        self.assertTrue(any("regional owner" in error and "6" in error for error in errors), errors)
+        self.assertTrue(any("theme owner" in error and "8" in error for error in errors), errors)
+
+    def test_complete_quota_is_per_owner_not_aggregate(self):
+        from tools.v03_owners import REGIONAL_TAGS
+        from tools.ywc_v03_check import check_complete_quotas
+
+        arcs = []
+        for tag in REGIONAL_TAGS[:-1]:
+            events, journals = 6, 2
+            if tag == "CHI":
+                events += 6
+                journals += 2
+            arcs.append({"slug": f"arc_{tag.lower()}", "owner": tag, "era": "1836-1870",
+                         "events": [{}] * events, "journals": [{}] * journals})
+        errors = check_complete_quotas({"regional_pack": {"layer": "regional", "runtime_tags": list(REGIONAL_TAGS), "arcs": arcs}})
+        self.assertTrue(any("owner MHG event quota" in error for error in errors), errors)
+
+    def test_one_catalog_can_cover_multiple_crisis_owners(self):
+        from tools.v03_owners import CRISIS_OWNERS
+        from tools.ywc_v03_check import check_complete_quotas
+
+        arcs = [{"slug": f"crisis_{owner.lower()}", "owner": owner, "era": "1836-1870",
+                 "events": [{}] * 12, "journals": [{}] * 3} for owner in CRISIS_OWNERS]
+        errors = check_complete_quotas({"crisis_pack": {"layer": "crisis", "runtime_tags": ["CHI"], "arcs": arcs}})
+        self.assertFalse(any(error.startswith("crisis owner ") for error in errors), errors)
 
 
 if __name__ == "__main__":

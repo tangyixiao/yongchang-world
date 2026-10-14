@@ -8,6 +8,11 @@ import re
 import sys
 from pathlib import Path
 
+try:
+    from tools.v03_owners import COUNTRY_NAMESPACES, EXPECTED_OWNERS, NAMESPACE_LIMITS, arc_owner, owner_slot
+except ModuleNotFoundError:
+    from v03_owners import COUNTRY_NAMESPACES, EXPECTED_OWNERS, NAMESPACE_LIMITS, arc_owner, owner_slot
+
 
 ROOT = Path(__file__).resolve().parents[1]
 V03_DIR = Path("data/content/v03")
@@ -175,6 +180,8 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
         interval = limits.get(layer, {}) if isinstance(limits, dict) else {}
         if not isinstance(interval, dict) or type(interval.get("start")) is not int or type(interval.get("end")) is not int or interval["start"] > interval["end"]:
             errors.append(f"id_registry has invalid namespace interval for {layer}")
+        elif (interval["start"], interval["end"]) != NAMESPACE_LIMITS[layer]:
+            errors.append(f"id_registry namespace interval for {layer} must match fixed bounds {NAMESPACE_LIMITS[layer]}")
     if not isinstance(reservations, list):
         return ["id_registry.reservations must be a list"]
     reservations_by_key = {}
@@ -266,7 +273,28 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors)
+            _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional={"owner"})
+            owner = arc_owner(layer, arc, tags)
+            if layer == "country":
+                if not isinstance(tags, list) or len(tags) != 1 or owner != (tags[0] if isinstance(tags, list) and len(tags) == 1 else None):
+                    errors.append(f"{arc_where}.owner must match the single country runtime_tag")
+                elif COUNTRY_NAMESPACES.get(owner) != (reservation or {}).get("namespace"):
+                    errors.append(f"{arc_where} country owner {owner} does not match fixed namespace")
+            elif owner not in EXPECTED_OWNERS.get(layer, ()):
+                errors.append(f"{arc_where}.owner must be one of fixed {layer} owners")
+            elif layer == "regional" and (owner not in tags or owner not in arc.get("participants", [])):
+                errors.append(f"{arc_where}.owner must be in runtime_tags and participants")
+            elif layer in {"crisis", "theme"}:
+                expected_namespace = "ywc_crisis" if layer == "crisis" else "ywc_society"
+                if (reservation or {}).get("namespace") != expected_namespace:
+                    errors.append(f"{arc_where} {layer} reservation must use {expected_namespace}")
+            elif layer == "regional" and (reservation or {}).get("namespace") != "ywc_regional":
+                errors.append(f"{arc_where} regional reservation must use ywc_regional")
+            slot = owner_slot(layer, owner)
+            if slot:
+                arc_range = ranges_by_arc.get((key, arc.get("slug")))
+                if arc_range and not (slot[0] <= arc_range.get("start", -1) <= arc_range.get("end", -1) <= slot[1]):
+                    errors.append(f"ID arc range for {key}/{arc.get('slug')} must stay within fixed {layer} owner {owner} slot {slot}")
             slug = arc.get("slug")
             if not isinstance(slug, str) or re.fullmatch(r"[a-z0-9_]+", slug) is None:
                 errors.append(f"{arc_where}.slug is unsafe or malformed")
@@ -286,7 +314,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                 if not isinstance(arc.get(field), list):
                     errors.append(f"{arc_where}.{field} must be a list")
             for jindex, journal in enumerate(arc.get("journals", []) if isinstance(arc.get("journals"), list) else []):
-                _validate_journal(journal, f"{arc_where}.journals[{jindex}]", all_ids, errors)
+                _validate_journal(journal, f"{arc_where}.journals[{jindex}]", owner, all_ids, errors)
             for eindex, event in enumerate(arc.get("events", []) if isinstance(arc.get("events"), list) else []):
                 _validate_event(event, f"{arc_where}.events[{eindex}]", key, slug, reservation, ranges_by_arc, limits, all_ids, errors)
 
@@ -306,9 +334,10 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
     return errors
 
 
-def _fields(value: dict, expected: set[str], where: str, errors: list[str]) -> None:
+def _fields(value: dict, expected: set[str], where: str, errors: list[str], optional: set[str] | None = None) -> None:
+    optional = optional or set()
     missing = expected - set(value)
-    extra = set(value) - expected
+    extra = set(value) - expected - optional
     if missing:
         errors.append(f"{where} missing fields: {sorted(missing)}")
     if extra:
@@ -324,7 +353,7 @@ def _unique_id(identifier: object, where: str, all_ids: dict[str, str], errors: 
         all_ids[identifier] = where
 
 
-def _validate_journal(value: object, where: str, all_ids: dict[str, str], errors: list[str]) -> None:
+def _validate_journal(value: object, where: str, owner: str | None, all_ids: dict[str, str], errors: list[str]) -> None:
     if not isinstance(value, dict):
         errors.append(f"{where} must be an object")
         return
@@ -333,6 +362,8 @@ def _validate_journal(value: object, where: str, all_ids: dict[str, str], errors
     _unique_id(identifier, where, all_ids, errors)
     if not isinstance(identifier, str) or not re.fullmatch(r"ywc_je_v03_[a-z0-9_]+", identifier):
         errors.append(f"{where}.id must use ywc_je_v03_<country>_<slug>_<phase>")
+    elif isinstance(owner, str) and not identifier.startswith(f"ywc_je_v03_{owner.lower()}_"):
+        errors.append(f"{where}.id prefix must match owner {owner}")
     for field in ("title", "desc"):
         _localized(value.get(field), f"{where}.{field}", errors)
     script_ok = _script_block(value.get("script"), f"{where}.script", errors)
@@ -585,6 +616,10 @@ def build(root: Path) -> list[str]:
         errors = [f"manifest.owned_outputs missing catalog path: {path}" for path in sorted(allowed_paths - owned_paths)]
         errors.extend(f"manifest.owned_outputs includes unregistered path: {path}" for path in sorted(owned_paths - allowed_paths))
         return errors
+    stale = [relative for relative in sorted(owned_paths - expected_paths)
+             if (root / "yongchang_world" / relative).exists()]
+    if stale:
+        return [f"stale output for empty catalog: {relative}" for relative in stale]
     planned: list[tuple[Path, str]] = []
     for relative, text in outputs.items():
         path_text = relative.as_posix()

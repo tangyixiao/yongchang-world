@@ -50,6 +50,49 @@ def write_fixture(root):
 
 
 class V03GeneratorTests(unittest.TestCase):
+    def test_rejects_registry_namespace_limit_expansion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            write_fixture(root)
+            path = root / "data/content/v03/id_registry.json"
+            registry = json.loads(path.read_text(encoding="utf-8"))
+            registry["namespace_limits"]["country"]["start"] = 1
+            path.write_text(json.dumps(registry), encoding="utf-8")
+            self.assertTrue(any("fixed" in e and "country" in e for e in validate_catalogs_at(root, {"country_shu": catalog()})))
+
+    def test_empty_catalog_stale_output_prevents_all_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            active_outputs = write_fixture(root)
+            base = root / "data/content/v03"
+            empty = catalog()
+            empty.update(key="country_dmg", runtime_tags=["DMG"])
+            empty["arcs"] = []
+            (base / "countries/dmg.json").write_text(json.dumps(empty), encoding="utf-8")
+            manifest_path = base / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["catalogs"].append("data/content/v03/countries/dmg.json")
+            stale_rel = "events/ywc_v03_country_dmg_events.txt"
+            manifest["owned_outputs"].extend([
+                stale_rel,
+                "common/journal_entries/ywc_v03_country_dmg_journal.txt",
+                "localization/simp_chinese/ywc_v03_country_dmg_l_simp_chinese.yml",
+                "localization/english/ywc_v03_country_dmg_l_english.yml",
+            ])
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            registry_path = base / "id_registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["reservations"].append({"key": "country_dmg", "layer": "country", "namespace": "ywc_dmg"})
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            stale = root / "yongchang_world" / stale_rel
+            stale.parent.mkdir(parents=True)
+            stale.write_text("preserve me", encoding="utf-8")
+            active = root / "yongchang_world" / active_outputs[0]
+            errors = build(root)
+            self.assertTrue(any(stale_rel in e and "stale" in e for e in errors), errors)
+            self.assertFalse(active.exists())
+            self.assertEqual(stale.read_text(encoding="utf-8"), "preserve me")
+
     def test_registered_non_country_packs_can_use_each_reserved_namespace(self):
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)
@@ -64,7 +107,9 @@ class V03GeneratorTests(unittest.TestCase):
                 value = catalog()
                 value.update(key=key, layer=layer, runtime_tags=["CHI"])
                 value["arcs"][0].update(slug=slug, participants=["CHI"])
-                value["arcs"][0]["journals"][0]["id"] = f"ywc_je_v03_{layer}_sample_main"
+                owner = {"crisis": "C01", "regional": "CHI", "theme": "T01"}[layer]
+                value["arcs"][0]["owner"] = owner
+                value["arcs"][0]["journals"][0]["id"] = f"ywc_je_v03_{owner.lower()}_sample_main"
                 value["arcs"][0]["events"][0]["id"] = f"{namespace}.{1000 + index:04d}"
                 catalog_by_layer[key] = value
                 registry["reservations"].append({"key": key, "layer": layer, "namespace": namespace})

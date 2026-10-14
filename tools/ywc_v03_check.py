@@ -15,18 +15,57 @@ try:
         read_manifest,
         validate_catalogs_at,
     )
+    from tools.v03_owners import EXPECTED_OWNERS, arc_owner
 except ModuleNotFoundError:  # direct `python tools/ywc_v03_check.py` invocation
     from build_v03_content import TARGETS, check_outputs, load_catalogs, read_manifest, validate_catalogs_at
+    from v03_owners import EXPECTED_OWNERS, arc_owner
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OWNER_COUNTS = {"country": 10, "crisis": 8, "regional": 63, "theme": 12}
 OWNER_QUOTAS = {
     "country": (72, 18),
     "crisis": (12, 3),
     "regional": (6, 2),
     "theme": (8, 1),
 }
+
+
+def check_complete_quotas(catalogs: dict[str, dict]) -> list[str]:
+    errors: list[str] = []
+    counts = {layer: {owner: [0, 0] for owner in owners} for layer, owners in EXPECTED_OWNERS.items()}
+    country_eras = {owner: {} for owner in EXPECTED_OWNERS["country"]}
+    for catalog in catalogs.values():
+        if not isinstance(catalog, dict):
+            continue
+        layer, tags = catalog.get("layer"), catalog.get("runtime_tags")
+        if layer not in counts:
+            continue
+        for arc in catalog.get("arcs", []) if isinstance(catalog.get("arcs"), list) else []:
+            if not isinstance(arc, dict):
+                continue
+            owner = arc_owner(layer, arc, tags)
+            if owner not in counts[layer]:
+                continue
+            row = counts[layer][owner]
+            row[0] += len(arc.get("events", [])) if isinstance(arc.get("events"), list) else 0
+            row[1] += len(arc.get("journals", [])) if isinstance(arc.get("journals"), list) else 0
+            if layer == "country":
+                era = arc.get("era")
+                if isinstance(era, str):
+                    country_eras[owner][era] = country_eras[owner].get(era, 0) + 1
+    for layer, owners in counts.items():
+        min_events, min_journals = OWNER_QUOTAS[layer]
+        for owner, (events, journals) in owners.items():
+            if events < min_events:
+                errors.append(f"{layer} owner {owner} event quota: {events}/{min_events}")
+            if journals < min_journals:
+                errors.append(f"{layer} owner {owner} journal quota: {journals}/{min_journals}")
+            if layer == "country" and sum(country_eras[owner].values()) < 9:
+                errors.append(f"country owner {owner} arc quota: {sum(country_eras[owner].values())}/9")
+    for owner, eras in country_eras.items():
+        if len(eras) < 3 or any(count < 3 for count in eras.values()):
+            errors.append(f"country owner {owner} must cover three eras with three arcs each")
+    return errors
 
 
 def check_root(root: Path, require_complete: bool = False) -> list[str]:
@@ -39,44 +78,7 @@ def check_root(root: Path, require_complete: bool = False) -> list[str]:
     errors = validate_catalogs_at(root, catalogs)
     errors.extend(check_outputs(root))
     if require_complete:
-        layers = {layer: {"events": 0, "journals": 0, "catalogs": 0} for layer in TARGETS}
-        for key, catalog in catalogs.items():
-            layer = catalog.get("layer")
-            if not isinstance(layer, str) or layer not in layers:
-                continue
-            layers[layer]["catalogs"] += 1
-            for arc in catalog.get("arcs", []) if isinstance(catalog.get("arcs"), list) else []:
-                if not isinstance(arc, dict):
-                    continue
-                layers[layer]["events"] += len(arc.get("events", [])) if isinstance(arc.get("events"), list) else 0
-                layers[layer]["journals"] += len(arc.get("journals", [])) if isinstance(arc.get("journals"), list) else 0
-        for layer, target in TARGETS.items():
-            actual = layers[layer]
-            for field in ("events", "journals"):
-                if actual[field] < target[field]:
-                    errors.append(f"{layer} {field} quota: {actual[field]}/{target[field]}")
-            if actual["catalogs"] < OWNER_COUNTS[layer]:
-                errors.append(f"{layer} catalog count: {actual['catalogs']}/{OWNER_COUNTS[layer]}")
-        registry = _registry_or_empty(root)
-        reservations = registry.get("reservations", [])
-        registered = {item.get("key"): item for item in reservations if isinstance(item, dict)}
-        for key, reservation in registered.items():
-            layer = reservation.get("layer")
-            if layer not in OWNER_QUOTAS:
-                continue
-            catalog = catalogs.get(key)
-            if catalog is None:
-                errors.append(f"missing required catalog {key} ({layer})")
-                continue
-            min_events, min_journals = OWNER_QUOTAS[layer]
-            count_events = sum(len(arc.get("events", [])) for arc in catalog.get("arcs", []) if isinstance(arc, dict) and isinstance(arc.get("events"), list))
-            count_journals = sum(len(arc.get("journals", [])) for arc in catalog.get("arcs", []) if isinstance(arc, dict) and isinstance(arc.get("journals"), list))
-            if count_events < min_events:
-                errors.append(f"{key} event quota: {count_events}/{min_events}")
-            if count_journals < min_journals:
-                errors.append(f"{key} journal quota: {count_journals}/{min_journals}")
-        # The manifest is the authoritative registration list during expansion;
-        # owner-count gates above ensure all four layers have been populated.
+        errors.extend(check_complete_quotas(catalogs))
         del manifest
     return errors
 
