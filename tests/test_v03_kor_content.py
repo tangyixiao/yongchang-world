@@ -212,6 +212,40 @@ class KorMilitaryAccountsTest(unittest.TestCase):
         self.assertFalse(started.conditions(limit, "KOR"), "the old monthly chapter pulse must pause after the KOR card actually starts")
         self.assertEqual(sum(key == "NOT" for key, _, _ in limit), 2)
 
+    def test_journal_one_goal_has_valid_success_and_breach_or_paths(self):
+        audit = self.arc["journals"][0]
+        goal = parse(audit["goal"].strip()[1:-1])
+        ready = PulseWorld("", {"KOR": {"ywc_kor_review_complete": 1}})
+        breach = PulseWorld("", {"KOR": {"ywc_kor_outcome_withdrawn_breach": 1}})
+        incomplete = PulseWorld("", {"KOR": {}})
+        self.assertTrue(ready.conditions(goal, "KOR"))
+        self.assertTrue(breach.conditions(goal, "KOR"))
+        self.assertFalse(incomplete.conditions(goal, "KOR"))
+
+    def test_event_1006_has_separate_six_month_and_blocked_prompt_paths(self):
+        event = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1006")
+        trigger = parse(event["trigger"].strip()[1:-1])
+        prompt_gate = next(node for node in trigger if node[0] == "OR")
+        intro_only = PulseWorld("", {"KOR": {"ywc_kor_intro_complete": 1}})
+        six_months = PulseWorld("", {"KOR": {"ywc_kor_intro_complete": 1, "ywc_kor_six_months_complete": 1}})
+        blocked_12 = PulseWorld("", {"KOR": {"ywc_kor_blocked_12_notice": 1}})
+        blocked_36 = PulseWorld("", {"KOR": {"ywc_kor_blocked_36_notice": 1}})
+        self.assertFalse(intro_only.condition(prompt_gate, "KOR"))
+        self.assertTrue(six_months.condition(prompt_gate, "KOR"))
+        self.assertTrue(blocked_12.condition(prompt_gate, "KOR"))
+        self.assertTrue(blocked_36.condition(prompt_gate, "KOR"))
+
+        exit_effect = next(row for row in event["options"] if row["key"] == "withdraw")["effect"]
+        world = PulseWorld(self.effects + "\n" + self.shared_effects, {"KOR": {
+            "ywc_v03_initialized": 1,
+            "ywc_v03_active_arc_count": 1,
+            "ywc_v03_visible_task_count": 1,
+            "ywc_v03_kor_v03_kor_military_accounts_started": 1,
+        }})
+        world.execute(parse(exit_effect.strip()[1:-1]), "KOR")
+        self.assertEqual(world.countries["KOR"]["ywc_v03_kor_v03_kor_military_accounts_outcome"], 4)
+        self.assertEqual(world.countries["KOR"]["ywc_v03_active_arc_count"], 0)
+
     def test_release_bridges_outcomes_preserves_old_result_and_opens_reform_two_once(self):
         effects = self.effects + "\n" + self.shared_effects
         for outcome, legacy in ((1, 1), (2, 2), (3, 2), (4, 3)):
