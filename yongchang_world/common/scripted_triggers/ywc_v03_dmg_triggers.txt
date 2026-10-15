@@ -1,0 +1,96 @@
+# DMG-local v0.3 conditions for the common-subjects card.
+ywc_dmg_v03_has_owned_state = {
+	any_scope_state = { is_owned_by = ROOT }
+}
+
+ywc_dmg_v03_has_multiple_identity_groups = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = { pop_has_primary_culture = no }
+	}
+}
+
+ywc_dmg_v03_has_low_acceptance_pop = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance <= acceptance_status_2
+		}
+	}
+}
+
+ywc_dmg_v03_has_fully_accepted_secondary_pop = {
+	OR = {
+		has_law_or_variant = law_type:law_subjecthood
+		has_law_or_variant = law_type:law_national_supremacy
+		has_law_or_variant = law_type:law_racial_segregation
+		has_law_or_variant = law_type:law_cultural_exclusion
+		has_law_or_variant = law_type:law_multicultural
+	}
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_4
+		}
+	}
+}
+
+# Acceptance and employment are independent checks. These predicates never
+# claim that the accepted pop is the person occupying the checked building.
+ywc_dmg_v03_government_appointment_ready = {
+	bureaucracy >= 0
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_dmg_v03_military_appointment_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_barracks
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_dmg_v03_any_real_appointment_ready = {
+	OR = {
+		ywc_dmg_v03_government_appointment_ready = yes
+		ywc_dmg_v03_military_appointment_ready = yes
+	}
+}
+
+ywc_dmg_v03_has_elected_representation = {
+	OR = {
+		has_law_or_variant = law_type:law_landed_voting
+		has_law_or_variant = law_type:law_wealth_voting
+		has_law_or_variant = law_type:law_census_voting
+		has_law_or_variant = law_type:law_universal_suffrage
+	}
+}
+
+ywc_dmg_v03_common_route_ready = {
+	ywc_dmg_v03_has_fully_accepted_secondary_pop = yes
+	ywc_dmg_v03_any_real_appointment_ready = yes
+}
+
+ywc_dmg_v03_selected_route_ready = {
+	OR = {
+		AND = { var:ywc_dmg_route = 1 ywc_dmg_v03_common_route_ready = yes bureaucracy >= 0 }
+		AND = { var:ywc_dmg_route = 2 has_variable = ywc_dmg_local_execution var:ywc_dmg_appeal_mechanism > 0 ywc_dmg_v03_has_owned_state = yes }
+		AND = { var:ywc_dmg_route = 3 has_variable = ywc_dmg_status_orders_cost_paid }
+	}
+}
+
+ywc_dmg_v03_unsettled = {
+	NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled }
+}
