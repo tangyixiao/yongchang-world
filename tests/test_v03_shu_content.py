@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
 sys.path.insert(0, str(ROOT))
 
-from clausewitz_harness import PulseWorld
+from clausewitz_harness import PulseWorld, parse
 
 
 CATALOG_PATH = ROOT / "data/content/v03/countries/shu.json"
@@ -17,6 +17,32 @@ EFFECTS_PATH = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_shu_effec
 TRIGGERS_PATH = ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_shu_triggers.txt"
 EVENT_IDS = [f"ywc_shu.{number}" for number in range(1000, 1010)]
 JE_IDS = ["ywc_je_v03_shu_register_pilot", "ywc_je_v03_shu_fiscal_settlement"]
+
+
+def pulse_effect_nodes(journal):
+    top = parse(journal["script"])
+    pulse = next(body for key, _, body in top if key == "on_monthly_pulse")
+    effect = next(body for key, _, body in pulse if key == "effect")
+    return effect
+
+
+def inject_fact_triggers(nodes):
+    """Replace only non-executable scripted-trigger predicates with fixture facts."""
+    facts = {
+        "ywc_v03_can_deliver_major": "test_cooldown_clear",
+        "ywc_shu_v03_unsettled": "test_unsettled",
+        "ywc_shu_v03_real_execution_ready": "test_ready",
+        "ywc_shu_v03_has_pilot_state": "test_has_pilot",
+    }
+    result = []
+    for key, comparison, value in nodes:
+        if key in facts:
+            result.append(("has_variable", "=", facts[key]))
+        elif isinstance(value, list):
+            result.append((key, comparison, inject_fact_triggers(value)))
+        else:
+            result.append((key, comparison, value))
+    return result
 
 
 class ShuContentCardTest(unittest.TestCase):
@@ -116,6 +142,90 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertIn("var:ywc_shu_pending_event = 1009", settlement)
         self.assertIn("trigger_event = { id = ywc_shu.1009 }", settlement)
         self.assertIn("ywc_shu_pending_event value = 1009", self.arc["events"][8]["options"][0]["effect"])
+
+    def test_journal_monthly_pulse_extracts_and_executes_the_effect_body(self):
+        for journal in self.arc["journals"]:
+            pulse_effect_nodes(journal)
+
+        pulse = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][0]))
+        world = PulseWorld(self.effects, {"SHU": {"ywc_shu_pending_event": 1000}})
+        world.execute(pulse, "SHU")
+        self.assertEqual(world.events, [], "queued events wait while the shared cooldown is occupied")
+        self.assertEqual(world.countries["SHU"]["ywc_shu_pending_event"], 1000)
+        world.countries["SHU"]["test_cooldown_clear"] = 1
+        world.execute(pulse, "SHU")
+        self.assertEqual(world.events, [("SHU", "ywc_shu.1000")])
+        self.assertNotIn("ywc_shu_pending_event", world.countries["SHU"])
+
+        settlement = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][1]))
+        followup = PulseWorld(self.effects, {"SHU": {"ywc_shu_pending_event": 1009, "test_cooldown_clear": 1}})
+        followup.execute(settlement, "SHU")
+        self.assertEqual(followup.events, [("SHU", "ywc_shu.1009")])
+        self.assertNotIn("ywc_shu_pending_event", followup.countries["SHU"])
+
+    def test_twelve_and_thirty_six_month_blockage_fallbacks_still_dispatch(self):
+        pulse = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][0]))
+        cases = (
+            ({"ywc_shu_waiting_for_capacity": 1, "ywc_shu_blocked_36_due": 1, "test_cooldown_clear": 1}, "ywc_shu.1001"),
+            ({"ywc_shu_blocked_12_due": 1, "test_cooldown_clear": 1}, "ywc_shu.1006"),
+        )
+        for state, expected in cases:
+            state["test_unsettled"] = 1
+            world = PulseWorld(self.effects, {"SHU": state})
+            world.execute(pulse, "SHU")
+            self.assertEqual(world.events, [("SHU", expected)])
+            self.assertNotIn("ywc_shu_pending_event", state)
+            if expected == "ywc_shu.1006":
+                world.countries["SHU"]["test_cooldown_clear"] = 1
+                world.journals.append(("SHU", [("type", "=", "ywc_je_v03_shu_register_pilot")]))
+                trigger = inject_fact_triggers(parse(self.arc["events"][6]["trigger"][1:-1]))
+                self.assertTrue(world.conditions(trigger, "SHU"), "the 36-month fallback must satisfy its event trigger")
+
+    def test_interrupted_review_restarts_a_fresh_180_day_period_after_recovery(self):
+        pulse = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][1]))
+        state = {
+            "ywc_shu_wartime_deferral": 1,
+            "ywc_shu_review_interrupted": 1,
+            "is_at_war": False,
+            "in_default": False,
+            "net_fixed_income": 20,
+            "test_ready": 1,
+            "test_has_pilot": 1,
+        }
+        world = PulseWorld(self.effects, {"SHU": state})
+        # Harness only models month timers; the owned helper's 180-day timer is covered by the source contract above.
+        world.effects["ywc_shu_start_settlement_review"] = parse(
+            "set_variable = { name = ywc_shu_settlement_review value = 1 }\n"
+            "set_variable = { name = ywc_shu_settlement_review_due value = 1 months = 6 }"
+        )
+        world.execute(pulse, "SHU")
+        self.assertEqual(state.get("ywc_shu_settlement_review"), 1)
+        self.assertEqual(state.get("ywc_shu_settlement_review_due"), 1)
+        self.assertEqual(world.months_until_expiry["SHU"].get("ywc_shu_settlement_review_due"), 6)
+        self.assertNotIn("ywc_shu_pending_event", state)
+
+    def test_wartime_interrupt_resets_six_month_review_before_queued_notice(self):
+        pulse = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][1]))
+        state = {
+            "ywc_shu_settlement_review": 1,
+            "ywc_shu_settlement_review_due": 1,
+            "is_at_war": True,
+            "net_fixed_income": 10,
+        }
+        world = PulseWorld(self.effects, {"SHU": state})
+        world.execute(pulse, "SHU")
+        self.assertNotIn("ywc_shu_settlement_review_due", state)
+        self.assertNotIn("ywc_shu_settlement_review", state)
+        self.assertEqual(state.get("ywc_shu_review_interrupted"), 1)
+        self.assertEqual(state.get("ywc_shu_pending_event"), 1008)
+        self.assertEqual(world.events, [], "notice waits for cooldown after its state reset has already happened")
+        state["test_unsettled"] = 1
+        state["test_cooldown_clear"] = 1
+        world.journals.append(("SHU", [("type", "=", JE_IDS[1])]))
+        world.execute(pulse, "SHU")
+        self.assertEqual(world.events, [("SHU", "ywc_shu.1008")])
+        trigger = inject_fact_triggers(parse(self.arc["events"][8]["trigger"][1:-1]))
+        self.assertTrue(world.conditions(trigger, "SHU"), "the interrupted marker must keep the queued event eligible after the review reset")
 
     def test_cost_base_is_captured_at_opening_once(self):
         world = PulseWorld(self.effects, {"SHU": {"yearly_gross_income": 52_000}})
