@@ -124,6 +124,33 @@ class V03CatalogTests(unittest.TestCase):
         errors = validate_catalogs({value["key"]: value})
         self.assertTrue(any("trigger" in error and "unbalanced" in error for error in errors), errors)
 
+    def test_script_blocks_require_clausewitz_logic_operator_blocks(self):
+        value = catalog()
+        value["arcs"][0]["journals"][0]["goal"] = (
+            "{ has_variable = ywc_ready OR has_variable = ywc_failed }"
+        )
+        errors = validate_catalogs({value["key"]: value})
+        self.assertTrue(
+            any("journals[0].goal" in error and "OR" in error and "block" in error for error in errors),
+            errors,
+        )
+
+        value["arcs"][0]["journals"][0]["goal"] = "{ OR = yes }"
+        errors = validate_catalogs({value["key"]: value})
+        self.assertTrue(
+            any("journals[0].goal" in error and "OR" in error and "block" in error for error in errors),
+            errors,
+        )
+
+    def test_script_blocks_accept_nested_logic_and_ignore_quotes_and_comments(self):
+        value = catalog()
+        value["arcs"][0]["journals"][0]["goal"] = (
+            '{ AND = { OR = { always = yes } NOT = { always = no } } '
+            'custom_tooltip = { text = "OR AND NOT NOR" } # NOR = invalid }\n}'
+        )
+        errors = validate_catalogs({value["key"]: value})
+        self.assertFalse(any("journals[0].goal" in error for error in errors), errors)
+
     def test_rejects_missing_journal_goal_and_exit_conditions(self):
         value = catalog()
         del value["arcs"][0]["journals"][0]["goal"]

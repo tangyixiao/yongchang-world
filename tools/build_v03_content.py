@@ -13,6 +13,11 @@ try:
 except ModuleNotFoundError:
     from v03_owners import COUNTRY_NAMESPACES, EXPECTED_OWNERS, NAMESPACE_LIMITS, arc_owner, owner_slot
 
+try:
+    from tools.ywc_check import _without_comments_and_strings
+except ModuleNotFoundError:
+    from ywc_check import _without_comments_and_strings
+
 
 ROOT = Path(__file__).resolve().parents[1]
 V03_DIR = Path("data/content/v03")
@@ -127,13 +132,20 @@ def _script_block(value: object, where: str, errors: list[str]) -> bool:
     depth = 0
     quoted = False
     escaped = False
+    in_comment = False
     for char in raw:
+        if in_comment:
+            if char == "\n":
+                in_comment = False
+            continue
         if escaped:
             escaped = False
         elif char == "\\" and quoted:
             escaped = True
         elif char == '"':
             quoted = not quoted
+        elif char == "#" and not quoted:
+            in_comment = True
         elif not quoted and char == "{":
             depth += 1
         elif not quoted and char == "}":
@@ -143,6 +155,14 @@ def _script_block(value: object, where: str, errors: list[str]) -> bool:
     if depth != 0 or quoted:
         errors.append(f"{where} has unbalanced Clausewitz braces or quotes")
         return False
+    cleaned = _without_comments_and_strings(raw)
+    for match in re.finditer(r"(?<![A-Za-z0-9_])(AND|OR|NOT|NOR)(?![A-Za-z0-9_])", cleaned):
+        if re.match(r"\s*=\s*\{", cleaned[match.end():]) is None:
+            errors.append(
+                f"{where} uses {match.group(1)} without a Clausewitz logic block; "
+                "logic operators must be followed by '= {'"
+            )
+            return False
     return True
 
 
@@ -518,6 +538,7 @@ def _render_event_file(catalog: dict, root: Path) -> str:
             lines.extend([
                 f"{event['id']} = {{",
                 "    type = country_event",
+                '    event_image = { video = "unspecific_politicians_arguing" }',
                 f"    title = {event['id']}.t",
                 f"    desc = {event['id']}.d",
                 f"    trigger = {event['trigger'].strip()}",

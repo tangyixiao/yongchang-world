@@ -4,6 +4,7 @@ fail at runtime, which hidden preloads never reach."""
 
 import pathlib
 import re
+import tempfile
 import unittest
 
 
@@ -25,6 +26,32 @@ def defined_in(folder: str, prefix: str = "ywc_") -> set:
     for path in (MOD / folder).rglob("*.txt"):
         out.update(re.findall(pattern, path.read_text("utf-8-sig"), re.MULTILINE))
     return out
+
+
+def _event_option_names(events_root: pathlib.Path) -> tuple[set[str], list[str]]:
+    used = set()
+    malformed = []
+    for path in pathlib.Path(events_root).glob("*.txt"):
+        text = path.read_text("utf-8-sig")
+        events = list(re.finditer(r"(?m)^\s*(ywc_[a-z0-9_]+\.[0-9]+)\s*=\s*\{", text))
+        for index, event in enumerate(events):
+            end = events[index + 1].start() if index + 1 < len(events) else len(text)
+            body = text[event.end():end]
+            for option in re.finditer(r"option\s*=\s*\{\s*name\s*=\s*([A-Za-z0-9_.]+)", body):
+                name = option.group(1)
+                expected = f"{event.group(1)}.{name.rsplit('.', 1)[-1]}"
+                if name != expected:
+                    malformed.append(f"{path.name}: {name} (expected {expected})")
+                used.add(name)
+    return used, malformed
+
+
+def _localized_event_option_names(localization_root: pathlib.Path) -> set[str]:
+    keys = set()
+    pattern = r"^\s*(ywc_[a-z0-9_]+\.[0-9]+\.[a-z0-9_]+):\d+"
+    for path in pathlib.Path(localization_root).glob("*.yml"):
+        keys.update(re.findall(pattern, path.read_text("utf-8-sig"), re.MULTILINE))
+    return keys
 
 
 class ReferenceIntegrityTest(unittest.TestCase):
@@ -79,32 +106,39 @@ class ReferenceIntegrityTest(unittest.TestCase):
 
     def test_event_option_names_are_localized(self):
         """Options use the event's dotted ID, and both languages define it."""
-        used = set()
-        malformed = []
-        for path in (MOD / "events").glob("*.txt"):
-            text = path.read_text("utf-8-sig")
-            events = list(re.finditer(r"(?m)^\s*(ywc_[a-z0-9_]+\.[0-9]+)\s*=\s*\{", text))
-            for index, event in enumerate(events):
-                end = events[index + 1].start() if index + 1 < len(events) else len(text)
-                body = text[event.end():end]
-                for option in re.finditer(r"option\s*=\s*\{\s*name\s*=\s*([A-Za-z0-9_.]+)", body):
-                    name = option.group(1)
-                    expected = f"{event.group(1)}.{name.rsplit('.', 1)[-1]}"
-                    if name != expected:
-                        malformed.append(f"{path.name}: {name} (expected {expected})")
-                    used.add(name)
+        used, malformed = _event_option_names(MOD / "events")
         # The four orphaned regional crisis events were removed after a real
         # 1.13.11 load; the remaining 144 dotted option keys are all wired.
         self.assertGreaterEqual(len(used), 140)
         self.assertEqual(malformed, [], "event option names must use dotted event IDs")
         for language in ("english", "simp_chinese"):
-            loc = set()
-            for path in (MOD / "localization" / language).glob("*.yml"):
-                loc.update(
-                    re.findall(r"^\s*(ywc_[a-z0-9_]+\.[0-9]+\.[a-z]):\d+", path.read_text("utf-8-sig"), re.MULTILINE)
-                )
+            loc = _localized_event_option_names(MOD / "localization" / language)
             missing = used - loc
             self.assertEqual(missing, set(), f"{language}: unlocalized options: {sorted(missing)[:8]}")
+
+    def test_descriptive_option_key_resolves_and_missing_localization_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            events = root / "events"
+            loc = root / "localization"
+            events.mkdir()
+            loc.mkdir()
+            (events / "example.txt").write_text(
+                "ywc_demo.1000 = { option = { name = ywc_demo.1000.central_audit } }\n",
+                encoding="utf-8",
+            )
+            option_names, malformed = _event_option_names(events)
+            self.assertEqual(malformed, [])
+            self.assertEqual(option_names, {"ywc_demo.1000.central_audit"})
+            (loc / "example.yml").write_text(
+                'l_english:\n ywc_demo.1000.central_audit:0 "Central audit"\n',
+                encoding="utf-8",
+            )
+            localized = _localized_event_option_names(loc)
+            self.assertEqual(option_names - localized, set())
+            (loc / "example.yml").write_text("l_english:\n", encoding="utf-8")
+            localized = _localized_event_option_names(loc)
+            self.assertEqual(option_names - localized, {"ywc_demo.1000.central_audit"})
 
     def test_journal_completion_variables_have_setters(self):
         # Plan 03 requires every main journal and route to be completable or

@@ -175,6 +175,7 @@ class V03GeneratorTests(unittest.TestCase):
             path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
             rendered = render_all(root)
             script = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
+            self.assertIn('event_image = { video = "unspecific_politicians_arguing" }', script)
             self.assertIn(
                 "        trigger = {\n"
                 "            has_law = law_type:law_monarchy\n"
