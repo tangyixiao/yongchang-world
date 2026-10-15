@@ -244,6 +244,51 @@ class ScriptStructureTest(unittest.TestCase):
             )
             self.assertEqual(collect_declared_keys(root), {"ywc_example"})
 
+    def test_unindented_nested_calls_and_braces_in_strings_are_not_declarations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "common/scripted_effects").mkdir(parents=True)
+            (root / "events").mkdir()
+            (root / "common/scripted_effects/example.txt").write_text(
+                'ywc_helper = { value = "}" }\n', encoding="utf-8"
+            )
+            (root / "events/example.txt").write_text(
+                "ywc_event = {\n"
+                "    trigger = {\n"
+                "# A comment with } and ywc_comment = { }\n"
+                'value = "}"\n'
+                "ywc_helper = yes\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(collect_declared_keys(root), {"ywc_event"})
+            self.assertEqual(find_duplicate_keys(root), set())
+
+    def test_scripted_helpers_skip_localization_but_keep_duplicate_checks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            effects = root / "common/scripted_effects"
+            effects.mkdir(parents=True)
+            events = root / "events"
+            events.mkdir()
+            (effects / "one.txt").write_text("ywc_internal_helper = { }\n", encoding="utf-8")
+            (events / "example.txt").write_text(
+                "ywc_visible_event = { }\n", encoding="utf-8"
+            )
+            self.assertEqual(collect_declared_keys(root), {"ywc_visible_event"})
+            diagnostics = validate(root)
+            self.assertTrue(
+                any("missing localization key ywc_visible_event" in item for item in diagnostics),
+                diagnostics,
+            )
+            self.assertFalse(
+                any("missing localization key ywc_internal_helper" in item for item in diagnostics),
+                diagnostics,
+            )
+            (effects / "two.txt").write_text("ywc_internal_helper = { }\n", encoding="utf-8")
+            self.assertEqual(find_duplicate_keys(root), {"ywc_internal_helper"})
+
     def test_on_action_ids_do_not_require_localization(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

@@ -103,6 +103,27 @@ class V03CatalogTests(unittest.TestCase):
         errors = validate_catalogs({value["key"]: value})
         self.assertTrue(any("must not define complete or fail" in error for error in errors), errors)
 
+    def test_option_trigger_is_optional_and_must_be_a_clausewitz_block(self):
+        value = catalog()
+        errors = validate_catalogs({value["key"]: value})
+        self.assertFalse(any("options[0].trigger" in error for error in errors), errors)
+
+        value["arcs"][0]["events"][0]["options"][0]["trigger"] = (
+            "{ has_law = law_type:law_monarchy }"
+        )
+        errors = validate_catalogs({value["key"]: value})
+        self.assertFalse(any("options[0].trigger" in error for error in errors), errors)
+
+        value["arcs"][0]["events"][0]["options"][0]["trigger"] = (
+            "has_law = law_type:law_monarchy"
+        )
+        errors = validate_catalogs({value["key"]: value})
+        self.assertTrue(any("trigger" in error and "wrapped" in error for error in errors), errors)
+
+        value["arcs"][0]["events"][0]["options"][0]["trigger"] = "{ always = yes }}"
+        errors = validate_catalogs({value["key"]: value})
+        self.assertTrue(any("trigger" in error and "unbalanced" in error for error in errors), errors)
+
     def test_rejects_missing_journal_goal_and_exit_conditions(self):
         value = catalog()
         del value["arcs"][0]["journals"][0]["goal"]

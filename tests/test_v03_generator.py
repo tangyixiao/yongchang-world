@@ -140,6 +140,56 @@ class V03GeneratorTests(unittest.TestCase):
             for relative in first:
                 self.assertTrue((root / "yongchang_world" / relative).read_bytes().startswith(b"\xef\xbb\xbf"))
 
+    def test_option_notes_render_as_exact_bilingual_custom_tooltips(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            write_fixture(root)
+            value = catalog()
+            option = value["arcs"][0]["events"][0]["options"][0]
+            option["cost_note"] = {"zh": '花费\n“银两”', "en": 'Cost\n"silver"'}
+            option["consequence_note"] = {"zh": "后果说明", "en": "Outcome note"}
+            path = root / "data/content/v03/countries/shu.json"
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            rendered = render_all(root)
+            event = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
+            zh = next(text for relative, text in rendered.items() if "simp_chinese" in str(relative))
+            en = next(text for relative, text in rendered.items() if "english" in str(relative))
+            self.assertIn("custom_tooltip = { text = ywc_shu.1000.continue.cost_tooltip }", event)
+            self.assertIn("custom_tooltip = { text = ywc_shu.1000.continue.consequence_tooltip }", event)
+            self.assertIn('ywc_shu.1000.continue.cost_tooltip:0 "花费\\n“银两”"', zh)
+            self.assertIn('ywc_shu.1000.continue.consequence_tooltip:0 "后果说明"', zh)
+            self.assertIn('ywc_shu.1000.continue.cost_tooltip:0 "Cost\\n\\"silver\\""', en)
+            self.assertIn('ywc_shu.1000.continue.consequence_tooltip:0 "Outcome note"', en)
+
+    def test_option_trigger_is_preserved_in_event_and_absent_trigger_stays_unconditional(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            write_fixture(root)
+            value = catalog()
+            event = value["arcs"][0]["events"][0]
+            event["options"][0]["trigger"] = (
+                "{\n    has_law = law_type:law_monarchy\n"
+                "    has_technology_researched = tec:urban_planning\n}"
+            )
+            path = root / "data/content/v03/countries/shu.json"
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            rendered = render_all(root)
+            script = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
+            self.assertIn(
+                "        trigger = {\n"
+                "            has_law = law_type:law_monarchy\n"
+                "            has_technology_researched = tec:urban_planning\n"
+                "        }",
+                script,
+            )
+            self.assertNotIn("trigger = { always = yes }", script)
+
+            del event["options"][0]["trigger"]
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            rendered = render_all(root)
+            script = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
+            self.assertNotIn("        trigger =", script)
+
     def test_journal_goal_and_exit_are_rendered_as_complete_and_fail(self):
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)

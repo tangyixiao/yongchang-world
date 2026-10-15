@@ -106,10 +106,14 @@ def _declared_key_occurrences(root: Path) -> dict[str, list[tuple[Path, int]]]:
     occurrences: dict[str, list[tuple[Path, int]]] = defaultdict(list)
     for path in _script_files(root):
         text = path.read_text(encoding="utf-8-sig")
-        for line_number, line in enumerate(text.splitlines(), 1):
-            match = DECLARED_KEY.match(line)
-            if match:
-                occurrences[match.group(1)].append((path, line_number))
+        cleaned = _without_comments_and_strings(text)
+        depth = 0
+        for line_number, line in enumerate(cleaned.splitlines(), 1):
+            if depth == 0:
+                match = DECLARED_KEY.match(line.lstrip())
+                if match:
+                    occurrences[match.group(1)].append((path, line_number))
+            depth += line.count("{") - line.count("}")
     return dict(occurrences)
 
 
@@ -143,6 +147,8 @@ def _is_localization_bearing(path: Path) -> bool:
             "coat_of_arms",
             "character_templates",
             "on_actions",
+            "scripted_effects",
+            "scripted_triggers",
         }
     )
 
