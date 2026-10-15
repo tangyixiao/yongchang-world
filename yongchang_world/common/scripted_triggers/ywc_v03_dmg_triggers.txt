@@ -1,4 +1,4 @@
-# DMG-local v0.3 conditions for the common-subjects card.
+﻿# DMG-local v0.3 conditions for the common-subjects card.
 ywc_dmg_v03_has_owned_state = {
 	any_scope_state = { is_owned_by = ROOT }
 }
@@ -20,6 +20,7 @@ ywc_dmg_v03_has_low_acceptance_pop = {
 	}
 }
 
+# Acceptance tier 5 is full acceptance (80); tier 4 is second-rate citizenship (60).
 ywc_dmg_v03_has_fully_accepted_secondary_pop = {
 	OR = {
 		has_law_or_variant = law_type:law_subjecthood
@@ -32,21 +33,26 @@ ywc_dmg_v03_has_fully_accepted_secondary_pop = {
 		is_owned_by = ROOT
 		any_scope_pop = {
 			pop_has_primary_culture = no
-			pop_acceptance >= acceptance_status_4
+			pop_acceptance >= acceptance_status_5
 		}
 	}
 }
 
-# Acceptance and employment are independent checks. These predicates never
-# claim that the accepted pop is the person occupying the checked building.
+# Tie the accepted secondary-culture cohort to a real job in the checked building.
 ywc_dmg_v03_government_appointment_ready = {
 	bureaucracy >= 0
 	any_scope_state = {
 		is_owned_by = ROOT
-		any_scope_building = {
-			is_building_type = building_government_administration
-			occupancy >= 0.8
-			building_has_goods_shortage = no
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_5
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_government_administration
+				occupancy >= 0.8
+				building_has_goods_shortage = no
+			}
 		}
 	}
 }
@@ -54,10 +60,16 @@ ywc_dmg_v03_government_appointment_ready = {
 ywc_dmg_v03_military_appointment_ready = {
 	any_scope_state = {
 		is_owned_by = ROOT
-		any_scope_building = {
-			is_building_type = building_barracks
-			occupancy >= 0.8
-			building_has_goods_shortage = no
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_5
+			OR = { is_pop_type = soldiers is_pop_type = officers }
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_barrack
+				occupancy >= 0.8
+				building_has_goods_shortage = no
+			}
 		}
 	}
 }
@@ -69,24 +81,54 @@ ywc_dmg_v03_any_real_appointment_ready = {
 	}
 }
 
-ywc_dmg_v03_has_elected_representation = {
-	OR = {
-		has_law_or_variant = law_type:law_landed_voting
-		has_law_or_variant = law_type:law_wealth_voting
-		has_law_or_variant = law_type:law_census_voting
-		has_law_or_variant = law_type:law_universal_suffrage
-	}
-}
-
 ywc_dmg_v03_common_route_ready = {
 	ywc_dmg_v03_has_fully_accepted_secondary_pop = yes
 	ywc_dmg_v03_any_real_appointment_ready = yes
+	bureaucracy >= 0
+}
+
+# A local compact needs an actual secondary-culture employee at a staffed,
+# supplied administration and choices whose material and political terms match.
+ywc_dmg_v03_secondary_local_office_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_government_administration
+				occupancy >= 0.8
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+ywc_dmg_v03_territorial_capacity_ready = {
+	ywc_dmg_v03_has_owned_state = yes
+	ywc_dmg_v03_secondary_local_office_ready = yes
+	has_variable = ywc_dmg_local_rollout_cost_paid
+	OR = {
+		AND = { var:ywc_dmg_appeal_mechanism = 1 var:ywc_dmg_inheritance_precedent = 1 var:ywc_dmg_public_language_mode = 1 legitimacy >= 25 }
+		AND = { var:ywc_dmg_appeal_mechanism = 2 var:ywc_dmg_inheritance_precedent = 2 var:ywc_dmg_public_language_mode = 2 bureaucracy >= 0 net_fixed_income >= 0 }
+		AND = { var:ywc_dmg_appeal_mechanism = 3 var:ywc_dmg_inheritance_precedent = 3 var:ywc_dmg_public_language_mode = 3 authority >= 50 }
+	}
+}
+
+ywc_dmg_v03_territorial_compact_ready = {
+	ywc_dmg_v03_territorial_capacity_ready = yes
+	OR = {
+		AND = { var:ywc_dmg_territorial_orders = 1 var:ywc_dmg_appeal_mechanism = 1 }
+		AND = { var:ywc_dmg_territorial_orders = 2 var:ywc_dmg_appeal_mechanism = 2 }
+		AND = { var:ywc_dmg_territorial_orders = 3 var:ywc_dmg_appeal_mechanism = 3 }
+	}
 }
 
 ywc_dmg_v03_selected_route_ready = {
 	OR = {
-		AND = { var:ywc_dmg_route = 1 ywc_dmg_v03_common_route_ready = yes bureaucracy >= 0 }
-		AND = { var:ywc_dmg_route = 2 has_variable = ywc_dmg_local_execution var:ywc_dmg_appeal_mechanism > 0 ywc_dmg_v03_has_owned_state = yes }
+		AND = { var:ywc_dmg_route = 1 ywc_dmg_v03_common_route_ready = yes }
+		AND = { var:ywc_dmg_route = 2 ywc_dmg_v03_territorial_capacity_ready = yes }
 		AND = { var:ywc_dmg_route = 3 has_variable = ywc_dmg_status_orders_cost_paid }
 	}
 }

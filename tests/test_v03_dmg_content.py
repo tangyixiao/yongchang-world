@@ -46,6 +46,20 @@ class DmgContentCardTest(unittest.TestCase):
             self.assertNotEqual(journal["goal"].strip(), "{ always = yes }")
             self.assertNotEqual(journal["exit_conditions"].strip(), "{ always = yes }")
 
+    def test_je_goal_uses_clausewitz_or_block_and_executes_both_terminal_paths(self):
+        goal = self.arc["journals"][0]["goal"]
+        # The harness parser accepts a block body; strip the JSON field's outer braces.
+        nodes = parse(goal.strip()[1:-1])
+        top_level_or = [body for key, _, body in nodes if key == "OR"]
+        self.assertEqual(len(nodes), 1, "goal should be one valid Clausewitz OR node")
+        self.assertEqual(len(top_level_or), 1)
+        self.assertEqual(len(top_level_or[0]), 2)
+        for terminal in ("ywc_dmg_first_stage_resolved", "ywc_dmg_outcome_withdrawn_breach"):
+            world = PulseWorld("", {"DMG": {terminal: 1}})
+            self.assertTrue(world.conditions(nodes, tag="DMG"), terminal)
+        world = PulseWorld("", {"DMG": {}})
+        self.assertFalse(world.conditions(nodes, tag="DMG"))
+
 
     def test_reads_and_writes_are_backed_by_script_or_helper_references(self):
         authored = [self.effects, self.triggers]
@@ -60,13 +74,146 @@ class DmgContentCardTest(unittest.TestCase):
                 for symbol in event[field]:
                     self.assertIn(symbol, scripts, f"{event['id']} {field}: {symbol}")
 
+
+    def test_full_acceptance_and_same_secondary_pop_must_occupy_real_workplace(self):
+        trigger_nodes = parse(self.triggers)
+        trigger = next(body for key, _, body in trigger_nodes if key == "ywc_dmg_v03_has_fully_accepted_secondary_pop")
+        rendered = self.triggers
+        self.assertIn("acceptance_status_5", rendered)
+        self.assertIn("is_employed = yes", rendered)
+        self.assertIn("workplace ?=", rendered)
+        self.assertIn("building_barrack", rendered)
+        military = next(body for key, _, body in self._walk(list(parse(self.triggers))) if key == "ywc_dmg_v03_military_appointment_ready")
+        self.assertIn("soldiers", str(military))
+        self.assertIn("officers", str(military))
+        self.assertNotIn("building_barracks", rendered)
+        # Acceptance, employment and building facts are nested under the same pop scope.
+        office = next(body for key, _, body in self._walk(list(parse(self.triggers))) if key == "ywc_dmg_v03_government_appointment_ready")
+        pop = next(body for key, _, body in self._walk(office) if key == "any_scope_pop")
+        pop_text = str(pop)
+        self.assertIn("pop_acceptance", pop_text)
+        self.assertIn("is_employed", pop_text)
+        self.assertIn("workplace", pop_text)
+        official = Path(r"E:\\SteamLibrary\\steamapps\\common\\Victoria 3\\game\\common\\acceptance_statuses\\00_acceptance_statuses.txt")
+        if official.exists():
+            source = official.read_text(encoding="utf-8-sig")
+            self.assertRegex(source, r"second_rate_citizen\s*=\s*\{[^}]*threshold\s*=\s*60")
+            self.assertRegex(source, r"full_acceptance\s*=\s*\{[^}]*threshold\s*=\s*80")
+        building = Path(r"E:\\SteamLibrary\\steamapps\\common\\Victoria 3\\game\\common\\buildings\\05_military.txt")
+        if building.exists():
+            self.assertRegex(building.read_text(encoding="utf-8-sig"), r"(?m)^building_barrack\s*=")
+
+    @staticmethod
+    def _walk(nodes):
+        for node in nodes:
+            yield node
+            if isinstance(node[2], list):
+                yield from DmgContentCardTest._walk(node[2])
+
+    def test_withdrawal_commits_breach_and_terminal_choices_always_have_escape(self):
+        e8 = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1008")
+        withdrawal = next(o for o in e8["options"] if o["key"] == "third")
+        self.assertIn("ywc_dmg_close_as_breach = yes", withdrawal["effect"])
+        e9 = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
+        self.assertTrue(any(o["key"] == "limited_settlement" for o in e9["options"]))
+        self.assertTrue(any(o["key"] == "withdraw_breach" for o in e9["options"]))
+        self.assertTrue(any(not o.get("trigger") for o in e9["options"]))
+        for o in e9["options"]:
+            if o.get("trigger"):
+                self.assertTrue(o["trigger"].strip().startswith("{"))
+
+    def test_legacy_bridge_is_idempotent_and_new_arc_does_not_stop_old_pulse(self):
+        bridge = next(block for key, _, block in parse(self.effects) if key == "ywc_v03_bridge_dmg_compact_one")
+        text = str(bridge)
+        self.assertIn("ywc_campaign_dmg_c1_outcome", text)
+        self.assertIn("ywc_je_flavor_dmg_compact_2", text)
+        self.assertIn("has_journal_entry', '=', 'ywc_je_flavor_dmg_compact_2", text)
+        self.assertIn("ywc_je_flavor_dmg_compact_2_resolved", text)
+        self.assertIn("ywc_je_flavor_dmg_compact_2_failed", text)
+        old_je = Path(ROOT / "yongchang_world/common/journal_entries/ywc_dmg.txt").read_text(encoding="utf-8-sig")
+        c1 = old_je.split("ywc_je_flavor_dmg_compact_1 = {", 1)[1].split("ywc_je_flavor_dmg_compact_2 = {", 1)[0]
+        self.assertIn("ywc_v03_dmg_v03_dmg_common_subjects_started", c1)
+        self.assertIn("NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started }", c1)
+
+
+    def test_bridge_maps_new_outcomes_and_never_overwrites_existing_old_result(self):
+        for new_outcome, expected in ((1,1),(2,2),(3,2),(4,3),(5,3)):
+            world=PulseWorld(self.effects, {"DMG":{"ywc_v03_dmg_v03_dmg_common_subjects_outcome":new_outcome}})
+            world.run("ywc_v03_bridge_dmg_compact_one", tag="DMG")
+            world.run("ywc_v03_bridge_dmg_compact_one", tag="DMG")
+            self.assertEqual(world.countries["DMG"]["ywc_campaign_dmg_c1_outcome"],expected)
+            self.assertEqual(sum(1 for tag, body in world.journals if tag=="DMG" and dict((k,v) for k,_,v in body).get("type")=="ywc_je_flavor_dmg_compact_2"),1)
+        world=PulseWorld(self.effects,{"DMG":{"ywc_campaign_dmg_c1_outcome":2,"ywc_v03_dmg_v03_dmg_common_subjects_outcome":1}})
+        world.run("ywc_v03_bridge_dmg_compact_one",tag="DMG")
+        self.assertEqual(world.countries["DMG"]["ywc_campaign_dmg_c1_outcome"],2)
+
+
+    def test_local_execution_fee_is_income_based_idempotent_and_game_assets_have_bom(self):
+        world=PulseWorld(self.effects,{"DMG":{"yearly_gross_income":52000}})
+        world.run("ywc_dmg_pay_local_rollout_once",tag="DMG")
+        first=world.treasury["DMG"]
+        self.assertAlmostEqual(first,-1000,places=5)
+        world.run("ywc_dmg_pay_local_rollout_once",tag="DMG")
+        self.assertEqual(world.treasury["DMG"],first)
+        self.assertEqual(world.countries["DMG"]["ywc_dmg_local_rollout_cost_paid"],1)
+        assets=[EFFECTS_PATH,TRIGGERS_PATH,ROOT/"yongchang_world/common/journal_entries/ywc_dmg.txt",ROOT/"yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt",ROOT/"yongchang_world/localization/english/ywc_v03_dmg_modifiers_l_english.yml",ROOT/"yongchang_world/localization/simp_chinese/ywc_v03_dmg_modifiers_l_simp_chinese.yml"]
+        for path in assets:
+            self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"),str(path))
+        modifiers=Path(ROOT/"yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt").read_text(encoding="utf-8-sig")
+        self.assertEqual(len(dict((key,body) for key,_,body in parse(modifiers))),9)
+
+    def test_local_contract_has_real_gate_fee_finite_tradeoffs_and_later_reads(self):
+        territory = next(t for key, _, t in parse(self.triggers) if key == "ywc_dmg_v03_territorial_compact_ready")
+        self.assertIn("ywc_dmg_appeal_mechanism", str(territory))
+        self.assertIn("ywc_dmg_inheritance_precedent", self.effects + json.dumps(self.arc))
+        self.assertIn("ywc_dmg_public_language_mode", self.effects + json.dumps(self.arc))
+        for name in ("ywc_dmg_joint_council", "ywc_dmg_noble_guarantee", "ywc_dmg_royal_directive"):
+            self.assertIn(name, Path(ROOT / "yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt").read_text(encoding="utf-8-sig"))
+        self.assertIn("months = 24", self.effects)
+        self.assertIn("remove_modifier = ywc_dmg_joint_council", self.effects)
+        self.assertIn("country_legitimacy_base_add", Path(ROOT / "yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt").read_text(encoding="utf-8-sig"))
+
+    def test_scripted_employment_predicate_with_injected_engine_facts_uses_same_pop_and_building(self):
+        triggers = dict((key, body) for key, _, body in parse(self.triggers))
+        nodes = triggers["ywc_dmg_v03_government_appointment_ready"]
+        def eval_nodes(tree, scope, country):
+            for key, op, value in tree:
+                if key == "AND" and not all(eval_nodes([child], scope, country) for child in value): return False
+                if key == "OR" and not any(eval_nodes([child], scope, country) for child in value): return False
+                if key == "NOT" and eval_nodes(value, scope, country): return False
+                if key == "bureaucracy" and not (country["bureaucracy"] >= float(value)): return False
+                if key == "is_owned_by" and scope.get("owner") != country["tag"]: return False
+                if key == "any_scope_state" and not any(eval_nodes(value, state, country) for state in country["states"]): return False
+                if key == "any_scope_pop" and not any(eval_nodes(value, pop, country) for pop in scope["pops"]): return False
+                if key == "pop_has_primary_culture" and scope.get("primary") != (value == "yes"): return False
+                if key == "pop_acceptance" and not (scope.get("acceptance", 0) >= (5 if value == "acceptance_status_5" else 4)): return False
+                if key == "is_pop_type" and scope.get("pop_type") != value: return False
+                if key == "is_employed" and scope.get("employed") != (value == "yes"): return False
+                if key == "workplace" and op == "?=":
+                    if scope.get("workplace") is None or not eval_nodes(value, scope["workplace"], country): return False
+                if key == "is_building_type" and scope.get("building_type") != value: return False
+                if key == "occupancy" and not (scope.get("occupancy", 0) >= float(value)): return False
+                if key == "building_has_goods_shortage" and scope.get("shortage") != (value == "yes"): return False
+            return True
+        def facts(popset):
+            state = {"owner":"DMG", "pops":popset}
+            return {"tag":"DMG", "bureaucracy":0, "states":[state]}
+        def pop(primary=False, acceptance=5, employed=False, workplace=None, pop_type="bureaucrats"):
+            return {"primary":primary, "acceptance":acceptance, "employed":employed, "workplace":workplace, "pop_type":pop_type}
+        admin={"building_type":"building_government_administration", "occupancy":0.8, "shortage":False}
+        self.assertFalse(eval_nodes(nodes, {}, facts([pop(acceptance=5, employed=False), pop(primary=True, employed=True, workplace=admin)])))
+        self.assertFalse(eval_nodes(nodes, {}, facts([pop(acceptance=4, employed=True, workplace=admin)])))
+        self.assertFalse(eval_nodes(nodes, {}, facts([pop(acceptance=5, employed=True, workplace={**admin,"occupancy":0.79})])))
+        self.assertTrue(eval_nodes(nodes, {}, facts([pop(acceptance=5, employed=True, workplace=admin)])))
+
     def test_scripts_use_real_acceptance_and_job_eligibility_checks(self):
         self.assertIn("any_scope_pop", self.triggers)
         self.assertIn("pop_acceptance", self.triggers)
         self.assertIn("acceptance_status_2", self.triggers)
-        self.assertIn("any_scope_building", self.triggers)
+        self.assertIn("workplace ?=", self.triggers)
         self.assertIn("building_government_administration", self.triggers)
-        self.assertIn("building_barracks", self.triggers)
+        self.assertIn("building_barrack", self.triggers)
+        self.assertNotIn("building_barracks", self.triggers)
         self.assertIn("occupancy >= 0.8", self.triggers)
         self.assertIn("building_has_goods_shortage = no", self.triggers)
         # A cohort's acceptance and the presence of occupied jobs remain separate predicates.

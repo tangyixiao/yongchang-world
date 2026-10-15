@@ -1,4 +1,4 @@
-# Local DMG common-subjects helpers. All one-shot flags are checked before payment or counters change.
+﻿# Local DMG common-subjects helpers. All one-shot flags are checked before payment or counters change.
 ywc_dmg_initialize_v03 = {
 	if = { limit = { NOT = { has_variable = ywc_v03_initialized } } set_variable = { name = ywc_v03_initialized value = 1 } }
 	if = { limit = { NOT = { has_variable = ywc_v03_active_arc_count } } set_variable = { name = ywc_v03_active_arc_count value = 0 } }
@@ -81,6 +81,69 @@ ywc_dmg_start_status_route = {
 	ywc_dmg_pay_status_orders_once = yes
 }
 
+ywc_dmg_pay_local_rollout_once = {
+	ywc_dmg_snapshot_costs_once = yes
+	if = {
+		limit = { NOT = { has_variable = ywc_dmg_local_rollout_cost_paid } }
+		add_treasury = { value = var:ywc_dmg_public_registry_cost multiply = -1 }
+		set_variable = { name = ywc_dmg_local_rollout_cost_paid value = 1 }
+	}
+}
+
+ywc_dmg_choose_joint_council = {
+	remove_modifier = ywc_dmg_joint_council
+	remove_modifier = ywc_dmg_noble_guarantee
+	remove_modifier = ywc_dmg_royal_directive
+	ywc_dmg_pay_local_rollout_once = yes
+	set_variable = { name = ywc_dmg_appeal_mechanism value = 1 }
+	add_modifier = { name = ywc_dmg_joint_council months = 24 }
+}
+
+ywc_dmg_choose_noble_guarantee = {
+	remove_modifier = ywc_dmg_joint_council
+	remove_modifier = ywc_dmg_noble_guarantee
+	remove_modifier = ywc_dmg_royal_directive
+	ywc_dmg_pay_local_rollout_once = yes
+	set_variable = { name = ywc_dmg_appeal_mechanism value = 2 }
+	add_modifier = { name = ywc_dmg_noble_guarantee months = 24 }
+}
+
+ywc_dmg_choose_royal_directive = {
+	remove_modifier = ywc_dmg_joint_council
+	remove_modifier = ywc_dmg_noble_guarantee
+	remove_modifier = ywc_dmg_royal_directive
+	ywc_dmg_pay_local_rollout_once = yes
+	set_variable = { name = ywc_dmg_appeal_mechanism value = 3 }
+	add_modifier = { name = ywc_dmg_royal_directive months = 24 }
+}
+
+ywc_dmg_apply_review_consequences = {
+	remove_modifier = ywc_dmg_language_central_forms
+	remove_modifier = ywc_dmg_language_translation
+	remove_modifier = ywc_dmg_language_old_register
+	remove_modifier = ywc_dmg_precedent_central
+	remove_modifier = ywc_dmg_precedent_local_courts
+	remove_modifier = ywc_dmg_precedent_lineage
+	if = {
+		limit = { var:ywc_dmg_public_language_mode = 1 }
+		add_modifier = { name = ywc_dmg_language_central_forms months = 24 }
+	}
+	else_if = {
+		limit = { var:ywc_dmg_public_language_mode = 2 }
+		add_modifier = { name = ywc_dmg_language_translation months = 24 }
+	}
+	else = { add_modifier = { name = ywc_dmg_language_old_register months = 24 } }
+	if = {
+		limit = { var:ywc_dmg_inheritance_precedent = 1 }
+		add_modifier = { name = ywc_dmg_precedent_central months = 24 }
+	}
+	else_if = {
+		limit = { var:ywc_dmg_inheritance_precedent = 2 }
+		add_modifier = { name = ywc_dmg_precedent_local_courts months = 24 }
+	}
+	else = { add_modifier = { name = ywc_dmg_precedent_lineage months = 24 } }
+}
+
 ywc_dmg_record_appointment_actual = {
 	remove_variable = ywc_dmg_appointment_actual
 	if = {
@@ -113,7 +176,7 @@ ywc_dmg_close_as_territorial = {
 		limit = { NOT = { has_variable = ywc_dmg_any_outcome } }
 		set_variable = { name = ywc_dmg_any_outcome value = 1 }
 		if = {
-			limit = { has_variable = ywc_dmg_local_execution var:ywc_dmg_appeal_mechanism > 0 ywc_dmg_v03_has_owned_state = yes }
+			limit = { ywc_dmg_v03_territorial_compact_ready = yes }
 			set_variable = { name = ywc_dmg_outcome_territorial_compact value = 1 }
 			set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_outcome value = 2 }
 		}
@@ -142,6 +205,16 @@ ywc_dmg_close_as_status = {
 	ywc_v03_release_arc_dmg_v03_dmg_common_subjects = yes
 }
 
+ywc_dmg_close_as_limited = {
+	if = {
+		limit = { NOT = { has_variable = ywc_dmg_any_outcome } }
+		set_variable = { name = ywc_dmg_any_outcome value = 1 }
+		set_variable = { name = ywc_dmg_outcome_limited_qualification value = 1 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_outcome value = 5 }
+	}
+	ywc_v03_release_arc_dmg_v03_dmg_common_subjects = yes
+}
+
 ywc_dmg_close_as_breach = {
 	if = {
 		limit = { NOT = { has_variable = ywc_dmg_any_outcome } }
@@ -151,6 +224,34 @@ ywc_dmg_close_as_breach = {
 		set_variable = { name = ywc_dmg_arc_abandoned value = 1 }
 	}
 	ywc_v03_release_arc_dmg_v03_dmg_common_subjects = yes
+}
+
+ywc_v03_bridge_dmg_compact_one = {
+	if = {
+		limit = { NOT = { has_variable = ywc_campaign_dmg_c1_outcome } }
+		if = {
+			limit = { var:ywc_v03_dmg_v03_dmg_common_subjects_outcome = 1 }
+			set_variable = { name = ywc_campaign_dmg_c1_outcome value = 1 }
+			set_variable = { name = ywc_je_flavor_dmg_compact_1_resolved value = 1 }
+		}
+		else_if = {
+			limit = { OR = { var:ywc_v03_dmg_v03_dmg_common_subjects_outcome = 2 var:ywc_v03_dmg_v03_dmg_common_subjects_outcome = 3 } }
+			set_variable = { name = ywc_campaign_dmg_c1_outcome value = 2 }
+			set_variable = { name = ywc_je_flavor_dmg_compact_1_resolved value = 1 }
+		}
+		else = {
+			set_variable = { name = ywc_campaign_dmg_c1_outcome value = 3 }
+			set_variable = { name = ywc_je_flavor_dmg_compact_1_failed value = 1 }
+		}
+	}
+	if = {
+		limit = {
+			NOT = { has_journal_entry = ywc_je_flavor_dmg_compact_2 }
+			NOT = { has_variable = ywc_je_flavor_dmg_compact_2_resolved }
+			NOT = { has_variable = ywc_je_flavor_dmg_compact_2_failed }
+		}
+		add_journal_entry = { type = ywc_je_flavor_dmg_compact_2 }
+	}
 }
 
 ywc_v03_release_arc_dmg_v03_dmg_common_subjects = {
@@ -165,5 +266,6 @@ ywc_v03_release_arc_dmg_v03_dmg_common_subjects = {
 		change_variable = { name = ywc_v03_visible_task_count add = -1 }
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		ywc_v03_bridge_dmg_compact_one = yes
 	}
 }

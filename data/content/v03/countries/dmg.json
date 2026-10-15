@@ -28,7 +28,7 @@
             "en": "Six months is the minimum continuous period with eligibility, staffed posts and local execution all in place. If conditions are short, wait and address them; the shared delivery queue is not a failure. The twelve-month notice appears only for a real route-specific shortfall; month thirty-six offers limited settlement or withdrawal. The shared 90-day cooldown means the ten sequential main events take at least about 27 months after the first event."
           },
           "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_dmg_v03_unsettled = yes ywc_dmg_v03_has_owned_state = yes } immediate = { ywc_dmg_open_common_subjects_once = yes set_variable = { name = ywc_dmg_pending_event value = 1000 } } on_fail = { ywc_dmg_close_as_breach = yes } on_monthly_pulse = { effect = { if = { limit = { has_variable = ywc_dmg_first_stage_ready_once NOT = { has_variable = ywc_dmg_first_stage_due } ywc_dmg_v03_selected_route_ready = yes NOT = { has_variable = ywc_dmg_first_stage_matured } } set_variable = { name = ywc_dmg_first_stage_matured value = 1 } } if = { limit = { ywc_dmg_v03_selected_route_ready = yes NOT = { has_variable = ywc_dmg_first_stage_due } NOT = { has_variable = ywc_dmg_first_stage_resolved } NOT = { has_variable = ywc_dmg_first_stage_matured } } set_variable = { name = ywc_dmg_first_stage_due value = 1 months = 6 } set_variable = { name = ywc_dmg_first_stage_ready_once value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_selected_route_ready = yes } } remove_variable = ywc_dmg_first_stage_due remove_variable = ywc_dmg_first_stage_ready_once remove_variable = ywc_dmg_first_stage_matured if = { limit = { NOT = { has_variable = ywc_dmg_delay_notice } NOT = { has_variable = ywc_dmg_final_deadline_notice } var:ywc_dmg_pending_event = 1006 } remove_variable = ywc_dmg_pending_event } } if = { limit = { NOT = { has_variable = ywc_dmg_first_stage_resolved } OR = { has_variable = ywc_dmg_first_stage_matured has_variable = ywc_dmg_delay_notice has_variable = ywc_dmg_final_deadline_notice } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_pending_event value = 1006 } } if = { limit = { NOT = { has_variable = ywc_dmg_blocked_12_due } NOT = { ywc_dmg_v03_selected_route_ready = yes } NOT = { has_variable = ywc_dmg_delay_notice } } set_variable = { name = ywc_dmg_delay_notice value = 1 } } if = { limit = { has_variable = ywc_dmg_delay_notice NOT = { has_variable = ywc_dmg_first_stage_resolved } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_pending_event value = 1006 } } if = { limit = { NOT = { has_variable = ywc_dmg_blocked_36_due } NOT = { has_variable = ywc_dmg_first_stage_resolved } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_final_deadline_notice value = 1 } set_variable = { name = ywc_dmg_pending_event value = 1006 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1000 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1000 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1001 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1001 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1002 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1002 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1003 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1003 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1004 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1004 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1005 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1006 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1006 } } } } }",
-          "goal": "{ has_variable = ywc_dmg_first_stage_resolved OR has_variable = ywc_dmg_outcome_withdrawn_breach }",
+          "goal": "{ OR = { has_variable = ywc_dmg_first_stage_resolved has_variable = ywc_dmg_outcome_withdrawn_breach } }",
           "exit_conditions": "{ has_variable = ywc_dmg_arc_abandoned }"
         },
         {
@@ -297,7 +297,7 @@
           },
           "desc": {
             "zh": "地方契约须说明谁能代表村社。混合听证、贵族担保或王命直下各自改变地方执行和申诉；无选举法时只能写听证或公职联署。",
-            "en": "A local compact must say who speaks for the village. Mixed hearings, noble guarantees and direct royal orders change local execution and appeals. Without election law, record hearings or official countersignatures."
+            "en": "Choose one appeal institution: each costs a further estimated week of gross income (minimum 100) and changes legitimacy, authority or bureaucracy for 24 months. The later local execution review checks an actually employed secondary-culture worker, staffed and supplied administration, the inheritance rule, the public-language rule and this institution. A crown may use joint hearings without election law."
           },
           "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_public_qualification ywc_dmg_v03_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 4 } }",
@@ -308,15 +308,15 @@
                 "zh": "付费混合听证与申诉簿",
                 "en": "Fund a mixed hearing and appeal roll"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_appeal_mechanism value = 1 }\nset_variable = { name = ywc_dmg_local_execution value = 1 } if = { limit = { ywc_dmg_v03_has_elected_representation = yes } set_variable = { name = ywc_dmg_political_procedure value = 1 } } else = { set_variable = { name = ywc_dmg_political_procedure value = 2 } }\nset_variable = { name = ywc_dmg_stage_4 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1004 } }",
+              "effect": "{ ywc_dmg_choose_joint_council = yes\nset_variable = { name = ywc_dmg_stage_4 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1004 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "继续占用登记与行政预算。",
-                "en": "Uses the registry and administrative budget."
+                "zh": "另扣一周估算年总收入（年总收入÷52），最低100。",
+                "en": "One additional week of gross income (yearly gross income / 52), minimum 100."
               },
               "consequence_note": {
-                "zh": "无选举法时是咨询听证，不是普选。",
-                "en": "A hearing is consultative where no election law applies."
+                "zh": "共同听审每两年增加文书负担，换取少量正当性。",
+                "en": "Consultative hearing; costs bureaucracy while it improves legitimacy."
               }
             },
             {
@@ -325,15 +325,15 @@
                 "zh": "贵族担保，保地方权但范围窄",
                 "en": "Use a noble guarantee with narrow jurisdiction"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_appeal_mechanism value = 2 }\nset_variable = { name = ywc_dmg_local_execution value = 1 } if = { limit = { ywc_dmg_v03_has_elected_representation = yes } set_variable = { name = ywc_dmg_political_procedure value = 1 } } else = { set_variable = { name = ywc_dmg_political_procedure value = 2 } }\nset_variable = { name = ywc_dmg_stage_4 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1004 } }",
+              "effect": "{ ywc_dmg_choose_noble_guarantee = yes\nset_variable = { name = ywc_dmg_stage_4 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1004 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "保留地方授权责任，不付现金补偿。",
-                "en": "No new cash grant."
+                "zh": "另扣一周估算年总收入（年总收入÷52），最低100。",
+                "en": "One additional week of gross income (yearly gross income / 52), minimum 100."
               },
               "consequence_note": {
-                "zh": "保护地方权利但未必提供个人申诉。",
-                "en": "Protects local rights, but individual appeals may remain limited."
+                "zh": "贵族担保每两年占用权威，并提高正当性。",
+                "en": "Protects local rights, but costs authority while raising legitimacy."
               }
             },
             {
@@ -342,32 +342,31 @@
                 "zh": "王命直下，承担地方对立",
                 "en": "Issue a royal order and accept local resistance"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_appeal_mechanism value = 3 }\nset_variable = { name = ywc_dmg_local_execution value = 2 }\nset_variable = { name = ywc_dmg_stage_4 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1004 } }",
+              "effect": "{ ywc_dmg_choose_royal_directive = yes\nset_variable = { name = ywc_dmg_stage_4 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1004 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "无新增款项；实际服从受政治与行政能力约束。",
-                "en": "No new cash grant."
+                "zh": "另扣一周估算年总收入（年总收入÷52），最低100。",
+                "en": "One additional week of gross income (yearly gross income / 52), minimum 100."
               },
               "consequence_note": {
-                "zh": "扩大王命同时承担地方对立。",
-                "en": "Expands royal orders and accepts local opposition."
+                "zh": "王命每两年降低正当性，保留行政能力。",
+                "en": "Expands administrative reach while reducing legitimacy."
               }
             }
           ],
           "purpose": {
             "zh": "记录谁执行地方契约并提供申诉。",
-            "en": "Record local execution and appeal arrangements."
+            "en": "A choice of local appeal institution with a one-week-income cost and a 24-month political or administrative tradeoff."
           },
           "reads": [
             "ywc_dmg_appeal_mechanism",
-            "ywc_dmg_v03_has_elected_representation"
+            "ywc_dmg_public_registry_cost"
           ],
           "writes": [
             "ywc_dmg_appeal_mechanism",
-            "ywc_dmg_local_execution",
-            "ywc_dmg_stage_4",
+            "ywc_dmg_local_rollout_cost_paid",
             "ywc_dmg_pending_event",
-            "ywc_dmg_political_procedure"
+            "ywc_dmg_stage_4"
           ]
         },
         {
@@ -537,8 +536,8 @@
             "en": "The First Joint Appointment"
           },
           "desc": {
-            "zh": "至少六个月的连续落实期已到；若主线场景排队较久，结果等下一次事件窗口，不据此判失败。十二个月提示只在所选路线的法律、实际岗位、地方执行或财政条件仍不足时出现。共同资格须分项核验当前公民法、非主流人口 acceptance、官署/营房在岗和行政不赤字；这些检查不证明同一群体任职。三十六月允许有限结算或撤回。",
-            "en": "The minimum six-month continuous implementation period has elapsed; if scenes are queued, the result waits for the next event window and is not treated as failure. A twelve-month notice appears only when the selected route still lacks legal, staffing, local-execution or fiscal conditions. Common eligibility separately checks current citizenship law, acceptance among non-primary pops, staffed administration or barracks, and non-negative bureaucracy; these checks do not prove the same group holds those jobs. At month thirty-six, choose limited settlement or withdrawal."
+            "zh": "至少六个月的连续路线条件已经满足。共同资格要求完全接纳（第5档），并在同一人口范围确认非主流群体实际受雇为官僚或军人，工作地点是有足够就业且无短缺的行政机构或军营。地方路线另要求次要文化人口实际在有足够就业、无短缺的行政机构工作。事件排队只等待90日门控后的投递窗口，不算改革受阻。十二个月提示只针对真实路线缺口；三十六月提供有限结算或撤回。",
+            "en": "The minimum six-month continuous readiness period has elapsed. Common eligibility requires full acceptance (tier 5) and the same non-primary group actually employed as bureaucrats or military staff in a staffed, supplied administration or barrack; acceptance and jobs are linked in one pop scope. The local route separately requires an actually employed secondary-culture pop at a staffed administration. Queued results wait for the next 90-day event window and are not failure. A twelve-month notice requires a real route gap; month thirty-six offers limited settlement or withdrawal."
           },
           "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_public_qualification ywc_dmg_v03_unsettled = yes OR = { AND = { has_variable = ywc_dmg_first_stage_matured } has_variable = ywc_dmg_delay_notice has_variable = ywc_dmg_final_deadline_notice } }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 7 } }",
@@ -566,7 +565,7 @@
                 "zh": "确认地方联署与申诉",
                 "en": "Confirm local countersignature and appeals"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_first_stage_resolved value = 1 }\nif = { limit = { has_variable = ywc_dmg_local_execution var:ywc_dmg_appeal_mechanism > 0 } set_variable = { name = ywc_dmg_first_stage_outcome value = 2 } set_variable = { name = ywc_dmg_public_qualification_resolved value = 1 } }\nelse = { set_variable = { name = ywc_dmg_first_stage_outcome value = 5 } }\nadd_journal_entry = { type = ywc_je_v03_dmg_compact_review }\nset_variable = { name = ywc_dmg_pending_event value = 1007 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_first_stage_resolved value = 1 }\nif = { limit = { var:ywc_dmg_appeal_mechanism > 0 } set_variable = { name = ywc_dmg_first_stage_outcome value = 2 } set_variable = { name = ywc_dmg_public_qualification_resolved value = 1 } }\nelse = { set_variable = { name = ywc_dmg_first_stage_outcome value = 5 } }\nadd_journal_entry = { type = ywc_je_v03_dmg_compact_review }\nset_variable = { name = ywc_dmg_pending_event value = 1007 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "地方持续承担联署和复核。",
@@ -625,7 +624,7 @@
           },
           "desc": {
             "zh": "外部边界仍在时核对边防与税吏是否重复发令；边界消失或领土缩小时转为境内官署管辖重叠。此事件不制造战争或授予马尼拉。",
-            "en": "If the external frontier remains, check duplicate orders from border forces and tax clerks. If it disappeared or territory shrank, review overlapping domestic offices. This event creates no war and grants no Manila."
+            "en": "A local compact is an execution claim, not a signed plan. One of three matched bundles of appeal institution, inheritance precedent, public language and country capacity can authorize the corresponding staffed-office order. The fourth option records an execution gap; it never claims local implementation."
           },
           "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_compact_review ywc_dmg_v03_unsettled = yes has_variable = ywc_dmg_first_stage_resolved }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 8 } }",
@@ -636,7 +635,7 @@
                 "zh": "指定单一发令机关",
                 "en": "Assign one office to issue orders"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 1 } set_variable = { name = ywc_dmg_boundary_authority value = 1 } set_variable = { name = ywc_dmg_stage_8 value = 1 }\nset_variable = { name = ywc_dmg_pending_event value = 1008 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 1 } set_variable = { name = ywc_dmg_boundary_authority value = 1 } set_variable = { name = ywc_dmg_stage_8 value = 1 } set_variable = { name = ywc_dmg_pending_event value = 1008 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "费用不因重复事件重复收取。",
@@ -645,7 +644,8 @@
               "consequence_note": {
                 "zh": "只结算该项承诺，不自动改变法律或人口。",
                 "en": "If the border is gone, this becomes domestic jurisdiction."
-              }
+              },
+              "trigger": "{ AND = { var:ywc_dmg_appeal_mechanism = 1 var:ywc_dmg_inheritance_precedent = 1 var:ywc_dmg_public_language_mode = 1 legitimacy >= 25 ywc_dmg_v03_secondary_local_office_ready = yes } }"
             },
             {
               "key": "second",
@@ -653,7 +653,7 @@
                 "zh": "地方联署，保留双重辖区",
                 "en": "Require local countersignature"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 2 } set_variable = { name = ywc_dmg_boundary_authority value = 2 } set_variable = { name = ywc_dmg_territorial_orders value = 2 } set_variable = { name = ywc_dmg_stage_8 value = 2 }\nset_variable = { name = ywc_dmg_pending_event value = 1008 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 2 } set_variable = { name = ywc_dmg_boundary_authority value = 2 } set_variable = { name = ywc_dmg_stage_8 value = 2 } set_variable = { name = ywc_dmg_pending_event value = 1008 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "保留已支付费用，继续承担地方核验。",
@@ -662,7 +662,8 @@
               "consequence_note": {
                 "zh": "跨区例外和下一代争议继续存在。",
                 "en": "Keeps duplicated jurisdictions and their paperwork."
-              }
+              },
+              "trigger": "{ AND = { var:ywc_dmg_appeal_mechanism = 2 var:ywc_dmg_inheritance_precedent = 2 var:ywc_dmg_public_language_mode = 2 bureaucracy >= 0 net_fixed_income >= 0 ywc_dmg_v03_secondary_local_office_ready = yes } }"
             },
             {
               "key": "third",
@@ -670,7 +671,7 @@
                 "zh": "保留双轨命令并限权",
                 "en": "Keep dual orders but limit jurisdiction"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 3 } set_variable = { name = ywc_dmg_boundary_authority value = 3 } set_variable = { name = ywc_dmg_territorial_orders value = 3 } set_variable = { name = ywc_dmg_stage_8 value = 3 }\nset_variable = { name = ywc_dmg_pending_event value = 1008 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 3 } set_variable = { name = ywc_dmg_boundary_authority value = 3 } set_variable = { name = ywc_dmg_stage_8 value = 3 } set_variable = { name = ywc_dmg_pending_event value = 1008 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "保留旧身份行政成本，不重复收费。",
@@ -679,22 +680,43 @@
               "consequence_note": {
                 "zh": "旧资格清楚列明，新人待遇留待申诉。",
                 "en": "Retains divided authority for later renegotiation."
+              },
+              "trigger": "{ AND = { var:ywc_dmg_appeal_mechanism = 3 var:ywc_dmg_inheritance_precedent = 3 var:ywc_dmg_public_language_mode = 3 authority >= 50 ywc_dmg_v03_secondary_local_office_ready = yes } }"
+            },
+            {
+              "key": "record_gap",
+              "label": {
+                "zh": "記錄未能落地；保留有限安排",
+                "en": "Record the execution gap and keep a limited arrangement"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_territorial_orders value = 4 } set_variable = { name = ywc_dmg_stage_8 value = 4 } set_variable = { name = ywc_dmg_pending_event value = 1008 } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不追加執行費用。",
+                "en": "No additional rollout charge."
+              },
+              "consequence_note": {
+                "zh": "明記地方職位或政治條件不足，不宣稱契約已執行。",
+                "en": "Records missing posts or political capacity without claiming implementation."
               }
             }
           ],
           "purpose": {
             "zh": "保留外部边界或境内权限旁路。",
-            "en": "Keep either the external-frontier or domestic-jurisdiction variant."
+            "en": "A matching local order is authorized only when the selected inheritance and language rules, actual office employment and country capacity agree."
           },
           "reads": [
             "ywc_dmg_first_stage_resolved",
+            "ywc_dmg_inheritance_precedent",
+            "ywc_dmg_local_rollout_cost_paid",
+            "ywc_dmg_public_language_mode",
             "ywc_dmg_v03_has_owned_state"
           ],
           "writes": [
-            "ywc_dmg_territorial_orders",
-            "ywc_dmg_stage_8",
+            "ywc_dmg_boundary_authority",
             "ywc_dmg_pending_event",
-            "ywc_dmg_boundary_authority"
+            "ywc_dmg_stage_8",
+            "ywc_dmg_territorial_orders"
           ]
         },
         {
@@ -705,7 +727,7 @@
           },
           "desc": {
             "zh": "按当前权力分配法审查代表。现行法允许选举时核资格；专制或寡头时期检查公职与共同任命章程，不虚构议会选票。 acceptance、空岗、财政不足分别呈现。",
-            "en": "Review representation under current power-distribution law. Check voting eligibility where election laws apply; under autocracy or oligarchy, review public-office and joint-appointment charters instead of inventing parliamentary ballots. Acceptance, vacancies and fiscal shortfalls remain distinct."
+            "en": "The nine-month review is due. Each non-withdrawal audit applies a 24-month consequence based on the chosen inheritance and public-language rules. Twelve-month notices still require a real route gap; event queues do not count. At month thirty-six, limited settlement or withdrawal remains available."
           },
           "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_compact_review ywc_dmg_v03_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 9 } }",
@@ -716,7 +738,7 @@
                 "zh": "修补资格、申诉与公职空缺",
                 "en": "Repair qualifications and appeal access"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_review_findings value = 1 } if = { limit = { var:ywc_dmg_first_stage_outcome = 1 } set_variable = { name = ywc_dmg_review_class value = 1 } } else_if = { limit = { var:ywc_dmg_first_stage_outcome = 2 } set_variable = { name = ywc_dmg_review_class value = 2 } } else = { set_variable = { name = ywc_dmg_review_class value = 3 } } if = { limit = { ywc_dmg_v03_has_elected_representation = yes } set_variable = { name = ywc_dmg_political_procedure value = 1 } } else = { set_variable = { name = ywc_dmg_political_procedure value = 2 } } set_variable = { name = ywc_dmg_stage_9 value = 1 } set_variable = { name = ywc_dmg_pending_event value = 1009 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_review_findings value = 1 } if = { limit = { var:ywc_dmg_first_stage_outcome = 1 } set_variable = { name = ywc_dmg_review_class value = 1 } } else_if = { limit = { var:ywc_dmg_first_stage_outcome = 2 } set_variable = { name = ywc_dmg_review_class value = 2 } } else = { set_variable = { name = ywc_dmg_review_class value = 3 } } set_variable = { name = ywc_dmg_stage_9 value = 1 } ywc_dmg_apply_review_consequences = yes\nset_variable = { name = ywc_dmg_pending_event value = 1009 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "费用不因重复事件重复收取。",
@@ -733,7 +755,7 @@
                 "zh": "承认地区例外并公布复核对象",
                 "en": "Recognize local exceptions and publish review rights"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_review_findings value = 2 } if = { limit = { var:ywc_dmg_first_stage_outcome = 1 } set_variable = { name = ywc_dmg_review_class value = 1 } } else_if = { limit = { var:ywc_dmg_first_stage_outcome = 2 } set_variable = { name = ywc_dmg_review_class value = 2 } } else = { set_variable = { name = ywc_dmg_review_class value = 3 } } if = { limit = { ywc_dmg_v03_has_elected_representation = yes } set_variable = { name = ywc_dmg_political_procedure value = 1 } } else = { set_variable = { name = ywc_dmg_political_procedure value = 2 } } set_variable = { name = ywc_dmg_stage_9 value = 2 } set_variable = { name = ywc_dmg_pending_event value = 1009 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_review_findings value = 2 } if = { limit = { var:ywc_dmg_first_stage_outcome = 1 } set_variable = { name = ywc_dmg_review_class value = 1 } } else_if = { limit = { var:ywc_dmg_first_stage_outcome = 2 } set_variable = { name = ywc_dmg_review_class value = 2 } } else = { set_variable = { name = ywc_dmg_review_class value = 3 } } set_variable = { name = ywc_dmg_stage_9 value = 2 } ywc_dmg_apply_review_consequences = yes\nset_variable = { name = ywc_dmg_pending_event value = 1009 } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "保留已支付费用，继续承担地方核验。",
@@ -750,7 +772,7 @@
                 "zh": "撤回共同承诺并承担失信",
                 "en": "Withdraw the common promise and accept breach"
               },
-              "effect": "{ set_variable = { name = ywc_dmg_review_findings value = 3 } if = { limit = { var:ywc_dmg_first_stage_outcome = 1 } set_variable = { name = ywc_dmg_review_class value = 1 } } else_if = { limit = { var:ywc_dmg_first_stage_outcome = 2 } set_variable = { name = ywc_dmg_review_class value = 2 } } else = { set_variable = { name = ywc_dmg_review_class value = 3 } } if = { limit = { ywc_dmg_v03_has_elected_representation = yes } set_variable = { name = ywc_dmg_political_procedure value = 1 } } else = { set_variable = { name = ywc_dmg_political_procedure value = 2 } } set_variable = { name = ywc_dmg_stage_9 value = 3 } set_variable = { name = ywc_dmg_pending_event value = 1009 } }",
+              "effect": "{ set_variable = { name = ywc_dmg_review_findings value = 3 } set_variable = { name = ywc_dmg_stage_9 value = 3 } ywc_dmg_close_as_breach = yes }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "保留旧身份行政成本，不重复收费。",
@@ -764,21 +786,19 @@
           ],
           "purpose": {
             "zh": "按当前政治制度审查实际代表。",
-            "en": "Review representation under the current political system."
+            "en": "Audit the two real downstream policy choices or immediately withdraw as breach."
           },
           "reads": [
             "ywc_dmg_v03_has_low_acceptance_pop",
             "ywc_dmg_v03_any_real_appointment_ready",
-            "ywc_dmg_v03_has_elected_representation",
-            "ywc_dmg_first_stage_outcome",
-            "ywc_dmg_political_procedure"
+            "ywc_dmg_first_stage_outcome"
           ],
           "writes": [
-            "ywc_dmg_review_findings",
-            "ywc_dmg_stage_9",
+            "ywc_dmg_outcome_withdrawn_breach",
             "ywc_dmg_pending_event",
             "ywc_dmg_review_class",
-            "ywc_dmg_political_procedure"
+            "ywc_dmg_review_findings",
+            "ywc_dmg_stage_9"
           ]
         },
         {
@@ -789,7 +809,7 @@
           },
           "desc": {
             "zh": "九个月审查到期；十二个月提示延误，三十六个月必须收束。按实际接受度、法律、就业、地方执行和预算分别确认；失地不抹除已付款项。",
-            "en": "The nine-month review is due; a delay notice comes at twelve months and the arc closes by month thirty-six. Verify acceptance, law, jobs, local execution and budget separately. Lost territory does not erase prior payments."
+            "en": "Success choices appear only when their current legal, group-employment, building, administrative and payment conditions hold. Limited settlement and withdrawal remain available in every case. Withdrawal closes as breach immediately, preserves payments, and cannot be overwritten."
           },
           "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_compact_review ywc_dmg_v03_unsettled = yes has_variable = ywc_dmg_review_findings NOT = { has_variable = ywc_dmg_review_due } }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 10 } }",
@@ -809,7 +829,8 @@
               "consequence_note": {
                 "zh": "不满足真实条件时只记有限资格。",
                 "en": "Limited result is recorded if real conditions are short."
-              }
+              },
+              "trigger": "{ AND = { var:ywc_dmg_route = 1 ywc_dmg_v03_common_route_ready = yes } }"
             },
             {
               "key": "territorial_compact",
@@ -826,7 +847,8 @@
               "consequence_note": {
                 "zh": "跨区资格留待以后重谈。",
                 "en": "Does not claim universal equality."
-              }
+              },
+              "trigger": "{ AND = { var:ywc_dmg_route = 2 ywc_dmg_v03_territorial_compact_ready = yes } }"
             },
             {
               "key": "status_orders",
@@ -843,12 +865,47 @@
               "consequence_note": {
                 "zh": "保守延续可行，新居民权利继续成为议题。",
                 "en": "Conservative continuity remains open to later reform."
+              },
+              "trigger": "{ AND = { var:ywc_dmg_route = 3 has_variable = ywc_dmg_status_orders_cost_paid } }"
+            },
+            {
+              "key": "limited_settlement",
+              "label": {
+                "zh": "记录有限资格与待补职位",
+                "en": "Record limited eligibility and vacancies"
+              },
+              "effect": "{ ywc_dmg_close_as_limited = yes }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不再追加费用；保留已支付的公共登记、地方执行与身份命令费用。",
+                "en": "No further charge; prior registry, rollout and status-order payments remain spent."
+              },
+              "consequence_note": {
+                "zh": "职位、接受度或地方执行条件不足时只记录有限安排。",
+                "en": "When jobs, acceptance or local execution fall short, this records a limited arrangement only."
+              }
+            },
+            {
+              "key": "withdraw_breach",
+              "label": {
+                "zh": "撤回承诺并承担失信",
+                "en": "Withdraw and accept breach"
+              },
+              "effect": "{ ywc_dmg_close_as_breach = yes }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不再追加费用；先前付款不退。",
+                "en": "No further charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "直接落失信结局，保留已支付标志，不可被后续选项改写。",
+                "en": "Closes directly as breach; paid flags remain and no later choice can overwrite it."
               }
             }
           ],
           "purpose": {
             "zh": "保存可供后续第二代内容读取的结局。",
-            "en": "Store results for later-generation content."
+            "en": "Gate each success by real script conditions while retaining guaranteed limited and breach exits."
           },
           "reads": [
             "ywc_dmg_appeal_mechanism",
@@ -859,8 +916,9 @@
           ],
           "writes": [
             "ywc_dmg_outcome_common_qualification",
-            "ywc_dmg_outcome_territorial_compact",
+            "ywc_dmg_outcome_limited_qualification",
             "ywc_dmg_outcome_status_orders",
+            "ywc_dmg_outcome_territorial_compact",
             "ywc_dmg_outcome_withdrawn_breach",
             "ywc_v03_dmg_v03_dmg_common_subjects_outcome"
           ]
