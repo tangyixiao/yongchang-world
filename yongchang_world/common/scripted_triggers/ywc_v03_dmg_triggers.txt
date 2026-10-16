@@ -1,0 +1,198 @@
+﻿# DMG-local v0.3 conditions for the common-subjects card.
+ywc_dmg_v03_has_owned_state = {
+	any_scope_state = { is_owned_by = ROOT }
+}
+
+ywc_dmg_v03_has_multiple_identity_groups = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = { pop_has_primary_culture = no }
+	}
+}
+
+ywc_dmg_v03_has_low_acceptance_pop = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance <= acceptance_status_2
+		}
+	}
+}
+
+# Acceptance tier 5 is full acceptance (80); tier 4 is second-rate citizenship (60).
+ywc_dmg_v03_has_fully_accepted_secondary_pop = {
+	OR = {
+		has_law_or_variant = law_type:law_subjecthood
+		has_law_or_variant = law_type:law_national_supremacy
+		has_law_or_variant = law_type:law_racial_segregation
+		has_law_or_variant = law_type:law_cultural_exclusion
+		has_law_or_variant = law_type:law_multicultural
+	}
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_5
+		}
+	}
+}
+
+# Tie the accepted secondary-culture cohort to a real job in the checked building.
+ywc_dmg_v03_government_appointment_ready = {
+	bureaucracy >= 0
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_5
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_government_administration
+				occupancy >= 0.8
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+ywc_dmg_v03_military_appointment_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_5
+			OR = { is_pop_type = soldiers is_pop_type = officers }
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_barrack
+				occupancy >= 0.8
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+# Elections use current profession and citizenship voting rules; monarchies
+# without a franchise require a real public appointment under the joint charter.
+ywc_dmg_v03_electoral_representative_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			pop_acceptance >= acceptance_status_5
+			is_employed = yes
+			wealth >= ROOT.modifier:country_voting_power_wealth_threshold_add
+			OR = {
+				AND = {
+					is_pop_type = bureaucrats
+					workplace ?= { is_building_type = building_government_administration }
+					OR = {
+						ROOT.modifier:country_voting_power_base_add > 0
+						ROOT.modifier:country_bureaucrats_voting_power_add > 0
+						AND = {
+							ROOT.modifier:country_voting_power_from_literacy_add > 0
+							literacy_rate > 0
+						}
+					}
+				}
+				AND = {
+					is_pop_type = officers
+					workplace ?= { is_building_type = building_barrack }
+					OR = {
+						ROOT.modifier:country_voting_power_base_add > 0
+						ROOT.modifier:country_officers_voting_power_add > 0
+						AND = {
+							ROOT.modifier:country_voting_power_from_literacy_add > 0
+							literacy_rate > 0
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+ywc_dmg_v03_common_political_qualification_ready = {
+	OR = {
+		AND = {
+			country_has_voting_franchise = yes
+			modifier:country_allow_voting_full_acceptance_bool = yes
+			ywc_dmg_v03_electoral_representative_ready = yes
+		}
+		AND = {
+			country_has_voting_franchise = no
+			ywc_dmg_v03_government_appointment_ready = yes
+			var:ywc_dmg_appeal_mechanism = 1
+		}
+	}
+}
+
+ywc_dmg_v03_any_real_appointment_ready = {
+	OR = {
+		ywc_dmg_v03_government_appointment_ready = yes
+		ywc_dmg_v03_military_appointment_ready = yes
+	}
+}
+
+ywc_dmg_v03_common_route_ready = {
+	ywc_dmg_v03_has_fully_accepted_secondary_pop = yes
+	ywc_dmg_v03_any_real_appointment_ready = yes
+	has_variable = ywc_dmg_public_registry_paid
+	has_variable = ywc_dmg_service_qualification
+	var:ywc_dmg_service_qualification < 3
+	ywc_dmg_v03_common_political_qualification_ready = yes
+	bureaucracy >= 0
+}
+
+# A local compact needs an actual secondary-culture employee at a staffed,
+# supplied administration and choices whose material and political terms match.
+ywc_dmg_v03_secondary_local_office_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_pop = {
+			pop_has_primary_culture = no
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_government_administration
+				occupancy >= 0.8
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+ywc_dmg_v03_territorial_capacity_ready = {
+	ywc_dmg_v03_has_owned_state = yes
+	ywc_dmg_v03_secondary_local_office_ready = yes
+	has_variable = ywc_dmg_public_registry_paid
+	has_variable = ywc_dmg_local_rollout_cost_paid
+	OR = {
+		AND = { var:ywc_dmg_appeal_mechanism = 1 var:ywc_dmg_inheritance_precedent = 1 var:ywc_dmg_public_language_mode = 1 legitimacy >= 25 }
+		AND = { var:ywc_dmg_appeal_mechanism = 2 var:ywc_dmg_inheritance_precedent = 2 var:ywc_dmg_public_language_mode = 2 bureaucracy >= 0 net_fixed_income >= 0 }
+		AND = { var:ywc_dmg_appeal_mechanism = 3 var:ywc_dmg_inheritance_precedent = 3 var:ywc_dmg_public_language_mode = 3 authority >= 50 }
+	}
+}
+
+ywc_dmg_v03_territorial_compact_ready = {
+	ywc_dmg_v03_territorial_capacity_ready = yes
+	OR = {
+		AND = { var:ywc_dmg_territorial_orders = 1 var:ywc_dmg_appeal_mechanism = 1 }
+		AND = { var:ywc_dmg_territorial_orders = 2 var:ywc_dmg_appeal_mechanism = 2 }
+		AND = { var:ywc_dmg_territorial_orders = 3 var:ywc_dmg_appeal_mechanism = 3 }
+	}
+}
+
+ywc_dmg_v03_selected_route_ready = {
+	OR = {
+		AND = { var:ywc_dmg_route = 1 ywc_dmg_v03_common_route_ready = yes }
+		AND = { var:ywc_dmg_route = 2 ywc_dmg_v03_territorial_capacity_ready = yes }
+		AND = { var:ywc_dmg_route = 3 has_variable = ywc_dmg_public_registry_paid has_variable = ywc_dmg_status_orders_cost_paid }
+	}
+}
+
+ywc_dmg_v03_unsettled = {
+	NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled }
+}

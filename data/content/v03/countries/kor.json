@@ -1,0 +1,979 @@
+{
+  "key": "country_kor",
+  "layer": "country",
+  "runtime_tags": [
+    "KOR"
+  ],
+  "arcs": [
+    {
+      "slug": "v03_kor_military_accounts",
+      "era": "foundation",
+      "participants": [
+        "朝鲜王廷与军门",
+        "各道官署和报账人",
+        "服役者家庭",
+        "士林与官学",
+        "港市工匠及有条件的外来教官"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_kor_military_audit",
+          "title": {
+            "zh": "点清军额与军粮",
+            "en": "Audit the Muster and Supply"
+          },
+          "desc": {
+            "zh": "选择王廷常备、各道分担或限额旧军。通过逐月真实状态检查连续观察六个月；坏月立刻清除计时。持续受阻12个月提示，36个月提供退出。无军队可用有岗官署继续有限边警。",
+            "en": "Choose court supply, provincial shares or capped legacy forces. Monthly real-state checks must pass continuously for six months; a failed month clears the timer. Show a blocked notice after 12 months and offer exit at 36. Without an army, a staffed office can sustain limited border service."
+          },
+          "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } } possible = { c:KOR ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_kor_v03_unsettled = yes ywc_kor_v03_has_owned_state = yes } immediate = { ywc_kor_claim_military_accounts = yes ywc_kor_open_military_accounts_once = yes } on_fail = { ywc_kor_close_as_breach = yes } on_monthly_pulse = { effect = {\n ywc_kor_pay_selected_contracts = yes\n if = { limit = { has_variable = ywc_kor_supply_route NOT = { ywc_kor_v03_route_execution_ready = yes } }\n  remove_variable = ywc_kor_observation_timer remove_variable = ywc_kor_observation_started remove_variable = ywc_kor_six_months_complete set_variable = { name = ywc_kor_ready_supply_months value = 0 }\n  if = { limit = { NOT = { has_variable = ywc_kor_blocked_timer_started } } set_variable = { name = ywc_kor_blocked_timer_started value = 1 } set_variable = { name = ywc_kor_blocked_12_due value = 1 days = 365 } set_variable = { name = ywc_kor_blocked_36_due value = 1 days = 1095 } }\n  if = { limit = { has_variable = ywc_kor_blocked_timer_started NOT = { has_variable = ywc_kor_blocked_12_due } NOT = { has_variable = ywc_kor_blocked_12_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_blocked_12_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1006 } }\n  if = { limit = { has_variable = ywc_kor_blocked_timer_started NOT = { has_variable = ywc_kor_blocked_36_due } NOT = { has_variable = ywc_kor_blocked_36_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_blocked_36_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1006 } }\n }\n if = { limit = { has_variable = ywc_kor_supply_route ywc_kor_v03_route_execution_ready = yes }\n  if = { limit = { has_variable = ywc_kor_observation_started NOT = { has_variable = ywc_kor_observation_timer } } set_variable = { name = ywc_kor_six_months_complete value = 1 } remove_variable = ywc_kor_observation_started }\n  if = { limit = { NOT = { has_variable = ywc_kor_observation_started } NOT = { has_variable = ywc_kor_six_months_complete } } set_variable = { name = ywc_kor_observation_timer value = 1 months = 6 } set_variable = { name = ywc_kor_observation_started value = 1 } }\n  ywc_kor_pay_monthly_supply = yes remove_variable = ywc_kor_blocked_12_due remove_variable = ywc_kor_blocked_36_due remove_variable = ywc_kor_blocked_timer_started\n }\n if = { limit = { has_variable = ywc_kor_intro_complete has_variable = ywc_kor_six_months_complete NOT = { has_variable = ywc_kor_review_event_prompted } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1006 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1000 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1000 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1001 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1001 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1002 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1002 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1003 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1003 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1004 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1004 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1005 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1005 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1006 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1006 } }\n} } }",
+          "goal": "{ OR = { has_variable = ywc_kor_review_complete has_variable = ywc_kor_outcome_withdrawn_breach } }",
+          "exit_conditions": "{ has_variable = ywc_kor_arc_abandoned }"
+        },
+        {
+          "id": "ywc_je_v03_kor_service_settlement",
+          "title": {
+            "zh": "谁来维持新的军门",
+            "en": "Who Will Sustain the New Army Office"
+          },
+          "desc": {
+            "zh": "首轮通过后连续复核九个月；每个好月实际付款，任何坏月清除九个月计时。和平看训练、轮值与采购，战时先保供并可缩限；内政不因属邦化中断。",
+            "en": "After the first review, check nine continuous months. Each passing month requires actual payment; any failed month clears the timer. In peace review training, rotations and procurement; in war prioritize supply and allow narrowing. Subject status does not interrupt domestic work."
+          },
+          "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized has_variable = ywc_kor_review_complete NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } } possible = { c:KOR ?= this has_variable = ywc_kor_review_complete ywc_kor_v03_unsettled = yes } immediate = { set_variable = { name = ywc_kor_pending_event value = 1007 } } on_fail = { ywc_kor_close_as_breach = yes } on_monthly_pulse = { effect = {\n ywc_kor_pay_selected_contracts = yes\n if = { limit = { NOT = { has_variable = ywc_kor_service_review_complete } has_variable = ywc_kor_review_complete NOT = { ywc_kor_v03_route_execution_ready = yes } }\n  remove_variable = ywc_kor_service_timer remove_variable = ywc_kor_service_observation_started remove_variable = ywc_kor_nine_months_complete remove_variable = ywc_kor_service_review_complete set_variable = { name = ywc_kor_service_paid_months value = 0 }\n  if = { limit = { NOT = { has_variable = ywc_kor_service_blocked_timer_started } } set_variable = { name = ywc_kor_service_blocked_timer_started value = 1 } set_variable = { name = ywc_kor_service_blocked_12_due value = 1 days = 365 } set_variable = { name = ywc_kor_service_blocked_36_due value = 1 days = 1095 } }\n  if = { limit = { has_variable = ywc_kor_service_blocked_timer_started NOT = { has_variable = ywc_kor_service_blocked_12_due } NOT = { has_variable = ywc_kor_service_12_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_service_12_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } }\n  if = { limit = { has_variable = ywc_kor_service_blocked_timer_started NOT = { has_variable = ywc_kor_service_blocked_36_due } NOT = { has_variable = ywc_kor_service_36_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_service_36_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } }\n }\n if = { limit = { NOT = { has_variable = ywc_kor_service_review_complete } has_variable = ywc_kor_review_complete ywc_kor_v03_route_execution_ready = yes }\n  if = { limit = { has_variable = ywc_kor_service_observation_started NOT = { has_variable = ywc_kor_service_timer } } set_variable = { name = ywc_kor_nine_months_complete value = 1 } remove_variable = ywc_kor_service_observation_started }\n  if = { limit = { NOT = { has_variable = ywc_kor_service_observation_started } NOT = { has_variable = ywc_kor_nine_months_complete } } set_variable = { name = ywc_kor_service_timer value = 1 months = 9 } set_variable = { name = ywc_kor_service_observation_started value = 1 } }\n  ywc_kor_pay_monthly_supply = yes remove_variable = ywc_kor_service_blocked_12_due remove_variable = ywc_kor_service_blocked_36_due remove_variable = ywc_kor_service_blocked_timer_started\n }\n if = { limit = { has_variable = ywc_kor_nine_months_complete NOT = { has_variable = ywc_kor_service_event_prompted } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1008 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1007 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1007 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1008 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1008 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1009 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1009 } }\n} } }",
+          "goal": "{ has_variable = ywc_kor_any_outcome }",
+          "exit_conditions": "{ has_variable = ywc_kor_arc_abandoned }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_kor.1000",
+          "title": {
+            "zh": "名册上没有的守军",
+            "en": "The Guards Missing from the Roll"
+          },
+          "desc": {
+            "zh": "军门有兵额，却没有列明军粮、军械和轮值由谁持续负担。若没有现役军队，本线改核官署边警与旧军额，不要求扩军。",
+            "en": "The army office has headcounts but no durable account of food, arms or rotations. Without an active army, this line audits office-based border service and legacy quotas without requiring expansion."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_journal_entry = ywc_je_v03_kor_military_audit }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 1 } }",
+          "options": [
+            {
+              "key": "court_supply",
+              "label": {
+                "zh": "王廷常备：统一调度",
+                "en": "Court supply: central command"
+              },
+              "effect": "{ ywc_kor_choose_court_supply = yes if = { limit = { var:ywc_kor_supply_route = 1 } set_variable = { name = ywc_kor_pending_event value = 1001 } }  else = { set_variable = { name = ywc_kor_pending_event value = 1000 } } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "一次核额费为开启时年总收入÷52，最低100；军队日常费用由游戏军费预算承担。",
+                "en": "One-time audit costs opening annual gross income / 52, minimum 100; regular army expenses remain in the game budget."
+              },
+              "consequence_note": {
+                "zh": "换得中央点验权；须维持职业军制、中档以上军饷与合格军营。固定开支最高。",
+                "en": "Gains central inspection; requires professional army law, medium or higher wages and qualifying barracks. Highest recurring cost."
+              },
+              "trigger": "{ army_size > 0 net_fixed_income >= 0 gold_reserves >= var:ywc_kor_weekly_cost }"
+            },
+            {
+              "key": "provincial_share",
+              "label": {
+                "zh": "各道分担：保留报额权",
+                "en": "Provincial shares: retain local returns"
+              },
+              "effect": "{ ywc_kor_choose_provincial_supply = yes if = { limit = { var:ywc_kor_supply_route = 2 } set_variable = { name = ywc_kor_pending_event value = 1001 } }  else = { set_variable = { name = ywc_kor_pending_event value = 1000 } } }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "一次核额费为开启时年总收入÷52，最低100；军队日常费用由游戏军费预算承担。",
+                "en": "One-time audit costs opening annual gross income / 52, minimum 100; regular army expenses remain in the game budget."
+              },
+              "consequence_note": {
+                "zh": "中央月额较低，换取各道持续报账与核销权；军营和军饷条件仍真实核验。",
+                "en": "Lower central allotment in exchange for provincial returns and audit rights; barrack and wage conditions still apply."
+              },
+              "trigger": "{ army_size > 0 net_fixed_income >= 0 gold_reserves >= var:ywc_kor_weekly_cost }"
+            },
+            {
+              "key": "limited_legacy",
+              "label": {
+                "zh": "限额旧军：降低目标",
+                "en": "Capped legacy forces: lower the target"
+              },
+              "effect": "{ ywc_kor_choose_limited_legacy = yes if = { limit = { var:ywc_kor_supply_route = 3 } set_variable = { name = ywc_kor_pending_event value = 1001 } }  else = { set_variable = { name = ywc_kor_pending_event value = 1000 } } }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "一次核额费为开启时年总收入÷52，最低100；不另设月度军粮税。",
+                "en": "One-time audit costs opening annual gross income / 52, minimum 100; no extra monthly military-supply tax is added."
+              },
+              "consequence_note": {
+                "zh": "不强迫扩军或改法；有军队时核验军营，无军队时走有岗且无短缺的官署边警通路。",
+                "en": "No forced expansion or law change; check barracks if an army exists, or use a staffed, supplied office for border service if it does not."
+              },
+              "trigger": "{ net_fixed_income >= 0 gold_reserves >= var:ywc_kor_weekly_cost }"
+            },
+            {
+              "key": "defer_or_withdraw",
+              "label": {
+                "zh": "暂缓核额或结束本次登记",
+                "en": "Defer the audit or end this registration"
+              },
+              "effect": "{ if = { limit = { has_variable = ywc_kor_audit_paid } set_variable = { name = ywc_kor_pending_event value = 1000 } } else = { set_variable = { name = ywc_kor_arc_abandoned value = 1 } ywc_kor_close_as_breach = yes } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "暂缓不再扣费；结束时保留已付审计费。",
+                "en": "Deferral charges nothing further; ending retains any audit fee already paid."
+              },
+              "consequence_note": {
+                "zh": "资金恢复后可重试；结束会记录受挫并释放本国活动名额。",
+                "en": "Retry when funds recover; ending records a setback and releases this country slot."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让三种军制都承担代价，并留下后续会读取的不同权责。",
+            "en": "Give each military policy a cost and distinct obligations for later reviews."
+          },
+          "reads": [
+            "army_size",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_kor_supply_route",
+            "ywc_kor_weekly_cost",
+            "ywc_kor_observation_timer"
+          ]
+        },
+        {
+          "id": "ywc_kor.1001",
+          "title": {
+            "zh": "粮饷走到哪一站",
+            "en": "Where Did the Rations Stop"
+          },
+          "desc": {
+            "zh": "核定州的军营必须实际有岗、军用品无短缺，国家预算也需能维持现有军费。这里不额外扣一笔虚构的月度军粮费。",
+            "en": "The audited state's barracks must be staffed and free of military-goods shortages, and the state budget must sustain its existing military spending. This review adds no invented monthly ration debit."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_variable = ywc_kor_supply_route }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 2 } }",
+          "options": [
+            {
+              "key": "pay_month",
+              "label": {
+                "zh": "维持核定月额并逐月实付",
+                "en": "Keep the allotment and pay monthly"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_supply_account_accepted value = 1 } set_variable = { name = ywc_kor_pending_event value = 1002 } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外月扣；军饷和供给支出按游戏真实军费/市场系统结算。",
+                "en": "No extra monthly debit; wages and supplies resolve through the game's actual military budget and market."
+              },
+              "consequence_note": {
+                "zh": "只有真实预算、法律、军饷、就业与商品条件连续合格的月份才计入观察。",
+                "en": "Only months with valid real budget, law, wages, staffing and goods conditions count toward review."
+              },
+              "trigger": "{ ywc_kor_v03_route_execution_ready = yes }"
+            },
+            {
+              "key": "narrow",
+              "label": {
+                "zh": "缩小驻防与轮值范围",
+                "en": "Narrow garrison and rotation scope"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_scope_narrowed value = 1 } set_variable = { name = ywc_kor_pending_event value = 1002 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无新一次性费；已付军费不返还。",
+                "en": "No new one-time fee; paid costs are not refunded."
+              },
+              "consequence_note": {
+                "zh": "后续按较小目标核验，不能把缩限当成满编或供给达标。",
+                "en": "Later reviews use a lower target; narrowing does not count as full staffing or supply."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把持续费用与真实就业、商品短缺、金库状态绑在一起。",
+            "en": "Tie recurring costs to real employment, goods shortages and treasury state."
+          },
+          "reads": [
+            "ywc_kor_supply_route",
+            "occupancy",
+            "building_has_goods_shortage",
+            "net_fixed_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_kor_ready_supply_months",
+            "ywc_kor_scope_narrowed"
+          ]
+        },
+        {
+          "id": "ywc_kor.1002",
+          "title": {
+            "zh": "各道交来的军额",
+            "en": "The Quotas Sent by the Provinces"
+          },
+          "desc": {
+            "zh": "王廷常备要求统一报表；各道分担以核销权换取较低中央月额；旧军限额不扩张，也不承诺统一新编制。",
+            "en": "Court supply requires a central ledger; provincial shares trade audit rights for lower central payments; capped legacy forces do not expand or promise a uniform establishment."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_variable = ywc_kor_supply_route has_variable = ywc_kor_ready_supply_months }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 3 } }",
+          "options": [
+            {
+              "key": "court_roll",
+              "label": {
+                "zh": "王廷统一编册和点验",
+                "en": "Centralize muster and inspection"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_reporting_mode value = 1 } set_variable = { name = ywc_kor_court_inspection_right value = 1 } set_variable = { name = ywc_kor_pending_event value = 1003 } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "检查常备军实际预算。",
+                "en": "Keep the higher court-supply allotment."
+              },
+              "consequence_note": {
+                "zh": "地方核销空间缩小；职业军法和军营供给仍由真实状态决定。",
+                "en": "Local audit discretion narrows; law and barrack supply still depend on real state."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "province_roll",
+              "label": {
+                "zh": "各道定额报送并保留核销",
+                "en": "Require provincial returns and keep local audit"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_reporting_mode value = 2 } set_variable = { name = ywc_kor_provincial_report_right value = 1 } set_variable = { name = ywc_kor_pending_event value = 1003 } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "由各道方案读取实际预算能力。",
+                "en": "Continue the lower provincial allotment."
+              },
+              "consequence_note": {
+                "zh": "换得地方核销权；报表或供给断裂会阻止后续确立。",
+                "en": "Retains local audit rights; missing returns or supply failures block establishment."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "legacy_roll",
+              "label": {
+                "zh": "旧额封顶，不开新军额",
+                "en": "Cap old quotas and authorize no new levies"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_reporting_mode value = 3 } set_variable = { name = ywc_kor_legacy_ceiling value = 1 } set_variable = { name = ywc_kor_pending_event value = 1003 } }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "保留最低月额，既有欠款照付。",
+                "en": "Keep the lowest allotment; existing arrears remain due."
+              },
+              "consequence_note": {
+                "zh": "减少各道扩军负担，后续目标同步降低。",
+                "en": "Reduces provincial expansion burdens and lowers later targets."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让中央指挥、地方核销与旧军上限进入后续结果条件。",
+            "en": "Carry central command, local audit and legacy caps into later outcome checks."
+          },
+          "reads": [
+            "ywc_kor_supply_route",
+            "ywc_kor_ready_supply_months"
+          ],
+          "writes": [
+            "ywc_kor_reporting_mode",
+            "ywc_kor_provincial_report_right",
+            "ywc_kor_legacy_ceiling"
+          ]
+        },
+        {
+          "id": "ywc_kor.1003",
+          "title": {
+            "zh": "书院先生的预算批注",
+            "en": "A Scholar's Note in the Budget"
+          },
+          "desc": {
+            "zh": "士林指出军费挤压官学和地方赈务。公开账目增加监督，密议保留调度却损害信任；缩减轮值可缓解预算但降低训练目标。",
+            "en": "The literati note that military costs compete with schools and relief. Public accounts add oversight; private review preserves discretion at a cost to trust; fewer rotations ease the budget but lower training goals."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_variable = ywc_kor_reporting_mode }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 4 } }",
+          "options": [
+            {
+              "key": "publish",
+              "label": {
+                "zh": "公开各道月账",
+                "en": "Publish monthly returns"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_audit_public value = 1 } set_variable = { name = ywc_kor_pending_event value = 1004 } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不另收费；公开不退已付款。",
+                "en": "No new fee; publication refunds nothing."
+              },
+              "consequence_note": {
+                "zh": "士林取得查账凭据，军门需解释月额；公开不会改善军营就业或消除短缺。",
+                "en": "The literati gain audit records and the army office must explain allotments; publication does not staff barracks or remove shortages."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "private",
+              "label": {
+                "zh": "由王廷密议，不公开明细",
+                "en": "Keep the review private at court"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_audit_private value = 1 } set_variable = { name = ywc_kor_court_trust_debt value = 1 } set_variable = { name = ywc_kor_pending_event value = 1004 } }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不新增款项；仅记录密议信任欠账，不直接改变政治支持。",
+                "en": "No added payment; record a private-review trust note without directly changing political support."
+              },
+              "consequence_note": {
+                "zh": "王廷保留机动，士林不获账簿；信任欠账只作为本线记录，不施加独立政治修正。",
+                "en": "The court keeps discretion and the literati do not receive the ledger; the trust note records this line only and applies no separate political modifier."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "reduce_rotations",
+              "label": {
+                "zh": "缩减训练与轮值目标",
+                "en": "Reduce training and rotation targets"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_scope_narrowed value = 1 } set_variable = { name = ywc_kor_pending_event value = 1004 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无新费用；缩限标记会改用实际在岗、无短缺的边警官署核验。",
+                "en": "No new cost; the narrowed route uses a real staffed, shortage-free border office for review."
+              },
+              "consequence_note": {
+                "zh": "不再强求职业军法或合格军营；仍须连续观察官署运作，且只可按限额旧军收束。",
+                "en": "Professional-army law and qualifying barracks are no longer required; the office must still pass continuous review and the result remains capped legacy service."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把财政监督与调度权的冲突落实为可读取的承诺。",
+            "en": "Record the conflict between fiscal oversight and command discretion as later-read commitments."
+          },
+          "reads": [
+            "ywc_kor_reporting_mode",
+            "school spending pressure"
+          ],
+          "writes": [
+            "ywc_kor_audit_public",
+            "ywc_kor_audit_private",
+            "ywc_kor_court_trust_debt",
+            "ywc_kor_scope_narrowed"
+          ]
+        },
+        {
+          "id": "ywc_kor.1004",
+          "title": {
+            "zh": "军械库门口的译学生",
+            "en": "The Interpreter at the Arsenal"
+          },
+          "desc": {
+            "zh": "本地译学可帮助核对合同，但不会带来科技。外来教官只可作为真实外交接触的后续议题，事件不凭空创造雇佣关系。",
+            "en": "Local translation work can help review contracts but grants no technology. A foreign instructor is only a follow-up where real diplomatic contact permits; the event does not invent employment."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes OR = { has_variable = ywc_kor_audit_public has_variable = ywc_kor_audit_private has_variable = ywc_kor_scope_narrowed } }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 5 } }",
+          "options": [
+            {
+              "key": "fund_local",
+              "label": {
+                "zh": "资助本地译学与工匠清册",
+                "en": "Fund local interpreters and workshop rolls"
+              },
+              "effect": "{ ywc_kor_start_translation_contract_once = yes if = { limit = { has_variable = ywc_kor_translation_contract_started } set_variable = { name = ywc_kor_local_translation_funded value = 1 } set_variable = { name = ywc_kor_pending_event value = 1005 } } }",
+              "ai_chance": "{ base = 65 }",
+              "cost_note": {
+                "zh": "仅选后才签约；最多12期，合计不超过开启时一周收入；成功或退出后仍按月支付已签余期。",
+                "en": "Only this choice starts the contract; at most 12 installments totaling one captured week of income, with signed unpaid installments still due monthly after success or withdrawal."
+              },
+              "consequence_note": {
+                "zh": "每期真实扣款；资金不足月份暂停，成功或退出不抹余欠，累计已付不清零，到12期后停止。",
+                "en": "Each installment is a real debit; underfunded months pause, success or withdrawal does not erase the balance, paid totals never reset, and charging stops at 12 installments."
+              },
+              "trigger": "{ net_fixed_income >= 0 gold_reserves >= { value = var:ywc_kor_weekly_cost multiply = 0.0833333333 } ywc_kor_v03_has_translation_employer = yes }"
+            },
+            {
+              "key": "foreign_offer",
+              "label": {
+                "zh": "登记有条件的外聘询价",
+                "en": "Record a conditional foreign hiring inquiry"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_foreign_offer_pending value = 1 } set_variable = { name = ywc_kor_pending_event value = 1005 } }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "暂不扣款，待真实对象、关系和报价确认。",
+                "en": "No debit until a real counterpart, relations and quote are confirmed."
+              },
+              "consequence_note": {
+                "zh": "对象缺席或拒绝时回到本地路线；转为属邦只调整对外谈价，不中断内政。",
+                "en": "A missing or refusing counterpart returns to the local route; subject status changes foreign negotiations only and does not stop domestic work."
+              },
+              "trigger": "{ is_subject = no }"
+            },
+            {
+              "key": "narrow_orders",
+              "label": {
+                "zh": "沿用旧作坊并缩小装备目标",
+                "en": "Keep old workshops and narrow equipment goals"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_procurement_narrowed value = 1 } set_variable = { name = ywc_kor_pending_event value = 1005 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不增加一次性费用，接受较低装备目标。",
+                "en": "No one-time fee; accept a lower equipment target."
+              },
+              "consequence_note": {
+                "zh": "不假设有进口伙伴或军工厂；真实商品短缺仍阻止供给核验。",
+                "en": "Assumes neither an importer nor an arms factory; real goods shortages still block supply review."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "连接港市工匠和外来知识，同时守住不免费送科技的边界。",
+            "en": "Connect port workshops and outside knowledge without granting free technology."
+          },
+          "reads": [
+            "port/workshop presence",
+            "foreign relations",
+            "building_has_goods_shortage"
+          ],
+          "writes": [
+            "ywc_kor_translation_contract_started",
+            "ywc_kor_local_translation_funded",
+            "ywc_kor_foreign_offer_pending",
+            "ywc_kor_procurement_narrowed"
+          ]
+        },
+        {
+          "id": "ywc_kor.1005",
+          "title": {
+            "zh": "旧军户想要一份新差事",
+            "en": "A New Posting for Old Service Households"
+          },
+          "desc": {
+            "zh": "军制变化影响实际服务家庭时，可支付限期转职名册与补助，也可保留有限边警轮值。无法确认相关人口时只核对退役名册，不虚构就业转移。",
+            "en": "When military changes affect real service households, the court can fund a time-limited transition register and stipend or retain limited border rotations. If no households can be confirmed, audit discharge rolls rather than inventing job transfers."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes OR = { has_variable = ywc_kor_audit_public has_variable = ywc_kor_audit_private has_variable = ywc_kor_scope_narrowed } }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 6 } }",
+          "options": [
+            {
+              "key": "fund_transition",
+              "label": {
+                "zh": "支付转职名册与期限补助",
+                "en": "Pay for transition rolls and a temporary stipend"
+              },
+              "effect": "{ ywc_kor_start_veteran_contract_once = yes if = { limit = { has_variable = ywc_kor_veteran_contract_started } set_variable = { name = ywc_kor_transition_obligation value = 1 } set_variable = { name = ywc_kor_intro_complete value = 1 } } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "自愿转职补助最多12期，合计一周收入；签约后的余期即使成功或退出仍按月到期。",
+                "en": "Optional transition support is capped at 12 installments totaling one week of income; signed unpaid installments remain due monthly after success or withdrawal."
+              },
+              "consequence_note": {
+                "zh": "已付累计不会因恢复或重审清零；成功或退出不抹已签余欠，资金不足时暂停到有款再付。",
+                "en": "Paid totals survive recovery and renewed review; success or withdrawal does not erase the signed balance, and insufficient funds pause payment until funds recover."
+              },
+              "trigger": "{ army_size > 0 net_fixed_income >= 0 gold_reserves >= { value = var:ywc_kor_weekly_cost multiply = 0.0833333333 } ywc_kor_v03_has_staffed_supplied_barracks = yes }"
+            },
+            {
+              "key": "retain_border",
+              "label": {
+                "zh": "保留旧军户的部分边警轮值",
+                "en": "Keep some legacy border rotations"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_border_rotation_kept value = 1 } set_variable = { name = ywc_kor_scope_narrowed value = 1 } set_variable = { name = ywc_kor_intro_complete value = 1 } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "减少补助支出，仍需支付较小月额。",
+                "en": "Avoid stipend costs while keeping a smaller monthly allotment."
+              },
+              "consequence_note": {
+                "zh": "保留传统服务关系并降低目标；若军法或军营条件失格，可凭有岗无短缺的边警官署连续核验；不改法律、军队或领土。",
+                "en": "Preserves service ties and narrows the target; if army law or barracks conditions fail, a staffed shortage-free border office can qualify for continuous review without changing laws, armies or territory."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "refuse_stipend",
+              "label": {
+                "zh": "暂不新增补助义务",
+                "en": "Decline a new stipend obligation"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_transition_refused value = 1 } set_variable = { name = ywc_kor_intro_complete value = 1 } }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不增加费用，旧账照付。",
+                "en": "No added cost; existing obligations remain due."
+              },
+              "consequence_note": {
+                "zh": "退役家庭没有本线补助，但后续仍可重谈；不会抹去实际退役。",
+                "en": "Discharged households receive no stipend from this line, but later renegotiation remains possible; actual discharge is untouched."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "明确军制变化由谁承担，并把家庭补助作为真实一次性扣款。",
+            "en": "Make the distributional cost explicit and debit the household stipend from treasury."
+          },
+          "reads": [
+            "ywc_kor_supply_route",
+            "service households",
+            "ywc_kor_scope_narrowed"
+          ],
+          "writes": [
+            "ywc_kor_transition_obligation",
+            "ywc_kor_border_rotation_kept",
+            "ywc_kor_transition_refused"
+          ]
+        },
+        {
+          "id": "ywc_kor.1006",
+          "title": {
+            "zh": "第一轮点验之后",
+            "en": "After the First Muster Audit"
+          },
+          "desc": {
+            "zh": "只有连续六个月保持真实执行条件后，才可进入九个月续审。任何坏月立即清除计时。12个月持续受阻时提示，36个月提供退出；常规军费仍按游戏本体结算。",
+            "en": "Begin the nine-month renewal only after six continuous months of real readiness. Any failed month clears the timer immediately. Show a blocked prompt after 12 continuous months and offer exit at 36; regular army spending remains in the base game."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes OR = { AND = { has_variable = ywc_kor_intro_complete has_variable = ywc_kor_six_months_complete } has_variable = ywc_kor_blocked_12_notice has_variable = ywc_kor_blocked_36_notice } }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 7 } if = { limit = { has_variable = ywc_kor_six_months_complete } set_variable = { name = ywc_kor_review_event_prompted value = 1 } } if = { limit = { has_variable = ywc_kor_blocked_12_notice } set_variable = { name = ywc_kor_blocked_12_prompted value = 1 } } if = { limit = { has_variable = ywc_kor_blocked_36_notice } set_variable = { name = ywc_kor_blocked_36_prompted value = 1 } } }",
+          "options": [
+            {
+              "key": "begin_renewal",
+              "label": {
+                "zh": "确认连续六个月点验，进入九个月续审",
+                "en": "Confirm six continuous months and start the renewal"
+              },
+              "effect": "{ if = { limit = { has_variable = ywc_kor_six_months_complete ywc_kor_v03_route_execution_ready = yes } set_variable = { name = ywc_kor_review_complete value = 1 } add_journal_entry = { type = ywc_je_v03_kor_service_settlement } } if = { limit = { NOT = { has_variable = ywc_kor_six_months_complete } } set_variable = { name = ywc_kor_waiting_for_readiness value = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "不收第二次核额费；正常军费按游戏本体结算。",
+                "en": "No second audit fee; regular army spending stays in the base game."
+              },
+              "consequence_note": {
+                "zh": "只有六个月计时完成且当前条件仍好才开启续审；提前改法不替代六个月。",
+                "en": "Opens renewal only when the six-month timer completed and current conditions still pass; early law changes do not replace the period."
+              },
+              "trigger": "{ has_variable = ywc_kor_six_months_complete ywc_kor_v03_route_execution_ready = yes }"
+            },
+            {
+              "key": "narrow_or_wait",
+              "label": {
+                "zh": "缩限或等待条件恢复",
+                "en": "Narrow the plan or wait for recovery"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_scope_narrowed value = 1 } remove_variable = ywc_kor_observation_timer remove_variable = ywc_kor_observation_started remove_variable = ywc_kor_six_months_complete remove_variable = ywc_kor_review_event_prompted remove_variable = ywc_kor_blocked_timer_started remove_variable = ywc_kor_blocked_12_due remove_variable = ywc_kor_blocked_36_due remove_variable = ywc_kor_blocked_12_notice remove_variable = ywc_kor_blocked_36_notice remove_variable = ywc_kor_blocked_12_prompted remove_variable = ywc_kor_blocked_36_prompted }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "已付账不退；未通过真实条件的月份不收费也不计时。",
+                "en": "Paid installments are not refunded; failed months are neither charged nor counted."
+              },
+              "consequence_note": {
+                "zh": "保留现有军队与法律；坏月清零后按缩限月额，重新连续观察六个月。",
+                "en": "Keep the current army and laws; after a failed month, restart six continuous months at the narrowed installment."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回未付新承诺",
+                "en": "Withdraw unpaid new commitments"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_arc_abandoned value = 1 } ywc_kor_close_as_breach = yes }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "停止未付部分；保留已付款项和已登记补助。",
+                "en": "Stop unpaid portions; retain paid costs and recorded stipends."
+              },
+              "consequence_note": {
+                "zh": "受挫改道，不解散军队、不改法律，仍可接续地方财政与退役后续。",
+                "en": "Closes as a setback without disbanding armies or changing laws; provincial finance and veteran follow-ups remain available."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "检查完整六个月连续执行，失败时重置计时而不伪造改革成功。",
+            "en": "Require six continuous months of execution and reset after failure rather than faking reform success."
+          },
+          "reads": [
+            "six-month timer",
+            "ywc_kor_ready_supply_months",
+            "army law",
+            "military wages",
+            "occupancy",
+            "shortage",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_kor_review_complete",
+            "ywc_kor_six_months_complete",
+            "ywc_kor_arc_abandoned"
+          ]
+        },
+        {
+          "id": "ywc_kor.1007",
+          "title": {
+            "zh": "釜山货单上的军用品",
+            "en": "Military Goods on the Busan Invoice"
+          },
+          "desc": {
+            "zh": "续审期检查港市工匠或内地作坊的真实报价。此处不会造库存、建工厂或开贸易路线；外部伙伴缺席时内部审计继续。",
+            "en": "During renewal, review actual quotes from port merchants or inland workshops. This event creates no stockpiles, factories or trade routes; domestic review continues if no foreign partner is available."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_journal_entry = ywc_je_v03_kor_service_settlement }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 8 } }",
+          "options": [
+            {
+              "key": "fund_invoice_review",
+              "label": {
+                "zh": "支付货单核价并维持月额",
+                "en": "Pay for invoice review and keep monthly supply"
+              },
+              "effect": "{ ywc_kor_pay_invoice_once = yes if = { limit = { has_variable = ywc_kor_invoice_review_paid } set_variable = { name = ywc_kor_procurement_booked value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "只有选择真实核价服务才一次性支付一周收入；不生成军用品。",
+                "en": "Only this paid quotation-review choice debits one captured week; it creates no military goods."
+              },
+              "consequence_note": {
+                "zh": "登记已付款核价，不会授予装备；商品短缺仍阻止通过。",
+                "en": "Records a paid quotation review without granting equipment; shortages still block certification."
+              },
+              "trigger": "{ net_fixed_income >= 0 gold_reserves >= var:ywc_kor_weekly_cost }"
+            },
+            {
+              "key": "current_workshops",
+              "label": {
+                "zh": "按现有作坊能力缩小采购",
+                "en": "Narrow procurement to current workshops"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_procurement_narrowed value = 1 } set_variable = { name = ywc_kor_procurement_booked value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不增一次性费用，目标降低。",
+                "en": "No added one-time cost; lower the target."
+              },
+              "consequence_note": {
+                "zh": "真实市场和建筑决定产能；供给不够时仍须缩限或退出。",
+                "en": "Market and buildings determine capacity; insufficient supply still requires narrowing or exit."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "seek_foreign_quote",
+              "label": {
+                "zh": "登记待核实的外部报价",
+                "en": "Record a request for a verifiable foreign quote"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_foreign_offer_pending value = 1 } set_variable = { name = ywc_kor_procurement_booked value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "不扣款也不建交易，须伙伴同意并由玩家另行建立贸易行动。",
+                "en": "No debit or trade route; a partner must agree and the player must establish trade separately."
+              },
+              "consequence_note": {
+                "zh": "韩国成为属邦只影响未授权对外谈价，不中断内部续审。",
+                "en": "Korea becoming a subject affects unauthorized foreign talks only; internal review continues."
+              },
+              "trigger": "{ is_subject = no }"
+            }
+          ],
+          "purpose": {
+            "zh": "让采购受真实市场与对方同意限制。",
+            "en": "Keep procurement subject to real markets and counterpart consent."
+          },
+          "reads": [
+            "port and workshop presence",
+            "foreign counterpart",
+            "military goods shortage",
+            "ywc_kor_review_complete"
+          ],
+          "writes": [
+            "ywc_kor_procurement_booked",
+            "ywc_kor_procurement_narrowed",
+            "ywc_kor_foreign_offer_pending"
+          ]
+        },
+        {
+          "id": "ywc_kor.1008",
+          "title": {
+            "zh": "没有打仗的那一年",
+            "en": "The Year Without a War"
+          },
+          "desc": {
+            "zh": "和平时复核训练、轮值与采购；真实战争时转为战时报账，优先供给并允许缩限。战争不自动失败；属邦变化不打断内部日志。",
+            "en": "In peace, review training, rotations and procurement. During war, use the wartime ledger, prioritize supply and allow narrowing. War is not automatic failure; subject changes do not interrupt the domestic journal."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_journal_entry = ywc_je_v03_kor_service_settlement OR = { has_variable = ywc_kor_procurement_booked has_variable = ywc_kor_procurement_narrowed has_variable = ywc_kor_foreign_offer_pending } OR = { has_variable = ywc_kor_nine_months_complete has_variable = ywc_kor_service_12_notice has_variable = ywc_kor_service_36_notice is_at_war = yes in_default = yes net_fixed_income < 0 } }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 9 } if = { limit = { has_variable = ywc_kor_nine_months_complete } set_variable = { name = ywc_kor_service_event_prompted value = 1 } } }",
+          "options": [
+            {
+              "key": "peace_ledger",
+              "label": {
+                "zh": "按和平账册复核训练和轮值",
+                "en": "Review training and rotations in the peacetime ledger"
+              },
+              "effect": "{ if = { limit = { ywc_kor_v03_route_execution_ready = yes has_variable = ywc_kor_nine_months_complete } set_variable = { name = ywc_kor_service_review_complete value = 1 } } set_variable = { name = ywc_kor_pending_event value = 1009 } }",
+              "ai_chance": "{ base = 65 }",
+              "cost_note": {
+                "zh": "不新增军队、训练或免费收入。",
+                "en": "Creates no troops, training or free income."
+              },
+              "consequence_note": {
+                "zh": "九个月连续合格后才标记通过；和平本身不是通过条件。",
+                "en": "Marks completion only after nine continuous months; peace itself is not a pass."
+              },
+              "trigger": "{ NOT = { is_at_war = yes } has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes }"
+            },
+            {
+              "key": "wartime_ration",
+              "label": {
+                "zh": "战时保供并暂停非必要轮训",
+                "en": "Prioritize supply and pause nonessential rotations"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_scope_narrowed value = 1 } set_variable = { name = ywc_kor_wartime_deferral value = 1 } if = { limit = { ywc_kor_v03_route_execution_ready = yes has_variable = ywc_kor_nine_months_complete } set_variable = { name = ywc_kor_service_review_complete value = 1 } } set_variable = { name = ywc_kor_pending_event value = 1009 } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外月扣；战时暂停部分仍由真实军费系统处理。",
+                "en": "No added monthly debit; real army costs remain in the base-game system."
+              },
+              "consequence_note": {
+                "zh": "战时继续读短缺与预算；恢复后九个月计时重新开始。",
+                "en": "Continue reading shortages and budget during war; renewal timing restarts after recovery."
+              },
+              "trigger": "{ is_at_war = yes has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes }"
+            },
+            {
+              "key": "restore_review",
+              "label": {
+                "zh": "缩限承诺并重新开始连续续审",
+                "en": "Narrow the commitment and restart continuous review"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_scope_narrowed value = 1 } remove_variable = ywc_kor_service_timer remove_variable = ywc_kor_service_observation_started remove_variable = ywc_kor_nine_months_complete remove_variable = ywc_kor_service_review_complete remove_variable = ywc_kor_service_event_prompted remove_variable = ywc_kor_service_blocked_timer_started remove_variable = ywc_kor_service_blocked_12_due remove_variable = ywc_kor_service_blocked_36_due remove_variable = ywc_kor_service_12_notice remove_variable = ywc_kor_service_36_notice remove_variable = ywc_kor_service_12_prompted remove_variable = ywc_kor_service_36_prompted }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "已付款不返还；缩限后按较低真实月额重新观察九个月。",
+                "en": "Past payments are not refunded; after narrowing, restart nine months at the lower actual installment."
+              },
+              "consequence_note": {
+                "zh": "保留军队、法律和旧合同；恢复计时须连续满足预算、工资、就业与供给条件。",
+                "en": "Keep the army, laws and existing contracts; the timer restarts only while budget, wages, staffing and supply remain valid."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "recognize_default",
+              "label": {
+                "zh": "承认账款无法维持并退出",
+                "en": "Acknowledge the unfunded plan and exit"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_arc_abandoned value = 1 } ywc_kor_close_as_breach = yes }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "停止未付款项，已付款和服务义务保留。",
+                "en": "Stop unpaid plans while retaining paid costs and service obligations."
+              },
+              "consequence_note": {
+                "zh": "不强制解散军队，保留限额旧军与地方重谈入口。",
+                "en": "Does not disband the army; capped legacy forces and local renegotiation remain available."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "区分和平维持与战争保供，并读取真实连续九个月条件。",
+            "en": "Distinguish peacetime readiness from wartime supply and require nine continuous months."
+          },
+          "reads": [
+            "is_at_war",
+            "military law",
+            "wages",
+            "occupancy",
+            "shortage",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_kor_service_review_complete",
+            "ywc_kor_wartime_deferral",
+            "ywc_kor_scope_narrowed"
+          ]
+        },
+        {
+          "id": "ywc_kor.1009",
+          "title": {
+            "zh": "军门以后的国家账",
+            "en": "The State Ledger Beyond the Army Office"
+          },
+          "desc": {
+            "zh": "结算读取当前军法、军营就业、商品短缺、军饷、财政、地方报表和九个月连续审查。常备固定成本最高；各道方案以报账权换中央支出；限额旧军保留较小边警目标。",
+            "en": "Settlement reads current law, barrack employment, goods shortages, wages, budget, provincial reports and the nine-month continuous review. Court supply has the highest fixed cost; provincial supply exchanges returns for lower central spending; capped legacy forces keep a smaller border goal."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_v03_unsettled = yes has_journal_entry = ywc_je_v03_kor_service_settlement }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 10 } }",
+          "options": [
+            {
+              "key": "establish_court",
+              "label": {
+                "zh": "确立王廷常备供给",
+                "en": "Establish court supply"
+              },
+              "effect": "{ if = { limit = { NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 1 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_court_execution_ready = yes ywc_kor_v03_route_execution_ready = yes } ywc_kor_close_as_court_supply = yes } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无结局奖金；固定费用仍由实际财政承担。",
+                "en": "No completion bonus; recurring costs remain in treasury."
+              },
+              "consequence_note": {
+                "zh": "不点击改法或增军；确认既有职业军法、合格军营和持续供给。",
+                "en": "Does not enact law or add troops; confirms existing law, barracks and continued supply."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 1 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_court_execution_ready = yes ywc_kor_v03_route_execution_ready = yes }"
+            },
+            {
+              "key": "establish_provincial",
+              "label": {
+                "zh": "确立各道分担",
+                "en": "Establish provincial shares"
+              },
+              "effect": "{ if = { limit = { NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 2 has_variable = ywc_kor_provincial_report_right has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_provincial_execution_ready = yes ywc_kor_v03_route_execution_ready = yes } ywc_kor_close_as_provincial_supply = yes } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "无结局奖金；地方月账与报送义务保留。",
+                "en": "No completion bonus; local allotments and returns remain due."
+              },
+              "consequence_note": {
+                "zh": "失去地方报账权或真实供给失格时不能确立。",
+                "en": "Cannot establish if local returns or real supply eligibility fail."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 2 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_provincial_execution_ready = yes ywc_kor_v03_route_execution_ready = yes has_variable = ywc_kor_provincial_report_right }"
+            },
+            {
+              "key": "establish_limited",
+              "label": {
+                "zh": "以限额旧军和边警收束",
+                "en": "Close with capped legacy forces and border service"
+              },
+              "effect": "{ if = { limit = { var:ywc_kor_supply_route = 3 has_variable = ywc_kor_legacy_ceiling has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes } ywc_kor_close_as_limited_legacy = yes } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "保持最低月额；不返还已付款。",
+                "en": "Keep the lowest monthly allotment; paid costs are not refunded."
+              },
+              "consequence_note": {
+                "zh": "无军队者可凭有岗无短缺官署续做有限边警；不改军法或领土。",
+                "en": "A country without an army can continue limited border service through a staffed, shortage-free office; no army law or territory changes."
+              },
+              "trigger": "{ var:ywc_kor_supply_route = 3 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes has_variable = ywc_kor_legacy_ceiling }"
+            },
+            {
+              "key": "establish_narrowed_target",
+              "label": {
+                "zh": "以边警官署确立缩限目标",
+                "en": "Establish the narrowed target through a border office"
+              },
+              "effect": "{ if = { limit = { has_variable = ywc_kor_scope_narrowed has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_reduced_execution_ready = yes ywc_kor_v03_route_execution_ready = yes } ywc_kor_close_as_limited_legacy = yes } }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不发结局奖金或免费军需；已签合同余期仍按月支付。",
+                "en": "No completion bonus or free supplies; signed contract balances remain payable monthly."
+              },
+              "consequence_note": {
+                "zh": "只核验有岗无短缺的边警官署；不要求职业军法或合格军营，不改军队、法律或领土。",
+                "en": "Requires only a staffed shortage-free border office; it does not require professional-army law or qualifying barracks and changes no army, law or territory."
+              },
+              "trigger": "{ has_variable = ywc_kor_scope_narrowed has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_reduced_execution_ready = yes ywc_kor_v03_route_execution_ready = yes }"
+            },
+            {
+              "key": "restart_renewal",
+              "label": {
+                "zh": "缩限并重新连续观察九个月",
+                "en": "Narrow and restart nine continuous months"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_scope_narrowed value = 1 } remove_variable = ywc_kor_service_timer remove_variable = ywc_kor_service_observation_started remove_variable = ywc_kor_nine_months_complete remove_variable = ywc_kor_service_review_complete remove_variable = ywc_kor_service_event_prompted remove_variable = ywc_kor_service_blocked_timer_started remove_variable = ywc_kor_service_blocked_12_due remove_variable = ywc_kor_service_blocked_36_due remove_variable = ywc_kor_service_12_notice remove_variable = ywc_kor_service_36_notice remove_variable = ywc_kor_service_12_prompted remove_variable = ywc_kor_service_36_prompted }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不重复支付核价费；只重新观察，已付合同累计和已签义务保留。",
+                "en": "Do not repeat the quotation fee; restart review while retaining paid contract totals and obligations."
+              },
+              "consequence_note": {
+                "zh": "当前条件未达标或复核尚未完成时可重开观察；缩限只降低合同承诺，不改法律或军队。",
+                "en": "Restart review when current conditions fail or review is incomplete; narrowing reduces commitments without changing laws or armies."
+              },
+              "trigger": "{ OR = { NOT = { has_variable = ywc_kor_service_review_complete } NOT = { ywc_kor_v03_route_execution_ready = yes } } }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "兑现失败时撤回未付承诺",
+                "en": "Withdraw unpaid commitments after failure"
+              },
+              "effect": "{ set_variable = { name = ywc_kor_arc_abandoned value = 1 } ywc_kor_close_as_breach = yes }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "停止未付部分，已付和已签义务保留。",
+                "en": "Stop unpaid portions while retaining paid costs and signed obligations."
+              },
+              "consequence_note": {
+                "zh": "失败改道仍接地方财政、官学、工匠和退役后续，不抹去军队。",
+                "en": "Failure can continue into local finance, schools, workshops and veteran follow-ups without erasing the army."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "形成可持续常备、地方分担或限额旧军三种不同结局。",
+            "en": "Resolve into distinct outcomes for sustainable court supply, provincial shares or capped legacy forces."
+          },
+          "reads": [
+            "supply route",
+            "ywc_kor_scope_narrowed",
+            "staffed, shortage-free border office",
+            "army law",
+            "occupancy",
+            "goods shortage",
+            "military wages",
+            "net_fixed_income",
+            "continuous observation",
+            "provincial returns"
+          ],
+          "writes": [
+            "ywc_kor_outcome_court_supply",
+            "ywc_kor_outcome_provincial_supply",
+            "ywc_kor_outcome_limited_legacy",
+            "ywc_kor_outcome_withdrawn_breach"
+          ]
+        }
+      ],
+      "outcomes": [
+        "court_supply",
+        "provincial_supply",
+        "limited_legacy",
+        "withdrawn_breach"
+      ],
+      "legacy_links": []
+    }
+  ]
+}

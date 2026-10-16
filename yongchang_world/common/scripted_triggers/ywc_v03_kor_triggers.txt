@@ -1,0 +1,99 @@
+﻿# KOR-local readiness checks: real laws, staffed forces, military goods and treasury.
+ywc_kor_v03_has_owned_state = {
+	any_scope_state = { is_owned_by = ROOT }
+}
+
+# Success requires a solvent treasury, working administration and no active
+# default or bankruptcy status in addition to the route-specific army checks.
+ywc_kor_v03_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+ywc_kor_v03_has_staffed_supplied_barracks = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_barrack
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_v03_has_staffed_border_office = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_v03_has_translation_employer = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			OR = { is_building_type = building_university is_building_type = building_government_administration }
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_v03_court_execution_ready = {
+	has_law_or_variant = law_type:law_professional_army
+	OR = { has_modifier = military_wages_medium has_modifier = military_wages_high has_modifier = military_wages_very_high }
+	net_fixed_income >= 0
+	ywc_kor_v03_has_staffed_supplied_barracks = yes
+}
+
+ywc_kor_v03_provincial_execution_ready = {
+	OR = {
+		has_law_or_variant = law_type:law_peasant_levies
+		has_law_or_variant = law_type:law_warrior_caste
+		has_law_or_variant = law_type:law_professional_army
+		has_law_or_variant = law_type:law_national_militia
+	}
+	OR = {
+		has_modifier = military_wages_low
+		has_modifier = military_wages_medium
+		has_modifier = military_wages_high
+		has_modifier = military_wages_very_high
+	}
+	net_fixed_income >= 0
+	ywc_kor_v03_has_staffed_supplied_barracks = yes
+}
+
+ywc_kor_v03_limited_execution_ready = {
+	net_fixed_income >= 0
+	OR = {
+		AND = { army_size <= 0 ywc_kor_v03_has_staffed_border_office = yes }
+		AND = { army_size > 0 ywc_kor_v03_has_staffed_supplied_barracks = yes }
+	}
+}
+
+# A narrowed commitment may be fulfilled through a real staffed border office
+# instead of meeting the full court/provincial army standard.
+ywc_kor_v03_reduced_execution_ready = {
+	ywc_kor_v03_has_staffed_border_office = yes
+}
+
+ywc_kor_v03_route_execution_ready = {
+	ywc_kor_v03_has_owned_state = yes
+	ywc_kor_v03_finance_safe = yes
+	OR = {
+		AND = { var:ywc_kor_supply_route = 1 ywc_kor_v03_court_execution_ready = yes }
+		AND = { var:ywc_kor_supply_route = 2 ywc_kor_v03_provincial_execution_ready = yes }
+		AND = { var:ywc_kor_supply_route = 3 ywc_kor_v03_limited_execution_ready = yes }
+		AND = { has_variable = ywc_kor_scope_narrowed ywc_kor_v03_reduced_execution_ready = yes }
+	}
+}
+
+ywc_kor_v03_unsettled = {
+	NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled }
+}

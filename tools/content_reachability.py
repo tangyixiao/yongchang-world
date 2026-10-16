@@ -34,7 +34,8 @@ from tools.ywc_check import _script_files, _without_comments_and_strings  # noqa
 
 ALLOWLIST_PATH = Path("data/content/reachability_allowlist.json")
 EVENT_DECLARATION = re.compile(r"^\s*(ywc_[a-z_]+\.\d+)\s*=\s*\{", re.M)
-JOURNAL_DECLARATION = re.compile(r"^\s*(ywc_je_[a-z0-9_]+)\s*=\s*\{", re.M)
+JOURNAL_DECLARATION = re.compile(r"^\s*(ywc_(?:je|route)_[a-z0-9_]+)\s*=\s*\{", re.M)
+ROUTE_DECLARATION = re.compile(r"^\s*(ywc_route_[a-z0-9_]+)\s*=\s*\{", re.M)
 HELPER_DECLARATION = re.compile(r"^\s*(ywc_[a-z0-9_]+)\s*=\s*\{", re.M)
 REFERENCE_PATTERNS = (
     re.compile(r"trigger_event\s*=\s*\{\s*id\s*=\s*([A-Za-z0-9_.]+)"),
@@ -71,6 +72,83 @@ def _declarations(texts: dict[Path, str], pattern: re.Pattern[str]) -> dict[str,
     return declared
 
 
+def _journal_declarations(texts: dict[Path, str], pattern: re.Pattern[str]) -> dict[str, Path]:
+    journal_texts = {
+        path: text for path, text in texts.items()
+        if "journal_entries" in {part.lower() for part in path.parts}
+    }
+    return _declarations(journal_texts, pattern)
+
+
+def _extract_block(text: str, start: int) -> str | None:
+    """Return a balanced Clausewitz block beginning at its opening brace."""
+    if start >= len(text) or text[start] != "{":
+        return None
+    depth = 0
+    for index in range(start, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:index]
+    return None
+
+
+def _named_blocks(text: str, name: str) -> list[str]:
+    blocks = []
+    pattern = re.compile(rf"\b{re.escape(name)}\s*=\s*\{{")
+    for match in pattern.finditer(text):
+        # JE activation fields must be direct members of the JE declaration;
+        # a similarly named field buried in an unrelated effect is not a gate.
+        if text[:match.start()].count("{") != text[:match.start()].count("}"):
+            continue
+        block = _extract_block(text, match.end() - 1)
+        if block is not None:
+            blocks.append(block)
+    return blocks
+
+
+COUNTRY_FILTER = re.compile(
+    r"\bc:([A-Z0-9]{2,4})\s*\??=\s*(?:this|root|\{)|"
+    r"\b(?:this|root)\s*=\s*c:([A-Z0-9]{2,4})\b"
+)
+
+
+def _country_filter_tags(blocks: list[str]) -> set[str]:
+    return {
+        tag
+        for block in blocks
+        for match in COUNTRY_FILTER.finditer(block)
+        for tag in match.groups()
+        if tag is not None
+    }
+
+
+def _auto_journal_entries(texts: dict[Path, str]) -> set[str]:
+    """Recognize explicit country-scoped JE self-activation conditions.
+
+    Victoria 3 activates an inactive JE when both `is_shown_when_inactive`
+    and `possible` pass. Require a country filter in both blocks so generic
+    always-true entries cannot bypass reachability review.
+    """
+    journal_texts = {
+        path: text for path, text in texts.items()
+        if "journal_entries" in {part.lower() for part in path.parts}
+    }
+    result: set[str] = set()
+    for path, text in journal_texts.items():
+        for match in JOURNAL_DECLARATION.finditer(text):
+            entry = _extract_block(text, match.end() - 1)
+            if entry is None:
+                continue
+            shown = _named_blocks(entry, "is_shown_when_inactive")
+            possible = _named_blocks(entry, "possible")
+            if _country_filter_tags(shown) & _country_filter_tags(possible):
+                result.add(match.group(1))
+    return result
+
+
 def _referenced_names(texts: dict[Path, str]) -> set[str]:
     names: set[str] = set()
     for text in texts.values():
@@ -98,7 +176,9 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
     texts = _script_texts(root)
     counts = _token_counts("\n".join(texts.values()))
     events = _declarations(texts, EVENT_DECLARATION)
-    journals = _declarations(texts, JOURNAL_DECLARATION)
+    journals = _journal_declarations(texts, JOURNAL_DECLARATION)
+    routes = _journal_declarations(texts, ROUTE_DECLARATION)
+    auto_journals = _auto_journal_entries(texts)
     helpers = {
         name: path
         for name, path in _declarations(texts, HELPER_DECLARATION).items()
@@ -107,12 +187,14 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
     referenced = _referenced_names(texts)
 
     unreferenced_events = sorted(name for name in events if counts[name] <= 1)
-    unreferenced_journals = sorted(name for name in journals if counts[name] <= 1)
+    unreferenced_journals = sorted(
+        name for name in journals if counts[name] <= 1 and name not in auto_journals
+    )
     dangling = sorted(
         name
         for name in referenced
         if (name.startswith("ywc_") and "." in name and name not in events)
-        or (name.startswith("ywc_je_") and name not in journals)
+        or (name.startswith(("ywc_je_", "ywc_route_")) and name not in journals)
     )
     allowlist = load_allowlist(allowlist_path or (root.parent / ALLOWLIST_PATH))
     unused_helpers = sorted(
@@ -122,6 +204,7 @@ def audit(root: Path, allowlist_path: Path | None = None) -> dict:
         "root": str(root),
         "event_count": len(events),
         "journal_count": len(journals),
+        "route_count": len(routes),
         "helper_count": len(helpers),
         "dangling_references": dangling,
         "unreferenced_events": unreferenced_events,
