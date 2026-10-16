@@ -16,7 +16,7 @@ except ModuleNotFoundError:  # Running this file directly puts ``tools`` on sys.
 
 SCRIPT_SUFFIXES = {".txt", ".gui", ".asset", ".gfx", ".mod"}
 LOCALIZATION_SUFFIXES = {".yml", ".yaml"}
-DECLARED_KEY = re.compile(r"^(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2})\s*=")
+DECLARED_KEY = re.compile(r"(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2})\s*=")
 LOCALIZATION_KEY = re.compile(r"^\s*(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2}(?:_[A-Za-z0-9_]+)?)\s*:")
 ROUTE_COOLDOWN_OR_PATTERNS = (
     re.compile(
@@ -108,12 +108,22 @@ def _declared_key_occurrences(root: Path) -> dict[str, list[tuple[Path, int]]]:
         text = path.read_text(encoding="utf-8-sig")
         cleaned = _without_comments_and_strings(text)
         depth = 0
-        for line_number, line in enumerate(cleaned.splitlines(), 1):
-            if depth == 0:
-                match = DECLARED_KEY.match(line.lstrip())
+        line_number = 1
+        previous = 0
+        for token in re.finditer(r"[{}]|[^\s{}=]+|=", cleaned):
+            # Stripping preserves offsets but blanks newlines inside strings.
+            # Count source newlines so diagnostics still identify the real line.
+            line_number += text.count("\n", previous, token.start())
+            previous = token.start()
+            value = token.group()
+            if value == "{":
+                depth += 1
+            elif value == "}":
+                depth -= 1
+            elif depth == 0:
+                match = DECLARED_KEY.match(cleaned, token.start())
                 if match:
                     occurrences[match.group(1)].append((path, line_number))
-            depth += line.count("{") - line.count("}")
     return dict(occurrences)
 
 
@@ -506,7 +516,11 @@ def _on_action_hook_diagnostics(mod_root: Path, game_root: Path) -> list[str]:
     return diagnostics
 
 
-def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
+def validate(
+    mod_root: Path,
+    game_root: Path | None = None,
+    require_complete: bool = False,
+) -> list[str]:
     mod_root = Path(mod_root)
     diagnostics: list[str] = []
     if not mod_root.is_dir():
@@ -549,6 +563,19 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
         diagnostics.append(f"{game_root}:1: game root does not exist")
 
     repository_root = mod_root.parent
+    v03_manifest = repository_root / "data/content/v03/manifest.json"
+    if v03_manifest.is_file():
+        try:
+            from tools.ywc_v03_check import check_root as check_v03_root
+        except ModuleNotFoundError:  # Running this file directly puts ``tools`` on sys.path.
+            from ywc_v03_check import check_root as check_v03_root
+        diagnostics.extend(
+            f"{repository_root}:1: v0.3 validation failed: {error}"
+            for error in check_v03_root(repository_root, require_complete=require_complete)
+        )
+    elif require_complete:
+        diagnostics.append(f"{v03_manifest}:1: required v0.3 manifest does not exist")
+
     if (repository_root / "data/scenario/tag_registry.json").is_file():
         try:
             diagnostics.extend(audit_repository_tags(repository_root))
@@ -608,12 +635,17 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
     return diagnostics
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mod-root", type=Path, required=True)
     parser.add_argument("--game-root", type=Path)
-    args = parser.parse_args()
-    diagnostics = validate(args.mod_root, args.game_root)
+    parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="also enforce the full v0.3 release quotas",
+    )
+    args = parser.parse_args(argv)
+    diagnostics = validate(args.mod_root, args.game_root, require_complete=args.require_complete)
     for diagnostic in diagnostics:
         print(diagnostic)
     return 1 if diagnostics else 0

@@ -7,6 +7,7 @@ ywc_dmg_initialize_v03 = {
 
 ywc_dmg_open_common_subjects_once = {
 	ywc_dmg_initialize_v03 = yes
+	ywc_dmg_snapshot_costs_once = yes
 	if = {
 		limit = {
 			NOT = { has_variable = ywc_dmg_arc_open }
@@ -17,7 +18,6 @@ ywc_dmg_open_common_subjects_once = {
 		set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_started value = 1 }
 		set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 0 }
 		set_variable = { name = ywc_dmg_contract_stage value = 0 }
-		set_variable = { name = ywc_dmg_review_due value = 1 months = 9 }
 		set_variable = { name = ywc_dmg_blocked_12_due value = 1 months = 12 }
 		set_variable = { name = ywc_dmg_blocked_36_due value = 1 months = 36 }
 		change_variable = { name = ywc_v03_active_arc_count add = 1 }
@@ -29,7 +29,7 @@ ywc_dmg_snapshot_costs_once = {
 	if = {
 		limit = { NOT = { has_variable = ywc_dmg_costs_snapshotted } }
 		set_variable = { name = ywc_dmg_public_registry_cost value = yearly_gross_income }
-		change_variable = { name = ywc_dmg_public_registry_cost multiply = 0.0192307692308 }
+		change_variable = { name = ywc_dmg_public_registry_cost divide = 52 }
 		clamp_variable = { name = ywc_dmg_public_registry_cost min = 100 max = 1000000000 }
 		set_variable = { name = ywc_dmg_compensation_cost value = var:ywc_dmg_public_registry_cost }
 		set_variable = { name = ywc_dmg_status_orders_cost value = var:ywc_dmg_public_registry_cost }
@@ -40,7 +40,7 @@ ywc_dmg_snapshot_costs_once = {
 ywc_dmg_pay_public_registry_once = {
 	ywc_dmg_snapshot_costs_once = yes
 	if = {
-		limit = { NOT = { has_variable = ywc_dmg_public_registry_paid } }
+		limit = { NOT = { has_variable = ywc_dmg_public_registry_paid } gold_reserves >= var:ywc_dmg_public_registry_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
 		add_treasury = { value = var:ywc_dmg_public_registry_cost multiply = -1 }
 		set_variable = { name = ywc_dmg_public_registry_paid value = 1 }
 	}
@@ -49,7 +49,7 @@ ywc_dmg_pay_public_registry_once = {
 ywc_dmg_pay_compensation_once = {
 	ywc_dmg_snapshot_costs_once = yes
 	if = {
-		limit = { NOT = { has_variable = ywc_dmg_compensation_paid } }
+		limit = { NOT = { has_variable = ywc_dmg_compensation_paid } gold_reserves >= var:ywc_dmg_compensation_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
 		add_treasury = { value = var:ywc_dmg_compensation_cost multiply = -1 }
 		set_variable = { name = ywc_dmg_compensation_paid value = 1 }
 	}
@@ -58,33 +58,36 @@ ywc_dmg_pay_compensation_once = {
 ywc_dmg_pay_status_orders_once = {
 	ywc_dmg_snapshot_costs_once = yes
 	if = {
-		limit = { NOT = { has_variable = ywc_dmg_status_orders_cost_paid } }
+		limit = { NOT = { has_variable = ywc_dmg_status_orders_cost_paid } gold_reserves >= var:ywc_dmg_status_orders_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
 		add_treasury = { value = var:ywc_dmg_status_orders_cost multiply = -1 }
 		set_variable = { name = ywc_dmg_status_orders_cost_paid value = 1 }
 	}
 }
 
 ywc_dmg_start_common_route = {
-	if = { limit = { NOT = { has_variable = ywc_dmg_route } } set_variable = { name = ywc_dmg_route value = 1 } }
 	ywc_dmg_pay_public_registry_once = yes
-	set_variable = { name = ywc_dmg_reform_path value = 1 }
+	if = {
+		limit = { has_variable = ywc_dmg_public_registry_paid NOT = { has_variable = ywc_dmg_route } }
+		set_variable = { name = ywc_dmg_route value = 1 }
+		set_variable = { name = ywc_dmg_reform_path value = 1 }
+	}
 }
 
 ywc_dmg_start_territorial_route = {
-	if = { limit = { NOT = { has_variable = ywc_dmg_route } } set_variable = { name = ywc_dmg_route value = 2 } }
 	ywc_dmg_pay_public_registry_once = yes
+	if = { limit = { has_variable = ywc_dmg_public_registry_paid NOT = { has_variable = ywc_dmg_route } } set_variable = { name = ywc_dmg_route value = 2 } }
 }
 
 ywc_dmg_start_status_route = {
-	if = { limit = { NOT = { has_variable = ywc_dmg_route } } set_variable = { name = ywc_dmg_route value = 3 } }
 	ywc_dmg_pay_public_registry_once = yes
 	ywc_dmg_pay_status_orders_once = yes
+	if = { limit = { has_variable = ywc_dmg_public_registry_paid has_variable = ywc_dmg_status_orders_cost_paid NOT = { has_variable = ywc_dmg_route } } set_variable = { name = ywc_dmg_route value = 3 } }
 }
 
 ywc_dmg_pay_local_rollout_once = {
 	ywc_dmg_snapshot_costs_once = yes
 	if = {
-		limit = { NOT = { has_variable = ywc_dmg_local_rollout_cost_paid } }
+		limit = { NOT = { has_variable = ywc_dmg_local_rollout_cost_paid } gold_reserves >= var:ywc_dmg_public_registry_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
 		add_treasury = { value = var:ywc_dmg_public_registry_cost multiply = -1 }
 		set_variable = { name = ywc_dmg_local_rollout_cost_paid value = 1 }
 	}
@@ -95,8 +98,7 @@ ywc_dmg_choose_joint_council = {
 	remove_modifier = ywc_dmg_noble_guarantee
 	remove_modifier = ywc_dmg_royal_directive
 	ywc_dmg_pay_local_rollout_once = yes
-	set_variable = { name = ywc_dmg_appeal_mechanism value = 1 }
-	add_modifier = { name = ywc_dmg_joint_council months = 24 }
+	if = { limit = { has_variable = ywc_dmg_local_rollout_cost_paid } set_variable = { name = ywc_dmg_appeal_mechanism value = 1 } add_modifier = { name = ywc_dmg_joint_council months = 24 } }
 }
 
 ywc_dmg_choose_noble_guarantee = {
@@ -104,8 +106,7 @@ ywc_dmg_choose_noble_guarantee = {
 	remove_modifier = ywc_dmg_noble_guarantee
 	remove_modifier = ywc_dmg_royal_directive
 	ywc_dmg_pay_local_rollout_once = yes
-	set_variable = { name = ywc_dmg_appeal_mechanism value = 2 }
-	add_modifier = { name = ywc_dmg_noble_guarantee months = 24 }
+	if = { limit = { has_variable = ywc_dmg_local_rollout_cost_paid } set_variable = { name = ywc_dmg_appeal_mechanism value = 2 } add_modifier = { name = ywc_dmg_noble_guarantee months = 24 } }
 }
 
 ywc_dmg_choose_royal_directive = {
@@ -113,8 +114,7 @@ ywc_dmg_choose_royal_directive = {
 	remove_modifier = ywc_dmg_noble_guarantee
 	remove_modifier = ywc_dmg_royal_directive
 	ywc_dmg_pay_local_rollout_once = yes
-	set_variable = { name = ywc_dmg_appeal_mechanism value = 3 }
-	add_modifier = { name = ywc_dmg_royal_directive months = 24 }
+	if = { limit = { has_variable = ywc_dmg_local_rollout_cost_paid } set_variable = { name = ywc_dmg_appeal_mechanism value = 3 } add_modifier = { name = ywc_dmg_royal_directive months = 24 } }
 }
 
 ywc_dmg_apply_review_consequences = {
@@ -157,7 +157,7 @@ ywc_dmg_close_as_common = {
 		limit = { NOT = { has_variable = ywc_dmg_any_outcome } }
 		ywc_dmg_record_appointment_actual = yes
 		if = {
-			limit = { has_variable = ywc_dmg_appointment_actual bureaucracy >= 0 }
+			limit = { has_variable = ywc_dmg_appointment_actual has_variable = ywc_dmg_public_registry_paid bureaucracy >= 0 OR = { AND = { var:ywc_dmg_service_qualification = 1 has_variable = ywc_dmg_compensation_paid } var:ywc_dmg_service_qualification = 2 } }
 			set_variable = { name = ywc_dmg_any_outcome value = 1 }
 			set_variable = { name = ywc_dmg_outcome_common_qualification value = 1 }
 			set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_outcome value = 1 }
@@ -193,7 +193,7 @@ ywc_dmg_close_as_status = {
 		limit = { NOT = { has_variable = ywc_dmg_any_outcome } }
 		set_variable = { name = ywc_dmg_any_outcome value = 1 }
 		if = {
-			limit = { has_variable = ywc_dmg_status_orders_cost_paid }
+			limit = { has_variable = ywc_dmg_public_registry_paid has_variable = ywc_dmg_status_orders_cost_paid }
 			set_variable = { name = ywc_dmg_outcome_status_orders value = 1 }
 			set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_outcome value = 3 }
 		}

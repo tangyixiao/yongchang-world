@@ -27,7 +27,7 @@
             "zh": "在实际拥有的试点州核查田粮、官署就业与投入品短缺。可走中央清查、地方联核或有限旧额；中央路线要求现行土地/人头/比例税法基础，两次核账至少间隔三个月。条件不足时可补就业或改善供给后等待。",
             "en": "Audit land tax, office staffing and input shortages in a state you actually own. Central review requires an existing land-based, per-capita or proportional taxation law; the two audits must be at least three months apart. If capacity is short, improve staffing or supply and wait."
           },
-          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } }\npossible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes ywc_shu_v03_has_eligible_state = yes }\nimmediate = { ywc_v03_claim_arc_shu_v03_shu_fiscal_register = yes ywc_shu_open_register_once = yes set_variable = { name = ywc_shu_blocked_12_due days = 365 } set_variable = { name = ywc_shu_blocked_36_due days = 1095 } set_variable = { name = ywc_shu_pending_event value = 1000 } }\non_fail = { ywc_shu_close_as_breach = yes }\non_monthly_pulse = {\n effect = {\n if = { limit = { has_variable = ywc_shu_waiting_for_capacity NOT = { has_variable = ywc_shu_first_audit } ywc_shu_v03_real_execution_ready = yes NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1001 } }\n if = { limit = { NOT = { has_variable = ywc_shu_first_audit } has_variable = ywc_shu_waiting_for_capacity NOT = { has_variable = ywc_shu_blocked_12_due } NOT = { has_variable = ywc_shu_blocked_12_notice } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1001 } }\n if = { limit = { NOT = { has_variable = ywc_shu_register_pilot_resolved } NOT = { has_variable = ywc_shu_blocked_36_due } NOT = { has_variable = ywc_shu_blocked_36_prompted } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_blocked_36_months value = 1 } set_variable = { name = ywc_shu_pending_event value = 1006 } }\n if = { limit = { has_variable = ywc_shu_first_audit NOT = { has_variable = ywc_shu_second_audit } NOT = { has_variable = ywc_shu_second_audit_due } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1006 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1000 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1000 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1001 } remove_variable = ywc_shu_pending_event remove_variable = ywc_shu_waiting_for_capacity trigger_event = { id = ywc_shu.1001 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1002 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1002 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1003 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1003 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1004 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1004 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1005 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1005 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1006 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1006 } }\n\n }\n}\n}",
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } }\npossible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes ywc_shu_v03_has_candidate_state = yes }\nimmediate = { ywc_v03_claim_arc_shu_v03_shu_fiscal_register = yes ywc_shu_open_register_once = yes set_variable = { name = ywc_shu_blocked_12_due days = 365 } set_variable = { name = ywc_shu_blocked_36_due days = 1095 } set_variable = { name = ywc_shu_pending_event value = 1000 } }\non_fail = { ywc_shu_close_as_breach = yes }\non_monthly_pulse = {\n effect = {\n if = { limit = { has_variable = ywc_shu_v03_pilot_state NOT = { ywc_shu_v03_has_pilot_state = yes } NOT = { var:ywc_shu_pilot_state_lost = 1 } } set_variable = { name = ywc_shu_pilot_state_lost value = 1 } if = { limit = { has_variable = ywc_shu_pending_event } set_variable = { name = ywc_shu_resume_event value = var:ywc_shu_pending_event } remove_variable = ywc_shu_pending_event } else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 1 } set_variable = { name = ywc_shu_resume_event value = 1001 } } else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 2 } set_variable = { name = ywc_shu_resume_event value = 1002 } } else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 3 } set_variable = { name = ywc_shu_resume_event value = 1003 } } else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 4 } set_variable = { name = ywc_shu_resume_event value = 1004 } } else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 5 } set_variable = { name = ywc_shu_resume_event value = 1005 } } else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 6 } set_variable = { name = ywc_shu_resume_event value = 1006 } } else = { set_variable = { name = ywc_shu_resume_event value = 1001 } } set_variable = { name = ywc_shu_pending_event value = 1001 } }\n if = { limit = { has_variable = ywc_shu_waiting_for_capacity NOT = { has_variable = ywc_shu_first_audit } ywc_shu_v03_real_execution_ready = yes NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1001 } }\n if = { limit = { NOT = { has_variable = ywc_shu_first_audit } has_variable = ywc_shu_waiting_for_capacity NOT = { has_variable = ywc_shu_blocked_12_due } NOT = { has_variable = ywc_shu_blocked_12_notice } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1001 } }\n if = { limit = { NOT = { has_variable = ywc_shu_register_pilot_resolved } NOT = { has_variable = ywc_shu_blocked_36_due } NOT = { has_variable = ywc_shu_blocked_36_prompted } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_blocked_36_months value = 1 } set_variable = { name = ywc_shu_pending_event value = 1006 } }\n if = { limit = { has_variable = ywc_shu_first_audit NOT = { has_variable = ywc_shu_second_audit } NOT = { has_variable = ywc_shu_second_audit_due } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1006 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1000 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1000 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1001 } remove_variable = ywc_shu_pending_event remove_variable = ywc_shu_waiting_for_capacity trigger_event = { id = ywc_shu.1001 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1002 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1002 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1003 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1003 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1004 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1004 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1005 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1005 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1006 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1006 } }\n\n }\n}\n}",
           "goal": "{ has_variable = ywc_shu_register_pilot_resolved OR = { AND = { has_variable = ywc_shu_first_audit has_variable = ywc_shu_second_audit } var:ywc_shu_pilot_outcome = 3 } }",
           "exit_conditions": "{ has_variable = ywc_shu_arc_abandoned }"
         },
@@ -38,10 +38,10 @@
             "en": "The New Register Must Honor Old Duties"
           },
           "desc": {
-            "zh": "将前期账务决定用于军饷、地方供役或海商预垫。六个月后复核预算、官署投入品与试点州；战争、失地、违约和财政恶化允许限缩或撤回，且不退已付款。",
-            "en": "Apply the first stage’s fiscal choice to military pay, provincial service or merchant credit. After six months, review the budget, office inputs and pilot state; war, lost territory, default or fiscal decline permit a limited settlement or withdrawal without refunding past payments."
+            "zh": "将前期账务决定用于军饷、地方供役或港口商人预垫。预垫本金一年后由月度财政回调自动偿还；国库不足会持续记录逾期压力。六个月连续审查只在和平、未违约、三月债务负担比未连续恶化、试点未失且官署可用时才成熟。",
+            "en": "Apply the first stage to military pay, provincial service or port-merchant advances. Principal is collected by a monthly fiscal callback after one year; insolvency keeps the arrears obligation active. The six-month review matures only through uninterrupted peace, no default or bankruptcy, no three-month worsening in scaled debt burden, a retained pilot state and a ready office."
           },
-          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized has_variable = ywc_shu_register_pilot_resolved NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_register_pilot_resolved ywc_shu_v03_unsettled = yes }\nimmediate = { set_variable = { name = ywc_shu_pending_event value = 1007 } }\non_fail = { ywc_shu_close_as_breach = yes }\non_monthly_pulse = {\n effect = {\n if = { limit = { has_variable = ywc_shu_wartime_deferral NOT = { is_at_war = yes } NOT = { in_default = yes } net_fixed_income >= 0 ywc_shu_v03_real_execution_ready = yes ywc_shu_v03_has_pilot_state = yes NOT = { has_variable = ywc_shu_pending_event } } remove_variable = ywc_shu_wartime_deferral remove_variable = ywc_shu_review_interrupted remove_variable = ywc_shu_settlement_review remove_variable = ywc_shu_settlement_review_due ywc_shu_start_settlement_review = yes }\n if = { limit = { has_variable = ywc_shu_settlement_review OR = { is_at_war = yes in_default = yes net_fixed_income < 0 NOT = { ywc_shu_v03_has_pilot_state = yes } NOT = { ywc_shu_v03_real_execution_ready = yes } } } remove_variable = ywc_shu_settlement_review_due remove_variable = ywc_shu_settlement_review set_variable = { name = ywc_shu_review_interrupted value = 1 } if = { limit = { NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1008 } } }\n if = { limit = { has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_due } NOT = { has_variable = ywc_shu_review_interrupted } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1008 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1007 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1007 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1008 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1008 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1009 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1009 } }\n\n }\n}\n}",
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized has_variable = ywc_shu_register_pilot_resolved NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_register_pilot_resolved ywc_shu_v03_unsettled = yes }\nimmediate = { set_variable = { name = ywc_shu_pending_event value = 1007 } }\non_fail = { ywc_shu_close_as_breach = yes }\non_monthly_pulse = {\n effect = {\n ywc_shu_track_debt_trend = yes\n if = { limit = { has_variable = ywc_shu_v03_pilot_state NOT = { ywc_shu_v03_has_pilot_state = yes } } set_variable = { name = ywc_shu_pilot_state_lost value = 1 } }\n  if = { limit = { has_variable = ywc_shu_wartime_deferral NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_settlement_execution_ready = yes ywc_shu_v03_has_pilot_state = yes NOT = { has_variable = ywc_shu_pending_event } } remove_variable = ywc_shu_wartime_deferral remove_variable = ywc_shu_review_interrupted remove_variable = ywc_shu_settlement_review remove_variable = ywc_shu_settlement_review_due ywc_shu_start_settlement_review = yes }\n if = { limit = { NOT = { has_variable = ywc_shu_settlement_review_due } has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_mature } NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_settlement_execution_ready = yes ywc_shu_v03_has_pilot_state = yes } set_variable = { name = ywc_shu_settlement_review_mature value = 1 } }\n if = { limit = { has_variable = ywc_shu_settlement_review OR = { is_at_war = yes NOT = { ywc_shu_v03_finance_safe = yes } NOT = { ywc_shu_v03_has_pilot_state = yes } NOT = { ywc_shu_v03_settlement_execution_ready = yes } } } remove_variable = ywc_shu_settlement_review_due remove_variable = ywc_shu_settlement_review remove_variable = ywc_shu_settlement_review_mature set_variable = { name = ywc_shu_review_interrupted value = 1 } if = { limit = { NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1008 } } }\n if = { limit = { has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_due } has_variable = ywc_shu_settlement_review_mature NOT = { has_variable = ywc_shu_review_interrupted } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1008 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1007 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1007 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1008 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1008 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1009 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1009 } }\n\n }\n}\n}",
           "goal": "{ has_variable = ywc_shu_register_resolved }",
           "exit_conditions": "{ has_variable = ywc_shu_arc_abandoned }"
         }
@@ -54,77 +54,113 @@
             "en": "Two Ledgers from One County"
           },
           "desc": {
-            "zh": "县吏把田粮册送入户部，军镇的供役名簿却列着另一批人。地方缙绅不肯先交旧免额，直到朝廷说清谁能核、谁负担纸笔。",
-            "en": "The county clerks send one grain ledger to the Board of Revenue; the garrison service roll lists a different set of households. Local gentry withhold their old exemptions until the court says who may audit and who pays for the paper."
+            "zh": "从实际拥有的四川、重庆、云南或贵州中选一州，让县吏、军镇和户部对同一册。失州后可重选，已经支出的差役银不退。",
+            "en": "Choose one actually owned state from Sichuan, Chongqing, Yunnan or Guizhou so clerks, garrisons and the Board audit the same register. If it is lost, another can be selected without refunding prior expenses."
           },
           "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\n\thas_journal_entry = ywc_je_v03_shu_register_pilot\n\tywc_shu_v03_unsettled = yes\n}",
           "immediate": "{\n ywc_v03_mark_major_delivered = yes\n set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 1 }\n}",
           "options": [
             {
-              "key": "central_audit",
+              "key": "pilot_state_sichuan",
               "label": {
-                "zh": "派员清查：中央持册",
-                "en": "Send auditors: central register"
+                "zh": "选定四川为试点州",
+                "en": "Select Sichuan as the pilot"
               },
-              "effect": "{\nywc_shu_begin_central_audit = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
-              "ai_chance": "{\nbase = 100\n}",
+              "trigger": "{ any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 1 }\nywc_shu_choose_pilot_state = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
+              "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "开启时年总收入÷52，最低100；首笔实扣一周估算的一半，余款在第二次核账时扣。",
-                "en": "At opening, estimate one week as yearly gross income ÷ 52, minimum 100; deduct half now and the remainder at the second audit."
+                "zh": "不交费；只能选择实际拥有的四川、重庆、云南或贵州。",
+                "en": "No charge. Only an actually owned Sichuan, Chongqing, Yunnan or Guizhou state can be selected."
               },
               "consequence_note": {
-                "zh": "中央取得查核权；须有本体税法基础、指定官署投入品不短缺与正向预算能力。",
-                "en": "The court gains audit authority, subject to an existing tax law, an adequately supplied pilot office and an affordable budget."
+                "zh": "之后核查只读这一州官署；失去后可重选，已付款不退。",
+                "en": "Later checks use this state's office only. If it is lost, select another eligible state; prior charges are not refunded."
               }
             },
             {
-              "key": "provincial_compact",
+              "key": "pilot_state_chongqing",
               "label": {
-                "zh": "地方联核：以留用换呈报权",
-                "en": "Joint audit: local reporting rights"
+                "zh": "选定重庆为试点州",
+                "en": "Select Chongqing as the pilot"
               },
-              "effect": "{\nywc_shu_begin_provincial_compact = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
-              "ai_chance": "{\nbase = 100\n}",
+              "trigger": "{ any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 2 }\nywc_shu_choose_pilot_state = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
+              "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "先不收审计费；若后来选择补偿征收，按两倍成本基数一次实扣。",
-                "en": "No audit fee now; compensated collection later deducts twice the cost base."
+                "zh": "不交费；只能选择实际拥有的四川、重庆、云南或贵州。",
+                "en": "No charge. Only an actually owned Sichuan, Chongqing, Yunnan or Guizhou state can be selected."
               },
               "consequence_note": {
-                "zh": "地方获得查册权，朝廷接受较低中央覆盖与一年分担义务。",
-                "en": "Provinces gain inspection rights; the court accepts lower central coverage and a one-year sharing obligation."
+                "zh": "之后核查只读这一州官署；失去后可重选，已付款不退。",
+                "en": "Later checks use this state's office only. If it is lost, select another eligible state; prior charges are not refunded."
               }
             },
             {
-              "key": "cap_old_exemptions",
+              "key": "pilot_state_yunnan",
               "label": {
-                "zh": "封顶旧额：保住供役旧约",
-                "en": "Cap old quotas: preserve service custom"
+                "zh": "选定云南为试点州",
+                "en": "Select Yunnan as the pilot"
               },
-              "effect": "{\nywc_shu_cap_legacy_assessment = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
-              "ai_chance": "{\nbase = 100\n}",
+              "trigger": "{ any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 3 }\nywc_shu_choose_pilot_state = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
+              "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "无启动款；目标缩为本地旧额核对，不宣称全国清丈。",
-                "en": "No start-up payment; scope narrows to local quota review, not a national survey."
+                "zh": "不交费；只能选择实际拥有的四川、重庆、云南或贵州。",
+                "en": "No charge. Only an actually owned Sichuan, Chongqing, Yunnan or Guizhou state can be selected."
               },
               "consequence_note": {
-                "zh": "保留缙绅与军镇旧约，也承认中央覆盖不足。",
-                "en": "Preserves gentry and garrison custom while acknowledging limited central coverage."
+                "zh": "之后核查只读这一州官署；失去后可重选，已付款不退。",
+                "en": "Later checks use this state's office only. If it is lost, select another eligible state; prior charges are not refunded."
+              }
+            },
+            {
+              "key": "pilot_state_guizhou",
+              "label": {
+                "zh": "选定贵州为试点州",
+                "en": "Select Guizhou as the pilot"
+              },
+              "trigger": "{ any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 4 }\nywc_shu_choose_pilot_state = yes\nset_variable = { name = ywc_shu_pending_event value = 1001 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不交费；只能选择实际拥有的四川、重庆、云南或贵州。",
+                "en": "No charge. Only an actually owned Sichuan, Chongqing, Yunnan or Guizhou state can be selected."
+              },
+              "consequence_note": {
+                "zh": "之后核查只读这一州官署；失去后可重选，已付款不退。",
+                "en": "Later checks use this state's office only. If it is lost, select another eligible state; prior charges are not refunded."
+              }
+            },
+            {
+              "key": "withdraw_before_pilot",
+              "label": {
+                "zh": "未选成试点，撤回本线",
+                "en": "No eligible pilot remains; withdraw"
+              },
+              "effect": "{ set_variable = { name = ywc_shu_arc_abandoned value = 1 } ywc_shu_close_as_breach = yes }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；既有已付款项不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线占用，记录撤回失信；候选州全部失去也可执行。",
+                "en": "Release this arc slot and record withdrawal; remains available if every candidate state is lost."
               }
             }
           ],
           "purpose": {
-            "zh": "确立中央持册、地方共核或保守封顶三种互斥开局，并留下真实账务义务。",
-            "en": "Choose among central audit, provincial co-audit or a conservative cap, each with a real fiscal obligation."
+            "zh": "先由玩家在实际拥有的四个候选州中选定一处核账试点；本节不替玩家代选治理路线。",
+            "en": "Let the player select the audit pilot from four fixed states that are actually owned; governance strategy is chosen in the next event."
           },
           "reads": [
-            "地方旧免额",
-            "初始成本基数",
-            "是否提前建立行政能力"
+            "actual ownership of Sichuan, Chongqing, Yunnan or Guizhou"
           ],
           "writes": [
-            "ywc_shu_audit_mode",
-            "ywc_shu_local_audit_right",
-            "ywc_shu_v03_pilot_state"
+            "ywc_shu_selected_pilot_state",
+            "ywc_shu_v03_pilot_state",
+            "ywc_shu_pending_event"
           ]
         },
         {
@@ -137,58 +173,169 @@
             "zh": "清查官须在指定试点州使用官署；该建筑就业达到八成且没有建筑投入品短缺，才可按真实行政结余记账。已满足条件者直接承认，不要求为了剧情回退法律。",
             "en": "Auditors must use an office in the designated pilot state. Its government administration building must reach 80% occupancy and have no building input shortage; then a real positive administrative balance can support the audit. Existing capacity is recognized."
           },
-          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\n\thas_journal_entry = ywc_je_v03_shu_register_pilot\n\tywc_shu_v03_unsettled = yes\n\t\tOR = { var:ywc_shu_audit_mode >= 1 }\n}",
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\n\thas_journal_entry = ywc_je_v03_shu_register_pilot\n\tywc_shu_v03_unsettled = yes\n\t\thas_variable = ywc_shu_v03_pilot_state\n}",
           "immediate": "{\n ywc_v03_mark_major_delivered = yes\n set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 2 }\n if = { limit = { NOT = { has_variable = ywc_shu_blocked_12_due } NOT = { has_variable = ywc_shu_first_audit } } set_variable = { name = ywc_shu_blocked_12_notice value = 1 } }\n}",
           "options": [
             {
-              "key": "record_ready_audit",
+              "key": "central_register",
               "label": {
-                "zh": "以现有官署、税法与投入品条件记第一次账",
-                "en": "Record the first audit with existing offices and tax law"
+                "zh": "户部清查：按现行税法立账",
+                "en": "Central audit under the existing tax law"
               },
-              "effect": "{\nif = { limit = { ywc_shu_v03_real_execution_ready = yes }\n if = { limit = { var:ywc_shu_audit_mode = 1 NOT = { has_variable = ywc_shu_audit_installment_paid } } ywc_shu_pay_audit_half_once = yes }\n if = { limit = { OR = { var:ywc_shu_audit_mode = 2 var:ywc_shu_audit_mode = 3 } } }\n ywc_shu_mark_first_audit = yes\n if = { limit = { has_variable = ywc_shu_first_audit } set_variable = { name = ywc_shu_pending_event value = 1002 } }\n}\nif = { limit = { NOT = { ywc_shu_v03_real_execution_ready = yes } } set_variable = { name = ywc_shu_waiting_for_capacity value = 1 } }\n}",
-              "ai_chance": "{\nbase = 100\n}",
+              "trigger": "{ NOT = { var:ywc_shu_pilot_state_lost = 1 } has_variable = ywc_shu_v03_pilot_state ywc_shu_v03_has_tax_register_law = yes }",
+              "effect": "{\nywc_shu_begin_central_audit = yes\nif = { limit = { ywc_shu_v03_real_execution_ready = yes } ywc_shu_pay_audit_half_once = yes ywc_shu_mark_first_audit = yes if = { limit = { has_variable = ywc_shu_first_audit } set_variable = { name = ywc_shu_pending_event value = 1002 } } if = { limit = { NOT = { has_variable = ywc_shu_first_audit } } set_variable = { name = ywc_shu_waiting_for_capacity value = 1 } } }\nelse = { set_variable = { name = ywc_shu_waiting_for_capacity value = 1 } }\n}",
+              "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "首笔仅在预算可支付时实扣 开启时一周收入估算基数的一半；不满足官署/投入品条件时不扣、不记账。",
-                "en": "Deduct half the captured one-week income estimate only when the budget permits; missing office/input conditions incur no charge and record no audit."
+                "zh": "预算容许时，实扣开启时年总收入÷52（最低100）的一半；开启快照不随后收入改变重算。",
+                "en": "When affordable, deduct half of the opening snapshot of annual gross income ÷ 52 (minimum 100); later income changes do not recalculate it."
               },
               "consequence_note": {
-                "zh": "还需土地税、人头税或比例税法基础，以及试点官署就业≥80%、无建筑投入品短缺和 bureaucracy≥0。",
-                "en": "Also requires land-based, per-capita or proportional taxation, ≥80% pilot-office occupancy, no building input shortage and bureaucracy ≥0."
+                "zh": "需现行税法、试点州官署就业和投入品准备。",
+                "en": "Requires an existing tax law and a staffed, supplied government office in the selected state."
               }
             },
             {
-              "key": "delegate_local_clerks",
+              "key": "local_register",
               "label": {
-                "zh": "地方书吏联署，承认地方查册权",
-                "en": "Use local clerks and recognize provincial review"
+                "zh": "地方联核：以查册权换取呈报",
+                "en": "Provincial co-audit for review rights"
               },
-              "effect": "{\nif = { limit = { ywc_shu_v03_has_eligible_state = yes } ywc_shu_choose_landlord_compromise = yes ywc_shu_mark_first_audit = yes set_variable = { name = ywc_shu_pending_event value = 1002 } }\nif = { limit = { NOT = { ywc_shu_v03_has_eligible_state = yes } } set_variable = { name = ywc_shu_waiting_for_capacity value = 1 } }\n}",
-              "ai_chance": "{\nbase = 100\n}",
+              "trigger": "{ NOT = { var:ywc_shu_pilot_state_lost = 1 } has_variable = ywc_shu_v03_pilot_state }",
+              "effect": "{\nywc_shu_begin_provincial_compact = yes\nywc_shu_mark_first_audit = yes\nif = { limit = { has_variable = ywc_shu_first_audit } set_variable = { name = ywc_shu_pending_event value = 1002 } }\n}",
+              "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "不直接生成官员；选择时不扣款，后续补偿另计。",
-                "en": "No clerks are created; this choice has no charge, later compensation is billed separately."
+                "zh": "无启动款；地方赚取复核权，赔偿另行审议。",
+                "en": "No start-up payment; provinces receive review rights and any compensation is decided separately."
               },
               "consequence_note": {
-                "zh": "地方取得复核权，中央覆盖率较低；若无可用州，选择只会留下等待标记。",
-                "en": "Local gentry receive review rights and central coverage is lower; a real owned state is required."
+                "zh": "不虚构官员或建筑，而是立即记下地方查册权。",
+                "en": "Records provincial inspection rights without fabricating offices or staff."
               }
             },
             {
-              "key": "wait_for_paper_and_office",
+              "key": "cap_old_quota",
               "label": {
-                "zh": "暂缓发册，先补行政与官署投入品",
-                "en": "Wait for offices and their building inputs"
+                "zh": "封顶旧额：只核对本地约定",
+                "en": "Cap old quotas and review local obligations only"
               },
-              "effect": "{\nset_variable = { name = ywc_shu_waiting_for_capacity value = 1 }\n}",
-              "ai_chance": "{\nbase = 100\n}",
+              "trigger": "{ NOT = { var:ywc_shu_pilot_state_lost = 1 } has_variable = ywc_shu_v03_pilot_state }",
+              "effect": "{\nywc_shu_cap_legacy_assessment = yes\nywc_shu_mark_first_audit = yes\nif = { limit = { has_variable = ywc_shu_first_audit } set_variable = { name = ywc_shu_pending_event value = 1002 } }\n}",
+              "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "暂不扣费，也不计为核账。",
-                "en": "No charge; this does not count as an audit."
+                "zh": "无启动款；不承诺全国清丘。",
+                "en": "No start-up payment; this makes no promise of a national survey."
               },
               "consequence_note": {
-                "zh": "先建设并补就业，或改善试点官署投入品供给；十二个月仍受阻会提示，三十六个月可缩限。",
-                "en": "Build and staff an office or improve its inputs; a 12-month blockage prompts review, and 36 months permits narrowing the pilot."
+                "zh": "保留缙绅与军镇的旧服务义务。",
+                "en": "Preserves gentry and garrison service obligations under the old quota."
+              }
+            },
+            {
+              "key": "wait_for_office",
+              "label": {
+                "zh": "暂缓：先补官署与供给",
+                "en": "Defer until the selected office is ready"
+              },
+              "trigger": "{ NOT = { var:ywc_shu_pilot_state_lost = 1 } has_variable = ywc_shu_v03_pilot_state }",
+              "effect": "{ set_variable = { name = ywc_shu_waiting_for_capacity value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费，也不记核账。",
+                "en": "No charge and no audit is recorded."
+              },
+              "consequence_note": {
+                "zh": "可先补就业或投入品，再由月度队列重新发送。",
+                "en": "Improve staffing or supplies, then the monthly dispatcher will offer the audit again."
+              }
+            },
+            {
+              "key": "reselect_state_sichuan",
+              "label": {
+                "zh": "失去试点后改选四川",
+                "en": "Replace the lost pilot with Sichuan"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 1 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nywc_shu_resume_after_pilot_reselection = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退回已付费用。",
+                "en": "Reselecting does not refund previous costs."
+              },
+              "consequence_note": {
+                "zh": "核账只使用新选州；试点序列从失州前的下一个节点继续。",
+                "en": "The audit switches to this state and resumes at the next stage after the loss."
+              }
+            },
+            {
+              "key": "reselect_state_chongqing",
+              "label": {
+                "zh": "失去试点后改选重庆",
+                "en": "Replace the lost pilot with Chongqing"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 2 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nywc_shu_resume_after_pilot_reselection = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退回已付费用。",
+                "en": "Reselecting does not refund previous costs."
+              },
+              "consequence_note": {
+                "zh": "核账只使用新选州；试点序列从失州前的下一个节点继续。",
+                "en": "The audit switches to this state and resumes at the next stage after the loss."
+              }
+            },
+            {
+              "key": "reselect_state_yunnan",
+              "label": {
+                "zh": "失去试点后改选云南",
+                "en": "Replace the lost pilot with Yunnan"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 3 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nywc_shu_resume_after_pilot_reselection = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退回已付费用。",
+                "en": "Reselecting does not refund previous costs."
+              },
+              "consequence_note": {
+                "zh": "核账只使用新选州；试点序列从失州前的下一个节点继续。",
+                "en": "The audit switches to this state and resumes at the next stage after the loss."
+              }
+            },
+            {
+              "key": "reselect_state_guizhou",
+              "label": {
+                "zh": "失去试点后改选贵州",
+                "en": "Replace the lost pilot with Guizhou"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 4 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nywc_shu_resume_after_pilot_reselection = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退回已付费用。",
+                "en": "Reselecting does not refund previous costs."
+              },
+              "consequence_note": {
+                "zh": "核账只使用新选州；试点序列从失州前的下一个节点继续。",
+                "en": "The audit switches to this state and resumes at the next stage after the loss."
+              }
+            },
+            {
+              "key": "withdraw_after_state_loss",
+              "label": {
+                "zh": "无可用试点：撤回核账承诺",
+                "en": "No eligible pilot remains: withdraw the register"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 }",
+              "effect": "{ set_variable = { name = ywc_shu_arc_abandoned value = 1 } ywc_shu_close_as_breach = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不退已支出费用或已发放的预垫。",
+                "en": "Prior costs and advances remain owed."
+              },
+              "consequence_note": {
+                "zh": "以撤回失信结束，不假装其他州可用。",
+                "en": "Ends as a breach rather than claiming another state is available."
               }
             }
           ],
@@ -236,8 +383,8 @@
                 "en": "No immediate deduction; records local review rights and 12 months of shared duties."
               },
               "consequence_note": {
-                "zh": "中央放弃部分覆盖换取地方供役和可复核期限。",
-                "en": "The court gives up some coverage for local service and a reviewable term."
+                "zh": "中央放弃部分覆盖换取地方供役和可复核期限。；地主支持提高 1 点，持续 12 个月。",
+                "en": "The court gives up some coverage for local service and a reviewable term.; Landowners gain 1 approval for 12 months."
               }
             },
             {
@@ -253,8 +400,8 @@
                 "en": "Deduct twice the one-week income estimate; if the budget gate fails, neither payment nor compensation is recorded."
               },
               "consequence_note": {
-                "zh": "地主失去旧免额，获得一次补偿；反对标记留给后续核账。",
-                "en": "Landowners lose the exemption but receive one compensation; their objection remains in the later audit."
+                "zh": "地主失去旧免额，获得一次补偿；反对标记留给后续核账。；实际付清后地主支持提高 2 点，持续 12 个月。",
+                "en": "Landowners lose the exemption but receive one compensation; their objection remains in the later audit.; if paid, Landowners gain 2 approval for 12 months."
               }
             },
             {
@@ -270,8 +417,8 @@
                 "en": "No immediate charge; the card gives up any claim of national tax-base coverage."
               },
               "consequence_note": {
-                "zh": "承认受挫妥协，以有限旧额继续，仍可进入后期重议。",
-                "en": "Accepts a bounded compromise and keeps later renegotiation open."
+                "zh": "承认受挫妥协，以有限旧额继续，仍可进入后期重议。；地主支持提高 3 点，持续 12 个月。",
+                "en": "Accepts a bounded compromise and keeps later renegotiation open.; Landowners gain 3 approval for 12 months."
               }
             }
           ],
@@ -392,7 +539,7 @@
                 "zh": "交官署复核，承担持续行政工作",
                 "en": "Refer it to the office for a staffed review"
               },
-              "effect": "{\nywc_shu_mark_duplicate_service_case = yes\nset_variable = { name = ywc_shu_appeal_owner value = 1 }\nset_variable = { name = ywc_shu_pending_event value = 1005 }\n}",
+              "effect": "{\nremove_modifier = ywc_shu_local_appeal_cost\nadd_modifier = { modifier = ywc_shu_central_appeal_cost months = 24 }\nywc_shu_mark_duplicate_service_case = yes\nset_variable = { name = ywc_shu_appeal_owner value = 1 }\nset_variable = { name = ywc_shu_pending_event value = 1005 }\n}",
               "ai_chance": "{\nbase = 100\n}",
               "cost_note": {
                 "zh": "无即时扣款；由真实行政结余与岗位供给承担持续工作。",
@@ -409,7 +556,7 @@
                 "zh": "交地方联核，保留地方裁判",
                 "en": "Refer the petition to provincial mediation"
               },
-              "effect": "{\nywc_shu_mark_duplicate_service_case = yes\nset_variable = { name = ywc_shu_appeal_owner value = 2 }\nset_variable = { name = ywc_shu_local_audit_right value = 1 }\nset_variable = { name = ywc_shu_pending_event value = 1005 }\n}",
+              "effect": "{\nremove_modifier = ywc_shu_central_appeal_cost\nadd_modifier = { modifier = ywc_shu_local_appeal_cost months = 24 }\nywc_shu_mark_duplicate_service_case = yes\nset_variable = { name = ywc_shu_appeal_owner value = 2 }\nset_variable = { name = ywc_shu_local_audit_right value = 1 }\nset_variable = { name = ywc_shu_pending_event value = 1005 }\n}",
               "ai_chance": "{\nbase = 100\n}",
               "cost_note": {
                 "zh": "不即时扣款；换取地方裁判与查册权。",
@@ -461,8 +608,8 @@
             "en": "Merchants Offer an Advance"
           },
           "desc": {
-            "zh": "海商可以先垫核账银，但要求下一年偿还、参与核对港税。若没有实际港口和商贸基础，这一席改由地方预缴，不虚构商人或海关。",
-            "en": "Merchants can advance audit funds, asking for repayment next year and a say in checking port dues. Where no real port or trade base exists, the offer becomes provincial prepayment; no merchant or customs house is invented."
+            "zh": "港口海商可先垫一周收入估算本金；无港时也可请本地粮户预付税银。本金保留为未偿债务，国库不足时持续等待并承担逾期政治代价。",
+            "en": "Port merchants may advance one week of estimated gross income; without a port, local grain houses may advance the tax receipts. Principal remains a liability, and insufficient treasury funds leave arrears and a political cost."
           },
           "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\n\thas_journal_entry = ywc_je_v03_shu_register_pilot\n\tywc_shu_v03_unsettled = yes\n\t\t\thas_variable = ywc_shu_first_audit\n}",
           "immediate": "{\n ywc_v03_mark_major_delivered = yes\n set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 6 }\n}",
@@ -473,15 +620,15 @@
                 "zh": "有港口时接纳商人预垫",
                 "en": "Accept the merchant advance where a port exists"
               },
-              "effect": "{\nif = { limit = { any_scope_state = { is_owned_by = ROOT has_building = building_port } } ywc_shu_accept_merchant_advance = yes }\nif = { limit = { NOT = { any_scope_state = { is_owned_by = ROOT has_building = building_port } } } set_variable = { name = ywc_shu_local_prepayment_offer value = 1 } }\nset_variable = { name = ywc_shu_pending_event value = 1006 }\n}",
+              "effect": "{\nif = { limit = { any_scope_state = { is_owned_by = ROOT has_building = building_port } } ywc_shu_accept_merchant_advance = yes }\nif = { limit = { NOT = { any_scope_state = { is_owned_by = ROOT has_building = building_port } } } ywc_shu_accept_merchant_advance = yes set_variable = { name = ywc_shu_local_prepayment_offer value = 1 } }\nset_variable = { name = ywc_shu_pending_event value = 1006 }\n}",
               "ai_chance": "{\nbase = 100\n}",
               "cost_note": {
-                "zh": "不增加国库资金；形成 12 个月偿付义务和港税咨询权。",
-                "en": "Adds no treasury money; records a 12-month repayment duty and port-dues consultation."
+                "zh": "港口海商或本地粮户先垫一周收入估算本金，一年后自动偿还同额本金。",
+                "en": "Port merchants or local grain houses advance the one-week income estimate; the same principal is due in one year."
               },
               "consequence_note": {
-                "zh": "只有真实港口可记录海商预垫；否则是地方预缴提议。",
-                "en": "Only a real port records a merchant advance; otherwise this becomes a provincial prepayment proposal."
+                "zh": "港口不可用时，本地粮户可先垫同额本金；一年后开始按月偿还，国库不足则逾期效果保留。",
+                "en": "If no port is available, local grain houses may advance the same principal; collection begins after a year and arrears persist if the treasury is short."
               }
             },
             {
@@ -564,7 +711,8 @@
               "consequence_note": {
                 "zh": "必须满足本地官署、行政结余、纸张与两次核账；点击本身不创造税收。",
                 "en": "Requires a local office, non-negative bureaucracy, paper availability and both audits; the button creates no tax revenue."
-              }
+              },
+              "trigger": "{ var:ywc_shu_audit_mode = 1 var:ywc_shu_appeal_owner = 1 ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes NOT = { has_variable = ywc_shu_second_audit_due } }"
             },
             {
               "key": "settle_as_provincial",
@@ -581,7 +729,8 @@
               "consequence_note": {
                 "zh": "前提是已有地方联核/分税责任，结局须承认较低中央覆盖。",
                 "en": "Requires an actual provincial co-audit or tax-sharing commitment and accepts lower central coverage."
-              }
+              },
+              "trigger": "{ var:ywc_shu_audit_mode = 2 var:ywc_shu_appeal_owner = 2 has_variable = ywc_shu_local_audit_right OR = { has_variable = ywc_shu_merchant_advance_repaid has_variable = ywc_shu_merchant_advance_refused } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes NOT = { has_variable = ywc_shu_second_audit_due } }"
             },
             {
               "key": "pause_as_legacy",
@@ -596,8 +745,26 @@
                 "en": "Earlier payments are not refunded; no second installment is taken."
               },
               "consequence_note": {
-                "zh": "只要坚持有限旧额即可进入后段；这是承认试点受挫，不伪称第二次核账。",
-                "en": "Proceed to settlement as a bounded, limited pilot; this acknowledges the failed expansion and does not claim a second audit."
+                "zh": "仅在试点仍归本国、财政安全且官署就业至少四分之一时转入限额旧额审查；仍需完成连续六个月履约。",
+                "en": "Enter capped-legacy review only with the pilot still owned, safe finances and at least 25% office staffing; six months of continuous fulfillment still remains."
+              },
+              "trigger": "{ ywc_shu_v03_limited_execution_ready = yes }"
+            },
+            {
+              "key": "withdraw_after_failed_audit",
+              "label": {
+                "zh": "撤回并保留已付款",
+                "en": "Withdraw and retain prior payments"
+              },
+              "effect": "{ set_variable = { name = ywc_shu_arc_abandoned value = 1 } ywc_shu_close_as_breach = yes }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不再新增费用；已付款不退。",
+                "en": "No new charges; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "记录撤回失信并结束本线。",
+                "en": "Record withdrawal and close this arc."
               }
             }
           ],
@@ -628,7 +795,7 @@
             "zh": "户部要把新册上的收入用在军饷、地方供役还是海关垫款上。中央查核、地方分担、旧额封顶互相排斥，不能同时取三份好处。",
             "en": "The Board must assign the new register’s claims to military pay, local service or merchant advances. Central audit, provincial sharing and capped quotas are mutually exclusive; the court cannot claim all three gains."
           },
-          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_fiscal_settlement\nywc_shu_v03_unsettled = yes\nOR = { AND = { var:ywc_shu_audit_mode = 1 has_variable = ywc_shu_pilot_outcome } AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right } AND = { var:ywc_shu_audit_mode = 3 has_variable = ywc_shu_pilot_outcome } }\n}",
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_fiscal_settlement\nywc_shu_v03_unsettled = yes\nOR = { AND = { var:ywc_shu_audit_mode = 1 has_variable = ywc_shu_pilot_outcome } AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right } AND = { var:ywc_shu_audit_mode = 3 has_variable = ywc_shu_pilot_outcome } var:ywc_shu_pilot_outcome = 3 }\n}",
           "immediate": "{\n ywc_v03_mark_major_delivered = yes\n set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 8 }\n}",
           "options": [
             {
@@ -646,7 +813,8 @@
               "consequence_note": {
                 "zh": "中央查核路线继续；真实军饷与官署支出仍由预算承担。",
                 "en": "Continues the central audit path; real pay and office costs remain on the budget."
-              }
+              },
+              "trigger": "{ var:ywc_shu_audit_mode = 1 var:ywc_shu_pilot_outcome = 1 ywc_shu_v03_finance_safe = yes }"
             },
             {
               "key": "provincial_retention",
@@ -663,7 +831,8 @@
               "consequence_note": {
                 "zh": "地方查册权与军镇分担进入结局；海商预垫不能抵销它。",
                 "en": "Provincial review and garrison sharing carry forward; merchant advances cannot cancel them."
-              }
+              },
+              "trigger": "{ var:ywc_shu_audit_mode = 2 var:ywc_shu_pilot_outcome = 2 has_variable = ywc_shu_local_audit_right OR = { has_variable = ywc_shu_merchant_advance_repaid has_variable = ywc_shu_merchant_advance_refused } ywc_shu_v03_finance_safe = yes }"
             },
             {
               "key": "cap_old_dues",
@@ -680,6 +849,41 @@
               "consequence_note": {
                 "zh": "允许保守秩序继续，但不领取中央查核成果。",
                 "en": "Allows conservative continuity without claiming the central-audit result."
+              },
+              "trigger": "{ OR = { has_variable = ywc_shu_legacy_cap var:ywc_shu_pilot_outcome = 3 } ywc_shu_v03_limited_execution_ready = yes }"
+            },
+            {
+              "key": "defer_until_ready",
+              "label": {
+                "zh": "暂缓裁定：待试点与旧额核对条件恢复",
+                "en": "Defer the ruling until the pilot and capped-quota conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_shu_pending_event value = 1007 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不新增费用、不开始观察期；已经支出的款项不退。",
+                "en": "Adds no charge and starts no review; prior spending is not refunded."
+              },
+              "consequence_note": {
+                "zh": "按共用大事件冷却重新排入本事件；条件未恢复前不会启动180天观察或产生结算。",
+                "en": "Requeues this event behind the shared major-event cooldown; no 180-day review or settlement begins until the conditions recover."
+              }
+            },
+            {
+              "key": "withdraw_before_execution",
+              "label": {
+                "zh": "撤回未能执行的旧额约定",
+                "en": "Withdraw the capped agreement before execution"
+              },
+              "effect": "{ set_variable = { name = ywc_shu_arc_abandoned value = 1 } ywc_shu_close_as_breach = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不新增费用；此前已支出的费用或预垫仍保留，不予退回。",
+                "en": "Adds no charge; earlier costs and advances remain owed and are not refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回失信结束并释放本线名额，不记作旧额结算成功。",
+                "en": "Ends as a breach and releases the arc slot; it does not count as a successful capped-quota settlement."
               }
             }
           ],
@@ -709,7 +913,7 @@
             "zh": "六个月巩固期到来。平时审查净固定收入与官署投入品；真实战争、破产、预算转负或试点失地时不装作和平，改作战时限缩或信用修复。",
             "en": "The six-month consolidation review arrives. In peace it checks net fixed income, offices and building inputs. Real war, default, a negative budget or loss of the pilot state moves the court to a wartime limit or credit repair instead of pretending conditions are normal."
           },
-          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_fiscal_settlement\nywc_shu_v03_unsettled = yes\nOR = { has_variable = ywc_shu_review_interrupted AND = { has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_due } } }\n}",
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_fiscal_settlement\nywc_shu_v03_unsettled = yes\nOR = { var:ywc_shu_pilot_state_lost = 1 has_variable = ywc_shu_review_interrupted AND = { has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_due } } }\n}",
           "immediate": "{\nywc_v03_mark_major_delivered = yes\n set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 9 }\nif = { limit = { NOT = { ywc_shu_v03_has_pilot_state = yes } } set_variable = { name = ywc_shu_pilot_state_lost value = 1 } }\n}",
           "options": [
             {
@@ -727,7 +931,8 @@
               "consequence_note": {
                 "zh": "条件达标才可确立，否则后续选项只能妥协或封顶。",
                 "en": "Establishment requires real conditions; otherwise only compromise or cap can close."
-              }
+              },
+              "trigger": "{ has_variable = ywc_shu_settlement_review_mature NOT = { has_variable = ywc_shu_review_interrupted } NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_settlement_execution_ready = yes ywc_shu_v03_has_pilot_state = yes }"
             },
             {
               "key": "limit_for_war",
@@ -735,7 +940,7 @@
                 "zh": "战时/财政受挫：保留试点，暂停并重启六个月审查",
                 "en": "Defer in war or fiscal distress; restart the six-month review later"
               },
-              "effect": "{\nset_variable = { name = ywc_shu_wartime_deferral value = 1 }\nremove_variable = ywc_shu_settlement_review_due\nremove_variable = ywc_shu_settlement_review\nremove_variable = ywc_shu_close_event_sent\n}",
+              "effect": "{\nset_variable = { name = ywc_shu_wartime_deferral value = 1 }\nremove_variable = ywc_shu_settlement_review_due\nremove_variable = ywc_shu_settlement_review\nremove_variable = ywc_shu_settlement_review_mature\nremove_variable = ywc_shu_close_event_sent\n}",
               "ai_chance": "{\nbase = 100\n}",
               "cost_note": {
                 "zh": "保留已付款项，不追加预算；延后责任仍记录。",
@@ -744,7 +949,8 @@
               "consequence_note": {
                 "zh": "不强迫停战；中断会清零，和平恢复且试点仍在后，重新开启完整六个月审查。",
                 "en": "No forced peace. The interrupted review resets; once peace and the pilot state return, a fresh six-month review begins."
-              }
+              },
+              "trigger": "{ has_variable = ywc_shu_review_interrupted }"
             },
             {
               "key": "withdraw_repair_credit",
@@ -752,7 +958,7 @@
                 "zh": "撤回承诺，进入信用修复",
                 "en": "Withdraw and repair fiscal credibility"
               },
-              "effect": "{\nset_variable = { name = ywc_shu_arc_abandoned value = 1 }\n}",
+              "effect": "{ set_variable = { name = ywc_shu_arc_abandoned value = 1 } ywc_shu_close_as_breach = yes }",
               "ai_chance": "{\nbase = 100\n}",
               "cost_note": {
                 "zh": "不退已付款，也不再新增承诺。",
@@ -761,6 +967,78 @@
               "consequence_note": {
                 "zh": "主动退出被记为失信；后续海关与省朝线仍可重谈。",
                 "en": "Active withdrawal is recorded as breach; later customs and provincial lines can renegotiate."
+              }
+            },
+            {
+              "key": "reselect_state_sichuan",
+              "label": {
+                "zh": "重选四川为核账试点",
+                "en": "Move the pilot to Sichuan"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 1 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nremove_variable = ywc_shu_review_interrupted\nremove_variable = ywc_shu_wartime_deferral\nremove_variable = ywc_shu_settlement_review\nremove_variable = ywc_shu_settlement_review_due\nremove_variable = ywc_shu_settlement_review_mature\nset_variable = { name = ywc_shu_wartime_deferral value = 1 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退旧账，不收新的标准试点费。",
+                "en": "This does not refund prior costs or charge a new standard pilot fee."
+              },
+              "consequence_note": {
+                "zh": "新试点需重新连续观察180天，只有四川、重庆、云南、贵州中实际拥有的州有效。",
+                "en": "The new pilot must pass a fresh continuous 180-day review; it must be an owned state among the four listed candidates."
+              }
+            },
+            {
+              "key": "reselect_state_chongqing",
+              "label": {
+                "zh": "重选重庆为核账试点",
+                "en": "Move the pilot to Chongqing"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 2 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nremove_variable = ywc_shu_review_interrupted\nremove_variable = ywc_shu_wartime_deferral\nremove_variable = ywc_shu_settlement_review\nremove_variable = ywc_shu_settlement_review_due\nremove_variable = ywc_shu_settlement_review_mature\nset_variable = { name = ywc_shu_wartime_deferral value = 1 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退旧账，不收新的标准试点费。",
+                "en": "This does not refund prior costs or charge a new standard pilot fee."
+              },
+              "consequence_note": {
+                "zh": "新试点需重新连续观察180天，只有四川、重庆、云南、贵州中实际拥有的州有效。",
+                "en": "The new pilot must pass a fresh continuous 180-day review; it must be an owned state among the four listed candidates."
+              }
+            },
+            {
+              "key": "reselect_state_yunnan",
+              "label": {
+                "zh": "重选云南为核账试点",
+                "en": "Move the pilot to Yunnan"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 3 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nremove_variable = ywc_shu_review_interrupted\nremove_variable = ywc_shu_wartime_deferral\nremove_variable = ywc_shu_settlement_review\nremove_variable = ywc_shu_settlement_review_due\nremove_variable = ywc_shu_settlement_review_mature\nset_variable = { name = ywc_shu_wartime_deferral value = 1 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退旧账，不收新的标准试点费。",
+                "en": "This does not refund prior costs or charge a new standard pilot fee."
+              },
+              "consequence_note": {
+                "zh": "新试点需重新连续观察180天，只有四川、重庆、云南、贵州中实际拥有的州有效。",
+                "en": "The new pilot must pass a fresh continuous 180-day review; it must be an owned state among the four listed candidates."
+              }
+            },
+            {
+              "key": "reselect_state_guizhou",
+              "label": {
+                "zh": "重选贵州为核账试点",
+                "en": "Move the pilot to Guizhou"
+              },
+              "trigger": "{ var:ywc_shu_pilot_state_lost = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU } }",
+              "effect": "{\nset_variable = { name = ywc_shu_selected_pilot_state value = 4 }\nywc_shu_choose_pilot_state = yes\nremove_variable = ywc_shu_pilot_state_lost\nremove_variable = ywc_shu_review_interrupted\nremove_variable = ywc_shu_wartime_deferral\nremove_variable = ywc_shu_settlement_review\nremove_variable = ywc_shu_settlement_review_due\nremove_variable = ywc_shu_settlement_review_mature\nset_variable = { name = ywc_shu_wartime_deferral value = 1 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "重选不退旧账，不收新的标准试点费。",
+                "en": "This does not refund prior costs or charge a new standard pilot fee."
+              },
+              "consequence_note": {
+                "zh": "新试点需重新连续观察180天，只有四川、重庆、云南、贵州中实际拥有的州有效。",
+                "en": "The new pilot must pass a fresh continuous 180-day review; it must be an owned state among the four listed candidates."
               }
             }
           ],
@@ -811,7 +1089,8 @@
               "consequence_note": {
                 "zh": "两次核账、行政供给与可支付性全满足时结果为确立。",
                 "en": "Established only if both audits, administrative supply and affordability are met."
-              }
+              },
+              "trigger": "{ has_variable = ywc_shu_second_audit var:ywc_shu_settlement_mode = 1 var:ywc_shu_pilot_outcome = 1 has_variable = ywc_shu_settlement_review_mature NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes has_variable = ywc_shu_audit_installment_paid_second }"
             },
             {
               "key": "confirm_provincial_share",
@@ -828,7 +1107,8 @@
               "consequence_note": {
                 "zh": "已实际给地方查册权并完成复核时结果为妥协。",
                 "en": "Compromise requires actual provincial review rights and a completed audit."
-              }
+              },
+              "trigger": "{ has_variable = ywc_shu_second_audit var:ywc_shu_settlement_mode = 2 has_variable = ywc_shu_local_audit_right var:ywc_shu_military_payer = 2 has_variable = ywc_shu_settlement_review_mature NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes OR = { has_variable = ywc_shu_merchant_advance_repaid has_variable = ywc_shu_merchant_advance_refused } }"
             },
             {
               "key": "keep_capped_quotas",
@@ -845,6 +1125,25 @@
               "consequence_note": {
                 "zh": "保守守成列为有限结果，未来可从海关或分省改革续接。",
                 "en": "Conservative continuity is a bounded result, open to later customs or provincial reform."
+              },
+              "trigger": "{ has_variable = ywc_shu_settlement_review_mature var:ywc_shu_settlement_mode = 3 ywc_shu_v03_limited_execution_ready = yes OR = { has_variable = ywc_shu_legacy_cap var:ywc_shu_pilot_outcome = 3 } }"
+            },
+            {
+              "key": "retry_after_interruption",
+              "label": {
+                "zh": "条件中断，重新开始六个月审查",
+                "en": "Conditions changed; restart the six-month review"
+              },
+              "trigger": "{ has_variable = ywc_shu_review_interrupted }",
+              "effect": "{ set_variable = { name = ywc_shu_wartime_deferral value = 1 } remove_variable = ywc_shu_review_class set_variable = { name = ywc_shu_pending_event value = 1008 } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "本选择不产生新费用；恢复后重新连续审查六个月。",
+                "en": "No new charge; after recovery, begin a fresh continuous six-month review."
+              },
+              "consequence_note": {
+                "zh": "保留承诺并回到中断处理，可在恢复条件后重新计时。",
+                "en": "Keep the commitment and return to interruption handling; the timer restarts after conditions recover."
               }
             },
             {
@@ -853,7 +1152,7 @@
                 "zh": "撤回并承担失信后果",
                 "en": "Withdraw and accept breach consequences"
               },
-              "effect": "{\nset_variable = { name = ywc_shu_arc_abandoned value = 1 }\n}",
+              "effect": "{\nset_variable = { name = ywc_shu_arc_abandoned value = 1 }\nywc_shu_close_as_breach = yes\n}",
               "ai_chance": "{\nbase = 100\n}",
               "cost_note": {
                 "zh": "停止未发生的新费用，已付款保留。",

@@ -1,14 +1,10 @@
-# Local v0.3 SHU trigger vocabulary, limited to vanilla-supported country/state scopes.
-ywc_shu_v03_has_eligible_state = {
-	any_scope_state = {
-		is_owned_by = ROOT
-	}
-}
-
+﻿# Local v0.3 SHU trigger vocabulary, limited to vanilla-supported country/state scopes.
 ywc_shu_v03_has_pilot_state = {
-	any_scope_state = {
-		is_owned_by = ROOT
-		has_variable = ywc_shu_v03_pilot_state
+	OR = {
+		AND = { var:ywc_shu_v03_pilot_state = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN } }
+		AND = { var:ywc_shu_v03_pilot_state = 2 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING } }
+		AND = { var:ywc_shu_v03_pilot_state = 3 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN } }
+		AND = { var:ywc_shu_v03_pilot_state = 4 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU } }
 	}
 }
 
@@ -23,15 +19,18 @@ ywc_shu_v03_has_tax_register_law = {
 ywc_shu_v03_administration_ready = {
 	bureaucracy >= 0
 	ywc_shu_v03_has_tax_register_law = yes
-	any_scope_state = {
-		is_owned_by = ROOT
-		has_variable = ywc_shu_v03_pilot_state
-		any_scope_building = {
-			is_building_type = building_government_administration
-			occupancy >= 0.8
-			building_has_goods_shortage = no
-		}
+	OR = {
+		AND = { var:ywc_shu_v03_pilot_state = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN any_scope_building = { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } }
+		AND = { var:ywc_shu_v03_pilot_state = 2 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING any_scope_building = { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } }
+		AND = { var:ywc_shu_v03_pilot_state = 3 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN any_scope_building = { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } }
+		AND = { var:ywc_shu_v03_pilot_state = 4 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU any_scope_building = { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } }
 	}
+}
+
+ywc_shu_v03_finance_safe = {
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+	NOT = { var:ywc_shu_scaled_debt_rise_months >= 3 }
 }
 
 ywc_shu_v03_real_execution_ready = {
@@ -39,6 +38,36 @@ ywc_shu_v03_real_execution_ready = {
 	ywc_shu_v03_administration_ready = yes
 }
 
+# The conservative route keeps a real office and a payable, peaceful ledger,
+# but does not require the national tax-law or 80% staffing threshold.
+ywc_shu_v03_limited_execution_ready = {
+	ywc_shu_v03_has_pilot_state = yes
+	ywc_shu_v03_finance_safe = yes
+	NOT = { is_at_war = yes }
+	OR = {
+		AND = { var:ywc_shu_v03_pilot_state = 1 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN any_scope_building = { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } }
+		AND = { var:ywc_shu_v03_pilot_state = 2 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING any_scope_building = { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } }
+		AND = { var:ywc_shu_v03_pilot_state = 3 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN any_scope_building = { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } }
+		AND = { var:ywc_shu_v03_pilot_state = 4 any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU any_scope_building = { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } }
+	}
+}
+
+ywc_shu_v03_settlement_execution_ready = {
+	OR = {
+		AND = { var:ywc_shu_settlement_mode = 3 ywc_shu_v03_limited_execution_ready = yes }
+		AND = { OR = { var:ywc_shu_settlement_mode = 1 var:ywc_shu_settlement_mode = 2 } ywc_shu_v03_real_execution_ready = yes }
+	}
+}
+
 ywc_shu_v03_unsettled = {
 	NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled }
+}
+
+ywc_shu_v03_has_candidate_state = {
+ OR = {
+  any_scope_state = { is_owned_by = ROOT state_region = s:STATE_SICHUAN }
+  any_scope_state = { is_owned_by = ROOT state_region = s:STATE_CHONGQING }
+  any_scope_state = { is_owned_by = ROOT state_region = s:STATE_YUNNAN }
+  any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU }
+ }
 }

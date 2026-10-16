@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from tools.ywc_check import (
+    _declared_key_occurrences,
     collect_declared_keys,
     collect_localization_keys,
     find_duplicate_keys,
@@ -234,6 +235,49 @@ class ScriptStructureTest(unittest.TestCase):
             (root / "common/two.txt").write_text("ywc_same = {}\n", encoding="utf-8")
             duplicates = find_duplicate_keys(root)
             self.assertIn("ywc_same", duplicates)
+
+    def test_same_line_root_duplicates_keep_both_source_locations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            path = root / "common/decisions/one.txt"
+            path.parent.mkdir(parents=True)
+            path.write_text("ywc_one = { } ywc_one = { }\n", encoding="utf-8")
+            self.assertEqual(find_duplicate_keys(root), {"ywc_one"})
+            self.assertEqual(_declared_key_occurrences(root)["ywc_one"],
+                             [(path, 1), (path, 1)])
+
+    def test_later_same_line_root_key_requires_localization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            path = root / "common/decisions/one.txt"
+            path.parent.mkdir(parents=True)
+            path.write_text("other = { } ywc_missing = { }\n", encoding="utf-8")
+            self.assertEqual(collect_declared_keys(root), {"ywc_missing"})
+            self.assertTrue(any("missing localization key ywc_missing" in item
+                                for item in validate(root)))
+
+    def test_same_line_scanning_ignores_nested_calls_quotes_and_comments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            path = root / "common/decisions/one.txt"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                'other = { text = "} ywc_fake = {" ywc_nested = yes } '
+                'ywc_real = { ywc_real = yes } # ywc_fake = { }\n'
+                'ywc_next = { }\n', encoding="utf-8")
+            self.assertEqual(collect_declared_keys(root), {"ywc_real", "ywc_next"})
+            self.assertEqual(find_duplicate_keys(root), set())
+            self.assertEqual(_declared_key_occurrences(root)["ywc_next"], [(path, 2)])
+
+    def test_root_assignment_across_lines_keeps_original_lines_after_quoted_newline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            path = root / "common/decisions/one.txt"
+            path.parent.mkdir(parents=True)
+            path.write_text('other = { text = "first\n} quoted" }\n'
+                            'ywc_next\n= { }\nywc_next = { }\n', encoding="utf-8")
+            self.assertEqual(_declared_key_occurrences(root)["ywc_next"],
+                             [(path, 3), (path, 5)])
 
     def test_nested_scripted_effect_calls_are_not_declarations(self):
         with tempfile.TemporaryDirectory() as directory:

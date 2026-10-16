@@ -86,6 +86,18 @@ class PulseWorld:
                     "OR": any, "NOR": lambda xs: not any(xs)}[key](results)
         if key == "has_variable":
             return value in variables
+        if key == "has_modifier":
+            return any(modifier_tag == tag and fields.get("modifier") == value
+                       for modifier_tag, fields in self.modifiers)
+        if key == "ywc_shu_v03_finance_safe":
+            return (not variables.get("in_default", False)
+                    and not any(modifier_tag == tag and fields.get("modifier") == "declared_bankruptcy"
+                                for modifier_tag, fields in self.modifiers)
+                    and variables.get("ywc_shu_scaled_debt_rise_months", 0) < 3)
+        if key == "ywc_shu_v03_real_execution_ready":
+            return bool(variables.get("test_ready", False))
+        if key == "ywc_shu_v03_has_pilot_state":
+            return bool(variables.get("test_has_pilot", False))
         if key == "has_journal_entry":
             return any(
                 entry_tag == tag
@@ -96,7 +108,7 @@ class PulseWorld:
             return value.removeprefix("c:") in self.countries
         if key == "always":
             return value == "yes"
-        if key in ("net_fixed_income", "bureaucracy", "gold_reserves", "yearly_gross_income", "in_default", "is_at_war"):
+        if key in ("net_fixed_income", "bureaucracy", "gold_reserves", "yearly_gross_income", "scaled_debt", "in_default", "is_at_war"):
             left = variables.get(key, 0)
             if isinstance(value, list):
                 fields = {name: field for name, _, field in value}
@@ -168,18 +180,23 @@ class PulseWorld:
                 fields = {name: value for name, _, value in body}
                 name = fields["name"]
                 if key == "set_variable":
-                    raw_value = fields["value"]
-                    if raw_value.startswith("var:"):
-                        resolved_value = variables.get(raw_value[4:], 0)
-                    elif raw_value.startswith("this."):
-                        resolved_value = variables.get(raw_value[5:], 0)
-                    elif raw_value in ("yearly_gross_income", "gdp"):
-                        resolved_value = variables.get(raw_value, 0)
+                    if "value" not in fields:
+                        if "days" not in fields:
+                            raise AssertionError(f"unsupported set_variable without value: {fields}")
+                        resolved_value = 1
                     else:
-                        try:
-                            resolved_value = float(raw_value)
-                        except ValueError:
-                            resolved_value = raw_value == "yes"
+                        raw_value = fields["value"]
+                        if raw_value.startswith("var:"):
+                            resolved_value = variables.get(raw_value[4:], 0)
+                        elif raw_value.startswith("this."):
+                            resolved_value = variables.get(raw_value[5:], 0)
+                        elif raw_value in ("yearly_gross_income", "gdp", "scaled_debt"):
+                            resolved_value = variables.get(raw_value, 0)
+                        else:
+                            try:
+                                resolved_value = float(raw_value)
+                            except ValueError:
+                                resolved_value = raw_value == "yes"
                     variables[name] = resolved_value
                     if "months" in fields:
                         self.months_until_expiry.setdefault(tag, {})[name] = int(float(fields["months"]))
@@ -192,6 +209,11 @@ class PulseWorld:
                 elif key == "change_variable":
                     if "multiply" in fields:
                         variables[name] = variables.get(name, 0) * float(fields["multiply"])
+                    elif "divide" in fields:
+                        divisor = float(fields["divide"])
+                        if divisor == 0:
+                            raise AssertionError(f"change_variable divide by zero: {fields}")
+                        variables[name] = variables.get(name, 0) / divisor
                     elif "add" in fields:
                         raw_add = fields["add"]
                         if raw_add.startswith("var:"):
@@ -213,6 +235,9 @@ class PulseWorld:
                 self.events.append((tag, dict((name, value) for name, _, value in body)["id"]))
             elif key == "add_modifier":
                 self.modifiers.append((tag, dict((name, value) for name, _, value in body)))
+            elif key == "remove_modifier":
+                self.modifiers = [(modifier_tag, fields) for modifier_tag, fields in self.modifiers
+                                  if modifier_tag != tag or fields.get("modifier") != body]
             elif key == "add_treasury":
                 if isinstance(body, list):
                     fields = {name: value for name, _, value in body}

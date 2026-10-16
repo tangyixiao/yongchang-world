@@ -117,10 +117,12 @@ class DmgContentCardTest(unittest.TestCase):
         e9 = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
         self.assertTrue(any(o["key"] == "limited_settlement" for o in e9["options"]))
         self.assertTrue(any(o["key"] == "withdraw_breach" for o in e9["options"]))
-        self.assertTrue(any(not o.get("trigger") for o in e9["options"]))
         for o in e9["options"]:
-            if o.get("trigger"):
-                self.assertTrue(o["trigger"].strip().startswith("{"))
+            self.assertTrue(o["trigger"].strip().startswith("{"))
+        for key in ("limited_settlement", "withdraw_breach"):
+            fallback = next(o for o in e9["options"] if o["key"] == key)
+            self.assertIn("ywc_dmg_review_matured", fallback["trigger"])
+            self.assertIn("ywc_dmg_review_blocked_12_notice", fallback["trigger"])
 
     def test_legacy_bridge_is_idempotent_and_new_arc_does_not_stop_old_pulse(self):
         bridge = next(block for key, _, block in parse(self.effects) if key == "ywc_v03_bridge_dmg_compact_one")
@@ -149,14 +151,14 @@ class DmgContentCardTest(unittest.TestCase):
 
 
     def test_local_execution_fee_is_income_based_idempotent_and_game_assets_have_bom(self):
-        world=PulseWorld(self.effects,{"DMG":{"yearly_gross_income":52000}})
+        world=PulseWorld(self.effects,{"DMG":{"yearly_gross_income":52000,"gold_reserves":2000}})
         world.run("ywc_dmg_pay_local_rollout_once",tag="DMG")
         first=world.treasury["DMG"]
         self.assertAlmostEqual(first,-1000,places=5)
         world.run("ywc_dmg_pay_local_rollout_once",tag="DMG")
         self.assertEqual(world.treasury["DMG"],first)
         self.assertEqual(world.countries["DMG"]["ywc_dmg_local_rollout_cost_paid"],1)
-        assets=[EFFECTS_PATH,TRIGGERS_PATH,ROOT/"yongchang_world/common/journal_entries/ywc_dmg.txt",ROOT/"yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt",ROOT/"yongchang_world/localization/english/ywc_v03_dmg_modifiers_l_english.yml",ROOT/"yongchang_world/localization/simp_chinese/ywc_v03_dmg_modifiers_l_simp_chinese.yml"]
+        assets=[EFFECTS_PATH,TRIGGERS_PATH,ROOT/"yongchang_world/common/journal_entries/ywc_dmg.txt",ROOT/"yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt",ROOT/"yongchang_world/localization/english/ywc_v03_dmg_modifiers_l_english.yml",ROOT/"yongchang_world/localization/simp_chinese/ywc_v03_dmg_modifiers_l_simp_chinese.yml",ROOT/"yongchang_world/events/ywc_v03_country_dmg_events.txt",ROOT/"yongchang_world/common/journal_entries/ywc_v03_country_dmg_journal.txt",ROOT/"yongchang_world/localization/english/ywc_v03_country_dmg_l_english.yml",ROOT/"yongchang_world/localization/simp_chinese/ywc_v03_country_dmg_l_simp_chinese.yml"]
         for path in assets:
             self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"),str(path))
         modifiers=Path(ROOT/"yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt").read_text(encoding="utf-8-sig")
@@ -234,7 +236,7 @@ class DmgContentCardTest(unittest.TestCase):
         e6 = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1006")
         self.assertIn("ywc_dmg_first_stage_matured", e6["trigger"])
         self.assertIn("ywc_dmg_first_stage_matured", e6["trigger"])
-        self.assertIn("NOT = { has_variable = ywc_dmg_review_due }", next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")["trigger"])
+        self.assertIn("has_variable = ywc_dmg_review_matured", next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")["trigger"])
 
 
     def test_extracted_pulse_effect_runs_six_continuous_months_and_restarts_after_break(self):
@@ -257,6 +259,8 @@ class DmgContentCardTest(unittest.TestCase):
             key = node[0]
             if key == "ywc_dmg_v03_selected_route_ready":
                 return bool(world.countries[tag].get("ywc_dmg_v03_selected_route_ready"))
+            if key == "ywc_dmg_v03_has_owned_state":
+                return True
             if key == "ywc_v03_can_deliver_major":
                 return False  # keep the shared 90-day delivery gate closed in this offline simulation
             return base_condition(node, tag)
@@ -285,9 +289,104 @@ class DmgContentCardTest(unittest.TestCase):
         self.assertEqual(world.countries["DMG"]["ywc_dmg_first_stage_matured"], 1)
         self.assertEqual(world.countries["DMG"]["ywc_dmg_pending_event"], 1006)
 
+    def test_je2_review_is_nine_continuous_months_of_selected_route_fulfillment(self):
+        journal = self.arc["journals"][1]
+        nodes = parse(journal["script"])
+        pulse = next(body for key, _, body in nodes if key == "on_monthly_pulse")
+        effect = next(body for key, _, body in pulse if key == "effect")
+        pulse_text = journal["script"]
+        self.assertIn("ywc_dmg_v03_selected_route_ready", pulse_text)
+        self.assertIn("ywc_dmg_review_due", pulse_text)
+        self.assertIn("ywc_dmg_review_matured", pulse_text)
+        self.assertIn("remove_variable = ywc_dmg_review_due", pulse_text)
+        self.assertIn("remove_variable = ywc_dmg_review_matured", pulse_text)
+        event = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
+        self.assertIn("has_variable = ywc_dmg_review_matured", event["trigger"])
+        for option in event["options"][:3]:
+            self.assertIn("ywc_dmg_review_matured", option.get("trigger", ""))
+
+    def test_je2_review_clock_restarts_after_lost_fulfillment(self):
+        journal = self.arc["journals"][1]
+        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
+        pulse_effect = next(body for key, _, body in pulse if key == "effect")
+        world = PulseWorld(self.effects, {"DMG": {"ywc_dmg_v03_selected_route_ready": 1}})
+        original_condition = world.condition
+
+        def condition(node, tag):
+            if node[0] == "ywc_dmg_v03_selected_route_ready":
+                return bool(world.countries[tag].get("ywc_dmg_v03_selected_route_ready"))
+            if node[0] == "ywc_dmg_v03_has_owned_state":
+                return True
+            if node[0] == "ywc_v03_can_deliver_major":
+                return False
+            return original_condition(node, tag)
+
+        world.condition = condition
+        world.execute(pulse_effect, "DMG")
+        self.assertEqual(world.months_until_expiry["DMG"]["ywc_dmg_review_due"], 9)
+        for _ in range(4):
+            world.advance_months()
+            world.execute(pulse_effect, "DMG")
+        world.countries["DMG"]["ywc_dmg_v03_selected_route_ready"] = 0
+        world.execute(pulse_effect, "DMG")
+        self.assertNotIn("ywc_dmg_review_due", world.countries["DMG"])
+        self.assertNotIn("ywc_dmg_review_matured", world.countries["DMG"])
+        world.countries["DMG"]["ywc_dmg_v03_selected_route_ready"] = 1
+        world.execute(pulse_effect, "DMG")
+        self.assertEqual(world.months_until_expiry["DMG"]["ywc_dmg_review_due"], 9)
+        for _ in range(8):
+            world.advance_months()
+            world.execute(pulse_effect, "DMG")
+        self.assertNotIn("ywc_dmg_review_matured", world.countries["DMG"])
+        world.advance_months()
+        world.execute(pulse_effect, "DMG")
+        self.assertEqual(world.countries["DMG"]["ywc_dmg_review_matured"], 1)
+
+    def test_common_qualification_excludes_reserved_service_and_checks_current_franchise(self):
+        common = next(body for key, _, body in parse(self.triggers) if key == "ywc_dmg_v03_common_route_ready")
+        common_text = str(common)
+        self.assertIn("ywc_dmg_service_qualification", common_text)
+        self.assertRegex(common_text, r"var:ywc_dmg_service_qualification', '<', '3")
+        politics = next(body for key, _, body in parse(self.triggers)
+                        if key == "ywc_dmg_v03_common_political_qualification_ready")
+        politics_text = self.triggers
+        self.assertIn("country_has_voting_franchise = yes", politics_text)
+        self.assertIn("country_bureaucrats_voting_power_add", politics_text)
+        self.assertIn("ROOT.modifier:country_voting_power_wealth_threshold_add", politics_text)
+        self.assertIn("ROOT.modifier:country_voting_power_base_add", politics_text)
+        self.assertIn("ROOT.modifier:country_bureaucrats_voting_power_add", politics_text)
+        self.assertIn("ROOT.modifier:country_officers_voting_power_add", politics_text)
+        self.assertIn("ROOT.modifier:country_voting_power_from_literacy_add", politics_text)
+        self.assertIn("country_voting_power_from_literacy_add", politics_text)
+        self.assertIn("literacy_rate > 0", politics_text)
+        self.assertIn("ywc_dmg_v03_electoral_representative_ready", politics_text)
+        self.assertIn("country_allow_voting_full_acceptance_bool", politics_text)
+        self.assertIn("var:ywc_dmg_appeal_mechanism = 1", politics_text)
+        self.assertNotIn("has_modifier = ywc_dmg_joint_council", politics_text)
+        self.assertIn("country_has_voting_franchise = no", politics_text)
+
+    def test_installed_11311_sources_support_used_electoral_accessors(self):
+        game = Path(r"E:\SteamLibrary\steamapps\common\Victoria 3\game\common")
+        triggers = (game / "scripted_triggers/00_scripted_triggers.txt").read_text(encoding="utf-8-sig")
+        laws = (game / "laws/00_distribution_of_power.txt").read_text(encoding="utf-8-sig")
+        citizenship = (game / "laws/00_citizenship.txt").read_text(encoding="utf-8-sig")
+        bureaucracy = (game / "pop_types/bureaucrats.txt").read_text(encoding="utf-8-sig")
+        capitalists = (game / "pop_types/capitalists.txt").read_text(encoding="utf-8-sig")
+        modifiers = (game / "modifier_type_definitions/00_modifier_types.txt").read_text(encoding="utf-8-sig")
+        self.assertIn("country_has_voting_franchise = {", triggers)
+        self.assertIn("country_bureaucrats_voting_power_add", triggers)
+        self.assertIn("country_aristocrats_voting_power_add", laws)
+        self.assertIn("country_officers_voting_power_add", laws)
+        self.assertIn("country_allow_voting_full_acceptance_bool = yes", citizenship)
+        self.assertIn("literacy_rate > 0.2", bureaucracy)
+        self.assertIn("wealth > 10", capitalists)
+        self.assertIn("country_voting_power_wealth_threshold_add={", modifiers)
+        branch = Path(r"E:\SteamLibrary\steamapps\common\Victoria 3\caligula_branch.txt")
+        self.assertIn("release/1.13.11", branch.read_text(encoding="utf-8-sig"))
+
     def test_cost_is_income_based_once_and_old_status_route_has_separate_cost(self):
         self.assertIn("value = yearly_gross_income", self.effects)
-        self.assertIn("0.0192307692308", self.effects)
+        self.assertIn("divide = 52", self.effects)
         self.assertIn("max = 100", self.effects)
         self.assertRegex(self.effects, r"add_treasury\s*=\s*\{\s*value\s*=\s*var:ywc_dmg_[a-z_]+cost")
         self.assertIn("ywc_dmg_compensation_paid", self.effects)
@@ -307,7 +406,7 @@ class DmgContentCardTest(unittest.TestCase):
         self.assertIn("NOT = { has_variable = ywc_dmg_compensation_paid }", self.effects)
 
     def test_country_helpers_are_idempotent_and_counted_once(self):
-        world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000}})
+        world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 1_000}})
         world.run("ywc_dmg_open_common_subjects_once", tag="DMG")
         world.run("ywc_dmg_open_common_subjects_once", tag="DMG")
         self.assertEqual(world.countries["DMG"]["ywc_dmg_arc_open"], 1)
@@ -316,16 +415,138 @@ class DmgContentCardTest(unittest.TestCase):
         self.assertNotIn("ywc_dmg_outcome_common_qualification", world.countries["DMG"])
 
     def test_repeated_payments_are_idempotent_and_keep_income_proportional(self):
-        world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000}})
+        world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 1_000}})
         world.run("ywc_dmg_pay_public_registry_once", tag="DMG")
         first = world.treasury["DMG"]
         self.assertAlmostEqual(first, -1_000, places=5)
+        self.assertEqual(first, -1_000)
         world.run("ywc_dmg_pay_public_registry_once", tag="DMG")
         self.assertEqual(world.treasury["DMG"], first)
         self.assertEqual(world.countries["DMG"]["ywc_dmg_public_registry_paid"], 1)
-        poor = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 104}})
+        poor = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 104, "gold_reserves": 100}})
         poor.run("ywc_dmg_snapshot_costs_once", tag="DMG")
         self.assertEqual(poor.countries["DMG"]["ywc_dmg_public_registry_cost"], 100)
+
+    def test_payment_effect_needs_exact_cash_and_does_not_mark_unpaid_cost_as_paid(self):
+        exact = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 1_000}})
+        exact.run("ywc_dmg_pay_public_registry_once", tag="DMG")
+        self.assertEqual(exact.countries["DMG"]["ywc_dmg_public_registry_cost"], 1_000)
+        self.assertEqual(exact.treasury["DMG"], -1_000)
+        self.assertEqual(exact.countries["DMG"]["ywc_dmg_public_registry_paid"], 1)
+        short = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 999}})
+        short.run("ywc_dmg_pay_public_registry_once", tag="DMG")
+        self.assertNotIn("ywc_dmg_public_registry_paid", short.countries["DMG"])
+        self.assertEqual(short.treasury["DMG"], 0)
+        defaulted = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 2_000, "in_default": True}})
+        defaulted.run("ywc_dmg_pay_public_registry_once", tag="DMG")
+        self.assertNotIn("ywc_dmg_public_registry_paid", defaulted.countries["DMG"])
+
+    def test_unfunded_opening_choice_cannot_select_a_paid_route(self):
+        opening = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1000")
+        option = next(o for o in opening["options"] if o["key"] == "common_qualification")
+        world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 0}})
+        world.execute(parse(option["effect"][1:-1]), "DMG")
+        state = world.countries["DMG"]
+        self.assertNotIn("ywc_dmg_public_registry_paid", state)
+        self.assertNotIn("ywc_dmg_route", state)
+        self.assertNotEqual(state.get("ywc_dmg_pending_event"), 1001)
+        self.assertTrue(any(o["key"] in ("defer", "withdraw") for o in opening["options"]))
+
+    def test_common_close_cannot_award_success_without_registry_payment(self):
+        effects = self.effects + "\nywc_v03_release_arc_dmg_v03_dmg_common_subjects = { set_variable = { name = released value = 1 } }\n"
+        class ReadyWithoutPaidRegistry(PulseWorld):
+            def condition(self, node, tag):
+                if node[0] == "ywc_dmg_v03_common_route_ready":
+                    return True
+                return super().condition(node, tag)
+        world = ReadyWithoutPaidRegistry(effects, {"DMG": {
+            "ywc_dmg_route": 1,
+            "ywc_dmg_service_qualification": 2,
+            "ywc_dmg_appointment_actual": 1,
+        }})
+        world.run("ywc_dmg_close_as_common", tag="DMG")
+        self.assertNotEqual(world.countries["DMG"].get("ywc_dmg_outcome_common_qualification"), 1)
+
+    def test_je2_blocked_route_prompts_after_twelve_months_without_maturity_and_keeps_exit(self):
+        journal = self.arc["journals"][1]
+        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
+        pulse_effect = next(body for key, _, body in pulse if key == "effect")
+        class BlockedReviewWorld(PulseWorld):
+            def condition(self, node, tag):
+                if node[0] == "ywc_dmg_v03_selected_route_ready":
+                    return False
+                if node[0] == "ywc_dmg_v03_has_owned_state":
+                    return True
+                if node[0] == "ywc_v03_can_deliver_major":
+                    return True
+                return super().condition(node, tag)
+        world = BlockedReviewWorld(self.effects, {"DMG": {
+            "ywc_dmg_review_findings": 1,
+            "ywc_dmg_pending_event": 1009,
+        }})
+        for _ in range(13):
+            world.execute(pulse_effect, "DMG")
+            world.advance_months()
+        self.assertIn(("DMG", "ywc_dmg.1009"), world.events)
+        event = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
+        withdraw = next(o for o in event["options"] if o["key"] == "withdraw_breach")
+        self.assertIn("ywc_dmg_review_blocked_12_notice", withdraw.get("trigger", ""))
+        limited = next(o for o in event["options"] if o["key"] == "limited_settlement")
+        self.assertIn("ywc_dmg_review_blocked_12_notice", limited.get("trigger", ""))
+        repair = next(o for o in event["options"] if o["key"] == "continue_repair")
+        self.assertIn("ywc_dmg_review_blocked_12_notice", repair["trigger"])
+        effects = self.effects + "\nywc_v03_release_arc_dmg_v03_dmg_common_subjects = { change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } }\n"
+        state = world.countries["DMG"]
+        state.update({"ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1})
+        closer = PulseWorld(effects, {"DMG": state})
+        closer.execute(parse(limited["effect"][1:-1]), "DMG")
+        self.assertEqual(closer.countries["DMG"].get("ywc_dmg_outcome_limited_qualification"), 1)
+        self.assertNotIn("ywc_dmg_outcome_common_qualification", closer.countries["DMG"])
+        self.assertEqual(closer.countries["DMG"].get("ywc_v03_active_arc_count"), 0)
+
+    def test_je2_lost_territory_keeps_immediate_breach_exit_and_releases_slot(self):
+        journal = self.arc["journals"][1]
+        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
+        pulse_effect = next(body for key, _, body in pulse if key == "effect")
+        class TerritoryLostWorld(PulseWorld):
+            def condition(self, node, tag):
+                if node[0] == "ywc_dmg_v03_selected_route_ready":
+                    return False
+                if node[0] == "ywc_dmg_v03_has_owned_state":
+                    return False
+                if node[0] == "ywc_v03_can_deliver_major":
+                    return True
+                return super().condition(node, tag)
+        state = {"ywc_dmg_review_findings": 1, "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1}
+        effects = self.effects + "\nywc_v03_release_arc_dmg_v03_dmg_common_subjects = { change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } }\n"
+        world = TerritoryLostWorld(effects, {"DMG": state})
+        world.execute(pulse_effect, "DMG")
+        self.assertIn(("DMG", "ywc_dmg.1009"), world.events)
+        event = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
+        withdraw = next(o for o in event["options"] if o["key"] == "withdraw_breach")
+        self.assertTrue(world.conditions(parse(withdraw["trigger"][1:-1]), "DMG"))
+        world.execute(parse(withdraw["effect"][1:-1]), "DMG")
+        self.assertEqual(state.get("ywc_dmg_outcome_withdrawn_breach"), 1)
+        self.assertNotIn("ywc_dmg_outcome_common_qualification", state)
+        self.assertEqual(state.get("ywc_v03_active_arc_count"), 0)
+        self.assertEqual(state.get("ywc_v03_visible_task_count"), 0)
+
+    def test_failed_compensation_and_local_fee_choices_do_not_advance(self):
+        training = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1002")
+        option = next(o for o in training["options"] if o["key"] == "pay_training")
+        world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 0}})
+        world.execute(parse(option["effect"][1:-1]), "DMG")
+        self.assertNotIn("ywc_dmg_compensation_paid", world.countries["DMG"])
+        self.assertNotIn("ywc_dmg_service_qualification", world.countries["DMG"])
+        self.assertNotEqual(world.countries["DMG"].get("ywc_dmg_pending_event"), 1003)
+
+        local = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1003")
+        for key in ("joint_hearing", "noble_guarantee", "royal_order"):
+            option = next(o for o in local["options"] if o["key"] == key)
+            world = PulseWorld(self.effects, {"DMG": {"yearly_gross_income": 52_000, "gold_reserves": 0}})
+            world.execute(parse(option["effect"][1:-1]), "DMG")
+            self.assertNotIn("ywc_dmg_appeal_mechanism", world.countries["DMG"], key)
+            self.assertNotEqual(world.countries["DMG"].get("ywc_dmg_pending_event"), 1004, key)
 
     def test_outcomes_close_once_and_release_capacity_even_after_lost_state(self):
         effects = self.effects + "\nywc_v03_release_arc_dmg_v03_dmg_common_subjects = { set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_settled value = 1 } }\n"

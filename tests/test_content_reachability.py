@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from tools.content_reachability import audit
+from tools.build_v03_content import load_catalogs
 
 
 ROOT = pathlib.Path(__file__).parents[1]
@@ -194,11 +195,45 @@ class ContentReachabilityTest(unittest.TestCase):
         self.assertEqual(report["unreferenced_events"], [])
         self.assertEqual(report["unreferenced_journals"], [])
         self.assertEqual(report["unused_scripted_helpers"], [])
-        # 272 through the large campaign, +33 hegemony, +18 southwest, and
-        # 180 frontier polity events; prior journals plus 60 frontier starts.
-        self.assertEqual(report["event_count"], 491)
-        self.assertEqual(report["journal_count"], 162)
-        self.assertEqual(report["route_count"], 20)
+        legacy = json.loads((ROOT / "data/content/v03/legacy_ids.json").read_text(encoding="utf-8"))
+        old_events = set(legacy["events"])
+        old_journals = set(legacy["journals"])
+        old_routes = set(legacy["routes"])
+        self.assertEqual(len(old_events), len(legacy["events"]))
+        self.assertEqual(len(old_journals), len(legacy["journals"]))
+        self.assertEqual(len(old_routes), len(legacy["routes"]))
+
+        catalogs = load_catalogs(ROOT)
+        new_events = {
+            event["id"]
+            for catalog in catalogs.values()
+            for arc in catalog["arcs"]
+            for event in arc["events"]
+        }
+        new_journals = {
+            journal["id"]
+            for catalog in catalogs.values()
+            for arc in catalog["arcs"]
+            for journal in arc["journals"]
+        }
+        catalog_event_count = sum(
+            len(arc["events"]) for catalog in catalogs.values() for arc in catalog["arcs"]
+        )
+        catalog_journal_count = sum(
+            len(arc["journals"]) for catalog in catalogs.values() for arc in catalog["arcs"]
+        )
+        self.assertEqual(len(new_events), catalog_event_count)
+        self.assertEqual(len(new_journals), catalog_journal_count)
+        old_ids = old_events | old_journals | old_routes
+        new_ids = new_events | new_journals
+        self.assertTrue(old_ids.isdisjoint(new_ids), sorted(old_ids & new_ids))
+        self.assertTrue(new_events.isdisjoint(new_journals), sorted(new_events & new_journals))
+
+        # Keep the frozen pre-catalog identity set; count the new side from the
+        # source catalogs. The audit count comes independently from generated scripts.
+        self.assertEqual(report["event_count"], len(old_events | new_events))
+        self.assertEqual(report["journal_count"], len(old_journals | old_routes | new_journals))
+        self.assertEqual(report["route_count"], len(old_routes))
 
 
 if __name__ == "__main__":

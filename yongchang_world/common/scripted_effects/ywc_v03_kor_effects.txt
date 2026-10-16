@@ -4,7 +4,7 @@ ywc_kor_capture_cost_base = {
 	if = {
 		limit = { NOT = { has_variable = ywc_kor_cost_captured } }
 		set_variable = { name = ywc_kor_weekly_cost value = yearly_gross_income }
-	change_variable = { name = ywc_kor_weekly_cost multiply = 0.0192307692308 }
+		change_variable = { name = ywc_kor_weekly_cost divide = 52 }
 		clamp_variable = { name = ywc_kor_weekly_cost min = 100 max = 1000000000 }
 		set_variable = { name = ywc_kor_cost_captured value = 1 }
 	}
@@ -170,7 +170,7 @@ ywc_kor_claim_military_accounts = {
 
 ywc_kor_close_as_court_supply = {
 	if = {
-		limit = { NOT = { has_variable = ywc_kor_any_outcome } var:ywc_kor_supply_route = 1 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete }
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 1 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes ywc_kor_v03_court_execution_ready = yes }
 		set_variable = { name = ywc_kor_outcome_court_supply value = 1 }
 		set_variable = { name = ywc_kor_any_outcome value = 1 }
 		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 1 }
@@ -180,7 +180,7 @@ ywc_kor_close_as_court_supply = {
 
 ywc_kor_close_as_provincial_supply = {
 	if = {
-		limit = { NOT = { has_variable = ywc_kor_any_outcome } var:ywc_kor_supply_route = 2 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete has_variable = ywc_kor_provincial_report_right }
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 2 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete has_variable = ywc_kor_provincial_report_right ywc_kor_v03_route_execution_ready = yes ywc_kor_v03_provincial_execution_ready = yes }
 		set_variable = { name = ywc_kor_outcome_provincial_supply value = 1 }
 		set_variable = { name = ywc_kor_any_outcome value = 1 }
 		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 2 }
@@ -190,7 +190,7 @@ ywc_kor_close_as_provincial_supply = {
 
 ywc_kor_close_as_limited_legacy = {
 	if = {
-		limit = { NOT = { has_variable = ywc_kor_any_outcome } var:ywc_kor_supply_route = 3 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete has_variable = ywc_kor_legacy_ceiling }
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } OR = { AND = { var:ywc_kor_supply_route = 3 has_variable = ywc_kor_legacy_ceiling } AND = { has_variable = ywc_kor_scope_narrowed ywc_kor_v03_reduced_execution_ready = yes } } has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes }
 		set_variable = { name = ywc_kor_outcome_limited_legacy value = 1 }
 		set_variable = { name = ywc_kor_any_outcome value = 1 }
 		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 3 }
@@ -200,7 +200,7 @@ ywc_kor_close_as_limited_legacy = {
 
 ywc_kor_close_as_breach = {
 	if = {
-		limit = { NOT = { has_variable = ywc_kor_any_outcome } OR = { has_variable = ywc_kor_arc_abandoned is_at_war = yes in_default = yes net_fixed_income < 0 var:ywc_kor_ready_supply_months < 6 } }
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } OR = { has_variable = ywc_kor_arc_abandoned is_at_war = yes in_default = yes has_modifier = declared_bankruptcy NOT = { ywc_kor_v03_finance_safe = yes } NOT = { ywc_kor_v03_has_owned_state = yes } var:ywc_kor_ready_supply_months < 6 } }
 		set_variable = { name = ywc_kor_outcome_withdrawn_breach value = 1 }
 		set_variable = { name = ywc_kor_any_outcome value = 1 }
 		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 4 }
@@ -212,8 +212,6 @@ ywc_kor_release_military_accounts = {
 	if = {
 		limit = { has_variable = ywc_v03_kor_v03_kor_military_accounts_started NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } var:ywc_v03_kor_v03_kor_military_accounts_outcome > 0 }
 		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_settled value = 1 }
-		remove_variable = ywc_kor_translation_contract_started
-		remove_variable = ywc_kor_veteran_contract_started
 		change_variable = { name = ywc_v03_active_arc_count add = -1 }
 		change_variable = { name = ywc_v03_visible_task_count add = -1 }
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }

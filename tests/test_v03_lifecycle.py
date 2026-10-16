@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
-from clausewitz_harness import PulseWorld
+from clausewitz_harness import PulseWorld, parse
 
 
 EFFECTS = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_effects.txt"
@@ -26,6 +26,16 @@ class V03LifecycleTest(unittest.TestCase):
 
     def world(self, initial=None):
         return PulseWorld(self.effects, {"SHU": initial or {}})
+
+    def test_days_only_set_variable_creates_a_default_flag_and_real_timer(self):
+        world = PulseWorld("test_days_only = { set_variable = { name = review_due days = 180 } }", {"SHU": {}})
+        world.run("test_days_only")
+        self.assertEqual(world.countries["SHU"]["review_due"], 1)
+        self.assertEqual(world.days_until_expiry["SHU"]["review_due"], 180)
+        world.advance_days(179)
+        self.assertIn("review_due", world.countries["SHU"])
+        world.advance_days(1)
+        self.assertNotIn("review_due", world.countries["SHU"])
 
     def test_country_initialization_is_idempotent_and_preserves_existing_state(self):
         world = self.world({"ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
@@ -103,7 +113,6 @@ class V03LifecycleTest(unittest.TestCase):
         self.assertEqual(world.countries["SHU"]["ywc_shu_audit_installment_paid"], 1)
 
     def test_shu_consolidation_review_resets_on_interruption_and_checks_real_conditions(self):
-        # Static contract check: the harness intentionally does not simulate Clausewitz days.
         arc = json.loads(SHU_CATALOG.read_text(encoding="utf-8"))["arcs"][0]
         journals = {row["id"]: row["script"] for row in arc["journals"]}
         events = {row["id"]: row for row in arc["events"]}
@@ -118,7 +127,7 @@ class V03LifecycleTest(unittest.TestCase):
         self.assertIn("occupancy >= 0.8", shu_triggers)
         self.assertIn("building_has_goods_shortage = no", shu_triggers)
         for condition in (
-            "is_at_war = yes", "in_default = yes", "net_fixed_income < 0",
+            "is_at_war = yes", "NOT = { ywc_shu_v03_finance_safe = yes }",
             "NOT = { ywc_shu_v03_has_pilot_state = yes }",
         ):
             self.assertIn(condition, settlement)
@@ -126,11 +135,25 @@ class V03LifecycleTest(unittest.TestCase):
                            if option["key"] == "limit_for_war")
         self.assertIn("remove_variable = ywc_shu_settlement_review_due", interrupted)
         self.assertIn("remove_variable = ywc_shu_settlement_review", interrupted)
-        resume_gate = "has_variable = ywc_shu_wartime_deferral NOT = { is_at_war = yes } NOT = { in_default = yes } net_fixed_income >= 0 ywc_shu_v03_real_execution_ready = yes"
-        self.assertIn(resume_gate, settlement)
+        self.assertIn("ywc_shu_v03_finance_safe = yes", settlement)
         restart_choices = [option["effect"] for option in events["ywc_shu.1007"]["options"]]
         self.assertTrue(any("ywc_shu_start_settlement_review = yes" in effect
                             for effect in restart_choices))
+        self.assertIn("has_modifier = declared_bankruptcy", (ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_shu_triggers.txt").read_text(encoding="utf-8-sig"))
+
+    def test_scaled_debt_worsening_requires_three_consecutive_monthly_samples(self):
+        world = PulseWorld(SHU_EFFECTS.read_text(encoding="utf-8-sig"),
+                           {"SHU": {"scaled_debt": 10}})
+        trigger_text = (ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_shu_triggers.txt").read_text(encoding="utf-8-sig")
+        finance = next(body for key, _, body in parse(trigger_text) if key == "ywc_shu_v03_finance_safe")
+        for value, expected_safe in ((10, True), (11, True), (12, True), (13, False)):
+            world.countries["SHU"]["scaled_debt"] = value
+            world.run("ywc_shu_track_debt_trend")
+            self.assertEqual(world.conditions(finance, "SHU"), expected_safe)
+        world.countries["SHU"]["scaled_debt"] = 1
+        world.run("ywc_shu_track_debt_trend")
+        self.assertEqual(world.countries["SHU"]["ywc_shu_scaled_debt_rise_months"], 0)
+        self.assertTrue(world.conditions(finance, "SHU"))
 
     def test_startup_is_tag_scoped_and_migration_is_explicit_and_idempotent(self):
         startup = STARTUP.read_text(encoding="utf-8-sig")

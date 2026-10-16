@@ -1,4 +1,4 @@
-# v0.3 SHU fiscal register. Long-lived variables represent actual public commitments,
+﻿# v0.3 SHU fiscal register. Long-lived variables represent actual public commitments,
 # not a substitute for laws, employment, supply, treasury or diplomatic state.
 
 ywc_shu_open_register_once = {
@@ -17,7 +17,7 @@ ywc_shu_capture_cost_base = {
 	if = {
 		limit = { NOT = { has_variable = ywc_shu_fiscal_cost_captured } }
 		set_variable = { name = ywc_shu_fiscal_cost value = yearly_gross_income }
-		change_variable = { name = ywc_shu_fiscal_cost multiply = 0.0192307692308 }
+		change_variable = { name = ywc_shu_fiscal_cost divide = 52 }
 		clamp_variable = { name = ywc_shu_fiscal_cost min = 100 max = 1000000000 }
 		set_variable = { name = ywc_shu_fiscal_cost_captured value = 1 }
 	}
@@ -66,10 +66,8 @@ ywc_shu_pay_compensation_once = {
 }
 
 ywc_shu_choose_pilot_state = {
-	random_scope_state = {
-		limit = { is_owned_by = ROOT }
-		set_variable = { name = ywc_shu_v03_pilot_state value = 1 }
-	}
+	# The event option writes one of the four fixed state IDs after checking ownership.
+	set_variable = { name = ywc_shu_v03_pilot_state value = var:ywc_shu_selected_pilot_state }
 }
 
 ywc_shu_begin_central_audit = {
@@ -113,7 +111,8 @@ ywc_shu_mark_first_audit = {
 			}
 			OR = {
 				var:ywc_shu_audit_mode = 3
-				AND = { ywc_shu_v03_has_eligible_state = yes ywc_shu_v03_real_execution_ready = yes }
+				AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right ywc_shu_v03_has_pilot_state = yes }
+				AND = { var:ywc_shu_audit_mode = 1 ywc_shu_v03_real_execution_ready = yes }
 			}
 		}
 		set_variable = { name = ywc_shu_first_audit value = 1 }
@@ -122,6 +121,9 @@ ywc_shu_mark_first_audit = {
 }
 
 ywc_shu_choose_landlord_compromise = {
+	remove_modifier = ywc_shu_landowner_compensated
+	remove_modifier = ywc_shu_landowner_old_exemption
+	add_modifier = { modifier = ywc_shu_landowner_quota_compromise months = 12 }
 	set_variable = { name = ywc_shu_compact_mode value = 1 }
 	set_variable = { name = ywc_shu_local_audit_right value = 1 }
 	set_variable = { name = ywc_shu_compensation_due days = 365 }
@@ -136,6 +138,9 @@ ywc_shu_choose_compensated_collection = {
 		ywc_shu_pay_compensation_once = yes
 		if = {
 			limit = { has_variable = ywc_shu_compensation_paid }
+			remove_modifier = ywc_shu_landowner_quota_compromise
+			remove_modifier = ywc_shu_landowner_old_exemption
+			add_modifier = { modifier = ywc_shu_landowner_compensated months = 12 }
 			set_variable = { name = ywc_shu_compact_mode value = 2 }
 			set_variable = { name = ywc_shu_landlord_objection value = 1 }
 		}
@@ -143,6 +148,9 @@ ywc_shu_choose_compensated_collection = {
 }
 
 ywc_shu_choose_old_exemption = {
+	remove_modifier = ywc_shu_landowner_compensated
+	remove_modifier = ywc_shu_landowner_quota_compromise
+	add_modifier = { modifier = ywc_shu_landowner_old_exemption months = 12 }
 	set_variable = { name = ywc_shu_audit_mode value = 3 }
 	set_variable = { name = ywc_shu_legacy_cap value = 1 }
 }
@@ -169,10 +177,39 @@ ywc_shu_mark_duplicate_service_case = {
 
 ywc_shu_accept_merchant_advance = {
 	if = {
-		limit = { NOT = { has_variable = ywc_shu_merchant_advance } }
+		limit = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } }
+		ywc_shu_capture_cost_base = yes
+		set_variable = { name = ywc_shu_merchant_principal value = var:ywc_shu_fiscal_cost }
+		add_treasury = { value = var:ywc_shu_merchant_principal }
 		set_variable = { name = ywc_shu_merchant_advance value = 1 }
-		set_variable = { name = ywc_shu_merchant_repayment_due days = 365 }
+		set_variable = { name = ywc_shu_merchant_advance_unpaid value = 1 }
+		set_variable = { name = ywc_shu_merchant_repayment_months value = 0 }
 		set_variable = { name = ywc_shu_merchant_consultation value = 1 }
+	}
+}
+
+ywc_shu_collect_merchant_repayment = {
+	if = {
+		limit = { has_variable = ywc_shu_merchant_advance_unpaid }
+		change_variable = { name = ywc_shu_merchant_repayment_months add = 1 }
+	}
+	if = {
+		limit = {
+			has_variable = ywc_shu_merchant_advance_unpaid
+			var:ywc_shu_merchant_repayment_months >= 12
+			gold_reserves >= { value = var:ywc_shu_merchant_principal }
+		}
+		add_treasury = { value = var:ywc_shu_merchant_principal multiply = -1 }
+		remove_variable = ywc_shu_merchant_advance_unpaid
+		remove_variable = ywc_shu_merchant_repayment_months
+		set_variable = { name = ywc_shu_merchant_advance_repaid value = 1 }
+		remove_modifier = ywc_shu_local_credit_arrears
+	}
+	else = {
+		if = {
+			limit = { has_variable = ywc_shu_merchant_advance_unpaid var:ywc_shu_merchant_repayment_months >= 12 }
+			add_modifier = { modifier = ywc_shu_local_credit_arrears months = 12 }
+		}
 	}
 }
 
@@ -185,8 +222,8 @@ ywc_shu_record_second_audit = {
 			net_fixed_income >= 0
 			ywc_shu_v03_real_execution_ready = yes
 			OR = {
-				AND = { var:ywc_shu_audit_mode = 1 has_variable = ywc_shu_audit_installment_paid }
-				AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right }
+				AND = { var:ywc_shu_audit_mode = 1 has_variable = ywc_shu_audit_installment_paid var:ywc_shu_appeal_owner = 1 }
+				AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right var:ywc_shu_appeal_owner = 2 OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } has_variable = ywc_shu_merchant_advance_refused } }
 				var:ywc_shu_audit_mode = 3
 			}
 		}
@@ -211,6 +248,7 @@ ywc_shu_start_settlement_review = {
 		limit = { NOT = { has_variable = ywc_shu_settlement_review } }
 		set_variable = { name = ywc_shu_settlement_review value = 1 }
 		set_variable = { name = ywc_shu_settlement_review_due days = 180 }
+		remove_variable = ywc_shu_settlement_review_mature
 	}
 }
 
@@ -245,11 +283,13 @@ ywc_shu_close_as_central = {
 			NOT = { has_variable = ywc_shu_fiscal_outcome_capped_legacy }
 			NOT = { has_variable = ywc_shu_fiscal_outcome_withdrawn_breach }
 			has_variable = ywc_shu_second_audit
+			has_variable = ywc_shu_settlement_review_mature
+			NOT = { is_at_war = yes }
+			ywc_shu_v03_finance_safe = yes
 			var:ywc_shu_settlement_mode = 1
 			var:ywc_shu_pilot_outcome = 1
 			ywc_shu_v03_real_execution_ready = yes
 			has_variable = ywc_shu_audit_installment_paid_second
-			net_fixed_income >= 0
 		}
 		set_variable = { name = ywc_shu_fiscal_outcome_central_audit value = 1 }
 		set_variable = { name = ywc_shu_register_resolved value = 1 }
@@ -267,12 +307,14 @@ ywc_shu_close_as_provincial = {
 			NOT = { has_variable = ywc_shu_fiscal_outcome_capped_legacy }
 			NOT = { has_variable = ywc_shu_fiscal_outcome_withdrawn_breach }
 			has_variable = ywc_shu_second_audit
+			has_variable = ywc_shu_settlement_review_mature
+			NOT = { is_at_war = yes }
+			ywc_shu_v03_finance_safe = yes
 			var:ywc_shu_settlement_mode = 2
 			OR = { var:ywc_shu_pilot_outcome = 2 has_variable = ywc_shu_local_audit_right }
 			has_variable = ywc_shu_local_audit_right
 			var:ywc_shu_military_payer = 2
-			OR = { has_variable = ywc_shu_merchant_advance has_variable = ywc_shu_merchant_advance_refused }
-			net_fixed_income >= 0
+			OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } has_variable = ywc_shu_merchant_advance_refused }
 		}
 		set_variable = { name = ywc_shu_fiscal_outcome_provincial_share value = 1 }
 		set_variable = { name = ywc_shu_register_resolved value = 1 }
@@ -289,7 +331,12 @@ ywc_shu_close_as_legacy = {
 			NOT = { has_variable = ywc_shu_fiscal_outcome_provincial_share }
 			NOT = { has_variable = ywc_shu_fiscal_outcome_capped_legacy }
 			NOT = { has_variable = ywc_shu_fiscal_outcome_withdrawn_breach }
-			OR = { has_variable = ywc_shu_legacy_cap var:ywc_shu_pilot_state_lost = 1 var:ywc_shu_pilot_outcome = 3 }
+			has_variable = ywc_shu_settlement_review_mature
+			NOT = { is_at_war = yes }
+			ywc_shu_v03_finance_safe = yes
+			var:ywc_shu_settlement_mode = 3
+			OR = { has_variable = ywc_shu_legacy_cap var:ywc_shu_pilot_outcome = 3 }
+			ywc_shu_v03_limited_execution_ready = yes
 		}
 		set_variable = { name = ywc_shu_fiscal_outcome_capped_legacy value = 1 }
 		set_variable = { name = ywc_shu_register_resolved value = 1 }
@@ -311,7 +358,8 @@ ywc_shu_close_as_breach = {
 				var:ywc_shu_pilot_state_lost = 1
 				is_at_war = yes
 				in_default = yes
-				net_fixed_income < 0
+				has_modifier = declared_bankruptcy
+				NOT = { ywc_shu_v03_finance_safe = yes }
 			}
 		}
 		set_variable = { name = ywc_shu_fiscal_outcome_withdrawn_breach value = 1 }
@@ -319,6 +367,22 @@ ywc_shu_close_as_breach = {
 		set_variable = { name = ywc_campaign_shu_v03_fiscal_register_outcome value = 4 }
 		set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_outcome value = 4 }
 		ywc_v03_release_arc_shu_v03_shu_fiscal_register = yes
+	}
+}
+
+ywc_shu_track_debt_trend = {
+	if = {
+		limit = { NOT = { has_variable = ywc_shu_scaled_debt_previous } }
+		set_variable = { name = ywc_shu_scaled_debt_previous value = scaled_debt }
+		set_variable = { name = ywc_shu_scaled_debt_rise_months value = 0 }
+	}
+	else = {
+		if = {
+			limit = { scaled_debt > var:ywc_shu_scaled_debt_previous }
+			change_variable = { name = ywc_shu_scaled_debt_rise_months add = 1 }
+		}
+		else = { set_variable = { name = ywc_shu_scaled_debt_rise_months value = 0 } }
+		set_variable = { name = ywc_shu_scaled_debt_previous value = scaled_debt }
 	}
 }
 
@@ -333,3 +397,13 @@ ywc_shu_resolve_as_limited_pilot = {
 	}
 }
 
+
+ywc_shu_resume_after_pilot_reselection = {
+ if = { limit = { has_variable = ywc_shu_resume_event } set_variable = { name = ywc_shu_pending_event value = var:ywc_shu_resume_event } remove_variable = ywc_shu_resume_event }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 1 } set_variable = { name = ywc_shu_pending_event value = 1001 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 2 } set_variable = { name = ywc_shu_pending_event value = 1002 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 3 } set_variable = { name = ywc_shu_pending_event value = 1003 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 4 } set_variable = { name = ywc_shu_pending_event value = 1004 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 5 } set_variable = { name = ywc_shu_pending_event value = 1005 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 6 } set_variable = { name = ywc_shu_pending_event value = 1006 } }
+}
