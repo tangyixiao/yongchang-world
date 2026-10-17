@@ -1,0 +1,216 @@
+﻿# NMG foundation scripted triggers. Every gate reads real country state.
+
+ywc_nmg_v03_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+ywc_nmg_v03_has_owned_state = {
+	any_scope_state = { is_owned_by = ROOT }
+}
+
+ywc_nmg_land_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled }
+}
+
+ywc_nmg_office_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled }
+}
+
+ywc_nmg_revenue_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled }
+}
+
+ywc_nmg_land_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_land_fee
+	gold_reserves >= var:ywc_nmg_land_fee
+}
+
+ywc_nmg_office_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_office_fee
+	gold_reserves >= var:ywc_nmg_office_fee
+}
+
+ywc_nmg_revenue_quota_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_revenue_quota
+	gold_reserves >= var:ywc_nmg_revenue_quota
+}
+
+ywc_nmg_land_agriculture_present = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			OR = {
+				is_building_type = building_rye_farm
+				is_building_type = building_wheat_farm
+				is_building_type = building_maize_farm
+			}
+			occupancy >= 0.5
+		}
+	}
+}
+
+ywc_nmg_land_administration_present = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.5
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_nmg_land_written_title = {
+	OR = {
+		has_law_or_variant = law_type:law_commercialized_agriculture
+		has_law_or_variant = law_type:law_tenant_farmers
+		has_law_or_variant = law_type:law_homesteading
+	}
+}
+
+ywc_nmg_land_migration_open = {
+	NOT = { has_law_or_variant = law_type:law_closed_borders }
+}
+
+ywc_nmg_land_mixed_ready = {
+	ywc_nmg_land_affordable = yes
+	ywc_nmg_land_agriculture_present = yes
+	ywc_nmg_land_administration_present = yes
+}
+
+ywc_nmg_land_unified_ready = {
+	ywc_nmg_land_affordable = yes
+	ywc_nmg_land_administration_present = yes
+	ywc_nmg_land_written_title = yes
+}
+
+ywc_nmg_land_old_ready = {
+	ywc_nmg_land_affordable = yes
+	NOT = { radical_fraction = { value >= 0.25 } }
+}
+
+ywc_nmg_land_route_ready = {
+	OR = {
+		ywc_nmg_land_mixed_ready = yes
+		ywc_nmg_land_unified_ready = yes
+		ywc_nmg_land_old_ready = yes
+	}
+}
+
+ywc_nmg_office_admin_present = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.5
+		}
+	}
+}
+
+ywc_nmg_office_literacy_ready = {
+	literacy_rate >= 0.25
+}
+
+ywc_nmg_office_bilingual_ready = {
+	ywc_nmg_office_affordable = yes
+	ywc_nmg_office_admin_present = yes
+	literacy_rate >= 0.35
+}
+
+ywc_nmg_office_local_ready = {
+	ywc_nmg_office_affordable = yes
+	ywc_nmg_office_admin_present = yes
+}
+
+ywc_nmg_office_single_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_office_admin_present = yes
+}
+
+ywc_nmg_office_route_ready = {
+	OR = {
+		ywc_nmg_office_bilingual_ready = yes
+		ywc_nmg_office_local_ready = yes
+		ywc_nmg_office_single_ready = yes
+	}
+}
+
+ywc_nmg_office_ig_support = {
+	any_interest_group = {
+		is_interest_group_type = ig_intelligentsia
+		ig_approval > 0
+	}
+}
+
+ywc_nmg_office_school_investment = {
+	institution_investment_level = {
+		institution = institution_schools
+		value >= 1
+	}
+}
+
+ywc_nmg_revenue_real_subject = {
+	is_subject = yes
+	is_subject_of = c:MEX
+}
+
+ywc_nmg_revenue_overlord_present = {
+	exists = c:MEX
+	overlord ?= { always = yes }
+}
+
+ywc_nmg_revenue_relations_ok = {
+	exists = c:MEX
+	overlord ?= { relations:root >= relations_threshold:poor }
+}
+
+ywc_nmg_revenue_defense_present = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			OR = {
+				is_building_type = building_barrack
+				is_building_type = building_port
+			}
+			occupancy >= 0.5
+		}
+	}
+}
+
+ywc_nmg_revenue_tax_base = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = { occupancy >= 0.5 }
+	}
+}
+
+ywc_nmg_revenue_fixed_ready = {
+	ywc_nmg_revenue_quota_affordable = yes
+	ywc_nmg_revenue_tax_base = yes
+	ywc_nmg_revenue_defense_present = yes
+}
+
+ywc_nmg_revenue_joint_ready = {
+	ywc_nmg_revenue_fixed_ready = yes
+	ywc_nmg_revenue_overlord_present = yes
+	ywc_nmg_revenue_relations_ok = yes
+}
+
+ywc_nmg_revenue_arrears_ready = {
+	ywc_nmg_revenue_real_subject = yes
+	ywc_nmg_v03_finance_safe = yes
+}
+
+ywc_nmg_revenue_route_ready = {
+	OR = {
+		ywc_nmg_revenue_fixed_ready = yes
+		ywc_nmg_revenue_joint_ready = yes
+		ywc_nmg_revenue_arrears_ready = yes
+	}
+}
