@@ -193,10 +193,14 @@ class LanPaymentTest(unittest.TestCase):
             self.assertIn("yearly_gross_income", claim)
             self.assertIn("divide = 52", claim)
             self.assertIn("clamp_variable", claim)
-            pay = _helper_body(effects, f"ywc_lan_{arc}_pay_fee")
-            for token in ("add_treasury", "multiply = -1", "in_default = yes",
-                          "declared_bankruptcy"):
-                self.assertIn(token, pay, arc)
+            chargers = [h for h in re.findall(rf"(?m)^(ywc_lan_choose_{arc}_[a-z0-9_]+)\s*=\s*\{{", effects)
+                        if "add_treasury" in _helper_body(effects, h)]
+            self.assertTrue(chargers, f"{arc} has no charging route helper")
+            for helper in chargers:
+                pay = _helper_body(effects, helper)
+                for token in ("add_treasury", "multiply = -1", "in_default = yes",
+                              "declared_bankruptcy"):
+                    self.assertIn(token, pay, f"{arc} {helper}")
 
     def test_no_route_helper_can_charge_twice(self):
         effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")

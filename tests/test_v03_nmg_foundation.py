@@ -109,7 +109,6 @@ REQUIRED_TRIGGERS = [
     "ywc_nmg_land_old_ready",
     "ywc_nmg_land_route_ready",
     "ywc_nmg_office_admin_present",
-    "ywc_nmg_office_literacy_ready",
     "ywc_nmg_office_bilingual_ready",
     "ywc_nmg_office_local_ready",
     "ywc_nmg_office_single_ready",
