@@ -269,3 +269,173 @@ ywc_v03_release_arc_dmg_v03_dmg_common_subjects = {
 		ywc_v03_bridge_dmg_compact_one = yes
 	}
 }
+
+
+
+# Foundation arc 2: land titles. This lane owns its own claim/release and never
+# calls the M1 common-subjects claim. All charges are one-shot, income-based,
+# and check affordability again at effect time.
+ywc_dmg_foundation_snapshot_costs = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_foundation_costs_snapshotted } }
+		set_variable = { name = ywc_dmg_titles_registry_cost value = yearly_gross_income }
+		change_variable = { name = ywc_dmg_titles_registry_cost divide = 52 }
+		clamp_variable = { name = ywc_dmg_titles_registry_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_dmg_titles_compensation_cost value = var:ywc_dmg_titles_registry_cost }
+		set_variable = { name = ywc_dmg_court_charter_cost value = var:ywc_dmg_titles_registry_cost }
+		set_variable = { name = ywc_dmg_court_budget_cost value = var:ywc_dmg_titles_registry_cost }
+		set_variable = { name = ywc_dmg_foundation_costs_snapshotted value = 1 }
+	}
+}
+
+ywc_dmg_foundation_claim_titles = {
+	ywc_v03_initialize_country = yes
+	ywc_dmg_foundation_snapshot_costs = yes
+	if = { limit = { NOT = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 ywc_dmg_v03_has_owned_state = yes }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_started value = 1 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 0 }
+		set_variable = { name = ywc_dmg_titles_pending_event value = 1010 }
+		set_variable = { name = ywc_dmg_titles_blocked_12_due value = 1 months = 12 }
+		set_variable = { name = ywc_dmg_titles_blocked_36_due value = 1 months = 36 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	}
+}
+
+ywc_dmg_foundation_claim_court = {
+	ywc_v03_initialize_country = yes
+	ywc_dmg_foundation_snapshot_costs = yes
+	if = { limit = { NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 ywc_dmg_v03_has_owned_state = yes }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_started value = 1 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 0 }
+		set_variable = { name = ywc_dmg_court_pending_event value = 1016 }
+		set_variable = { name = ywc_dmg_court_blocked_12_due value = 1 months = 12 }
+		set_variable = { name = ywc_dmg_court_blocked_36_due value = 1 months = 36 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	}
+}
+
+ywc_dmg_foundation_pay_titles_registry = {
+	ywc_dmg_foundation_snapshot_costs = yes
+	if = { limit = { NOT = { has_variable = ywc_dmg_titles_registry_paid } gold_reserves >= var:ywc_dmg_titles_registry_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		add_treasury = { value = var:ywc_dmg_titles_registry_cost multiply = -1 }
+		set_variable = { name = ywc_dmg_titles_registry_paid value = 1 }
+	}
+}
+
+ywc_dmg_foundation_pay_titles_compensation = {
+	ywc_dmg_foundation_snapshot_costs = yes
+	if = { limit = { NOT = { has_variable = ywc_dmg_titles_compensation_paid } gold_reserves >= var:ywc_dmg_titles_compensation_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		add_treasury = { value = var:ywc_dmg_titles_compensation_cost multiply = -1 }
+		set_variable = { name = ywc_dmg_titles_compensation_paid value = 1 }
+	}
+}
+
+ywc_dmg_foundation_pay_court_charter = {
+	ywc_dmg_foundation_snapshot_costs = yes
+	if = { limit = { NOT = { has_variable = ywc_dmg_court_charter_paid } gold_reserves >= var:ywc_dmg_court_charter_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		add_treasury = { value = var:ywc_dmg_court_charter_cost multiply = -1 }
+		set_variable = { name = ywc_dmg_court_charter_paid value = 1 }
+	}
+}
+
+ywc_dmg_foundation_pay_court_budget = {
+	ywc_dmg_foundation_snapshot_costs = yes
+	if = { limit = { NOT = { has_variable = ywc_dmg_court_budget_paid } gold_reserves >= var:ywc_dmg_court_budget_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		add_treasury = { value = var:ywc_dmg_court_budget_cost multiply = -1 }
+		set_variable = { name = ywc_dmg_court_budget_paid value = 1 }
+	}
+}
+
+ywc_dmg_foundation_close_titles = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_titles_outcome } }
+		if = { limit = { has_variable = ywc_dmg_titles_review_matured has_variable = ywc_dmg_titles_route_ready has_variable = ywc_dmg_titles_compensation_paid var:ywc_dmg_titles_route = 1 }
+			set_variable = { name = ywc_dmg_titles_outcome value = 1 }
+			add_modifier = { name = ywc_dmg_foundation_titles_mixed months = 36 }
+		}
+		else_if = { limit = { has_variable = ywc_dmg_titles_review_matured has_variable = ywc_dmg_titles_route_ready has_variable = ywc_dmg_titles_registry_paid var:ywc_dmg_titles_route = 2 }
+			set_variable = { name = ywc_dmg_titles_outcome value = 2 }
+			add_modifier = { name = ywc_dmg_foundation_titles_contract months = 36 }
+		}
+		else_if = { limit = { has_variable = ywc_dmg_titles_route var:ywc_dmg_titles_route = 3 }
+			set_variable = { name = ywc_dmg_titles_outcome value = 3 }
+			add_modifier = { name = ywc_dmg_foundation_titles_legacy months = 36 }
+		}
+		else_if = { limit = { has_variable = ywc_dmg_titles_blocked_12_notice }
+			set_variable = { name = ywc_dmg_titles_outcome value = 4 }
+		}
+	}
+	ywc_v03_release_arc_dmg_foundation_titles = yes
+}
+
+ywc_dmg_foundation_close_court = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_court_outcome } }
+		if = { limit = { has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_route_ready has_variable = ywc_dmg_court_charter_paid has_variable = ywc_dmg_court_budget_paid var:ywc_dmg_court_route = 1 }
+			set_variable = { name = ywc_dmg_court_outcome value = 1 }
+			add_modifier = { name = ywc_dmg_foundation_court_central months = 36 }
+		}
+		else_if = { limit = { has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_route_ready has_variable = ywc_dmg_court_charter_paid has_variable = ywc_dmg_court_budget_paid var:ywc_dmg_court_route = 2 }
+			set_variable = { name = ywc_dmg_court_outcome value = 2 }
+			add_modifier = { name = ywc_dmg_foundation_court_joint months = 36 }
+		}
+		else_if = { limit = { has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_route_ready has_variable = ywc_dmg_court_charter_paid has_variable = ywc_dmg_court_budget_paid var:ywc_dmg_court_route = 3 }
+			set_variable = { name = ywc_dmg_court_outcome value = 3 }
+			add_modifier = { name = ywc_dmg_foundation_court_local months = 36 }
+		}
+		else_if = { limit = { has_variable = ywc_dmg_court_blocked_12_notice }
+			set_variable = { name = ywc_dmg_court_outcome value = 4 }
+		}
+	}
+	ywc_v03_release_arc_dmg_foundation_court = yes
+}
+
+ywc_v03_release_arc_dmg_foundation_titles = {
+	if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_settled } has_variable = ywc_dmg_titles_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+ywc_v03_release_arc_dmg_foundation_court = {
+	if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } has_variable = ywc_dmg_court_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+
+ywc_dmg_foundation_limit_titles = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_titles_outcome } }
+		set_variable = { name = ywc_dmg_titles_outcome value = 4 }
+	}
+	ywc_v03_release_arc_dmg_foundation_titles = yes
+}
+
+ywc_dmg_foundation_withdraw_titles = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_titles_outcome } }
+		set_variable = { name = ywc_dmg_titles_outcome value = 5 }
+		set_variable = { name = ywc_dmg_titles_withdraw_requested value = 1 }
+	}
+	ywc_v03_release_arc_dmg_foundation_titles = yes
+}
+
+ywc_dmg_foundation_limit_court = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_court_outcome } }
+		set_variable = { name = ywc_dmg_court_outcome value = 4 }
+	}
+	ywc_v03_release_arc_dmg_foundation_court = yes
+}
+
+ywc_dmg_foundation_withdraw_court = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_court_outcome } }
+		set_variable = { name = ywc_dmg_court_outcome value = 5 }
+		set_variable = { name = ywc_dmg_court_withdraw_requested value = 1 }
+	}
+	ywc_v03_release_arc_dmg_foundation_court = yes
+}

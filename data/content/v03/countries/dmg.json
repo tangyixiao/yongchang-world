@@ -1057,6 +1057,1900 @@
         "旧 yongchang_world/events/ywc_dmg_nqg_events.txt 的 .100-.114 仅作为可选前序，不读写其 outcome 或覆盖 v0.3 结果。",
         "后续代际线可读取 ywc_v03_dmg_v03_dmg_common_subjects_outcome、ywc_dmg_outcome_*、ywc_dmg_appeal_mechanism、ywc_dmg_public_service_target 和 ywc_dmg_inheritance_precedent。"
       ]
+    },
+    {
+      "slug": "v03_dmg_two_land_titles",
+      "era": "foundation",
+      "participants": [
+        "朱氏礼仪王廷",
+        "明裔军户与实际服役者",
+        "承接受耕作者与村社",
+        "华商与持契债权人",
+        "迁居者与地方官署"
+      ],
+      "depends_on": [
+        "v03_dmg_common_subjects"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_dmg_land_titles_review",
+          "title": {
+            "zh": "丈量、赔付与登记复核",
+            "en": "Survey, Compensation and Registration Review"
+          },
+          "desc": {
+            "zh": "在真实领有的一个州里做登记试点：先付一周估算年总收入（年总收入÷52，最低100）的登记费，再从三条路线中选一条，才进入丈量与赔付。执行条件是真实的农业就业与在任官署，加上可承受的财政；六个月连续成立才成熟，任何中断都清零重看。第十二个月只提出限额或重新议定，第三十六个月结算或退出。已付款与已签赔付债务永不消除，和平状态正常也可完成。",
+            "en": "Run a registration pilot in one really owned state: pay a registry fee of one week of estimated yearly gross income (yearly gross income / 52, minimum 100), choose one of three routes, and only then reach survey and compensation. Execution needs real agricultural employment and a staffed office plus affordable finances; six continuous months mature the review, and any interruption restarts it from zero. Month 12 offers only a cap or renegotiation, month 36 settles or exits. Fees paid and signed compensation debts are never erased, and ordinary peace can still complete the lane."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized var:ywc_v03_release_version >= 3 ywc_dmg_v03_has_owned_state = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_settled } } immediate = { ywc_dmg_foundation_claim_titles = yes set_variable = { name = ywc_dmg_titles_pending_event value = 1010 } } on_monthly_pulse = { effect = { if = { limit = { ywc_dmg_foundation_titles_route_ready = yes NOT = { has_variable = ywc_dmg_titles_review_due } NOT = { has_variable = ywc_dmg_titles_review_matured } NOT = { has_variable = ywc_dmg_titles_outcome } } set_variable = { name = ywc_dmg_titles_review_due value = 1 months = 6 } set_variable = { name = ywc_dmg_titles_observation_started value = 1 } } if = { limit = { has_variable = ywc_dmg_titles_observation_started NOT = { has_variable = ywc_dmg_titles_review_due } ywc_dmg_foundation_titles_route_ready = yes NOT = { has_variable = ywc_dmg_titles_review_matured } } set_variable = { name = ywc_dmg_titles_review_matured value = 1 } set_variable = { name = ywc_dmg_titles_route_ready value = 1 } } if = { limit = { NOT = { ywc_dmg_foundation_titles_route_ready = yes } } remove_variable = ywc_dmg_titles_review_due remove_variable = ywc_dmg_titles_observation_started remove_variable = ywc_dmg_titles_review_matured remove_variable = ywc_dmg_titles_route_ready } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_started NOT = { has_variable = ywc_dmg_titles_outcome } NOT = { has_variable = ywc_dmg_titles_blocked_12_due } NOT = { has_variable = ywc_dmg_titles_blocked_12_notice } } set_variable = { name = ywc_dmg_titles_blocked_12_notice value = 1 } set_variable = { name = ywc_dmg_titles_pending_event value = 1015 } } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_two_land_titles_started NOT = { has_variable = ywc_dmg_titles_outcome } NOT = { has_variable = ywc_dmg_titles_blocked_36_due } NOT = { has_variable = ywc_dmg_titles_blocked_36_notice } } set_variable = { name = ywc_dmg_titles_blocked_36_notice value = 1 } set_variable = { name = ywc_dmg_titles_pending_event value = 1015 } } if = { limit = { NOT = { ywc_dmg_v03_has_owned_state = yes } NOT = { has_variable = ywc_dmg_titles_emergency_notice } } set_variable = { name = ywc_dmg_titles_emergency_notice value = 1 } set_variable = { name = ywc_dmg_titles_pending_event value = 1015 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_titles_pending_event = 1010 } remove_variable = ywc_dmg_titles_pending_event trigger_event = { id = ywc_dmg.1010 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_titles_pending_event = 1011 } remove_variable = ywc_dmg_titles_pending_event trigger_event = { id = ywc_dmg.1011 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_titles_pending_event = 1012 } remove_variable = ywc_dmg_titles_pending_event trigger_event = { id = ywc_dmg.1012 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_titles_pending_event = 1013 } remove_variable = ywc_dmg_titles_pending_event trigger_event = { id = ywc_dmg.1013 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_titles_pending_event = 1014 } remove_variable = ywc_dmg_titles_pending_event trigger_event = { id = ywc_dmg.1014 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_titles_pending_event = 1015 OR = { has_variable = ywc_dmg_titles_review_matured has_variable = ywc_dmg_titles_blocked_12_notice has_variable = ywc_dmg_titles_blocked_36_notice has_variable = ywc_dmg_titles_emergency_notice } } remove_variable = ywc_dmg_titles_pending_event trigger_event = { id = ywc_dmg.1015 } } } } }",
+          "goal": "{ has_variable = ywc_dmg_titles_outcome }",
+          "exit_conditions": "{ has_variable = ywc_dmg_titles_withdraw_requested }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_dmg.1010",
+          "title": {
+            "zh": "军户与村社各执一契",
+            "en": "The Service Household and the Village Each Hold a Contract"
+          },
+          "desc": {
+            "zh": "同一片田上，军户拿出旧役契，村社拿出世代耕作的惯例记录。王廷要决定用哪一种凭据开册：混合仲裁让村社派人并案申诉，统一契约按现行土地法核验书面契据并由官署承接，旧权划界则保留旧界只登记无争议地段。三条路的登记费与证据要求不同，府库不足时可以先不推进。",
+            "en": "On the same field the service household holds an old duty contract and the village holds customary tillage records. The court must pick the evidence it will register: mixed arbitration seats villages in joint hearings, a unified contract verifies written deeds under the real land law and has the office take them up, and old-boundary delimitation keeps the old line and registers only undisputed parcels. Each route costs and demands differently, and a thin treasury may simply not advance."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_land_titles_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 1010 } }",
+          "options": [
+            {
+              "key": "mixed_arbitration",
+              "label": {
+                "zh": "混合仲裁（县级并案与村社申诉）",
+                "en": "Mixed arbitration (county joint hearings and village appeals)"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_titles_registry = yes\nif = { limit = { has_variable = ywc_dmg_titles_registry_paid } set_variable = { name = ywc_dmg_titles_route value = 1 } set_variable = { name = ywc_dmg_titles_pending_event value = 1011 } }\nelse = { set_variable = { name = ywc_dmg_titles_pending_event value = 1010 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "另扣一周估算年总收入（年总收入÷52），最低100；实扣成功才锁定路线。",
+                "en": "Charges one week of estimated yearly gross income (yearly gross income / 52), minimum 100. The route locks only after the deduction really lands."
+              },
+              "consequence_note": {
+                "zh": "军户旧役契与村社耕作惯例并案听审，村社可派代表申诉；登记费实扣后才进入丈量安排。",
+                "en": "Service-duty contracts and village tillage custom are heard together and villages may send representatives; the survey stage opens only after the fee is really deducted."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_titles_registry_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "unified_contract",
+              "label": {
+                "zh": "统一契约（书面核验由官署承接）",
+                "en": "Unified contract (written verification taken up by the office)"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_titles_registry = yes\nif = { limit = { has_variable = ywc_dmg_titles_registry_paid } set_variable = { name = ywc_dmg_titles_route value = 2 } set_variable = { name = ywc_dmg_titles_pending_event value = 1011 } }\nelse = { set_variable = { name = ywc_dmg_titles_pending_event value = 1010 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "另扣一周估算年总收入（年总收入÷52），最低100；实扣成功才锁定路线。",
+                "en": "Charges one week of estimated yearly gross income (yearly gross income / 52), minimum 100. The route locks only after the deduction really lands."
+              },
+              "consequence_note": {
+                "zh": "按本国现行土地法允许的书面契约统一登记，由在任官署承接核验；承接受耕作者与持契人同列一册。",
+                "en": "Registration runs on written contracts that the country's real land law allows, verified by the office in post; accepted cultivators and contract holders share one register."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_titles_registry_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "old_boundary",
+              "label": {
+                "zh": "旧权划界（保留旧界、缩小试点）",
+                "en": "Old-boundary delimitation (keep the old line, narrow the pilot)"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_titles_registry = yes\nif = { limit = { has_variable = ywc_dmg_titles_registry_paid } set_variable = { name = ywc_dmg_titles_route value = 3 } set_variable = { name = ywc_dmg_titles_pending_event value = 1011 } }\nelse = { set_variable = { name = ywc_dmg_titles_pending_event value = 1010 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "另扣一周估算年总收入（年总收入÷52），最低100；实扣成功才锁定路线。",
+                "en": "Charges one week of estimated yearly gross income (yearly gross income / 52), minimum 100. The route locks only after the deduction really lands."
+              },
+              "consequence_note": {
+                "zh": "保留旧界与旧册，只登记无争议地段；重复丈量与旧册核对的开支仍由王廷承担。",
+                "en": "The old boundary and old rolls stand and only undisputed parcels are registered, while the court still carries the cost of repeated surveying and ledger checking."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_titles_registry_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓登记（府库不足时不推进）",
+                "en": "Defer registration (do not advance while the treasury is thin)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_pending_event value = 1010 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "路线保持未定，本事件可在后续月份重新提出；不产生新的登记事实。",
+                "en": "No route is chosen and the event may return in a later month; no registration fact is created."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_titles",
+              "label": {
+                "zh": "停止地契线（依法撤回）",
+                "en": "Withdraw the title lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_titles = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "本线以撤回结案；已签赔付债务、已付登记费与实际登记事实全部保留。",
+                "en": "The lane ends in withdrawal; signed compensation debts, fees already paid and registration facts already recorded all remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以登记费与证据方式确定三条路线之一，并记录真实扣款。",
+            "en": "Fix one of three routes by registry fee and evidence, and record the real deduction."
+          },
+          "reads": [
+            "ywc_dmg_titles_registry_cost",
+            "gold_reserves",
+            "in_default",
+            "ywc_dmg_v03_secondary_local_office_ready",
+            "law_type:law_tenant_farmers",
+            "ywc_dmg_foundation_agriculture_employment"
+          ],
+          "writes": [
+            "ywc_dmg_titles_route",
+            "ywc_dmg_titles_registry_paid",
+            "ywc_dmg_titles_pending_event",
+            "ywc_dmg_foundation_costs_snapshotted",
+            "ywc_dmg_titles_withdraw_requested"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1011",
+          "title": {
+            "zh": "丈量员从哪条田埂走",
+            "en": "Which Ridge the Surveyor Walks"
+          },
+          "desc": {
+            "zh": "丈量要有人跟着走。共同资格代表随行、持契商人书面作保、或只按旧册旧界核对，三条路决定谁能签字、以及在任官署与农业就业的门槛要多高。此前的共同臣民安排在认可与岗位上越完整，可随行的代表越多；条件不够时可以缩小范围或另择一路。",
+            "en": "Someone must walk the line. Representatives with common eligibility may come along, contract holders may stand surety in writing, or the survey may only check the old rolls and old boundary. The three paths decide who may sign and how high the thresholds for a staffed office and agricultural employment sit. The more completely the earlier common-subjects arrangement held on acceptance and posts, the more representatives may walk along; where conditions fall short the pilot narrows or another route is taken."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_land_titles_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 1011 } }",
+          "options": [
+            {
+              "key": "joint_survey",
+              "label": {
+                "zh": "共同丈量（共同资格代表随行）",
+                "en": "Joint survey (representatives with common eligibility walk along)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_representation value = 1 }\nif = { limit = { OR = { var:ywc_v03_dmg_v03_dmg_common_subjects_outcome = 1 var:ywc_v03_dmg_v03_dmg_common_subjects_outcome = 2 } } set_variable = { name = ywc_dmg_titles_representation_wide value = 1 } }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1012 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "签字权扩及实际耕作者；此前的共同臣民安排在认可与岗位上都成立时，可随行的代表更多，丈量结果更难被单方否认。",
+                "en": "The right to sign extends to actual cultivators; when the earlier common-subjects arrangement really held on acceptance and posts, more representatives walk along and the result is harder to deny."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_route var:ywc_dmg_titles_route = 1 }"
+            },
+            {
+              "key": "contract_holders",
+              "label": {
+                "zh": "持契担保（商契持有人书面作保）",
+                "en": "Contract holders stand surety (written merchant guarantee)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_representation value = 2 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1012 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "丈量界线由持契商人与承接受耕作者书面作保；官署只核验书面，不逐户到田。",
+                "en": "Survey lines are guaranteed in writing by contract holders and accepted cultivators; the office checks documents instead of walking every parcel."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_route var:ywc_dmg_titles_route = 2 }"
+            },
+            {
+              "key": "old_register",
+              "label": {
+                "zh": "旧册重丈（按旧界原册核对）",
+                "en": "Resurvey on the old register (check against the old boundary rolls)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_representation value = 3 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1012 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "丈量只核对旧册与旧界，界外与争议地段不登记；开支重复发生而试点范围最小。",
+                "en": "The survey only checks the old rolls and old boundary; outside and disputed parcels stay unregistered, so the expense recurs while the pilot stays smallest."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_route var:ywc_dmg_titles_route = 3 }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "等代表到位再丈量",
+                "en": "Wait until representatives are really in place"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_pending_event value = 1011 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "本节点保留，待在任官署或代表条件真实具备后再议。",
+                "en": "This node stays open until the office or representative condition actually exists."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_titles",
+              "label": {
+                "zh": "停止地契线（依法撤回）",
+                "en": "Withdraw the title lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_titles = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "本线以撤回结案；已付款与已签债务保留。",
+                "en": "The lane ends in withdrawal; paid money and signed debts remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "确定签字与作保机制，并读取共同臣民安排的实际结果。",
+            "en": "Fix who signs and who stands surety, reading the real common-subjects result."
+          },
+          "reads": [
+            "ywc_dmg_titles_route",
+            "ywc_v03_dmg_v03_dmg_common_subjects_outcome",
+            "ywc_dmg_v03_secondary_local_office_ready",
+            "ywc_dmg_foundation_agriculture_employment",
+            "law_type:law_manorialism"
+          ],
+          "writes": [
+            "ywc_dmg_titles_representation",
+            "ywc_dmg_titles_representation_wide",
+            "ywc_dmg_titles_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1012",
+          "title": {
+            "zh": "商人的抵押契",
+            "en": "The Merchant's Mortgage"
+          },
+          "desc": {
+            "zh": "持契商人要求把抵押写进册子并取得优先受偿顺序。王廷可以登记这一顺序、交给地方联保人承担核验，或者干脆拒绝抵押并把试点缩小到无争议地段。契据顺序一旦登记，下一节点先付给谁、要付多少就跟着变。",
+            "en": "The contract-holding merchant wants the mortgage entered in the register with priority of claim. The court may record that order, hand verification to local sureties, or refuse the mortgage and narrow the pilot to undisputed parcels. Once the order of documented debts is recorded, who is paid first and how much cash it takes at the next node changes with it."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_land_titles_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 1012 } }",
+          "options": [
+            {
+              "key": "priority_recorded",
+              "label": {
+                "zh": "登记商契优先受偿顺序",
+                "en": "Record the mortgage's priority of claim"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_mortgage value = 1 }\nset_variable = { name = ywc_dmg_titles_payee value = 3 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1013 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本节点不新增扣款；核验结果并入赔付顺序，使 1013 所需现银提高到一周半年总收入（×1.5）。",
+                "en": "No new deduction here; the verified claim is folded into the payment order, which raises the cash 1013 requires to one and a half weeks of yearly gross income (multiply 1.5)."
+              },
+              "consequence_note": {
+                "zh": "核验费不从本节点扣除，而是在 1013 的赔付中按契据顺序优先列支；未备足提高后的现银则无法付款。",
+                "en": "The verification fee is not taken here but ranks first in the 1013 payment by documented order; without the larger cash reserve the payment cannot be made."
+              },
+              "trigger": "{ gold_reserves >= { value = var:ywc_dmg_titles_compensation_cost multiply = 1.5 } in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "local_joint_guarantee",
+              "label": {
+                "zh": "地方联保（核验责任交联保人）",
+                "en": "Local joint guarantee (sureties carry the verification)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_mortgage value = 2 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1013 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "核验责任由地方联保人承担，抵押不取得优先顺序；1013 的受偿顺序仍按当事人身份确定。",
+                "en": "Local sureties carry the verification burden and the mortgage gains no priority, so the payee at 1013 is still decided by who the claimant actually is."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "refuse_mortgage",
+              "label": {
+                "zh": "拒绝抵押并把试点缩小",
+                "en": "Refuse the mortgage and narrow the pilot"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_mortgage value = 3 }\nset_variable = { name = ywc_dmg_titles_pilot_narrowed value = 1 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1013 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "试点只保留无争议地段，商人诉求不进入本册；赔付范围与实际登记范围同步缩小。",
+                "en": "The pilot keeps only undisputed parcels and the merchant claim stays out of the register, narrowing compensation and registration together."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "先核验后付款",
+                "en": "Verify first, pay later"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_pending_event value = 1012 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "契据顺序暂不登记，本事件可在后续月份重新提出。",
+                "en": "The debt order is not recorded yet and this event may return in a later month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_titles",
+              "label": {
+                "zh": "停止地契线（依法撤回）",
+                "en": "Withdraw the title lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_titles = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "本线以撤回结案；已付款与商契事实保留。",
+                "en": "The lane ends in withdrawal; paid money and the merchant contract remain facts."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "记录契据顺序，并决定下一节点的受偿人与现银门槛。",
+            "en": "Record the documented debt order and set the next node's payee and cash threshold."
+          },
+          "reads": [
+            "ywc_dmg_titles_compensation_cost",
+            "gold_reserves",
+            "in_default",
+            "ywc_dmg_titles_route"
+          ],
+          "writes": [
+            "ywc_dmg_titles_mortgage",
+            "ywc_dmg_titles_payee",
+            "ywc_dmg_titles_pilot_narrowed",
+            "ywc_dmg_titles_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1013",
+          "title": {
+            "zh": "赔偿先付给谁",
+            "en": "Who Is Compensated First"
+          },
+          "desc": {
+            "zh": "赔付只能付一次：军户本家、实际耕作者、或契据在册的债权人。一次性付清要真实扣款并同时检查府库与破产，只有真的扣下来才写下已付并推进；府库不足就留在本节点重试，或者改走地方分期与旧界限额，或依法撤回。",
+            "en": "Compensation is paid once: to the service household, to those actually tilling, or to the creditor named in the documents. A single payment deducts real money and re-checks both the treasury and bankruptcy; only a real deduction writes the payment and advances. Without the funds the node retries, switches to local instalments or an old-boundary limit, or the lane is lawfully withdrawn."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_land_titles_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 1013 } }",
+          "options": [
+            {
+              "key": "pay_documented_creditor",
+              "label": {
+                "zh": "先付契据在册的债权人",
+                "en": "Pay the creditor who stands in the documents first"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_titles_compensation = yes\nif = { limit = { has_variable = ywc_dmg_titles_compensation_paid } set_variable = { name = ywc_dmg_titles_payee value = 3 } set_variable = { name = ywc_dmg_titles_pending_event value = 1014 } }\nelse = { set_variable = { name = ywc_dmg_titles_pending_event value = 1013 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一周估算年总收入（年总收入÷52），最低100；已扣过则不重复扣款。",
+                "en": "Deducts one week of estimated yearly gross income (yearly gross income / 52), minimum 100. A charge already made is never repeated."
+              },
+              "consequence_note": {
+                "zh": "只有实际扣款才写下已付并推进；现银不足或已破产则留在本节点重试，或依法撤回。",
+                "en": "Only a real deduction writes the payment and advances; without the cash, or under bankruptcy, the node retries or the lane is lawfully withdrawn."
+              },
+              "trigger": "{ gold_reserves >= { value = var:ywc_dmg_titles_compensation_cost multiply = 1.5 } in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "pay_actual_cultivator",
+              "label": {
+                "zh": "先付实际耕作者",
+                "en": "Pay the actual cultivators first"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_titles_compensation = yes\nif = { limit = { has_variable = ywc_dmg_titles_compensation_paid } set_variable = { name = ywc_dmg_titles_payee value = 2 } set_variable = { name = ywc_dmg_titles_pending_event value = 1014 } }\nelse = { set_variable = { name = ywc_dmg_titles_pending_event value = 1013 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一周估算年总收入（年总收入÷52），最低100；已扣过则不重复扣款。",
+                "en": "Deducts one week of estimated yearly gross income (yearly gross income / 52), minimum 100. A charge already made is never repeated."
+              },
+              "consequence_note": {
+                "zh": "赔付直接给在田耕作者，旧役契持有人转为普通债权；实扣成功才推进。",
+                "en": "Compensation goes straight to those actually tilling, and old service contracts drop to ordinary creditors; only a real deduction advances."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_titles_compensation_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "pay_service_household",
+              "label": {
+                "zh": "先付军户本家",
+                "en": "Pay the service household itself first"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_titles_compensation = yes\nif = { limit = { has_variable = ywc_dmg_titles_compensation_paid } set_variable = { name = ywc_dmg_titles_payee value = 1 } set_variable = { name = ywc_dmg_titles_pending_event value = 1014 } }\nelse = { set_variable = { name = ywc_dmg_titles_pending_event value = 1013 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一周估算年总收入（年总收入÷52），最低100；已扣过则不重复扣款。",
+                "en": "Deducts one week of estimated yearly gross income (yearly gross income / 52), minimum 100. A charge already made is never repeated."
+              },
+              "consequence_note": {
+                "zh": "赔付按旧役契给本家，村社与迁居者随后另议；实扣成功才推进。",
+                "en": "Compensation follows the old service contract to the household first, leaving villagers and newcomers to a later round; only a real deduction advances."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_titles_compensation_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "local_instalments",
+              "label": {
+                "zh": "改为地方分期赔付（不一次付清）",
+                "en": "Switch to local instalments (no single payment)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_compensation_instalments value = 1 }\nset_variable = { name = ywc_dmg_titles_pilot_narrowed value = 1 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1014 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "本节点不扣款，赔付改由地方分期承担；未付清的赔付债务保留在册，路线不能按已付结案。",
+                "en": "Nothing is deducted here and compensation moves to local instalments; the outstanding debt stays on the books and the lane cannot close as paid."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "old_boundary_limit",
+              "label": {
+                "zh": "只按旧界赔付并缩小范围",
+                "en": "Pay only along the old boundary and narrow the scope"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_pilot_narrowed value = 1 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1014 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "旧界之外与争议地段不赔付、不登记；已付款不退，未付债务仍留在册。",
+                "en": "Parcels outside the old boundary and disputed parcels are neither compensated nor registered; paid money is not refunded and unpaid debts stay on the books."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_titles",
+              "label": {
+                "zh": "停止地契线（依法撤回）",
+                "en": "Withdraw the title lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_titles = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "本线以撤回结案；已付款、赔偿债务与登记事实全部保留。",
+                "en": "The lane ends in withdrawal; paid money, compensation debts and registration facts all remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实扣款确定受偿人，未扣款不推进。",
+            "en": "Fix the payee by a real deduction; no deduction, no advance."
+          },
+          "reads": [
+            "ywc_dmg_titles_compensation_cost",
+            "ywc_dmg_titles_payee",
+            "ywc_dmg_titles_mortgage",
+            "gold_reserves",
+            "in_default",
+            "ywc_dmg_titles_pilot_narrowed"
+          ],
+          "writes": [
+            "ywc_dmg_titles_compensation_paid",
+            "ywc_dmg_titles_payee",
+            "ywc_dmg_titles_compensation_instalments",
+            "ywc_dmg_titles_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1014",
+          "title": {
+            "zh": "迁居者来补登",
+            "en": "Newcomers Ask to Be Entered"
+          },
+          "desc": {
+            "zh": "迁居者要求把耕作与抵押关系补登记进册子。可以逐户受理个别申诉、由村社联署、或只在旧册范围内补记。三条路要求真实的在任官署、已有的代表或联保机制，以及旧册本身；本事件不生成任何移民人口，扣款失败也不推进。",
+            "en": "Newcomers want their tillage and mortgage ties entered on the register. Individual appeals may be heard household by household, villages may co-sign, or only old-register parcels may be added. Each path needs a real office in post, an existing representative or surety mechanism, or the old register itself. The event creates no migrant pops and a failed charge never advances."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_land_titles_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 1014 } }",
+          "options": [
+            {
+              "key": "individual_appeal",
+              "label": {
+                "zh": "迁居者个别申诉（逐户核验）",
+                "en": "Individual appeal by newcomers (verified household by household)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_newcomer_mode value = 1 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1015 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "申诉逐户处理，需要真实在任的次级官署承接；共同臣民安排在认可与岗位上越完整，可受理的申诉越多。",
+                "en": "Appeals are handled household by household and need a real secondary office in post; the more completely the common-subjects arrangement held, the more appeals can be accepted."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_registry_paid ywc_dmg_v03_secondary_local_office_ready = yes }"
+            },
+            {
+              "key": "village_cosignature",
+              "label": {
+                "zh": "村社联署登记（须有代表机制）",
+                "en": "Village co-signature (requires a representative mechanism)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_newcomer_mode value = 2 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1015 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "迁居者须由村社联署；此机制只有在丈量阶段真的建立了代表或联保时才可用。",
+                "en": "Newcomers need a village co-signature, which exists only if the survey stage really produced representatives or local sureties."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_registry_paid has_variable = ywc_dmg_titles_representation }"
+            },
+            {
+              "key": "old_roll_entry",
+              "label": {
+                "zh": "旧册补登（按旧界原册补记）",
+                "en": "Supplementary entry on the old rolls (record against the old register)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_newcomer_mode value = 3 }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1015 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "只补记旧册范围内的地段，登记范围不扩大；重复核对开支照旧发生。",
+                "en": "Only parcels inside the old register are added and the registered scope does not grow, while the cost of repeated checking continues."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_registry_paid }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "等下轮丈量再补登",
+                "en": "Wait for the next survey round"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_titles_pending_event value = 1014 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "补登暂不受理，本事件可在后续月份重新提出；不产生移民人口或新地块。",
+                "en": "Supplementary entry is postponed and the event may return; no migrant pops or new parcels are created."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_titles",
+              "label": {
+                "zh": "停止地契线（依法撤回）",
+                "en": "Withdraw the title lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_titles = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "本线以撤回结案；已登记与已付款事实保留。",
+                "en": "The lane ends in withdrawal; recorded entries and paid money remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "按真实官署与代表机制决定补登方式。",
+            "en": "Choose the entry path by real offices and representation."
+          },
+          "reads": [
+            "ywc_dmg_titles_registry_paid",
+            "ywc_dmg_v03_secondary_local_office_ready",
+            "ywc_dmg_titles_representation",
+            "ywc_dmg_titles_newcomer_mode"
+          ],
+          "writes": [
+            "ywc_dmg_titles_newcomer_mode",
+            "ywc_dmg_titles_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1015",
+          "title": {
+            "zh": "土地没有随纸张移动",
+            "en": "The Land Did Not Move with the Paper"
+          },
+          "desc": {
+            "zh": "复核实际登记、农业就业、官署供给、府库与地方动荡。只有在这条路线上连续观察成立的人才能确认结果；依法部分履行的可以折中结案。失去州、开战或破产时，仍可限额、重议或撤回，债务一律保留。",
+            "en": "The review checks real registration, agricultural employment, administrative supply, the treasury and local unrest. Only continuous observance on this route may confirm the result, while lawful partial performance may settle as a compromise. A lost state, war or bankruptcy still leaves capping, renegotiation or withdrawal open, and debts are always retained."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_land_titles_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_two_land_titles_last_event value = 1015 } }",
+          "options": [
+            {
+              "key": "confirm_mixed",
+              "label": {
+                "zh": "确认混合仲裁结果（连续复核成立）",
+                "en": "Confirm mixed arbitration (continuous review held)"
+              },
+              "effect": "{ ywc_dmg_foundation_close_titles = yes\nset_variable = { name = ywc_dmg_two_land_titles_outcome value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "仅在连续六个月复核成立、登记费与赔付都已实付时确认；结案后 36 个月内行政负担上升、正当性提高。",
+                "en": "Confirmed only with six continuous months of review, the registry fee and the compensation really paid; for 36 months administration costs more and legitimacy rises."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_review_matured has_variable = ywc_dmg_titles_route_ready has_variable = ywc_dmg_titles_compensation_paid var:ywc_dmg_titles_route = 1 ywc_dmg_foundation_titles_route_ready = yes }"
+            },
+            {
+              "key": "confirm_contract",
+              "label": {
+                "zh": "确认统一契约结果（书面核验成立）",
+                "en": "Confirm the unified contract (written verification held)"
+              },
+              "effect": "{ ywc_dmg_foundation_close_titles = yes\nset_variable = { name = ywc_dmg_two_land_titles_outcome value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "仅在现行土地法允许、书面核验与登记费都成立时确认；结案后行政负担下降、旧claimant认可减少。",
+                "en": "Confirmed only when the real land law allows it and written verification plus the registry fee both hold; for 36 months administration is cheaper but old claimants accept less."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_review_matured has_variable = ywc_dmg_titles_route_ready has_variable = ywc_dmg_titles_registry_paid var:ywc_dmg_titles_route = 2 ywc_dmg_foundation_titles_route_ready = yes }"
+            },
+            {
+              "key": "confirm_legacy",
+              "label": {
+                "zh": "确认旧权划界结果（旧界旧册为准）",
+                "en": "Confirm old-boundary delimitation (old line and old rolls rule)"
+              },
+              "effect": "{ ywc_dmg_foundation_close_titles = yes\nset_variable = { name = ywc_dmg_two_land_titles_outcome value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "旧界与旧册继续有效，试点范围最小；结案后登记开支长期偏高、正当性受限。",
+                "en": "The old boundary and rolls keep standing and the pilot stays smallest; registration stays expensive and legitimacy stays limited."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_route_ready var:ywc_dmg_titles_route = 3 }"
+            },
+            {
+              "key": "limited_settlement",
+              "label": {
+                "zh": "承认有限结案（十二年未备齐）",
+                "en": "Accept a limited settlement (twelve years without readiness)"
+              },
+              "effect": "{ ywc_dmg_foundation_limit_titles = yes\nset_variable = { name = ywc_dmg_two_land_titles_outcome value = 4 } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以有限结案收束本线；已付登记费与已签赔付债务保留在册，后续仍可再议。",
+                "en": "The lane closes as a limited settlement; the registry fee already paid and the compensation debts already signed stay on the books and may be revisited."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_blocked_12_notice }"
+            },
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "重新议定并重设十二年观察期",
+                "en": "Renegotiate and reset the twelve-year observation"
+              },
+              "effect": "{ remove_variable = ywc_dmg_titles_blocked_12_notice\nremove_variable = ywc_dmg_titles_blocked_36_notice\nremove_variable = ywc_dmg_titles_observation_started\nremove_variable = ywc_dmg_titles_review_matured\nif = { limit = { NOT = { has_variable = ywc_dmg_titles_blocked_12_due } } set_variable = { name = ywc_dmg_titles_blocked_12_due value = 1 months = 12 } }\nset_variable = { name = ywc_dmg_titles_pending_event value = 1015 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "不新增扣款，重新起算观察与提示期；已付费用与债务一律保留，路线可继续修复。",
+                "en": "No new charge; observation and notice periods restart while every paid fee and debt is retained, so the lane can still be repaired."
+              },
+              "trigger": "{ has_variable = ywc_dmg_titles_blocked_12_notice NOT = { has_variable = ywc_dmg_titles_blocked_36_notice } ywc_dmg_v03_has_owned_state = yes }"
+            },
+            {
+              "key": "withdraw_titles",
+              "label": {
+                "zh": "停止地契线（依法撤回）",
+                "en": "Withdraw the title lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_titles = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付登记费、赔偿债务与登记事实全部保留。",
+                "en": "Ends in withdrawal; the registry fee paid, compensation debts and registration facts all remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "按真实执行结果确认、折中、限额或撤回。",
+            "en": "Confirm, compromise, cap or withdraw by what was really executed."
+          },
+          "reads": [
+            "ywc_dmg_titles_review_matured",
+            "ywc_dmg_titles_route_ready",
+            "ywc_dmg_titles_registry_paid",
+            "ywc_dmg_titles_compensation_paid",
+            "ywc_dmg_foundation_titles_route_ready",
+            "ywc_dmg_titles_blocked_12_notice",
+            "ywc_dmg_titles_blocked_36_notice"
+          ],
+          "writes": [
+            "ywc_dmg_titles_outcome",
+            "ywc_dmg_two_land_titles_outcome",
+            "ywc_dmg_titles_withdraw_requested",
+            "ywc_v03_dmg_v03_dmg_two_land_titles_settled",
+            "ywc_dmg_titles_blocked_12_notice"
+          ]
+        }
+      ],
+      "outcomes": [
+        "mixed_arbitration:县级并案与村社申诉成立，登记费与赔付都已实付，结案后行政负担上升而正当性提高。",
+        "unified_contract:按现行土地法允许的书面契约统一登记并由官署核验，行政更省但旧claimant认可减少。",
+        "old_boundary_delimitation:保留旧界与旧册，只登记无争议地段，正当性受限且登记开支长期偏高。",
+        "limited_settlement:十二年未备齐或状态有变时承认有限结案，已付款与已签债务保留在册。",
+        "withdrawn:依法撤回，已付登记费、赔偿债务与实际登记事实全部保留。"
+      ],
+      "legacy_links": [
+        "本线不读写旧 yongchang_world/events/ywc_dmg_nqg_events.txt 的任何结果，只在前序可选时提供不同开价。",
+        "后续代际线可读取 ywc_dmg_two_land_titles_outcome、ywc_dmg_titles_outcome、ywc_dmg_titles_mortgage、ywc_dmg_titles_payee、ywc_dmg_titles_representation、ywc_dmg_titles_compensation_paid 与 ywc_dmg_titles_newcomer_mode。"
+      ]
+    },
+    {
+      "slug": "v03_dmg_court_provinces",
+      "era": "foundation",
+      "participants": [
+        "朱氏礼仪王廷",
+        "地方诸邑与州预算承担者",
+        "在任与候任的次级官僚",
+        "土地贵族与既有的政治团体",
+        "实际承担防务开支的军事部门"
+      ],
+      "depends_on": [
+        "v03_dmg_common_subjects"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_dmg_court_appointment",
+          "title": {
+            "zh": "任命权议定",
+            "en": "Settling the Appointment"
+          },
+          "desc": {
+            "zh": "王廷的印与地方的印要落在同一封信上。三条真实安排互斥：王廷统筹以中央预算与在任官署承担任命，共同任命以本国真实的选举资格或共署章程为据，地方联合以地方预算份额与共同申诉为条件。选择任意一条都要另付一周估算年总收入（年总收入÷52，最低100）的文书与踏勘费，实扣成功才锁定路线。文字上选定不等于任命已经完成；失去州或政治团体变动仍可重议、限额或撤回。",
+            "en": "The court's seal and the locality's seal must sit on one letter. Three real arrangements are mutually exclusive: royal administration carries the appointment on a central budget and offices in post, joint appointment rests on the country's real voting qualification or a co-signed charter, and a local compact needs a local budget share and joint appeals. Any route charges a further one week of estimated yearly gross income (yearly gross income / 52, minimum 100) as the document and survey fee, and the lane locks only after the deduction really lands. Choosing the text is not completing the appointment; a lost state or a shifting political group still leaves renegotiation, capping or withdrawal open."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized var:ywc_v03_release_version >= 3 ywc_dmg_v03_has_owned_state = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } } immediate = { ywc_dmg_foundation_claim_court = yes set_variable = { name = ywc_dmg_court_pending_event value = 1016 } } on_monthly_pulse = { effect = { if = { limit = { has_variable = ywc_dmg_court_route NOT = { has_variable = ywc_dmg_court_budget_stage } NOT = { has_variable = ywc_dmg_court_pending_event } } set_variable = { name = ywc_dmg_court_pending_event value = 1017 } } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_blocked_12_due } NOT = { has_variable = ywc_dmg_court_blocked_12_notice } } set_variable = { name = ywc_dmg_court_blocked_12_notice value = 1 } } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_blocked_36_due } NOT = { has_variable = ywc_dmg_court_blocked_36_notice } } set_variable = { name = ywc_dmg_court_blocked_36_notice value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_has_owned_state = yes } NOT = { has_variable = ywc_dmg_court_emergency_notice } } set_variable = { name = ywc_dmg_court_emergency_notice value = 1 } } if = { limit = { has_variable = ywc_dmg_court_blocked_12_notice NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_pending_event } } set_variable = { name = ywc_dmg_court_pending_event value = 1017 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1016 } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1017 } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1017 } } } } }",
+          "goal": "{ has_variable = ywc_dmg_court_budget_stage }",
+          "exit_conditions": "{ has_variable = ywc_dmg_court_withdraw_requested }"
+        },
+        {
+          "id": "ywc_je_v03_dmg_court_budget",
+          "title": {
+            "zh": "实职与地方预算履行",
+            "en": "Posts and Local Budget Fulfilment"
+          },
+          "desc": {
+            "zh": "任命书送到官署之后要有人真的在任，预算份额要真的付得出来。本线核对实际的政府官署与员额、所选预算份额与财政承受能力；在任岗位不由事件生成，缺员只能由玩家在基础游戏中补员或兴建。两张地契的仲裁结果在这里继续生效：旧权划界沿用旧官署名册，混合仲裁承认共同申诉，统一契约要求官署书面核验。第十二与第三十六个月给出修复或退出的窗口，已付款、真实岗位与债务都保留。",
+            "en": "Once the letter reaches the office someone must really be in post and the budget share must really be payable. This lane checks actual government administration buildings and employment, the chosen budget share and fiscal capacity; posts are never generated by events, and vacancies can only be filled or built by the player in the base game. The land-title arbitration keeps biting here: old-boundary delimitation keeps the old office ledger, mixed arbitration recognises joint appeals, and a unified contract requires written office verification. Months 12 and 36 open repair or exit windows, and money paid, real posts and debts all remain."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized var:ywc_v03_release_version >= 3 ywc_dmg_v03_has_owned_state = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } } immediate = { ywc_dmg_foundation_claim_court = yes set_variable = { name = ywc_dmg_court_pending_event value = 1018 } } on_monthly_pulse = { effect = { if = { limit = { NOT = { has_variable = ywc_dmg_court_defence_veto } NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_pending_event } has_variable = ywc_dmg_court_budget_stage } set_variable = { name = ywc_dmg_court_pending_event value = 1018 } } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_blocked_12_due } NOT = { has_variable = ywc_dmg_court_blocked_12_notice } } set_variable = { name = ywc_dmg_court_blocked_12_notice value = 1 } } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_blocked_36_due } NOT = { has_variable = ywc_dmg_court_blocked_36_notice } } set_variable = { name = ywc_dmg_court_blocked_36_notice value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_has_owned_state = yes } NOT = { has_variable = ywc_dmg_court_emergency_notice } } set_variable = { name = ywc_dmg_court_emergency_notice value = 1 } } if = { limit = { has_variable = ywc_dmg_court_blocked_12_notice NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_pending_event } } set_variable = { name = ywc_dmg_court_pending_event value = 1021 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1018 } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1018 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1019 NOT = { has_variable = ywc_dmg_court_task_narrowed } } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1019 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1020 NOT = { has_variable = ywc_dmg_court_task_narrowed } } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1020 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1021 } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1021 } } } } }",
+          "goal": "{ OR = { has_variable = ywc_dmg_court_defence_veto has_variable = ywc_dmg_court_outcome } }",
+          "exit_conditions": "{ has_variable = ywc_dmg_court_withdraw_requested }"
+        },
+        {
+          "id": "ywc_je_v03_dmg_court_charter_review",
+          "title": {
+            "zh": "代表与共任章程连续九个月复核",
+            "en": "Nine Continuous Months of Representation Review"
+          },
+          "desc": {
+            "zh": "哪一种国书能被诸邑承认，要看连续九个月的真实条件：有选举制度时按本国真实选举资格与在职代表核对，无选举时看共署的官署章程、州预算与申诉记录。任何中断都从零重看，不虚构任何议席。失去州、开战、财政恶化或政治团体变动都会给出重议、限额或退出的分支；和平时期照常推行预算联署与轮值审计。",
+            "en": "Which instrument the towns accept depends on nine continuous months of real conditions: with a franchise the check runs on the country's own voting qualification and employed representatives, and without one it runs on a co-signed office charter, state budget and appeal record. Any interruption restarts from zero and no seat is ever invented. A lost state, war, fiscal deterioration or a shifting political group each open renegotiation, capping or withdrawal, while peace carries budget countersignature and rotating audit as usual."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized var:ywc_v03_release_version >= 3 ywc_dmg_v03_has_owned_state = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_settled } } immediate = { ywc_dmg_foundation_claim_court = yes set_variable = { name = ywc_dmg_court_pending_event value = 1022 } } on_monthly_pulse = { effect = { if = { limit = { ywc_dmg_foundation_court_route_ready = yes NOT = { has_variable = ywc_dmg_court_review_due } NOT = { has_variable = ywc_dmg_court_review_matured } NOT = { has_variable = ywc_dmg_court_outcome } } set_variable = { name = ywc_dmg_court_review_due value = 1 months = 9 } set_variable = { name = ywc_dmg_court_observation_started value = 1 } } if = { limit = { has_variable = ywc_dmg_court_observation_started NOT = { has_variable = ywc_dmg_court_review_due } ywc_dmg_foundation_court_route_ready = yes NOT = { has_variable = ywc_dmg_court_review_matured } } set_variable = { name = ywc_dmg_court_review_matured value = 1 } set_variable = { name = ywc_dmg_court_route_ready value = 1 } } if = { limit = { NOT = { ywc_dmg_foundation_court_route_ready = yes } } remove_variable = ywc_dmg_court_review_due remove_variable = ywc_dmg_court_observation_started remove_variable = ywc_dmg_court_review_matured remove_variable = ywc_dmg_court_route_ready } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_blocked_12_due } NOT = { has_variable = ywc_dmg_court_blocked_12_notice } } set_variable = { name = ywc_dmg_court_blocked_12_notice value = 1 } } if = { limit = { has_variable = ywc_v03_dmg_v03_dmg_court_provinces_started NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_blocked_36_due } NOT = { has_variable = ywc_dmg_court_blocked_36_notice } } set_variable = { name = ywc_dmg_court_blocked_36_notice value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_has_owned_state = yes } NOT = { has_variable = ywc_dmg_court_emergency_notice } } set_variable = { name = ywc_dmg_court_emergency_notice value = 1 } } if = { limit = { OR = { has_variable = ywc_dmg_court_blocked_12_notice has_variable = ywc_dmg_court_blocked_36_notice has_variable = ywc_dmg_court_emergency_notice } NOT = { has_variable = ywc_dmg_court_outcome } NOT = { has_variable = ywc_dmg_court_pending_event } } set_variable = { name = ywc_dmg_court_pending_event value = 1023 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1022 } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1022 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_court_pending_event = 1023 OR = { has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_blocked_12_notice has_variable = ywc_dmg_court_blocked_36_notice has_variable = ywc_dmg_court_emergency_notice } } remove_variable = ywc_dmg_court_pending_event trigger_event = { id = ywc_dmg.1023 } } } } }",
+          "goal": "{ has_variable = ywc_dmg_court_outcome }",
+          "exit_conditions": "{ has_variable = ywc_dmg_court_withdraw_requested }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_dmg.1016",
+          "title": {
+            "zh": "王印与地方印在同一封信",
+            "en": "The Royal Seal and the Local Seal on One Letter"
+          },
+          "desc": {
+            "zh": "王廷催促任命，城镇却要求先谈预算责任。王廷统筹、共同任命、地方联合三条安排通向不同的日志目标、不同的文书费与不同的真实岗位门槛。文书与踏勘费要真实扣除才锁定路线，府库不足时可以先不推进。",
+            "en": "The court presses for the appointment while the towns demand budget responsibility first. Royal administration, joint appointment and a local compact lead to different journal goals, different document fees and different real thresholds for posts. The document and survey fee must really be deducted before the lane locks, and a thin treasury may simply not advance."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_appointment }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1016 } }",
+          "options": [
+            {
+              "key": "royal_administration",
+              "label": {
+                "zh": "王廷统筹（中央预算与在任官署）",
+                "en": "Royal administration (central budget, offices in post)"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_court_charter = yes\nif = { limit = { has_variable = ywc_dmg_court_charter_paid } set_variable = { name = ywc_dmg_court_route value = 1 } set_variable = { name = ywc_dmg_court_pending_event value = 1017 } }\nelse = { set_variable = { name = ywc_dmg_court_pending_event value = 1016 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "另扣一周估算年总收入（年总收入÷52）作任命文书与踏勘费，最低100；实扣成功才锁定统筹路线。",
+                "en": "Charges one week of estimated yearly gross income (yearly gross income / 52) as the appointment document and survey fee, minimum 100; the lane locks only after the deduction really lands."
+              },
+              "consequence_note": {
+                "zh": "文书费实扣后才推进；王廷要以真实在任官署与中央预算承担任命，经费与员额都不由事件凭空产生。",
+                "en": "The lane advances only after the fee is really deducted; the court must carry the appointment with offices actually in post and a central budget, and no funds or staff appear from the event."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_court_charter_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "joint_appointment",
+              "label": {
+                "zh": "共同任命（真实代表或共署章程）",
+                "en": "Joint appointment (real representatives or a co-signed charter)"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_court_charter = yes\nif = { limit = { has_variable = ywc_dmg_court_charter_paid } set_variable = { name = ywc_dmg_court_route value = 2 } set_variable = { name = ywc_dmg_court_pending_event value = 1017 } }\nelse = { set_variable = { name = ywc_dmg_court_pending_event value = 1016 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同样另扣一周估算年总收入，最低100；须已有真实代表或可承接任命的次级官署。",
+                "en": "Also charges one week of estimated yearly gross income, minimum 100, and requires either real representatives or a secondary office able to take up the appointment."
+              },
+              "consequence_note": {
+                "zh": "有选举时按本国真实选举资格与在职代表核对，无选举时须共署官署章程与预算；声称并不等于任命完成。",
+                "en": "With a franchise the check runs on the country's own voting qualification and employed representatives; without one the office charter and budget must be co-signed. Proclaiming it never completes the appointment."
+              },
+              "trigger": "{ in_default = no NOT = { has_modifier = declared_bankruptcy } gold_reserves >= var:ywc_dmg_court_charter_cost OR = { ywc_dmg_v03_electoral_representative_ready = yes ywc_dmg_v03_government_appointment_ready = yes } }"
+            },
+            {
+              "key": "local_compact",
+              "label": {
+                "zh": "地方联合（地方预算份额与共同申诉）",
+                "en": "Local compact (local budget share and joint appeals)"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_court_charter = yes\nif = { limit = { has_variable = ywc_dmg_court_charter_paid } set_variable = { name = ywc_dmg_court_route value = 3 } set_variable = { name = ywc_dmg_court_pending_event value = 1017 } }\nelse = { set_variable = { name = ywc_dmg_court_pending_event value = 1016 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同样另扣一周估算年总收入，最低100；须有真实在任的次级官署。",
+                "en": "Also charges one week of estimated yearly gross income, minimum 100, and requires a secondary office really in post."
+              },
+              "consequence_note": {
+                "zh": "地方承担预算份额并取得共同申诉渠道；官署员额仍须真实在任，事件不生成任何岗位。",
+                "en": "The locality carries a budget share and gains a joint appeal channel; office posts must still be really staffed and the event creates none."
+              },
+              "trigger": "{ in_default = no NOT = { has_modifier = declared_bankruptcy } gold_reserves >= var:ywc_dmg_court_charter_cost ywc_dmg_v03_secondary_local_office_ready = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓议定（待官署与府库就绪）",
+                "en": "Defer the decision (until offices and treasury are ready)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1016 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "王印与地方印都仍悬置，本事件可在后续月份重新提出；不产生任命事实。",
+                "en": "Both seals stay pending and the event may return in a later month; no appointment fact is created."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "本线以撤回结案；已付文书费、在任岗位与既有债务全部保留。",
+                "en": "The lane ends in withdrawal; fees paid, posts in service and existing debts all remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以文书费与真实资格确定三条安排之一。",
+            "en": "Fix one of three arrangements by document fee and real qualifications."
+          },
+          "reads": [
+            "ywc_dmg_court_charter_cost",
+            "gold_reserves",
+            "in_default",
+            "ywc_dmg_v03_electoral_representative_ready",
+            "ywc_dmg_v03_government_appointment_ready",
+            "ywc_dmg_v03_secondary_local_office_ready",
+            "country_has_voting_franchise"
+          ],
+          "writes": [
+            "ywc_dmg_court_route",
+            "ywc_dmg_court_charter_paid",
+            "ywc_dmg_court_pending_event",
+            "ywc_dmg_court_withdraw_requested"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1017",
+          "title": {
+            "zh": "地方愿出多少饷",
+            "en": "How Much the Locality Will Pay"
+          },
+          "desc": {
+            "zh": "份饷有三种出法：中央出钱并接受中央审计、地方从真实财政里出一份并因此取得联署、或者把旧预算定成上限并把任务缩小。地契线的仲裁结果在这里决定谁有资格联署、地方申诉要花多少成本；本事件不产生任何凭空收入。",
+            "en": "The share can be paid three ways: the centre pays and submits to central audit, the locality pays from its real finances and gains co-signature, or the old budget is capped and the task narrowed. The title arbitration decides here who may countersign and what local appeals cost; the event invents no income."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_appointment }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1017 } }",
+          "options": [
+            {
+              "key": "central_audit_pays",
+              "label": {
+                "zh": "中央付款、中央审计",
+                "en": "The centre pays under central audit"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_court_budget = yes\nif = { limit = { has_variable = ywc_dmg_court_budget_paid } set_variable = { name = ywc_dmg_court_audit value = 1 } set_variable = { name = ywc_dmg_court_budget_stage value = 1 } set_variable = { name = ywc_dmg_court_pending_event value = 1018 } }\nelse = { set_variable = { name = ywc_dmg_court_pending_event value = 1017 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一周估算年总收入（年总收入÷52），最低100；已付过预算份额则不重复扣款，未扣款不推进。",
+                "en": "Deducts one week of estimated yearly gross income (yearly gross income / 52), minimum 100. A budget share already paid is never charged twice, and no advance happens without the deduction."
+              },
+              "consequence_note": {
+                "zh": "预算份额由中央实际支出并接受中央审计；实扣成功才推进，未扣款留在本节点重试。",
+                "en": "The budget share is really paid by the centre and audited centrally; only a real deduction advances, otherwise this node retries."
+              },
+              "trigger": "{ gold_reserves >= var:ywc_dmg_court_budget_cost in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "local_share_countersign",
+              "label": {
+                "zh": "地方出份、取得联署",
+                "en": "The locality pays a share and gains co-signature"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_court_budget = yes\nif = { limit = { has_variable = ywc_dmg_court_budget_paid } set_variable = { name = ywc_dmg_court_local_share value = 1 } set_variable = { name = ywc_dmg_court_countersignature value = 1 } set_variable = { name = ywc_dmg_court_budget_stage value = 1 } set_variable = { name = ywc_dmg_court_pending_event value = 1018 } }\nelse = { set_variable = { name = ywc_dmg_court_pending_event value = 1017 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一周估算年总收入（年总收入÷52），最低100；已付过预算份额则不重复扣款，未扣款不推进。",
+                "en": "Deducts one week of estimated yearly gross income (yearly gross income / 52), minimum 100. A budget share already paid is never charged twice, and no advance happens without the deduction."
+              },
+              "consequence_note": {
+                "zh": "可联署对象按两张地契的仲裁结果确定：混合仲裁认代表、统一契约须官署核验、旧权划界沿用旧官署名册；无地契结果时以在任官署为据。实扣成功才取得联署。",
+                "en": "Who may countersign follows the title arbitration: mixed arbitration recognises representatives, a unified contract requires office verification, and old-boundary delimitation keeps the old office ledger; without a title result the office in post decides. Only a real deduction secures the co-signature."
+              },
+              "trigger": "{ in_default = no NOT = { has_modifier = declared_bankruptcy } net_fixed_income >= 0 gold_reserves >= var:ywc_dmg_court_budget_cost OR = { AND = { var:ywc_dmg_two_land_titles_outcome = 1 has_variable = ywc_dmg_titles_representation } AND = { var:ywc_dmg_two_land_titles_outcome = 2 ywc_dmg_v03_government_appointment_ready = yes } AND = { var:ywc_dmg_two_land_titles_outcome = 3 ywc_dmg_v03_secondary_local_office_ready = yes } AND = { NOT = { var:ywc_dmg_two_land_titles_outcome = 1 } NOT = { var:ywc_dmg_two_land_titles_outcome = 2 } NOT = { var:ywc_dmg_two_land_titles_outcome = 3 } ywc_dmg_v03_government_appointment_ready = yes } } }"
+            },
+            {
+              "key": "limited_old_budget",
+              "label": {
+                "zh": "旧预算限额、任务缩小",
+                "en": "Cap the old budget and narrow the task"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_budget_limited value = 1 }\nset_variable = { name = ywc_dmg_court_task_narrowed value = 1 }\nset_variable = { name = ywc_dmg_court_budget_stage value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1018 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "本节点不扣款，也不虚增收入；任务范围缩到旧预算能承担的部分，后续要求按缩小后的目标核对。",
+                "en": "Nothing is deducted and no income is invented; the task shrinks to what the old budget can carry and later checks use the narrowed goal."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "等下月再议份饷",
+                "en": "Reopen the budget share next month"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1017 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "份饷未定，本事件可在后续月份重新提出。",
+                "en": "The share stays undecided and the event may return in a later month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付款与在任岗位保留。",
+                "en": "Ends in withdrawal; money paid and posts in service remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "确定预算来源与联署资格，并读取地契仲裁结果。",
+            "en": "Fix the budget source and countersignature standing, reading the title arbitration."
+          },
+          "reads": [
+            "ywc_dmg_court_budget_cost",
+            "ywc_dmg_two_land_titles_outcome",
+            "ywc_dmg_titles_representation",
+            "ywc_dmg_v03_government_appointment_ready",
+            "ywc_dmg_v03_secondary_local_office_ready",
+            "net_fixed_income",
+            "gold_reserves",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_dmg_court_budget_paid",
+            "ywc_dmg_court_audit",
+            "ywc_dmg_court_local_share",
+            "ywc_dmg_court_countersignature",
+            "ywc_dmg_court_budget_limited",
+            "ywc_dmg_court_budget_stage",
+            "ywc_dmg_court_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1018",
+          "title": {
+            "zh": "任命书送到空官署",
+            "en": "The Letter Reaches an Empty Office"
+          },
+          "desc": {
+            "zh": "任命书送到官署，官署可能是空的。有员则照章授权；缺员时玩家要在基础游戏里补员或兴建，或者用真实在任的地方官署暂代，或者把目标缩小到现有官署能执行的部分。本事件不生成任何官署人口。",
+            "en": "The letter arrives and the office may be empty. A staffed office authorises by the book; where posts are vacant the player must hire or build in the base game, a really staffed local office may deputise, or the goal narrows to what the existing offices can execute. The event creates no office pops."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_budget }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1018 } }",
+          "options": [
+            {
+              "key": "authorize_staffed",
+              "label": {
+                "zh": "官署有员，照章授权",
+                "en": "The office is staffed, so authorise by the book"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_post_staffed value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1019 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "只有在任的次级官僚与可用的政府官署都真实存在时才可照章授权；岗位不是事件生成的。",
+                "en": "Authorisation runs only when a secondary bureaucrat is really in post at a usable government administration building; the post is never created by the event."
+              },
+              "trigger": "{ ywc_dmg_v03_government_appointment_ready = yes }"
+            },
+            {
+              "key": "temporary_deputy",
+              "label": {
+                "zh": "地方暂代（有限授权）",
+                "en": "A temporary local deputy (limited authorisation)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_temp_deputy value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1019 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "由真实在任的地方官署暂代，权限有限；正式官署仍须由玩家在基础游戏中补员或兴建。",
+                "en": "A really staffed local office deputises with limited authority; the full office still has to be hired or built by the player in the base game."
+              },
+              "trigger": "{ OR = { ywc_dmg_v03_secondary_local_office_ready = yes ywc_dmg_v03_government_appointment_ready = yes } }"
+            },
+            {
+              "key": "wait_for_posting",
+              "label": {
+                "zh": "等官署补员后再送任命书",
+                "en": "Wait for the office to be staffed"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1018 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "任命书留在王廷，本事件可在后续月份重新提出；不生成官署人口或建筑。",
+                "en": "The letter stays with the court and the event may return; no office pops or buildings are created."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "narrow_goal",
+              "label": {
+                "zh": "目标缩小到现有官署",
+                "en": "Narrow the goal to the offices that exist"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_task_narrowed value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1019 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "任务缩到实际有员的官署能执行的部分，后续路线门槛随缩小后的目标核对。",
+                "en": "The task shrinks to what the staffed offices can actually execute, and later route checks use the narrowed goal."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付文书费与既有岗位保留。",
+                "en": "Ends in withdrawal; the fee paid and existing posts remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "按真实官署与员额决定授权或缩小目标。",
+            "en": "Authorise or narrow by the offices and posts that really exist."
+          },
+          "reads": [
+            "ywc_dmg_v03_government_appointment_ready",
+            "ywc_dmg_v03_secondary_local_office_ready",
+            "building_government_administration"
+          ],
+          "writes": [
+            "ywc_dmg_court_post_staffed",
+            "ywc_dmg_court_temp_deputy",
+            "ywc_dmg_court_task_narrowed",
+            "ywc_dmg_court_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1019",
+          "title": {
+            "zh": "贵族要求列席的次序",
+            "en": "The Order in Which the Nobles Sit"
+          },
+          "desc": {
+            "zh": "土地贵族与其他既有政治团体争预算审查的列席次序。限期修正议程、贵族担保、王廷独议三条路，在接下来 24 个月给出不同的正当性与行政代价；资格条件按本国真实政体与真实团体核对。",
+            "en": "Landowners and other existing political groups contest the order of budget review. A time-limited amendment, a noble guarantee and sole court deliberation each carry different legitimacy and administrative costs over the next 24 months, and eligibility is checked against the country's real polity and the groups that really exist."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_budget }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1019 } }",
+          "options": [
+            {
+              "key": "time_limited_amendment",
+              "label": {
+                "zh": "限期修正议程（24个月）",
+                "en": "A time-limited amendment to the agenda (24 months)"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_joint_council months = 24 }\nset_variable = { name = ywc_dmg_court_review_order value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1020 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "不新增扣款，但 24 个月内听审占用行政资源、正当性提高。",
+                "en": "No new charge, but for 24 months the hearings occupy administrative resources while legitimacy rises."
+              },
+              "trigger": "{ any_interest_group = { is_interest_group_type = ig_landowners } }"
+            },
+            {
+              "key": "noble_guarantee",
+              "label": {
+                "zh": "贵族担保（24个月）",
+                "en": "Noble guarantee (24 months)"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_noble_guarantee months = 24 }\nset_variable = { name = ywc_dmg_court_review_order value = 2 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1020 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "以真实存在的土地贵族团体作保：24 个月内正当性提高而政府权威下降。",
+                "en": "Surety comes from the landowner interest group that really exists: for 24 months legitimacy rises while government authority falls."
+              },
+              "trigger": "{ any_interest_group = { is_interest_group_type = ig_landowners } }"
+            },
+            {
+              "key": "royal_sole_review",
+              "label": {
+                "zh": "王廷独议（24个月）",
+                "en": "Sole court deliberation (24 months)"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_royal_directive months = 24 }\nset_variable = { name = ywc_dmg_court_review_order value = 3 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1020 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "次序由王廷独定：24 个月内行政触达提高而正当性明显下降，地方团体后续更难合作。",
+                "en": "The court fixes the order alone: for 24 months administrative reach improves while legitimacy falls sharply and local groups cooperate less later."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "让贵族与城镇自行排序",
+                "en": "Let nobles and towns settle the order themselves"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1019 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "次序未定，本事件可在后续月份重新提出。",
+                "en": "The order stays undecided and the event may return."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付款与既有团体关系保留。",
+                "en": "Ends in withdrawal; paid money and existing group relations remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "按真实政治团体确定审查次序与其 24 个月代价。",
+            "en": "Fix the review order and its 24-month cost against the groups that really exist."
+          },
+          "reads": [
+            "ig_landowners",
+            "ywc_dmg_court_route",
+            "ywc_dmg_court_budget_stage"
+          ],
+          "writes": [
+            "ywc_dmg_court_review_order",
+            "ywc_dmg_court_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1020",
+          "title": {
+            "zh": "没有选举时如何共议",
+            "en": "How to Deliberate Without Elections"
+          },
+          "desc": {
+            "zh": "有选举制度时按本国真实投票资格与在职代表核对；没有选举时用共署的官署章程、州预算与申诉记录。第二种做法写下的共署条款，是共同任命路线后续成立的要件。两种做法都不虚构任何议席。",
+            "en": "Where a franchise exists the check runs on the country's own voting qualification and employed representatives; where none exists, a co-signed office charter, state budget and appeal record stand in. The co-signature clause written by the second path is what later makes the joint-appointment lane valid. Neither path invents a seat."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_budget }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1020 } }",
+          "options": [
+            {
+              "key": "elected_representatives",
+              "label": {
+                "zh": "按选举资格与在职代表共议",
+                "en": "Deliberate through real voting eligibility and employed representatives"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_representation value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1021 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "本国确有选举制度时，按真实投票资格与在职代表核对，不虚构议席。",
+                "en": "When the country really has a franchise, the check runs on its own voting qualification and employed representatives; no seats are invented."
+              },
+              "trigger": "{ country_has_voting_franchise = yes ywc_dmg_v03_electoral_representative_ready = yes }"
+            },
+            {
+              "key": "office_charter_cosign",
+              "label": {
+                "zh": "共署官署章程与预算（无选举时）",
+                "en": "Co-sign the office charter and budget (without a franchise)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_joint_appointment_clause value = 1 }\nset_variable = { name = ywc_dmg_court_representation value = 2 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1021 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "无选举时以共署官署章程、州预算与申诉记录代替议席；该共署条款是共同任命路线成立的要件。",
+                "en": "Without a franchise, a co-signed office charter, state budget and appeal record stand in for seats; this co-signature clause is what makes the joint-appointment lane valid."
+              },
+              "trigger": "{ country_has_voting_franchise = no }"
+            },
+            {
+              "key": "old_ledger_consultation",
+              "label": {
+                "zh": "沿旧官署名册征询（范围有限）",
+                "en": "Consult the old office ledger (limited scope)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_representation value = 3 }\nset_variable = { name = ywc_dmg_court_task_narrowed value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1021 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "只征询旧名册在册者，共议范围与任务同步缩小；不新增任何代表席位。",
+                "en": "Only those already on the old ledger are consulted, so deliberation and the task narrow together; no representative seat is added."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "待选举或章程就绪再共议",
+                "en": "Wait until the franchise or charter is ready"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1020 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "共议形式未定，本事件可在后续月份重新提出。",
+                "en": "The form of deliberation stays undecided and the event may return."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付款与已签章程保留。",
+                "en": "Ends in withdrawal; paid money and signed charters remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "确定共议形式并记下共署条款要件。",
+            "en": "Fix the form of deliberation and the co-signature clause requirement."
+          },
+          "reads": [
+            "country_has_voting_franchise",
+            "ywc_dmg_v03_electoral_representative_ready",
+            "ywc_dmg_court_budget_stage"
+          ],
+          "writes": [
+            "ywc_dmg_joint_appointment_clause",
+            "ywc_dmg_court_representation",
+            "ywc_dmg_court_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1021",
+          "title": {
+            "zh": "防务支出谁能否决",
+            "en": "Who May Veto Defence Spending"
+          },
+          "desc": {
+            "zh": "战时紧急否决只在真实存在战争与军费时讨论；平时只审常规营房预算。王廷保留审计控制但要付审计代价，共同否决权只给真的承担了预算份额的地方，旧制不设否决则留下地方不满与更窄的支出空间。本事件绝不强制开战。",
+            "en": "A wartime emergency veto is discussed only where a real war and military spending exist, while peace reviews the ordinary barrack budget. The court may keep audit control and pay its cost, a joint veto may go only to a locality really carrying a budget share, and the old practice may keep no veto at the price of local resentment and narrower spending. The event never forces a war."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_budget }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1021 } }",
+          "options": [
+            {
+              "key": "court_keeps_control",
+              "label": {
+                "zh": "王廷保留审计控制（平时营房预算）",
+                "en": "The court keeps audit control (peacetime barrack budget)"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_precedent_central months = 24 }\nset_variable = { name = ywc_dmg_court_defence_veto value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1022 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "平时只审常规营房预算，不虚构战时支出；24 个月内审计占用行政资源换得正当性。",
+                "en": "In peace only the ordinary barrack budget is reviewed and no wartime spending is invented; for 24 months the audit costs administrative capacity and buys legitimacy."
+              },
+              "trigger": "{ NOT = { is_at_war = yes } }"
+            },
+            {
+              "key": "joint_veto",
+              "label": {
+                "zh": "地方共享否决权",
+                "en": "A shared local veto"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_joint_council months = 24 }\nset_variable = { name = ywc_dmg_court_defence_veto value = 2 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1022 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "否决权只在地方真的承担了预算份额时给出；24 个月内听审占用行政资源、正当性提高。",
+                "en": "The veto is granted only where the locality really carries a budget share; for 24 months hearings cost administrative capacity and raise legitimacy."
+              },
+              "trigger": "{ has_variable = ywc_dmg_court_local_share }"
+            },
+            {
+              "key": "old_system_no_veto",
+              "label": {
+                "zh": "旧制不设否决（地方不满累积）",
+                "en": "The old system keeps no veto (local resentment builds)"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_precedent_lineage months = 24 }\nset_variable = { name = ywc_dmg_court_defence_veto value = 3 }\nset_variable = { name = ywc_dmg_court_local_discontent value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1022 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "旧制省下行政能力却积累地方不满：24 个月内行政压力较轻而正当性明显下降。",
+                "en": "The old practice saves administrative capacity but builds local resentment: for 24 months administration is lighter while legitimacy falls sharply."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "wartime_emergency_veto",
+              "label": {
+                "zh": "战时紧急否决（真实军费）",
+                "en": "A wartime emergency veto (real military spending)"
+              },
+              "effect": "{ add_modifier = { name = ywc_dmg_royal_directive months = 24 }\nset_variable = { name = ywc_dmg_court_defence_veto value = 4 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1022 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "仅在本国确实处于战争时可用；24 个月内行政触达提高而正当性下降。",
+                "en": "Available only while the country is really at war; for 24 months administrative reach improves while legitimacy falls."
+              },
+              "trigger": "{ is_at_war = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "防务否决权暂不议定",
+                "en": "Leave the defence veto undecided"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1021 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "否决权未定，本事件可在后续月份重新提出。",
+                "en": "The veto stays undecided and the event may return."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付款与既有防务安排保留。",
+                "en": "Ends in withdrawal; paid money and existing defence arrangements remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "按真实战争与预算份额确定防务否决安排。",
+            "en": "Fix the defence veto by real war and real budget shares."
+          },
+          "reads": [
+            "is_at_war",
+            "ywc_dmg_court_local_share",
+            "ywc_dmg_court_budget_paid"
+          ],
+          "writes": [
+            "ywc_dmg_court_defence_veto",
+            "ywc_dmg_court_local_discontent",
+            "ywc_dmg_court_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1022",
+          "title": {
+            "zh": "新任官要不要重签",
+            "en": "Must the New Official Sign Again"
+          },
+          "desc": {
+            "zh": "现任官或继任者接手，同时读取地契线的仲裁结果与已付、未付的赔付债务。可以确认既有条陈、付费修改条款、或让官署停摆留缺。前任离职不构成债务免除；旧权划界结果下重新登记需要更多现银。",
+            "en": "The official in post or the successor takes over and reads the title arbitration together with the compensation debts already paid and still unpaid. The standing terms may be confirmed, amended for a fee, or left to a vacancy. A predecessor's departure is never debt forgiveness, and under old-boundary delimitation re-registration needs more cash."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_charter_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1022 } }",
+          "options": [
+            {
+              "key": "confirm_signed_terms",
+              "label": {
+                "zh": "确认既有条陈（债务随任转移）",
+                "en": "Confirm the standing terms (debts follow the office)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_successor_terms value = 1 }\nif = { limit = { OR = { var:ywc_dmg_two_land_titles_outcome = 1 var:ywc_dmg_two_land_titles_outcome = 2 var:ywc_dmg_two_land_titles_outcome = 3 } NOT = { has_variable = ywc_dmg_titles_compensation_paid } } set_variable = { name = ywc_dmg_court_inherited_land_debt value = 1 } }\nset_variable = { name = ywc_dmg_court_pending_event value = 1023 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "前任离职不免除债务：两张地契线若有已签而未付的赔付，继任者承接并在册；本节点不扣款。",
+                "en": "A predecessor's departure is not debt forgiveness: where the title lane signed compensation that is still unpaid, the successor inherits it on the books; nothing is deducted here."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "pay_to_amend",
+              "label": {
+                "zh": "付费修改条陈",
+                "en": "Pay to amend the terms"
+              },
+              "effect": "{ ywc_dmg_foundation_pay_court_budget = yes\nif = { limit = { has_variable = ywc_dmg_court_budget_paid } set_variable = { name = ywc_dmg_court_successor_terms value = 2 } set_variable = { name = ywc_dmg_court_pending_event value = 1023 } }\nelse = { set_variable = { name = ywc_dmg_court_pending_event value = 1022 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一周估算年总收入（年总收入÷52），最低100；已付过地方份饷者不可重复扣款，本项仅在未付时可用。旧权划界结果下重新登记需一周半的现银（×1.5）。",
+                "en": "Deducts one week of estimated yearly gross income (yearly gross income / 52), minimum 100. Where the local share was already paid this can never be charged twice, so the option exists only while unpaid; under old-boundary delimitation the re-registration needs one and a half weeks of cash (multiply 1.5)."
+              },
+              "consequence_note": {
+                "zh": "实扣成功才把继任者的修改条陈写进册子并进入承认程序；府库不足则留回本节点，容后再议。",
+                "en": "Only a real deduction enters the successor's amended terms on the register and moves to the recognition stage; a short treasury returns to this node for a later attempt."
+              },
+              "trigger": "{ in_default = no NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_dmg_court_budget_paid } OR = { AND = { var:ywc_dmg_two_land_titles_outcome = 3 gold_reserves >= { value = var:ywc_dmg_court_budget_cost multiply = 1.5 } } AND = { NOT = { var:ywc_dmg_two_land_titles_outcome = 3 } gold_reserves >= var:ywc_dmg_court_budget_cost } } }"
+            },
+            {
+              "key": "suspend_into_vacancy",
+              "label": {
+                "zh": "停摆留缺（不重签）",
+                "en": "Suspend into the vacancy (no re-signature)"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_vacancy value = 1 }\nset_variable = { name = ywc_dmg_court_task_narrowed value = 1 }\nset_variable = { name = ywc_dmg_court_pending_event value = 1023 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "不扣款，官署停摆留缺；已付费用、在任岗位与既有债务仍是事实，任务范围随之缩小。",
+                "en": "Nothing is deducted and the office is left vacant; fees paid, posts in service and existing debts remain facts, and the task narrows."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "等继任者到任再议",
+                "en": "Wait until the successor takes office"
+              },
+              "effect": "{ set_variable = { name = ywc_dmg_court_pending_event value = 1022 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无需新增付款。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "重签与否未定，本事件可在后续月份重新提出。",
+                "en": "Whether to re-sign stays undecided and the event may return."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；未付债务与已付款一并保留在册。",
+                "en": "Ends in withdrawal; unpaid debts and money already paid both stay on the books."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "读取地契仲裁与债务，决定确认、付费修改或留缺。",
+            "en": "Read the title arbitration and the debts, then confirm, amend for a fee, or leave a vacancy."
+          },
+          "reads": [
+            "ywc_dmg_two_land_titles_outcome",
+            "ywc_dmg_titles_compensation_paid",
+            "ywc_dmg_court_budget_paid",
+            "ywc_dmg_court_budget_cost",
+            "gold_reserves",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_dmg_court_successor_terms",
+            "ywc_dmg_court_inherited_land_debt",
+            "ywc_dmg_court_vacancy",
+            "ywc_dmg_court_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1023",
+          "title": {
+            "zh": "诸邑承认哪一种国书",
+            "en": "Which Instrument the Towns Accept"
+          },
+          "desc": {
+            "zh": "连续九个月的真实在任、预算与法定代表条件，才能确认王廷统筹、共同任命或地方联合中的一种。依法部分履行的可以折中，受阻的可以限额结案；失去州、开战、财政恶化或政治团体离开，各自给出重议、限额或退出的分支。本事件绝不自动给予独立或改动政体。",
+            "en": "Nine continuous months of real posts, budget and lawful representation confirm exactly one of royal administration, joint appointment or a local compact. Lawful partial performance may compromise and a blocked lane may settle as capped; a lost state, war, fiscal deterioration or a departing political group each opens renegotiation, capping or withdrawal. The event never grants independence or changes the polity by itself."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_court_charter_review }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_court_provinces_last_event value = 1023 } }",
+          "options": [
+            {
+              "key": "confirm_royal",
+              "label": {
+                "zh": "确认王廷统筹国书",
+                "en": "Confirm the royal-administration instrument"
+              },
+              "effect": "{ ywc_dmg_foundation_close_court = yes\nset_variable = { name = ywc_dmg_court_provinces_outcome value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "仅在连续九个月复核成立、文书费与预算份额都已实付、官署真在任时确认；结案后 36 个月内行政压力上升、正当性受限。",
+                "en": "Confirmed only with nine continuous months of review, the charter fee and budget share really paid, and offices really in post; for 36 months administration costs more and legitimacy is limited."
+              },
+              "trigger": "{ has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_route_ready has_variable = ywc_dmg_court_charter_paid has_variable = ywc_dmg_court_budget_paid var:ywc_dmg_court_route = 1 ywc_dmg_foundation_court_route_ready = yes }"
+            },
+            {
+              "key": "confirm_joint",
+              "label": {
+                "zh": "确认共同任命国书",
+                "en": "Confirm the joint-appointment instrument"
+              },
+              "effect": "{ ywc_dmg_foundation_close_court = yes\nset_variable = { name = ywc_dmg_court_provinces_outcome value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "仅有选举时按真实选举资格、无选举时按共署章程都成立，且九个月复核连续时才确认；结案后 36 个月内正当性提高、行政压力上升。",
+                "en": "Confirmed only when the real franchise route or the co-signed charter really holds and nine continuous months of review passed; for 36 months legitimacy rises while administration costs more."
+              },
+              "trigger": "{ has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_route_ready has_variable = ywc_dmg_court_charter_paid has_variable = ywc_dmg_court_budget_paid var:ywc_dmg_court_route = 2 ywc_dmg_foundation_court_route_ready = yes }"
+            },
+            {
+              "key": "confirm_local",
+              "label": {
+                "zh": "确认地方联合国书",
+                "en": "Confirm the local-compact instrument"
+              },
+              "effect": "{ ywc_dmg_foundation_close_court = yes\nset_variable = { name = ywc_dmg_court_provinces_outcome value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以真实在任的次级官署与地方预算份额为基础，九个月复核连续时确认；结案后 36 个月内行政压力减轻、中央权威略降。",
+                "en": "Grounded in a really staffed secondary office and a local budget share, confirmed after nine continuous months of review; for 36 months administration is lighter while central authority eases slightly."
+              },
+              "trigger": "{ has_variable = ywc_dmg_court_review_matured has_variable = ywc_dmg_court_route_ready has_variable = ywc_dmg_court_charter_paid has_variable = ywc_dmg_court_budget_paid var:ywc_dmg_court_route = 3 ywc_dmg_foundation_court_route_ready = yes }"
+            },
+            {
+              "key": "limited_settlement",
+              "label": {
+                "zh": "承认有限结案（十二年未备齐）",
+                "en": "Accept a limited settlement (twelve years without readiness)"
+              },
+              "effect": "{ ywc_dmg_foundation_limit_court = yes\nset_variable = { name = ywc_dmg_court_provinces_outcome value = 4 } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以有限结案收束本线；已付文书费、预算份额与在任岗位保留，后续仍可再议。",
+                "en": "The lane closes as a limited settlement; the charter fee paid, the budget share and the posts in service stay and may be revisited."
+              },
+              "trigger": "{ has_variable = ywc_dmg_court_blocked_12_notice }"
+            },
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "重新议定并重设十二年观察期",
+                "en": "Renegotiate and reset the twelve-year observation"
+              },
+              "effect": "{ remove_variable = ywc_dmg_court_blocked_12_notice\nremove_variable = ywc_dmg_court_blocked_36_notice\nremove_variable = ywc_dmg_court_observation_started\nremove_variable = ywc_dmg_court_review_matured\nif = { limit = { NOT = { has_variable = ywc_dmg_court_blocked_12_due } } set_variable = { name = ywc_dmg_court_blocked_12_due value = 1 months = 12 } }\nset_variable = { name = ywc_dmg_court_pending_event value = 1023 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "不新增扣款，重新起算观察与提示期；已付费用、在任岗位与既有债务一律保留，路线可继续修复。",
+                "en": "No new charge; observation and notice periods restart while every paid fee, post in service and existing debt is retained so the lane can still be repaired."
+              },
+              "trigger": "{ has_variable = ywc_dmg_court_blocked_12_notice NOT = { has_variable = ywc_dmg_court_blocked_36_notice } ywc_dmg_v03_has_owned_state = yes }"
+            },
+            {
+              "key": "withdraw_court",
+              "label": {
+                "zh": "停止诸邑线（依法撤回）",
+                "en": "Withdraw the provinces lane (lawful exit)"
+              },
+              "effect": "{ ywc_dmg_foundation_withdraw_court = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无需新增付款；已付款不退。",
+                "en": "No new charge. Money already paid is never refunded."
+              },
+              "consequence_note": {
+                "zh": "以撤回结案；已付文书费、预算份额、在任岗位与未付债务全部保留。",
+                "en": "Ends in withdrawal; the charter fee paid, the budget share, posts in service and unpaid debts all remain."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "按连续九个月的真实条件确认、折中、限额或撤回。",
+            "en": "Confirm, compromise, cap or withdraw on nine continuous months of real conditions."
+          },
+          "reads": [
+            "ywc_dmg_court_review_matured",
+            "ywc_dmg_court_route_ready",
+            "ywc_dmg_court_charter_paid",
+            "ywc_dmg_court_budget_paid",
+            "ywc_dmg_foundation_court_route_ready",
+            "ywc_dmg_court_blocked_12_notice",
+            "ywc_dmg_court_blocked_36_notice"
+          ],
+          "writes": [
+            "ywc_dmg_court_outcome",
+            "ywc_dmg_court_provinces_outcome",
+            "ywc_dmg_court_withdraw_requested",
+            "ywc_v03_dmg_v03_dmg_court_provinces_settled"
+          ]
+        }
+      ],
+      "outcomes": [
+        "royal_administration:王廷以中央预算与在任官署承担任命，行政压力上升而正当性受限。",
+        "joint_appointment:按真实选举资格或共署章程共任，正当性提高而行政成本上升。",
+        "local_compact:地方承担预算份额与共同申诉，行政压力减轻而中央权威略降。",
+        "limited_settlement:十二年未备齐或状态有变时承认有限结案，已付费与在任岗位保留。",
+        "withdrawn:依法撤回，已付文书费、预算份额、在任岗位与未付债务全部保留。"
+      ],
+      "legacy_links": [
+        "本线不读写旧 yongchang_world/events/ywc_dmg_nqg_events.txt 的任何结果，也不主张任何独立或政体变更。",
+        "后续代际线可读取 ywc_dmg_court_provinces_outcome、ywc_dmg_court_outcome、ywc_dmg_court_route、ywc_dmg_court_local_share、ywc_dmg_court_countersignature、ywc_dmg_court_defence_veto 与 ywc_dmg_court_inherited_land_debt。"
+      ]
     }
   ]
 }
