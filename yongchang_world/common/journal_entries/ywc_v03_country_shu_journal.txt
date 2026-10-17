@@ -48,3 +48,87 @@ ywc_je_v03_shu_fiscal_settlement = {
     complete = { has_variable = ywc_shu_register_resolved }
     fail = { has_variable = ywc_shu_arc_abandoned }
 }
+
+ywc_je_v03_shu_service_contract = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome } }
+    possible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome } }
+    immediate = { ywc_v03_claim_arc_shu_v03_shu_service_compact = yes set_variable = { name = ywc_shu_service_block_12_due days = 365 } set_variable = { name = ywc_shu_service_block_36_due days = 1095 } set_variable = { name = ywc_shu_service_pending_event value = 1010 } }
+    on_fail = { ywc_shu_service_withdraw = yes }
+    on_monthly_pulse = {
+     effect = {
+      if = { limit = { NOT = { has_variable = ywc_shu_service_route } has_variable = ywc_shu_service_block_12_due NOT = { has_variable = ywc_shu_service_block_12_prompted } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_block_12_prompted value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 } }
+      if = { limit = { NOT = { has_variable = ywc_shu_service_route } has_variable = ywc_shu_service_block_36_due NOT = { has_variable = ywc_shu_service_block_36_prompted } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_block_36_prompted value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 } }
+      if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1010 } remove_variable = ywc_shu_service_pending_event ywc_v03_claim_arc_shu_v03_shu_service_compact = yes trigger_event = { id = ywc_shu.1010 } } else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1011 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1011 } } else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1012 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1012 } } else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1013 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1013 } }
+     }
+    }
+    complete = {
+has_variable = ywc_shu_service_route
+}
+    fail = {
+{ has_variable = ywc_shu_service_withdrawn }
+}
+}
+
+ywc_je_v03_shu_service_appointments = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_service_route NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }
+    possible = { c:SHU ?= this has_variable = ywc_shu_service_route NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }
+    immediate = { set_variable = { name = ywc_shu_service_pending_event value = 1014 } set_variable = { name = ywc_shu_service_block_12_due days = 365 } set_variable = { name = ywc_shu_service_block_36_due days = 1095 } }
+    on_fail = { ywc_shu_service_withdraw = yes }
+    on_monthly_pulse = { effect = {
+     if = { limit = { has_variable = ywc_shu_service_contract_active NOT = { has_variable = ywc_shu_service_contract_delivered } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_pending_event value = 1014 } }
+     if = { limit = { NOT = { ywc_shu_service_actual_ready = yes } has_variable = ywc_shu_service_block_12_due NOT = { has_variable = ywc_shu_service_block_12_prompted } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_block_12_prompted value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 } }
+     if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1014 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1014 } }
+     else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1015 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1015 } }
+     else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1016 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1016 } }
+     } }
+    complete = {
+has_variable = ywc_shu_service_appointment_result
+}
+    fail = {
+{ has_variable = ywc_shu_service_withdrawn }
+}
+}
+
+ywc_je_v03_shu_service_successor = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_service_appointment_result NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }
+    possible = { c:SHU ?= this has_variable = ywc_shu_service_appointment_result NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }
+    immediate = { ywc_shu_service_start_review = yes }
+    on_fail = { ywc_shu_service_withdraw = yes }
+    on_monthly_pulse = { effect = {
+     if = { limit = { has_variable = ywc_shu_service_review_due OR = { is_at_war = yes in_default = yes has_modifier = declared_bankruptcy NOT = { ywc_shu_service_route_ready = yes } } } remove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature set_variable = { name = ywc_shu_service_review_interrupted value = 1 } }
+     if = { limit = { NOT = { has_variable = ywc_shu_service_review_due } NOT = { has_variable = ywc_shu_service_review_mature } NOT = { has_variable = ywc_shu_service_review_interrupted } ywc_shu_service_route_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } ywc_shu_service_start_review = yes }
+     if = { limit = { NOT = { has_variable = ywc_shu_service_review_due } has_variable = ywc_shu_service_review NOT = { has_variable = ywc_shu_service_review_interrupted } } set_variable = { name = ywc_shu_service_review_mature value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1017 } }
+     if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1016 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1016 } }
+     else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1017 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1017 } }
+     } }
+    complete = {
+has_variable = ywc_shu_service_outcome
+}
+    fail = {
+{ has_variable = ywc_shu_service_withdrawn }
+}
+}
+
+ywc_je_v03_shu_port_customs = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome has_variable = ywc_v03_shu_v03_shu_service_compact_settled has_variable = ywc_shu_service_outcome } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } }
+    possible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome has_variable = ywc_v03_shu_v03_shu_service_compact_settled has_variable = ywc_shu_service_outcome } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } }
+    immediate = { ywc_v03_claim_arc_shu_v03_shu_port_treasury = yes set_variable = { name = ywc_shu_port_pending_event value = 1018 } set_variable = { name = ywc_shu_port_block_12_due days = 365 } set_variable = { name = ywc_shu_port_block_36_due days = 1095 } }
+    on_fail = { ywc_shu_port_close_withdrawn = yes }
+    on_monthly_pulse = { effect = {
+     if = { limit = { NOT = { has_variable = ywc_shu_port_route } has_variable = ywc_shu_port_block_12_due NOT = { has_variable = ywc_shu_port_block_12_prompted } NOT = { has_variable = ywc_shu_port_pending_event } } set_variable = { name = ywc_shu_port_block_12_prompted value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1024 } }
+     if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1018 } remove_variable = ywc_shu_port_pending_event ywc_v03_claim_arc_shu_v03_shu_port_treasury = yes trigger_event = { id = ywc_shu.1018 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1019 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1019 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1020 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1020 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1021 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1021 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1022 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1022 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1023 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1023 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1024 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1024 } }
+     else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1025 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1025 } }
+     } }
+    complete = {
+has_variable = ywc_shu_port_outcome
+}
+    fail = {
+{ has_variable = ywc_shu_port_withdrawn }
+}
+}

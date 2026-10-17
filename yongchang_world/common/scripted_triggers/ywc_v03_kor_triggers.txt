@@ -97,3 +97,192 @@ ywc_kor_v03_route_execution_ready = {
 ywc_kor_v03_unsettled = {
 	NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled }
 }
+
+ywc_kor_school_affordable = {
+	ywc_kor_v03_finance_safe = yes
+	gold_reserves >= var:ywc_kor_school_archive_fee
+}
+
+ywc_kor_school_can_pay = {
+	ywc_kor_school_affordable = yes
+}
+
+ywc_kor_school_education_law = {
+	OR = {
+		has_law_or_variant = law_type:law_religious_schools
+		has_law_or_variant = law_type:law_public_schools
+		has_law_or_variant = law_type:law_private_schools
+	}
+}
+
+ywc_kor_school_institution_ready = {
+	ywc_kor_school_education_law = yes
+	institution_investment_level = {
+		institution = institution_schools
+		value >= 1
+	}
+}
+
+ywc_kor_school_has_staffed_university = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_university
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_school_coop_ready = {
+	ywc_kor_v03_finance_safe = yes
+	OR = {
+		ywc_kor_v03_has_translation_employer = yes
+		ywc_kor_v03_has_staffed_border_office = yes
+	}
+}
+
+ywc_kor_school_office_ready = {
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_school_institution_ready = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+}
+
+ywc_kor_school_limited_ready = {
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+}
+
+ywc_kor_school_university_ready = {
+	ywc_kor_school_institution_ready = yes
+	ywc_kor_school_has_staffed_university = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_school_employer_office_ready = {
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_school_route_execution_ready = {
+	OR = {
+		AND = {
+			var:ywc_kor_school_route = 1
+			ywc_kor_school_coop_ready = yes
+		}
+		AND = {
+			var:ywc_kor_school_route = 2
+			ywc_kor_school_office_ready = yes
+		}
+		AND = {
+			var:ywc_kor_school_route = 3
+			ywc_kor_school_limited_ready = yes
+		}
+	}
+}
+
+ywc_kor_school_full_ready = {
+	OR = {
+		AND = {
+			var:ywc_kor_school_route = 1
+			ywc_kor_school_university_ready = yes
+		}
+		AND = {
+			var:ywc_kor_school_route = 2
+			ywc_kor_school_office_ready = yes
+		}
+	}
+	ywc_kor_school_old_contracts_clear = yes
+}
+
+ywc_kor_school_old_contracts_clear = {
+	AND = {
+		OR = {
+			NOT = { has_variable = ywc_kor_translation_contract_started }
+			var:ywc_kor_translation_contract_paid_months >= 12
+		}
+		OR = {
+			NOT = { has_variable = ywc_kor_veteran_contract_started }
+			var:ywc_kor_veteran_contract_paid_months >= 12
+		}
+	}
+}
+
+ywc_kor_ports_trade_permitted = {
+	OR = {
+		has_law_or_variant = law_type:law_mercantilism
+		has_law_or_variant = law_type:law_protectionism
+		has_law_or_variant = law_type:law_free_trade
+	}
+}
+
+ywc_kor_ports_broad_trade_law = {
+	OR = {
+		has_law_or_variant = law_type:law_protectionism
+		has_law_or_variant = law_type:law_free_trade
+	}
+}
+
+ywc_kor_ports_has_staffed_port = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_port
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_ports_can_pay = {
+	ywc_kor_v03_finance_safe = yes
+	gold_reserves >= var:ywc_kor_port_fee
+}
+
+ywc_kor_ports_designated_ready = {
+	ywc_kor_ports_trade_permitted = yes
+	ywc_kor_ports_has_staffed_port = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_ports_general_ready = {
+	ywc_kor_ports_broad_trade_law = yes
+	ywc_kor_ports_has_staffed_port = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_ports_shore_ready = {
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_ports_current_route_ready = {
+	OR = {
+		AND = { var:ywc_kor_ports_route = 1 ywc_kor_ports_designated_ready = yes }
+		AND = { var:ywc_kor_ports_route = 2 ywc_kor_ports_general_ready = yes }
+		AND = { var:ywc_kor_ports_route = 3 ywc_kor_ports_shore_ready = yes }
+	}
+}
+
+ywc_kor_ports_full_ready = {
+	OR = {
+		AND = { var:ywc_kor_ports_route = 1 ywc_kor_ports_designated_ready = yes }
+		AND = { var:ywc_kor_ports_route = 2 ywc_kor_ports_general_ready = yes }
+	}
+}
+
+ywc_kor_ports_auditor_ready = {
+	OR = {
+		AND = { var:ywc_kor_school_route = 1 ywc_kor_school_coop_ready = yes }
+		AND = { var:ywc_kor_school_route = 2 ywc_kor_school_office_ready = yes }
+		AND = { var:ywc_kor_school_route = 3 ywc_kor_school_limited_ready = yes }
+		NOT = { has_variable = ywc_kor_school_route }
+	}
+	ywc_kor_ports_current_route_ready = yes
+}
+
+ywc_kor_ports_old_contracts_clear = {
+	ywc_kor_school_old_contracts_clear = yes
+}

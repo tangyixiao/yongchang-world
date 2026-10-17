@@ -162,7 +162,9 @@ class DmgContentCardTest(unittest.TestCase):
         for path in assets:
             self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"),str(path))
         modifiers=Path(ROOT/"yongchang_world/common/static_modifiers/ywc_v03_dmg_modifiers.txt").read_text(encoding="utf-8-sig")
-        self.assertEqual(len(dict((key,body) for key,_,body in parse(modifiers))),9)
+        declared=set(dict((key,body) for key,_,body in parse(modifiers)))
+        for name in ("ywc_dmg_joint_council","ywc_dmg_noble_guarantee","ywc_dmg_royal_directive","ywc_dmg_language_central_forms","ywc_dmg_language_translation","ywc_dmg_language_old_register","ywc_dmg_precedent_central","ywc_dmg_precedent_local_courts","ywc_dmg_precedent_lineage"):
+            self.assertIn(name,declared)
 
     def test_local_contract_has_real_gate_fee_finite_tradeoffs_and_later_reads(self):
         territory = next(t for key, _, t in parse(self.triggers) if key == "ywc_dmg_v03_territorial_compact_ready")

@@ -196,3 +196,40 @@ ywc_dmg_v03_selected_route_ready = {
 ywc_dmg_v03_unsettled = {
 	NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled }
 }
+
+
+
+# DMG foundation arcs: employment is tied to real owned-state pops and their
+# staffed buildings. These facts are evaluated by the engine on monthly pulse.
+ywc_dmg_foundation_agriculture_employment = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_group = bg_agriculture
+			occupancy >= 0.5
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_dmg_foundation_titles_route_ready = {
+	has_variable = ywc_dmg_titles_registry_paid
+	net_fixed_income >= 0
+	OR = {
+		AND = { var:ywc_dmg_titles_route = 1 ywc_dmg_v03_secondary_local_office_ready = yes ywc_dmg_foundation_agriculture_employment = yes }
+		AND = { var:ywc_dmg_titles_route = 2 OR = { has_law_or_variant = law_type:law_tenant_farmers has_law_or_variant = law_type:law_manorialism has_law_or_variant = law_type:law_peasant_proprietorship has_law_or_variant = law_type:law_commercialized_agriculture has_law_or_variant = law_type:law_homesteading } ywc_dmg_foundation_agriculture_employment = yes }
+		AND = { var:ywc_dmg_titles_route = 3 OR = { has_law_or_variant = law_type:law_serfdom has_law_or_variant = law_type:law_manorialism has_law_or_variant = law_type:law_tenant_farmers has_law_or_variant = law_type:law_peasant_proprietorship has_law_or_variant = law_type:law_commercialized_agriculture has_law_or_variant = law_type:law_homesteading } ywc_dmg_foundation_agriculture_employment = yes }
+	}
+}
+
+ywc_dmg_foundation_court_route_ready = {
+	has_variable = ywc_dmg_court_charter_paid
+	has_variable = ywc_dmg_court_budget_paid
+	net_fixed_income >= 0
+	OR = {
+		AND = { var:ywc_dmg_court_route = 1 ywc_dmg_v03_government_appointment_ready = yes }
+		AND = { var:ywc_dmg_court_route = 2 country_has_voting_franchise = yes ywc_dmg_v03_electoral_representative_ready = yes }
+		AND = { var:ywc_dmg_court_route = 2 country_has_voting_franchise = no ywc_dmg_v03_government_appointment_ready = yes var:ywc_dmg_joint_appointment_clause = 1 }
+		AND = { var:ywc_dmg_court_route = 3 ywc_dmg_v03_secondary_local_office_ready = yes ywc_dmg_foundation_agriculture_employment = yes }
+	}
+}

@@ -1193,6 +1193,1484 @@
       "legacy_links": [
         "ywc_shu.100-114：旧朝廷三席只作为旧接口/可选前序；v0.3入口由本日志独占，旧线结果不得覆盖本线。"
       ]
+    },
+    {
+      "slug": "v03_shu_service_compact",
+      "era": "foundation",
+      "participants": [
+        "李氏朝廷与铨部",
+        "世袭武勋军镇",
+        "军户及服役家庭",
+        "地方文官与县吏"
+      ],
+      "depends_on": [
+        "v03_shu_fiscal_register"
+      ],
+      "legacy_links": [
+        "ywc_je_flavor_shu_court_1",
+        "ywc_campaign_shu_c1_outcome"
+      ],
+      "outcomes": [
+        "professional_reorganization",
+        "garrison_compact",
+        "capped_legacy",
+        "withdrawn_breach"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_shu_service_contract",
+          "title": {
+            "zh": "军镇供饷契约",
+            "en": "Garrison Pay Compact"
+          },
+          "desc": {
+            "zh": "选择并支付一份有限契约，说明军饷、任用名单由谁核验。",
+            "en": "Choose and pay for a bounded compact that assigns responsibility for pay and appointments."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome } }\npossible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome } }\nimmediate = { ywc_v03_claim_arc_shu_v03_shu_service_compact = yes set_variable = { name = ywc_shu_service_block_12_due days = 365 } set_variable = { name = ywc_shu_service_block_36_due days = 1095 } set_variable = { name = ywc_shu_service_pending_event value = 1010 } }\non_fail = { ywc_shu_service_withdraw = yes }\non_monthly_pulse = {\n effect = {\n  if = { limit = { NOT = { has_variable = ywc_shu_service_route } has_variable = ywc_shu_service_block_12_due NOT = { has_variable = ywc_shu_service_block_12_prompted } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_block_12_prompted value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 } }\n  if = { limit = { NOT = { has_variable = ywc_shu_service_route } has_variable = ywc_shu_service_block_36_due NOT = { has_variable = ywc_shu_service_block_36_prompted } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_block_36_prompted value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 } }\n  if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1010 } remove_variable = ywc_shu_service_pending_event ywc_v03_claim_arc_shu_v03_shu_service_compact = yes trigger_event = { id = ywc_shu.1010 } } else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1011 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1011 } } else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1012 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1012 } } else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1013 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1013 } }\n }\n}\n}",
+          "goal": "{\nhas_variable = ywc_shu_service_route\n}",
+          "exit_conditions": "{\n{ has_variable = ywc_shu_service_withdrawn }\n}"
+        },
+        {
+          "id": "ywc_je_v03_shu_service_appointments",
+          "title": {
+            "zh": "铨部任用与军镇供给",
+            "en": "Appointments and Garrison Supply"
+          },
+          "desc": {
+            "zh": "按所选军制检查真实兵营与官署岗位、供给和军费责任；达不到目标时可修复或降格。",
+            "en": "Check real barracks and administration employment, supply and pay duties under the selected military arrangement; repair or reduce the goal if short."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_service_route NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_service_route NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }\nimmediate = { set_variable = { name = ywc_shu_service_pending_event value = 1014 } set_variable = { name = ywc_shu_service_block_12_due days = 365 } set_variable = { name = ywc_shu_service_block_36_due days = 1095 } }\non_fail = { ywc_shu_service_withdraw = yes }\non_monthly_pulse = { effect = {\n if = { limit = { has_variable = ywc_shu_service_contract_active NOT = { has_variable = ywc_shu_service_contract_delivered } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_pending_event value = 1014 } }\n if = { limit = { NOT = { ywc_shu_service_actual_ready = yes } has_variable = ywc_shu_service_block_12_due NOT = { has_variable = ywc_shu_service_block_12_prompted } NOT = { has_variable = ywc_shu_service_pending_event } } set_variable = { name = ywc_shu_service_block_12_prompted value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 } }\n if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1014 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1014 } }\n else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1015 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1015 } }\n else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1016 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1016 } }\n } }\n}",
+          "goal": "{\nhas_variable = ywc_shu_service_appointment_result\n}",
+          "exit_conditions": "{\n{ has_variable = ywc_shu_service_withdrawn }\n}"
+        },
+        {
+          "id": "ywc_je_v03_shu_service_successor",
+          "title": {
+            "zh": "继任仍按契约",
+            "en": "The Successor Still Follows the Compact"
+          },
+          "desc": {
+            "zh": "六个月连续核验和平时期的供给、任命和财政；中断后从零重新观察，也可延期或撤回。",
+            "en": "Continuously verify peaceful supply, appointments and finances for six months; interruption restarts observation, with deferral or withdrawal available."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_service_appointment_result NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_service_appointment_result NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } }\nimmediate = { ywc_shu_service_start_review = yes }\non_fail = { ywc_shu_service_withdraw = yes }\non_monthly_pulse = { effect = {\n if = { limit = { has_variable = ywc_shu_service_review_due OR = { is_at_war = yes in_default = yes has_modifier = declared_bankruptcy NOT = { ywc_shu_service_route_ready = yes } } } remove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature set_variable = { name = ywc_shu_service_review_interrupted value = 1 } }\n if = { limit = { NOT = { has_variable = ywc_shu_service_review_due } NOT = { has_variable = ywc_shu_service_review_mature } NOT = { has_variable = ywc_shu_service_review_interrupted } ywc_shu_service_route_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } ywc_shu_service_start_review = yes }\n if = { limit = { NOT = { has_variable = ywc_shu_service_review_due } has_variable = ywc_shu_service_review NOT = { has_variable = ywc_shu_service_review_interrupted } } set_variable = { name = ywc_shu_service_review_mature value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1017 } }\n if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1016 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1016 } }\n else_if = { limit = { has_variable = ywc_shu_service_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_service_pending_event = 1017 } remove_variable = ywc_shu_service_pending_event trigger_event = { id = ywc_shu.1017 } }\n } }\n}",
+          "goal": "{\nhas_variable = ywc_shu_service_outcome\n}",
+          "exit_conditions": "{\n{ has_variable = ywc_shu_service_withdrawn }\n}"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_shu.1010",
+          "title": {
+            "zh": "两枚印信的一份调令",
+            "en": "One Order, Two Seals"
+          },
+          "desc": {
+            "zh": "户部带来朝廷印，军镇也拿出旧有供军文书。先定由谁核对下一份名册；这只确定谈判桌，不替任何一方授官。",
+            "en": "The Board brings a court seal while the garrisons produce their old supply warrants. Decide who checks the next roster; this sets the negotiating table and appoints nobody."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_contract\nywc_shu_v03_unsettled = yes NOT = { has_variable = ywc_shu_service_route }\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1010 }\n}",
+          "options": [
+            {
+              "key": "court_seal",
+              "label": {
+                "zh": "先由朝廷与铨部联署",
+                "en": "Let court and personnel office countersign first"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_authority value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1011 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "中央掌握复核权，后续专业整编的费用较低，军镇需提交完整名册。",
+                "en": "The court keeps review authority, lowering later professional-audit cost while requiring complete garrison rosters."
+              }
+            },
+            {
+              "key": "garrison_seal",
+              "label": {
+                "zh": "军镇也须盖上供饷印",
+                "en": "Require the garrisons to seal the supply record too"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_authority value = 2 } set_variable = { name = ywc_shu_service_local_voice value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1011 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "军镇取得书面复核权；后续地方共约可减免一次费用，但中央核验门槛更高。",
+                "en": "Garrisons gain a written review role; the later local compact can waive a fee, while central verification becomes harder."
+              }
+            },
+            {
+              "key": "delay_order",
+              "label": {
+                "zh": "先封存调令，暂不签约",
+                "en": "Seal the order without signing a compact"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_deferred value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "不产生新费用；进入可恢复的受阻议价，仍可重试或撤回。",
+                "en": "No new charge; the compact enters a recoverable negotiation delay and can be retried or withdrawn."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "户部带来朝廷印，军镇也拿出旧有供军文书。先定由谁核对下一份名册；这只确定谈判桌，不替任何一方授官。",
+            "en": "The Board brings a court seal while the garrisons produce their old supply warrants. Decide who checks the next roster; this sets the negotiating table and appoints nobody."
+          },
+          "reads": [],
+          "writes": [
+            "ywc_shu_service_authority",
+            "ywc_shu_service_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_shu.1011",
+          "title": {
+            "zh": "军户欠饷与文官空缺",
+            "en": "Unpaid Garrisons, Vacant Offices"
+          },
+          "desc": {
+            "zh": "两本名册都不完整：军户称旧欠未清，铨部称候补官缺无人交接。玩家可以先核实一笔有限账目，也可把责任压回地方或承认旧额上限。",
+            "en": "Both rosters are incomplete: garrison households cite arrears, while the personnel office has vacant posts. Verify one bounded ledger, assign responsibility locally, or cap the legacy obligation."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_contract\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1011 }\n}",
+          "options": [
+            {
+              "key": "verify_payroll",
+              "label": {
+                "zh": "先核一笔军饷与官缺账",
+                "en": "Audit one payroll and vacancy ledger"
+              },
+              "effect": "{\nywc_shu_pay_service_cost = yes if = { limit = { has_variable = ywc_shu_service_cost_paid } set_variable = { name = ywc_shu_service_payroll_checked value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1012 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "按年总收入÷52（最低100）收取一次核验费；必须财政安全且有现款。",
+                "en": "One audit fee equal to annual gross income ÷ 52 (minimum 100); requires safe finances and available reserves."
+              },
+              "consequence_note": {
+                "zh": "只有扣款成功才可进入保荐名单；既有欠款仍按账承担。",
+                "en": "Only a successful charge advances to recommendations; existing arrears remain due."
+              },
+              "trigger": "{\nnet_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_service_cost }\n}"
+            },
+            {
+              "key": "local_ledger",
+              "label": {
+                "zh": "由各道先报实额",
+                "en": "Ask the provinces to report actual amounts first"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_payer value = 2 } set_variable = { name = ywc_shu_service_provincial_report value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1012 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无新增中央费用；须承担地方报告权，并在后续至少核验实际官署就业。",
+                "en": "No central fee; accepts provincial reporting rights and a later check of real administration employment."
+              },
+              "consequence_note": {
+                "zh": "走地方共约时地方拥有账目复核权，中央不能同时按全额统一军额结案。",
+                "en": "A local compact gives provinces review rights; the court cannot also settle as if it held the full centralized roster."
+              }
+            },
+            {
+              "key": "cap_arrears",
+              "label": {
+                "zh": "承认有限旧额，不追补全部欠饷",
+                "en": "Keep a limited legacy allowance without claiming all arrears"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_legacy_cap value = 1 } set_variable = { name = ywc_shu_service_payer value = 3 } set_variable = { name = ywc_shu_service_pending_event value = 1012 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收核验费；目标降低，不能声称已清偿未付军饷。",
+                "en": "No audit fee; the target is smaller and unpaid military arrears are not declared cleared."
+              },
+              "consequence_note": {
+                "zh": "保留旧指挥与较低供给目标，后续兵营就业门槛较低但中央整编收益也较少。",
+                "en": "Preserves legacy command at a lower supply target; later barracks employment threshold and centralization benefit are both lower."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "两本名册都不完整：军户称旧欠未清，铨部称候补官缺无人交接。玩家可以先核实一笔有限账目，也可把责任压回地方或承认旧额上限。",
+            "en": "Both rosters are incomplete: garrison households cite arrears, while the personnel office has vacant posts. Verify one bounded ledger, assign responsibility locally, or cap the legacy obligation."
+          },
+          "reads": [
+            "ywc_shu_fiscal_outcome_central_audit",
+            "ywc_shu_fiscal_outcome_provincial_share",
+            "ywc_shu_fiscal_outcome_capped_legacy",
+            "ywc_shu_register_resolved"
+          ],
+          "writes": [
+            "ywc_shu_service_payer",
+            "ywc_shu_service_cost_paid"
+          ]
+        },
+        {
+          "id": "ywc_shu.1012",
+          "title": {
+            "zh": "将领的保荐名单",
+            "en": "A Commander's Recommendation List"
+          },
+          "desc": {
+            "zh": "将领递上荐任名单，铨部要求每一缺额都有可追溯的交接。军方保荐、文武会核与仅承认现任各有不同权责。",
+            "en": "A commander submits recommendations; the personnel office wants each vacancy to have a traceable handover. Military nomination, joint review and recognition of incumbents assign different powers."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_contract\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1012 }\n}",
+          "options": [
+            {
+              "key": "professional_list",
+              "label": {
+                "zh": "军职按资格逐名核验",
+                "en": "Audit military appointments by qualification"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_recommendation value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1013 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "专业整编须有职业军制或在役兵营实际达到较高就业；军方失去单独保荐权。",
+                "en": "Professional reorganization requires professional-army law or high actual barracks employment; commanders lose sole nomination authority."
+              }
+            },
+            {
+              "key": "joint_list",
+              "label": {
+                "zh": "铨部与军镇共同签名",
+                "en": "Have personnel office and garrisons sign together"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_recommendation value = 2 } set_variable = { name = ywc_shu_service_joint_review value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1013 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "承认地方共约与双重复核；官署和兵营均须证明有人履职。",
+                "en": "Recognizes a local compact and dual review; both administration and barracks must show staffed posts."
+              }
+            },
+            {
+              "key": "incumbents_only",
+              "label": {
+                "zh": "暂认现任，不扩大荐任权",
+                "en": "Recognize incumbents without expanding nominations"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_recommendation value = 3 } set_variable = { name = ywc_shu_service_pending_event value = 1013 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "只维持可核验的现有军额；较低目标保留军镇权威，不产生新任命。",
+                "en": "Maintains only verifiable existing strength; the lower target preserves garrison authority and creates no appointments."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "将领递上荐任名单，铨部要求每一缺额都有可追溯的交接。军方保荐、文武会核与仅承认现任各有不同权责。",
+            "en": "A commander submits recommendations; the personnel office wants each vacancy to have a traceable handover. Military nomination, joint review and recognition of incumbents assign different powers."
+          },
+          "reads": [
+            "ywc_shu_service_authority",
+            "ywc_shu_service_payer",
+            "ywc_shu_fiscal_outcome_provincial_share"
+          ],
+          "writes": [
+            "ywc_shu_service_recommendation",
+            "ywc_shu_service_joint_review"
+          ]
+        },
+        {
+          "id": "ywc_shu.1013",
+          "title": {
+            "zh": "按营交验还是按镇包供",
+            "en": "Audit by Barracks or Contract by Garrison"
+          },
+          "desc": {
+            "zh": "三种军制各有一份不同账目。专业整编要求职业军制或真实营额与高就业；军镇共约依现行法令并承担地方核验；封顶旧军降低目标且保留既有指挥。",
+            "en": "Each military arrangement carries a different ledger. Professional reorganization requires professional-army law or well-staffed barracks; a garrison compact uses current law with provincial review; capped legacy strength lowers the target and preserves existing command."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_contract\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1013 }\n}",
+          "options": [
+            {
+              "key": "professional",
+              "label": {
+                "zh": "签专业整编：逐营交验",
+                "en": "Sign professional reorganization: audit each barracks"
+              },
+              "effect": "{\nywc_shu_choose_service_route = yes set_variable = { name = ywc_shu_service_route value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1014 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "一次性费用按年总收入÷52计，现行职业军制或已达目标的兵营可减半；需有现款。",
+                "en": "One-time cost is annual gross income ÷ 52; existing professional-army law or already-qualified barracks halves it; cash reserves are required."
+              },
+              "consequence_note": {
+                "zh": "逐营检查至少80%就业、无商品短缺，铨部也须有真实官署岗位。",
+                "en": "Requires at least 80% barracks occupancy without goods shortage and real personnel-office posts."
+              },
+              "trigger": "{\nOR = { has_law_or_variant = law_type:law_professional_army ywc_shu_v03_service_professional_ready = yes } net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_service_cost }\n}"
+            },
+            {
+              "key": "provincial_compact",
+              "label": {
+                "zh": "签军镇共约：地方供给、中央复核",
+                "en": "Sign a garrison compact: local supply, central review"
+              },
+              "effect": "{\nywc_shu_choose_service_route = yes set_variable = { name = ywc_shu_service_route value = 2 } set_variable = { name = ywc_shu_service_pending_event value = 1014 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "地方共同核验已在1011成立时免中央核验费；否则收取年总收入÷52四分之一，且须有现款。",
+                "en": "Waives the central audit fee if provincial reporting was accepted in 1011; otherwise charges one quarter of annual gross income ÷ 52 and requires cash reserves."
+              },
+              "consequence_note": {
+                "zh": "不强迫改变军队法律，但需军镇实际供给、地方报账和至少60%兵营就业。",
+                "en": "Does not force a military-law change; requires actual garrison supply, provincial accounts and at least 60% barracks occupancy."
+              },
+              "trigger": "{\nnet_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }\n}"
+            },
+            {
+              "key": "legacy_cap",
+              "label": {
+                "zh": "封顶旧军：不扩营，只核在册",
+                "en": "Cap legacy forces: no expansion, audit the rolls only"
+              },
+              "effect": "{\nywc_shu_choose_service_route = yes set_variable = { name = ywc_shu_service_route value = 3 } set_variable = { name = ywc_shu_service_pending_event value = 1014 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无新增费用；必须有真实兵营或官署供给记录，目标降至25%兵营就业。",
+                "en": "No new fee; requires a real barracks or administration record, with a 25% barracks-employment target."
+              },
+              "consequence_note": {
+                "zh": "保留旧指挥而不宣称现代整编；上限会被后续继任核验读取。",
+                "en": "Preserves legacy command without claiming modernization; the cap is checked again at succession."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "三种军制各有一份不同账目。专业整编要求职业军制或真实营额与高就业；军镇共约依现行法令并承担地方核验；封顶旧军降低目标且保留既有指挥。",
+            "en": "Each military arrangement carries a different ledger. Professional reorganization requires professional-army law or well-staffed barracks; a garrison compact uses current law with provincial review; capped legacy strength lowers the target and preserves existing command."
+          },
+          "reads": [
+            "ywc_shu_service_authority",
+            "ywc_shu_service_recommendation",
+            "ywc_shu_service_joint_review",
+            "ywc_shu_fiscal_outcome_capped_legacy"
+          ],
+          "writes": [
+            "ywc_shu_service_route",
+            "ywc_shu_service_cost_paid"
+          ]
+        },
+        {
+          "id": "ywc_shu.1014",
+          "title": {
+            "zh": "未出征的军费单",
+            "en": "The Military Bill in a Year Without Campaigns"
+          },
+          "desc": {
+            "zh": "没有战事，不代表军费不必按时入账。兵营和官署的实际岗位、供给短缺、当前法律及财政安全共同决定能否兑现。",
+            "en": "A quiet year does not erase military bills. Actual barracks and office posts, supply shortages, current law and fiscal safety determine whether the compact can be fulfilled."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_appointments\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1014 }\n}",
+          "options": [
+            {
+              "key": "check_supply",
+              "label": {
+                "zh": "按现有营额交验供给",
+                "en": "Audit supply against the current barracks"
+              },
+              "effect": "{\nif = { limit = { ywc_shu_v03_service_route_ready = yes } set_variable = { name = ywc_shu_service_supply_checked value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1015 } } else = { set_variable = { name = ywc_shu_service_waiting_for_posts value = 1 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "只有当前路线的真实岗位、法律与供给同时满足才推进；不足时可整补再试。",
+                "en": "Advances only when real posts, law and supply meet the selected route; shortages can be repaired and retried."
+              },
+              "trigger": "{\nywc_shu_v03_service_route_ready = yes\n}"
+            },
+            {
+              "key": "pay_local_share",
+              "label": {
+                "zh": "付款请各道承担一部分转运",
+                "en": "Pay to assign part of the transport to the provinces"
+              },
+              "effect": "{\nywc_shu_pay_service_local_once = yes if = { limit = { has_variable = ywc_shu_service_local_paid } set_variable = { name = ywc_shu_service_payer value = 2 } set_variable = { name = ywc_shu_service_local_share value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1015 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "一次性费用为周收入（年总收入÷52）四分之一；付款后记为地方共同责任。",
+                "en": "One-time fee is one quarter of weekly income (annual gross income ÷ 52); payment records a provincial co-responsibility."
+              },
+              "consequence_note": {
+                "zh": "双重可负担检查通过后才登记责任；未付成功仍可重试或退出。",
+                "en": "Responsibility is recorded only after affordability checks pass; failed payment can be retried or withdrawn."
+              },
+              "trigger": "{\nnet_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_service_cost multiply = 0.25 }\n}"
+            },
+            {
+              "key": "reduce_target",
+              "label": {
+                "zh": "将供给目标缩到现有旧额",
+                "en": "Reduce the supply target to the existing rolls"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_route value = 3 } set_variable = { name = ywc_shu_service_target_reduced value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1015 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "专业或共约路线改走有限旧军，既付费用与已签地方义务继续有效。",
+                "en": "Professional or compact route converts to limited legacy strength; prior charges and signed provincial duties remain due."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "没有战事，不代表军费不必按时入账。兵营和官署的实际岗位、供给短缺、当前法律及财政安全共同决定能否兑现。",
+            "en": "A quiet year does not erase military bills. Actual barracks and office posts, supply shortages, current law and fiscal safety determine whether the compact can be fulfilled."
+          },
+          "reads": [
+            "ywc_shu_service_route",
+            "ywc_shu_service_payer",
+            "ywc_shu_service_local_share",
+            "ywc_shu_v03_service_route_ready"
+          ],
+          "writes": [
+            "ywc_shu_service_supply_checked",
+            "ywc_shu_service_local_share"
+          ]
+        },
+        {
+          "id": "ywc_shu.1015",
+          "title": {
+            "zh": "铨部退回的任命",
+            "en": "The Personnel Office Returns the Appointment"
+          },
+          "desc": {
+            "zh": "被退回的任命不是抽象的文武不和：岗位可能空缺、名册不全，或荐任规则和所选军制不合。逐项补证或缩小承诺。",
+            "en": "A returned appointment is not merely a court-versus-military quarrel: the post may be vacant, the roster incomplete, or nomination rules inconsistent with the selected arrangement. Supply evidence or narrow the commitment."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_appointments\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1015 }\n}",
+          "options": [
+            {
+              "key": "accept_appointments",
+              "label": {
+                "zh": "按既定名册完成实际任用登记",
+                "en": "Register appointments from the agreed roster"
+              },
+              "effect": "{\nif = { limit = { ywc_shu_v03_service_route_ready = yes has_variable = ywc_shu_service_recommendation } set_variable = { name = ywc_shu_service_appointment_result value = 1 } set_variable = { name = ywc_shu_service_contract_delivered value = 1 } add_journal_entry = { type = ywc_je_v03_shu_service_successor } } else = { set_variable = { name = ywc_shu_service_waiting_for_posts value = 1 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "须有真实官署岗位与所选路线的兵营就业/军法条件；随后进入六个月履约观察。",
+                "en": "Requires real administration posts and the selected route’s barracks-employment and law conditions, then starts a six-month compliance review."
+              },
+              "trigger": "{\nywc_shu_v03_service_route_ready = yes\n}"
+            },
+            {
+              "key": "joint_recheck",
+              "label": {
+                "zh": "军镇与铨部共同复核一次",
+                "en": "Let garrisons and personnel office jointly review once"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_joint_review value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1015 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不自动登记任用；地方共约路线可用共同名册满足复核条件。",
+                "en": "Does not appoint anyone automatically; a joint roster can meet the review condition for a local compact."
+              },
+              "consequence_note": {
+                "zh": "仍需真实岗位和供给达标，六个月观察从条件满足后才开始。",
+                "en": "Real posts and supply must still qualify; the six-month observation begins only after conditions are met."
+              },
+              "trigger": "{\nywc_shu_service_route = 2 NOT = { has_variable = ywc_shu_service_joint_review }\n}"
+            },
+            {
+              "key": "vacant_cap",
+              "label": {
+                "zh": "不补空缺，改记有限旧额",
+                "en": "Leave vacancies open and record a limited legacy cap"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_route value = 3 } set_variable = { name = ywc_shu_service_target_reduced value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1016 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "不凭空授官；继续履约只核现役旧额和25%兵营就业。",
+                "en": "Appoints nobody by fiat; continued compliance checks only existing strength and 25% barracks occupancy."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "被退回的任命不是抽象的文武不和：岗位可能空缺、名册不全，或荐任规则和所选军制不合。逐项补证或缩小承诺。",
+            "en": "A returned appointment is not merely a court-versus-military quarrel: the post may be vacant, the roster incomplete, or nomination rules inconsistent with the selected arrangement. Supply evidence or narrow the commitment."
+          },
+          "reads": [
+            "ywc_shu_service_recommendation",
+            "ywc_shu_service_route",
+            "ywc_shu_service_joint_review",
+            "ywc_shu_service_supply_checked"
+          ],
+          "writes": [
+            "ywc_shu_service_appointment_result",
+            "ywc_shu_service_target_reduced"
+          ]
+        },
+        {
+          "id": "ywc_shu.1016",
+          "title": {
+            "zh": "军镇请求重议上限",
+            "en": "The Garrisons Ask to Renegotiate the Cap"
+          },
+          "desc": {
+            "zh": "账目已受阻十二或三十六个月，或一项现实条件刚刚失效。重议只影响后续义务，已签约和已经支付的债务仍在。",
+            "en": "The ledger has been blocked for twelve or thirty-six months, or a real condition has just failed. Renegotiation changes future duties; signed contracts and paid obligations remain."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_appointments\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1016 }\n}",
+          "options": [
+            {
+              "key": "retry_after_repair",
+              "label": {
+                "zh": "保留原路，修复后重新计时",
+                "en": "Keep the route and restart timing after repairs"
+              },
+              "effect": "{\nremove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature remove_variable = ywc_shu_service_review_interrupted set_variable = { name = ywc_shu_service_pending_event value = 1014 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留原承诺；所有连续观察从恢复条件满足后重新开始。",
+                "en": "Keeps the original compact; all continuous reviews restart after conditions recover."
+              }
+            },
+            {
+              "key": "accept_cap",
+              "label": {
+                "zh": "将新义务缩为有限旧军",
+                "en": "Reduce future duties to capped legacy strength"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_route value = 3 } set_variable = { name = ywc_shu_service_target_reduced value = 1 } remove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature remove_variable = ywc_shu_service_review_interrupted set_variable = { name = ywc_shu_service_pending_event value = 1014 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "不抹除已签债务；改用较低目标、较低费用与保守集团支持。",
+                "en": "Does not erase signed debt; uses a lower target, lower fee and conservative group support."
+              }
+            },
+            {
+              "key": "withdraw_service",
+              "label": {
+                "zh": "承认未能履约，撤回未付部分",
+                "en": "Admit non-fulfilment and withdraw unpaid future duties"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_withdrawn value = 1 } ywc_shu_service_close_withdrawn = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留既付费用和债务，关闭本线占用并登记失信；之后仍可从地方或旧额责任另开治理议题。",
+                "en": "Keeps paid fees and debts, releases the arc slot and records breach; later governance can revisit local or legacy duties."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "账目已受阻十二或三十六个月，或一项现实条件刚刚失效。重议只影响后续义务，已签约和已经支付的债务仍在。",
+            "en": "The ledger has been blocked for twelve or thirty-six months, or a real condition has just failed. Renegotiation changes future duties; signed contracts and paid obligations remain."
+          },
+          "reads": [
+            "ywc_shu_service_route",
+            "ywc_shu_service_cost_paid",
+            "ywc_shu_service_payer",
+            "ywc_shu_service_review_interrupted"
+          ],
+          "writes": [
+            "ywc_shu_service_withdrawn",
+            "ywc_shu_service_target_reduced"
+          ]
+        },
+        {
+          "id": "ywc_shu.1017",
+          "title": {
+            "zh": "下一任仍须照章",
+            "en": "The Next Successor Must Follow the Rules"
+          },
+          "desc": {
+            "zh": "交接名册交到下一任手里，仍须符合已选路线、六个月连续和平履约和财政条件。受阻时可以重试或撤回，不会将战争视作必然结局。",
+            "en": "The roster passes to a successor, who must still meet the selected route, six months of peaceful continuous compliance and fiscal conditions. If blocked, the compact can be retried or withdrawn; war is never presumed."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_service_successor\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1017 }\n}",
+          "options": [
+            {
+              "key": "settle_service",
+              "label": {
+                "zh": "照契约结案并保留继任复核",
+                "en": "Settle by the compact and retain successor review"
+              },
+              "effect": "{\nywc_shu_service_close_success = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "专业整编、军镇共约、封顶旧军分别记录；只给相应军方或地方集团效果，不自动改法律或增军。",
+                "en": "Records professional reorganization, local compact or capped legacy strength separately; grants only the relevant military or local-group effect, without changing law or adding troops."
+              },
+              "trigger": "{\nhas_variable = ywc_shu_service_review_mature ywc_shu_service_route_ready = yes NOT = { is_at_war = yes } net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }\n}"
+            },
+            {
+              "key": "restart_service_review",
+              "label": {
+                "zh": "条件曾中断，恢复后重新观察",
+                "en": "Conditions were interrupted; restart after recovery"
+              },
+              "effect": "{\nremove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature remove_variable = ywc_shu_service_review_interrupted ywc_shu_service_start_review = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "清除成熟资格并重新连续观察六个月。",
+                "en": "Clears maturity and restarts a fresh six-month continuous review."
+              },
+              "trigger": "{\nNOT = { has_variable = ywc_shu_service_review_mature }\n}"
+            },
+            {
+              "key": "withdraw_at_close",
+              "label": {
+                "zh": "撤回未付义务，保留已签账款",
+                "en": "Withdraw unpaid duties while keeping signed bills"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_service_withdrawn value = 1 } ywc_shu_service_close_withdrawn = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "仅停止未发生的后续义务；已付费用、已签债务和已落实岗位不撤销。",
+                "en": "Stops only future unpaid duties; paid fees, signed debts and appointments already made remain."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接名册交到下一任手里，仍须符合已选路线、六个月连续和平履约和财政条件。受阻时可以重试或撤回，不会将战争视作必然结局。",
+            "en": "The roster passes to a successor, who must still meet the selected route, six months of peaceful continuous compliance and fiscal conditions. If blocked, the compact can be retried or withdrawn; war is never presumed."
+          },
+          "reads": [
+            "ywc_shu_service_route",
+            "ywc_shu_service_recommendation",
+            "ywc_shu_service_review_mature",
+            "ywc_shu_service_payer"
+          ],
+          "writes": [
+            "ywc_shu_service_outcome",
+            "ywc_v03_shu_v03_shu_service_compact_settled"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "v03_shu_port_treasury",
+      "era": "foundation",
+      "participants": [
+        "朝廷户部与港务官署",
+        "实际存在的海商",
+        "地方征收者",
+        "依现行法律受限的贸易群体"
+      ],
+      "depends_on": [
+        "v03_shu_fiscal_register"
+      ],
+      "legacy_links": [
+        "ywc_je_flavor_shu_court_1",
+        "ywc_campaign_shu_c1_outcome"
+      ],
+      "outcomes": [
+        "unified_customs",
+        "negotiated_share",
+        "capped_legacy",
+        "inland_ledger",
+        "withdrawn_breach"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_shu_port_customs",
+          "title": {
+            "zh": "港务与国库交验",
+            "en": "Port and Treasury Reconciliation"
+          },
+          "desc": {
+            "zh": "在实际港口与现行贸易/税务法律下复核关账、商议分成或有限旧包征；缺港时缩小目标，欠款仍留在账上。",
+            "en": "Verify unified customs, negotiated revenue sharing or a capped legacy collection at a real port and under current trade and taxation laws; reduce the goal if no port exists, and keep debts on the ledger."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome has_variable = ywc_v03_shu_v03_shu_service_compact_settled has_variable = ywc_shu_service_outcome } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } }\npossible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_shu_v03_unsettled = yes OR = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled has_variable = ywc_shu_fiscal_register_resolved has_variable = ywc_campaign_shu_c1_outcome has_variable = ywc_v03_shu_v03_shu_service_compact_settled has_variable = ywc_shu_service_outcome } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } }\nimmediate = { ywc_v03_claim_arc_shu_v03_shu_port_treasury = yes set_variable = { name = ywc_shu_port_pending_event value = 1018 } set_variable = { name = ywc_shu_port_block_12_due days = 365 } set_variable = { name = ywc_shu_port_block_36_due days = 1095 } }\non_fail = { ywc_shu_port_close_withdrawn = yes }\non_monthly_pulse = { effect = {\n if = { limit = { NOT = { has_variable = ywc_shu_port_route } has_variable = ywc_shu_port_block_12_due NOT = { has_variable = ywc_shu_port_block_12_prompted } NOT = { has_variable = ywc_shu_port_pending_event } } set_variable = { name = ywc_shu_port_block_12_prompted value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1024 } }\n if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1018 } remove_variable = ywc_shu_port_pending_event ywc_v03_claim_arc_shu_v03_shu_port_treasury = yes trigger_event = { id = ywc_shu.1018 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1019 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1019 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1020 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1020 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1021 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1021 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1022 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1022 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1023 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1023 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1024 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1024 } }\n else_if = { limit = { has_variable = ywc_shu_port_pending_event ywc_v03_can_deliver_major = yes var:ywc_shu_port_pending_event = 1025 } remove_variable = ywc_shu_port_pending_event trigger_event = { id = ywc_shu.1025 } }\n } }\n}",
+          "goal": "{\nhas_variable = ywc_shu_port_outcome\n}",
+          "exit_conditions": "{\n{ has_variable = ywc_shu_port_withdrawn }\n}"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_shu.1018",
+          "title": {
+            "zh": "一笔港税的三个收款人",
+            "en": "Three Claimants to One Port Duty"
+          },
+          "desc": {
+            "zh": "官署、港商和地方各执一张收据。选择统一关账、商议分成或旧包税上限；若本国无港，改为内地账簿缩限或退出。",
+            "en": "The administration, merchants and province each hold a receipt. Choose unified books, negotiated shares or a legacy cap; without a national port, narrow this to an inland ledger or withdraw."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1018 }\n}",
+          "options": [
+            {
+              "key": "unified_customs",
+              "label": {
+                "zh": "拟统一关账，由官署核验",
+                "en": "Propose unified customs under the administration"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_route value = 1 } set_variable = { name = ywc_shu_port_responsibility value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1019 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "记录本项责任，后续按实际条件复核。",
+                "en": "Records this responsibility for a later check against actual conditions."
+              },
+              "trigger": "{\nywc_shu_v03_has_port = yes\n}"
+            },
+            {
+              "key": "merchant_share",
+              "label": {
+                "zh": "商议分成，保留商人查账权",
+                "en": "Negotiate a share and retain merchant review"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_route value = 2 } set_variable = { name = ywc_shu_port_responsibility value = 2 } set_variable = { name = ywc_shu_port_pending_event value = 1019 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "商人咨询权与分成义务登记，之后不能又按中央全额收款结案。",
+                "en": "Records merchant review and a revenue share; the arc cannot later settle as if the court collected all revenue."
+              },
+              "trigger": "{\nywc_shu_v03_has_port = yes\n}"
+            },
+            {
+              "key": "legacy_collection",
+              "label": {
+                "zh": "暂留旧包征，先封定上限",
+                "en": "Keep the legacy collection under a fixed cap"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_route value = 3 } set_variable = { name = ywc_shu_port_responsibility value = 3 } set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1019 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "目标降为现有港务与账册，不宣称统一海关或新增贸易。",
+                "en": "Limits the goal to existing port operations and ledgers; claims neither unified customs nor new trade."
+              },
+              "trigger": "{\nywc_shu_v03_has_port = yes\n}"
+            },
+            {
+              "key": "inland_narrow",
+              "label": {
+                "zh": "没有可核港口，缩为内地账房",
+                "en": "No port can be audited; narrow to inland books"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_route value = 4 } set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1019 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "只核现有官署收支，不声称港税或贸易已存在。",
+                "en": "Checks only existing administrative receipts and costs; claims no port duty or trade that is absent."
+              },
+              "trigger": "{\nywc_shu_v03_has_port = no\n}"
+            },
+            {
+              "key": "withdraw_no_port",
+              "label": {
+                "zh": "无港也无账可缩，撤回本线",
+                "en": "No port or usable ledger; withdraw"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_withdrawn value = 1 } ywc_shu_port_close_withdrawn = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费；已签旧债继续保留。",
+                "en": "No fee; previously signed debts remain due."
+              },
+              "consequence_note": {
+                "zh": "释放本线槽位并记录撤回。",
+                "en": "Releases this arc slot and records withdrawal."
+              },
+              "trigger": "{\nywc_shu_v03_has_port = no NOT = { ywc_shu_v03_inland_office_ready = yes }\n}"
+            }
+          ],
+          "purpose": {
+            "zh": "官署、港商和地方各执一张收据。选择统一关账、商议分成或旧包税上限；若本国无港，改为内地账簿缩限或退出。",
+            "en": "The administration, merchants and province each hold a receipt. Choose unified books, negotiated shares or a legacy cap; without a national port, narrow this to an inland ledger or withdraw."
+          },
+          "reads": [
+            "ywc_shu_fiscal_outcome_central_audit",
+            "ywc_shu_fiscal_outcome_provincial_share",
+            "ywc_shu_fiscal_outcome_capped_legacy",
+            "ywc_shu_service_outcome"
+          ],
+          "writes": [
+            "ywc_shu_port_route",
+            "ywc_shu_port_responsibility"
+          ]
+        },
+        {
+          "id": "ywc_shu.1019",
+          "title": {
+            "zh": "内地账房来查海关",
+            "en": "Inland Auditors Arrive at Customs"
+          },
+          "desc": {
+            "zh": "内地核账官要求对照港税、官署支出和前期税册结果。中央清查成功可降低统一路线门槛；地方分账或旧额封顶则保留相应责任。",
+            "en": "Inland auditors compare port duties, office costs and the earlier tax-register result. A successful central audit can lower the unified-route threshold; local sharing or a legacy cap keeps its own duties."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1019 }\n}",
+          "options": [
+            {
+              "key": "publish_books",
+              "label": {
+                "zh": "公布同一套关账簿",
+                "en": "Publish one set of customs books"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_books value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1020 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "中央核账旧结果可减半后续核验费；若旧线为地方分担，必须保留地方复核权。",
+                "en": "A prior central-audit result halves the later fee; a prior local-share result requires continued provincial review."
+              }
+            },
+            {
+              "key": "split_books",
+              "label": {
+                "zh": "分开登记地方留用部分",
+                "en": "Record the provincial share separately"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_books value = 2 } set_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1020 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留地方留用与商人复核，不能套用中央全额收益。",
+                "en": "Retains provincial share and merchant review; cannot claim full central revenue."
+              }
+            },
+            {
+              "key": "cap_books",
+              "label": {
+                "zh": "保留旧账但限制征额",
+                "en": "Keep old books with a capped assessment"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_books value = 3 } set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1020 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "旧线保守结局可降低费用，但必须降低后续港务目标。",
+                "en": "A conservative prior outcome lowers cost but also requires a smaller port target."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "内地核账官要求对照港税、官署支出和前期税册结果。中央清查成功可降低统一路线门槛；地方分账或旧额封顶则保留相应责任。",
+            "en": "Inland auditors compare port duties, office costs and the earlier tax-register result. A successful central audit can lower the unified-route threshold; local sharing or a legacy cap keeps its own duties."
+          },
+          "reads": [
+            "ywc_shu_port_route",
+            "ywc_shu_fiscal_outcome_central_audit",
+            "ywc_shu_fiscal_outcome_provincial_share",
+            "ywc_shu_fiscal_outcome_capped_legacy"
+          ],
+          "writes": [
+            "ywc_shu_port_books",
+            "ywc_shu_port_local_share"
+          ]
+        },
+        {
+          "id": "ywc_shu.1020",
+          "title": {
+            "zh": "商人愿垫哪一项",
+            "en": "What Will the Merchants Advance?"
+          },
+          "desc": {
+            "zh": "海商提出一笔有本金、有到期日的短垫，只能用于实际账房核对；也可只给咨询权或拒绝借款。没有真实港务基础时不得伪造商人预付款。",
+            "en": "Merchants offer a short advance with principal and a due date for real bookkeeping only; the court may instead grant review rights or refuse credit. No advance is invented without actual port operations."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1020 }\n}",
+          "options": [
+            {
+              "key": "merchant_advance",
+              "label": {
+                "zh": "接受短垫，十二个月后偿还本金",
+                "en": "Accept a short advance and repay principal after twelve months"
+              },
+              "effect": "{\nywc_shu_accept_port_advance = yes if = { limit = { has_variable = ywc_shu_port_advance_accepted }set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "借款金额为一次性周收入（年总收入÷52），只在真实港口、无破产并且可偿付时取得；一年后必须偿还相同本金。",
+                "en": "Advance equals one-time weekly income (annual gross income ÷ 52), only with a real port, no bankruptcy and affordability; the same principal is due after one year."
+              },
+              "consequence_note": {
+                "zh": "本金入国库不算税收。未还款不清除债务，退出也保留。",
+                "en": "Principal enters treasury but is not counted as tax revenue. Unpaid debt remains due after withdrawal."
+              },
+              "trigger": "{\nywc_shu_v03_has_port = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_shu_port_advance_accepted }\n}"
+            },
+            {
+              "key": "consult_only",
+              "label": {
+                "zh": "拒绝借款，只接受有偿查账",
+                "en": "Refuse credit and pay only for ledger review"
+              },
+              "effect": "{\nywc_shu_pay_port_fee = yes if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "一次性审阅费为周收入（年总收入÷52）一半；无借款本金或未来偿还。",
+                "en": "One-time review fee is half of weekly income (annual gross income ÷ 52); no borrowed principal or future repayment."
+              },
+              "consequence_note": {
+                "zh": "扣款成功后才取得商人查账权。",
+                "en": "Merchant review rights are recorded only after successful payment."
+              },
+              "trigger": "{\nnet_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 }\n}"
+            },
+            {
+              "key": "refuse_credit",
+              "label": {
+                "zh": "拒绝垫款，不承担借款",
+                "en": "Refuse the advance and take no loan"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_advance_refused value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "不新增现金或债务；商人不获得咨询权，核账由官署或地方自行负担。",
+                "en": "Adds neither cash nor debt; merchants receive no review right, and the court or province bears audit work."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "海商提出一笔有本金、有到期日的短垫，只能用于实际账房核对；也可只给咨询权或拒绝借款。没有真实港务基础时不得伪造商人预付款。",
+            "en": "Merchants offer a short advance with principal and a due date for real bookkeeping only; the court may instead grant review rights or refuse credit. No advance is invented without actual port operations."
+          },
+          "reads": [
+            "ywc_shu_service_outcome",
+            "ywc_shu_fiscal_outcome_provincial_share",
+            "ywc_shu_port_route",
+            "ywc_shu_port_books"
+          ],
+          "writes": [
+            "ywc_shu_port_advance_accepted",
+            "ywc_shu_port_merchant_review"
+          ]
+        },
+        {
+          "id": "ywc_shu.1021",
+          "title": {
+            "zh": "禁货也在税单上",
+            "en": "Prohibited Goods Still Appear on the Ledger"
+          },
+          "desc": {
+            "zh": "账上出现受限商品条目，不等于贸易已获准。选择按现行贸易法与消费税法复核、缩小到账册核对，或停下等待立法系统变化。",
+            "en": "Restricted goods appearing in a ledger do not mean trade is permitted. Review under current trade and consumption-tax laws, narrow the audit to books, or wait for the lawmaking system to change."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1021 }\n}",
+          "options": [
+            {
+              "key": "current_law_review",
+              "label": {
+                "zh": "按现行贸易法与税法核验",
+                "en": "Verify under current trade and tax law"
+              },
+              "effect": "{\nif = { limit = { ywc_shu_v03_customs_law_ready = yes } set_variable = { name = ywc_shu_port_law_verified value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1022 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "贸易法律决定可核的贸易范围，税法决定现有税单范围；不自动开放贸易。",
+                "en": "Trade law limits auditable trade and tax law limits existing receipts; neither opens trade automatically."
+              },
+              "trigger": "{\nywc_shu_v03_customs_law_ready = yes\n}"
+            },
+            {
+              "key": "books_only",
+              "label": {
+                "zh": "只核账簿，不判禁货是否合法",
+                "en": "Audit books without changing restricted-goods policy"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_law_verified value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1022 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "缩小目标为行政账簿；法律不变，也不把禁货列作已征得的新税。",
+                "en": "Narrows the target to administrative books; law remains unchanged and restricted goods do not become newly taxed."
+              }
+            },
+            {
+              "key": "wait_law",
+              "label": {
+                "zh": "暂缓海关承诺，等待依法变更",
+                "en": "Defer the customs pledge until law changes through normal process"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_waiting_law value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "不要求立法系统立即通过；可持续等待或从日志内退出。",
+                "en": "Does not force an immediate law change; the journal can wait or withdraw."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "账上出现受限商品条目，不等于贸易已获准。选择按现行贸易法与消费税法复核、缩小到账册核对，或停下等待立法系统变化。",
+            "en": "Restricted goods appearing in a ledger do not mean trade is permitted. Review under current trade and consumption-tax laws, narrow the audit to books, or wait for the lawmaking system to change."
+          },
+          "reads": [
+            "ywc_shu_port_route",
+            "ywc_shu_port_books",
+            "ywc_shu_port_advance_accepted",
+            "ywc_shu_service_outcome"
+          ],
+          "writes": [
+            "ywc_shu_port_law_verified",
+            "ywc_shu_port_narrow_target"
+          ]
+        },
+        {
+          "id": "ywc_shu.1022",
+          "title": {
+            "zh": "船进港而款未进库",
+            "en": "Ships Enter, Money Does Not"
+          },
+          "desc": {
+            "zh": "船只在港不等于税款已经入库。选择付款核验、补登记地方份额或等待，只有满足财政可负担性和实际港务才推进。",
+            "en": "A ship in harbor does not mean its duty reached the treasury. Pay for verification, register the provincial share, or wait; progress requires affordability and real port operations."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1022 }\n}",
+          "options": [
+            {
+              "key": "pay_verification",
+              "label": {
+                "zh": "付款核验实收与欠账",
+                "en": "Pay to verify receipts and arrears"
+              },
+              "effect": "{\nywc_shu_pay_port_fee = yes if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "一次性费用为周收入；失败不写已核验标记，也不推进。",
+                "en": "One-time fee equals weekly income; failure sets no verification flag and makes no progress."
+              },
+              "consequence_note": {
+                "zh": "真实港口、官署供给、无违约/破产并有现款时才可选。",
+                "en": "Requires a real port, administrative supply, no default or bankruptcy, and available cash."
+              },
+              "trigger": "{\nywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_port_cost }\n}"
+            },
+            {
+              "key": "register_share",
+              "label": {
+                "zh": "先记地方留用与未收欠款",
+                "en": "Record the provincial share and unpaid arrears first"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_arrears_open value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "不把未收税款当收入；地方份额和商人本金继续记账。",
+                "en": "Uncollected duties are not treated as revenue; provincial share and merchant principal remain on the books."
+              }
+            },
+            {
+              "key": "wait_receipts",
+              "label": {
+                "zh": "款项未到，先留在待核状态",
+                "en": "Receipts have not arrived; keep the ledger pending"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_pending_event value = 1022 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "记录本项责任，后续按实际条件复核。",
+                "en": "Records this responsibility for a later check against actual conditions."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "船只在港不等于税款已经入库。选择付款核验、补登记地方份额或等待，只有满足财政可负担性和实际港务才推进。",
+            "en": "A ship in harbor does not mean its duty reached the treasury. Pay for verification, register the provincial share, or wait; progress requires affordability and real port operations."
+          },
+          "reads": [
+            "ywc_shu_port_advance_accepted",
+            "ywc_shu_port_local_share",
+            "ywc_shu_port_law_verified",
+            "ywc_shu_port_execution_ready"
+          ],
+          "writes": [
+            "ywc_shu_port_receipts_checked",
+            "ywc_shu_port_arrears_open"
+          ]
+        },
+        {
+          "id": "ywc_shu.1023",
+          "title": {
+            "zh": "两种关单的通行费",
+            "en": "The Fee on Two Customs Forms"
+          },
+          "desc": {
+            "zh": "港务人员给出中央关单与商议分成两种实际格式。决定谁承担收费、谁能查账；前序军镇共约和旧税册责任改变复核资格。",
+            "en": "Port officials present central and revenue-share forms. Decide who pays and who can review; earlier garrison and fiscal responsibilities change review eligibility."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1023 }\n}",
+          "options": [
+            {
+              "key": "central_form",
+              "label": {
+                "zh": "按中央统一关单",
+                "en": "Use the unified central form"
+              },
+              "effect": "{\nif = { limit = { ywc_shu_v03_port_execution_ready = yes } set_variable = { name = ywc_shu_port_settlement_choice value = 1 } set_variable = { name = ywc_shu_port_central_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1024 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "既有中央税册结果可免此处再次收取核验费；否则一次性收取。",
+                "en": "A prior central fiscal-register result waives this second audit fee; otherwise a one-time fee applies."
+              },
+              "consequence_note": {
+                "zh": "官署须真实供给，且统一路线承担完整中央核验义务。",
+                "en": "Requires actual administration supply and full central review under the unified route."
+              },
+              "trigger": "{\nywc_shu_v03_port_execution_ready = yes NOT = { has_variable = ywc_shu_fiscal_outcome_provincial_share }\n}"
+            },
+            {
+              "key": "share_form",
+              "label": {
+                "zh": "商议分成并留商人查账权",
+                "en": "Negotiate a share and retain merchant review"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_settlement_choice value = 2 } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1024 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "军镇共约或旧税册地方分担支持此路线；否则承担一次有偿协商费用。",
+                "en": "A prior garrison compact or fiscal local-share result supports this route; otherwise a one-time negotiation cost applies."
+              }
+            },
+            {
+              "key": "legacy_form",
+              "label": {
+                "zh": "限制旧包征，不追求全面关账",
+                "en": "Cap the legacy collection instead of full customs"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_settlement_choice value = 3 } set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1024 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "目标降低，只核现有收款和季节性支出，不获得统一征收收益。",
+                "en": "Lowers the target to current receipts and seasonal costs, without unified-collection benefits."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "港务人员给出中央关单与商议分成两种实际格式。决定谁承担收费、谁能查账；前序军镇共约和旧税册责任改变复核资格。",
+            "en": "Port officials present central and revenue-share forms. Decide who pays and who can review; earlier garrison and fiscal responsibilities change review eligibility."
+          },
+          "reads": [
+            "ywc_shu_service_outcome",
+            "ywc_shu_fiscal_outcome_provincial_share",
+            "ywc_shu_port_route",
+            "ywc_shu_port_books"
+          ],
+          "writes": [
+            "ywc_shu_port_settlement_choice",
+            "ywc_shu_port_local_share"
+          ]
+        },
+        {
+          "id": "ywc_shu.1024",
+          "title": {
+            "zh": "淡季如何分担",
+            "en": "Sharing the Burden in the Off-season"
+          },
+          "desc": {
+            "zh": "淡季港务收入可能下降，但官署供给、商人本金和分成责任仍持续。选择由中央承担、按既有协议分担或缩小承诺，并开始连续六个月交验。",
+            "en": "Off-season port receipts may fall while administrative costs, merchant principal and sharing duties continue. Choose central payment, existing shared terms or a reduced commitment, then begin six months of review."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1024 }\n}",
+          "options": [
+            {
+              "key": "central_burden",
+              "label": {
+                "zh": "中央按账承担当前港务费",
+                "en": "The court pays current port costs"
+              },
+              "effect": "{\nif = { limit = { net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_burden value = 1 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 } }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "保守旧账路线免一次性费用；中央统一路线需有现款，观察期间任何财务/港务中断均重置。",
+                "en": "Legacy books waive the one-time fee; unified customs requires cash. Any fiscal or port interruption resets observation."
+              },
+              "consequence_note": {
+                "zh": "启动连续六个月观察，财政恶化、战事或港口失去会清除成熟资格。",
+                "en": "Starts a continuous six-month review; worsening finances, war or port loss clears maturity."
+              },
+              "trigger": "{\nnet_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }\n}"
+            },
+            {
+              "key": "shared_burden",
+              "label": {
+                "zh": "按协议由地方与商人分担",
+                "en": "Share the burden under the compact"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_burden value = 2 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "仅在地方留用或商人查账权真实登记时成立；承担分成而不计全额中央收入。",
+                "en": "Available only with recorded provincial share or merchant review; accepts revenue sharing instead of claiming all proceeds."
+              }
+            },
+            {
+              "key": "reduce_burden",
+              "label": {
+                "zh": "缩为旧额季节核账",
+                "en": "Reduce to seasonal review of the capped legacy amount"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_burden value = 3 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "目标和收益均降低；既有借款到期仍须偿还。",
+                "en": "Both target and benefit are smaller; existing advances remain repayable."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "淡季港务收入可能下降，但官署供给、商人本金和分成责任仍持续。选择由中央承担、按既有协议分担或缩小承诺，并开始连续六个月交验。",
+            "en": "Off-season port receipts may fall while administrative costs, merchant principal and sharing duties continue. Choose central payment, existing shared terms or a reduced commitment, then begin six months of review."
+          },
+          "reads": [
+            "ywc_shu_port_advance_accepted",
+            "ywc_shu_port_local_share",
+            "ywc_shu_port_settlement_choice",
+            "ywc_shu_v03_port_execution_ready"
+          ],
+          "writes": [
+            "ywc_shu_port_burden",
+            "ywc_shu_port_review_due"
+          ]
+        },
+        {
+          "id": "ywc_shu.1025",
+          "title": {
+            "zh": "国库不只靠这一港",
+            "en": "The Treasury Cannot Depend on One Port"
+          },
+          "desc": {
+            "zh": "连续六个月的关账期满，复核贸易法律、真实港口、官署供给、欠款和财政。可按实际路线结案；未成熟、战争、失州或财政恶化时仍可重试、缩限或退出。",
+            "en": "Six months of customs review have passed. Recheck trade law, real ports, administrative supply, debt and finances. Settle only the route actually fulfilled; if interrupted by war, lost territory or worsening finances, retry, narrow or withdraw."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_port_customs\nywc_shu_v03_unsettled = yes\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1025 }\n}",
+          "options": [
+            {
+              "key": "settle_unified",
+              "label": {
+                "zh": "统一关账结案",
+                "en": "Settle unified customs"
+              },
+              "effect": "{\nywc_shu_port_close_unified = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "仅统一路线、真实港口、法律与岗位持续达标且观察成熟可结案；登记官署整账，效果偏中央。",
+                "en": "Requires unified route, real port, sustained legal and staffing conditions and a mature review; records centralized bookkeeping."
+              },
+              "trigger": "{\nvar:ywc_shu_port_route = 1 has_variable = ywc_shu_port_review_mature ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }\n}"
+            },
+            {
+              "key": "settle_share",
+              "label": {
+                "zh": "分成与查账权共同结案",
+                "en": "Settle negotiated sharing and review"
+              },
+              "effect": "{\nywc_shu_port_close_shared = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留地方/商人份额，收益低于中央统一关账但更符合已有分担。",
+                "en": "Retains provincial and merchant shares; yields less than unified customs but honors recorded responsibilities."
+              },
+              "trigger": "{\nvar:ywc_shu_port_route = 2 has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_merchant_review has_variable = ywc_shu_port_local_share NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }\n}"
+            },
+            {
+              "key": "settle_legacy",
+              "label": {
+                "zh": "封顶旧账结案",
+                "en": "Settle capped legacy books"
+              },
+              "effect": "{\nywc_shu_port_close_legacy = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "只承认现有收款与较低目标；保留旧集团支持，不称全面统一海关。",
+                "en": "Recognizes existing receipts and a smaller target; retains conservative group support without claiming unified customs."
+              },
+              "trigger": "{\nOR = { var:ywc_shu_port_route = 3 var:ywc_shu_port_route = 4 } has_variable = ywc_shu_port_review_mature NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }\n}"
+            },
+            {
+              "key": "retry_port",
+              "label": {
+                "zh": "条件中断，修复后从零观察",
+                "en": "Conditions broke; repair and restart observation"
+              },
+              "effect": "{\nremove_variable = ywc_shu_port_review_due remove_variable = ywc_shu_port_review_mature set_variable = { name = ywc_shu_port_review_interrupted value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1024 }\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "清除成熟资格；恢复实际港务和财政后重新连续观察六个月。",
+                "en": "Clears maturity; after port operations and finances recover, a new six-month continuous review begins."
+              }
+            },
+            {
+              "key": "withdraw_port",
+              "label": {
+                "zh": "撤回未付关务承诺",
+                "en": "Withdraw unpaid customs duties"
+              },
+              "effect": "{\nset_variable = { name = ywc_shu_port_withdrawn value = 1 } ywc_shu_port_close_withdrawn = yes\n}",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "已签商人本金、地方份额和已付款项不会消失；只终止未付未来责任。",
+                "en": "Merchant principal, provincial shares and paid costs remain; only unpaid future duties end."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "连续六个月的关账期满，复核贸易法律、真实港口、官署供给、欠款和财政。可按实际路线结案；未成熟、战争、失州或财政恶化时仍可重试、缩限或退出。",
+            "en": "Six months of customs review have passed. Recheck trade law, real ports, administrative supply, debt and finances. Settle only the route actually fulfilled; if interrupted by war, lost territory or worsening finances, retry, narrow or withdraw."
+          },
+          "reads": [
+            "ywc_shu_port_route",
+            "ywc_shu_port_settlement_choice",
+            "ywc_shu_port_review_mature",
+            "ywc_shu_port_advance_accepted",
+            "ywc_shu_service_outcome",
+            "ywc_shu_fiscal_outcome_central_audit"
+          ],
+          "writes": [
+            "ywc_shu_port_outcome",
+            "ywc_v03_shu_v03_shu_port_treasury_settled"
+          ]
+        }
+      ]
     }
   ]
 }

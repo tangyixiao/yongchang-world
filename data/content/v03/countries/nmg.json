@@ -1,0 +1,2135 @@
+{
+  "key": "country_nmg",
+  "layer": "country",
+  "runtime_tags": [
+    "NMG"
+  ],
+  "arcs": [
+    {
+      "slug": "v03_nmg_land_arbitration",
+      "era": "foundation",
+      "participants": [
+        "新明官署与地方议员",
+        "海湾旧村与移民垦户",
+        "华墨社群商行",
+        "朱氏仪礼房",
+        "天主教教区",
+        "墨西哥宗主代表"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_land_arbitration",
+          "title": {
+            "zh": "海湾地簿与旧村",
+            "en": "The Gulf Land Books and the Old Villages"
+          },
+          "desc": {
+            "zh": "旧村按祖界，移民按新契。设混合法庭、推统一地契或保住旧界，三条路都要真付一次开庭费，再以真在岗官署与真实土地法承接。六个月观察决定成败，受阻满十二个月提示、三十六个月给退出。",
+            "en": "Old villages by ancestral line, migrants by new deed. A mixed court, unified titles or protected old boundaries: each costs a real sitting fee and needs a staffed office plus a real land law. A six-month watch decides the result, with a notice at twelve months and an exit at thirty-six."
+          },
+          "script": "{\nis_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }\npossible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_nmg_land_unsettled = yes ywc_nmg_v03_has_owned_state = yes }\nimmediate = { ywc_nmg_claim_land_arbitration = yes ywc_nmg_open_land_once = yes }\non_fail = { ywc_nmg_close_land_as_breach = yes }\non_monthly_pulse = {\neffect = {\nywc_nmg_land_monthly_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1000 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1000 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1001 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1001 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1002 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1002 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1003 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1003 } }\n}\n}\n}",
+          "goal": "{ has_variable = ywc_nmg_land_closed }",
+          "exit_conditions": "{ has_variable = ywc_nmg_land_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_land_settlement",
+          "title": {
+            "zh": "地籍册的最后一页",
+            "en": "The Last Page of the Survey"
+          },
+          "desc": {
+            "zh": "地权已经写进册子，剩下的是税、迁入与结算。按真实税源与官署承载推进，把结果写死在国家账本上，然后让出名额。",
+            "en": "The titles are in the book; what remains is tax, migration and settlement. Proceed on a genuine tax base and staffed office, write the result into the country ledger, then free the slot."
+          },
+          "script": "{\nis_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized has_variable = ywc_nmg_land_stage2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }\npossible = { c:NMG ?= this has_variable = ywc_nmg_land_stage2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }\nimmediate = { if = { limit = { NOT = { has_variable = ywc_nmg_land_pending } } set_variable = { name = ywc_nmg_land_pending value = 1004 } } }\non_fail = { ywc_nmg_close_land_as_breach = yes }\non_monthly_pulse = {\neffect = {\nywc_nmg_land_monthly_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1004 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1004 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1005 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1005 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1006 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1006 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_land_pending = 1007 } remove_variable = ywc_nmg_land_pending trigger_event = { id = ywc_nmg.1007 } }\n}\n}\n}",
+          "goal": "{ has_variable = ywc_nmg_land_closed }",
+          "exit_conditions": "{ has_variable = ywc_nmg_land_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1000",
+          "title": {
+            "zh": "海湾地簿",
+            "en": "The Gulf Land Books"
+          },
+          "desc": {
+            "zh": "旧村按祖界耕作，移民按新契开垦，两套凭据在同一个官署里互相否定。地方议员要一个说法，华墨社群愿意出钱，朱氏仪礼房只问谁的名册算数。三条路都要真金白银。",
+            "en": "Old villages farm by ancestral boundary; migrants clear land on new deeds, and the two paper trails cancel each other inside one office. The council wants a ruling, the community will pay, and the Zhu ritual house asks only whose register counts."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1000 } }",
+          "options": [
+            {
+              "key": "mixed",
+              "label": {
+                "zh": "设混合仲裁庭",
+                "en": "Constitute a mixed court"
+              },
+              "effect": "{ywc_nmg_choose_land_mixed = yes set_variable = { name = ywc_nmg_land_pending value = 1001 }}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "付一次开庭费，此后常年行政费。",
+                "en": "One sitting fee, then permanent administrative cost."
+              },
+              "consequence_note": {
+                "zh": "动荡下降得慢，官僚压力上升。",
+                "en": "Unrest eases slowly and bureaucratic strain rises."
+              },
+              "trigger": "{ ywc_nmg_land_mixed_ready = yes }"
+            },
+            {
+              "key": "unified",
+              "label": {
+                "zh": "推行统一地契",
+                "en": "Impose a single deed"
+              },
+              "effect": "{ywc_nmg_choose_land_unified = yes set_variable = { name = ywc_nmg_land_pending value = 1001 }}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "费用最高，需真实土地法与在岗官署。",
+                "en": "Most expensive; needs a real land law and a staffed office."
+              },
+              "consequence_note": {
+                "zh": "长期税基最清，书吏下乡会得罪旧界持有者。",
+                "en": "Clearest long-run tax base; the survey offends old boundary holders."
+              },
+              "trigger": "{ ywc_nmg_land_unified_ready = yes }"
+            },
+            {
+              "key": "old",
+              "label": {
+                "zh": "保障旧区、缩小试点",
+                "en": "Guarantee old districts, shrink the pilot"
+              },
+              "effect": "{ywc_nmg_choose_land_old = yes set_variable = { name = ywc_nmg_land_pending value = 1001 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "费用最低，不新增常设机关。",
+                "en": "Cheapest; creates no standing bureau."
+              },
+              "consequence_note": {
+                "zh": "旧界持有人满意，新城扩张受阻。",
+                "en": "Boundary holders are pleased; new-town growth stalls."
+              },
+              "trigger": "{ ywc_nmg_land_old_ready = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把土地争议变成需要真实财政与官署承接的选择。",
+            "en": "Turn a land dispute into choices that need real money and staffed offices."
+          },
+          "reads": [
+            "gold_reserves",
+            "yearly_gross_income",
+            "bureaucracy",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_nmg_land_route",
+            "ywc_nmg_land_fee",
+            "ywc_nmg_land_pending"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1001",
+          "title": {
+            "zh": "混合法庭第一次开庭",
+            "en": "The Mixed Court Sits"
+          },
+          "desc": {
+            "zh": "三名旧村长老、两名移民代表和一名官署书吏坐定。第一件案子就卡住：移民拿出的地契盖着已经撤并的县印。判下去，两边都有人不服。",
+            "en": "Three village elders, two migrant delegates and one clerk take their seats. The first case stalls: the migrant deed bears the seal of an abolished county. Whatever is ruled, one side objects."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1001 } }",
+          "options": [
+            {
+              "key": "rule_register",
+              "label": {
+                "zh": "照现行登记判",
+                "en": "Rule on the surviving register"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_rule value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1002 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "移民得地，旧村记恨；执行需要真在岗官署。",
+                "en": "Migrants keep the plot and villages resent it; execution needs a staffed office."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "rule_custom",
+              "label": {
+                "zh": "照祖界旧例判",
+                "en": "Rule on ancestral custom"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_rule value = 2 } ywc_nmg_land_record_backlog = yes set_variable = { name = ywc_nmg_land_pending value = 1002 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不另收费，但积压增加。",
+                "en": "No extra fee, but the backlog grows."
+              },
+              "consequence_note": {
+                "zh": "旧村稳住，地籍册留下大量未决条目。",
+                "en": "Villages hold, and the survey book fills with unresolved entries."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "休庭，等补录旧档",
+                "en": "Adjourn and re-enter old files"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1002 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不结案，动荡继续累积。",
+                "en": "Nothing is settled and unrest keeps accumulating."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让混合路线付出判例代价，而不是免费和解。",
+            "en": "Make the mixed route pay a precedential price rather than reconcile for free."
+          },
+          "reads": [
+            "bureaucracy",
+            "radicals"
+          ],
+          "writes": [
+            "ywc_nmg_land_rule",
+            "ywc_nmg_arbitration_backlog"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1002",
+          "title": {
+            "zh": "书吏下乡核验",
+            "en": "Clerks Ride Out to Survey"
+          },
+          "desc": {
+            "zh": "书吏带着测绳、印泥和一本薄薄的名册下乡。旧村把界桩挪了半尺，移民在地契背面又添了一行。核验必须逐块完成，缺人缺钱就断在半路。",
+            "en": "Clerks ride out with cord, ink and a thin register. Villages shift the stones half a foot; migrants add a line on a deed's back. Every plot must be checked, and a shortage halts the work."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1002 } }",
+          "options": [
+            {
+              "key": "finish_survey",
+              "label": {
+                "zh": "补足人手，一次核完",
+                "en": "Staff it fully and finish at once"
+              },
+              "effect": "{add_treasury = { value = var:ywc_nmg_land_fee multiply = -1 } set_variable = { name = ywc_nmg_land_survey_full value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1003 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "再付一份等额核验费。",
+                "en": "A second charge equal to the sitting fee."
+              },
+              "consequence_note": {
+                "zh": "地籍册一次成型，短期财政明显吃紧。",
+                "en": "The register lands whole; the treasury feels it sharply."
+              },
+              "trigger": "{ ywc_nmg_land_administration_present = yes }"
+            },
+            {
+              "key": "half_survey",
+              "label": {
+                "zh": "只核近郊",
+                "en": "Survey the near suburbs only"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_survey_partial value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1003 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "远郊留白，日后还要再跑一趟。",
+                "en": "Far districts stay blank and need another ride."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂停，等官署补齐",
+                "en": "Suspend until the office is staffed"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1003 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "核验停摆，移民继续占地。",
+                "en": "The survey stops and migrants keep clearing land."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让统一地契的高成本落在真实财政与官署承载上。",
+            "en": "Put the high cost of unified titles on real treasury and office capacity."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_land_survey_full",
+            "ywc_nmg_land_survey_partial"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1003",
+          "title": {
+            "zh": "旧界桩与新村给排水",
+            "en": "Boundary Stones, New Town Drainage"
+          },
+          "desc": {
+            "zh": "旧界桩保住了，新村规划却只能画在半张纸上。地方议员要求至少把水源和道路划进去，华墨社群愿意自筹修渠——只要官署承认他们的地。",
+            "en": "The stones hold, but the new-town plan fits on half a sheet. The council wants water and road; the community will pay for the canal if the office recognizes their ground."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1003 } }",
+          "options": [
+            {
+              "key": "keep_old",
+              "label": {
+                "zh": "维持旧界，新村缓办",
+                "en": "Keep the old line, slow the new town"
+              },
+              "effect": "{ywc_nmg_land_open_settlement = yes}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不再收费。",
+                "en": "No further charge."
+              },
+              "consequence_note": {
+                "zh": "旧界持有人满意，新城扩张长期受阻。",
+                "en": "Boundary holders are satisfied; new-town growth is blocked for long."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "canal_deal",
+              "label": {
+                "zh": "以修渠换承认",
+                "en": "Trade the canal for recognition"
+              },
+              "effect": "{ywc_nmg_office_record_parish = yes set_variable = { name = ywc_nmg_land_canal value = 1 } ywc_nmg_land_open_settlement = yes}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "社群自筹，不占国库。",
+                "en": "Community-funded; no treasury cost."
+              },
+              "consequence_note": {
+                "zh": "教区与社群得利，旧界持有人视之为让步。",
+                "en": "Parish and community gain; boundary holders read it as a concession."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "搁置规划",
+                "en": "Shelve the plan"
+              },
+              "effect": "{ywc_nmg_land_open_settlement = yes}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "争议不解决，只是推迟。",
+                "en": "The dispute is not solved, only postponed."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让第一条线进入第二阶段并把地权写实。",
+            "en": "Move the first line into its second stage with real title outcomes."
+          },
+          "reads": [
+            "radicals",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_land_canal",
+            "ywc_nmg_land_stage2"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1004",
+          "title": {
+            "zh": "迁入人口与地籍册",
+            "en": "Migrants and the Survey Book"
+          },
+          "desc": {
+            "zh": "移民还在往海湾来，地籍册还没合上。移民法一收紧，来的人立刻变少；官署人手不足，册子就停在上一页。这里的每个数字都会被下一份税单读到。",
+            "en": "Migrants keep arriving while the book stays open. Tighten the migration law and the flow thins; starve the office and the book freezes on its last page. Every number here is read by the next tax bill."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1004 } }",
+          "options": [
+            {
+              "key": "keep_recording",
+              "label": {
+                "zh": "继续登记，不加限制",
+                "en": "Keep recording, add no restriction"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1005 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "人口与条目同增，短期动荡上升。",
+                "en": "Population and entries both grow; unrest rises for now."
+              },
+              "trigger": "{ ywc_nmg_land_migration_open = yes }"
+            },
+            {
+              "key": "slow_intake",
+              "label": {
+                "zh": "暂缓放号",
+                "en": "Slow the intake"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_slow_intake value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1005 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "官署压力下降，等待中的移民不满。",
+                "en": "Office pressure eases; waiting migrants are not pleased."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "留待下月",
+                "en": "Leave it for next month"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1005 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "册子继续积压。",
+                "en": "The book keeps piling up."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把迁入与官署承载写成真实状态读取。",
+            "en": "Read migration and office capacity as real state."
+          },
+          "reads": [
+            "radicals",
+            "literacy_rate"
+          ],
+          "writes": [
+            "ywc_nmg_land_slow_intake"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1005",
+          "title": {
+            "zh": "新村给水与地税",
+            "en": "Water Works and Land Tax"
+          },
+          "desc": {
+            "zh": "渠修到一半，地税册还没定稿。议员想先按旧额征一年，社群想按新垦亩数算，教区只要维持济贫。三种算法，换算成三种税率。",
+            "en": "The canal is half built and the tax roll unfinished. The council wants last year's figure, the community wants new acreage counted, the parish wants poor relief kept. Three methods, three rates."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1005 } }",
+          "options": [
+            {
+              "key": "old_assessment",
+              "label": {
+                "zh": "先按旧额征",
+                "en": "Assess on the old figure"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1006 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "征收顺利，税基改良推迟。",
+                "en": "Collection is smooth and tax reform slips."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "new_assessment",
+              "label": {
+                "zh": "按新垦亩数征",
+                "en": "Assess on new acreage"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_reassessed value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1006 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不另收费，需真在岗官署执行。",
+                "en": "No extra fee, but a staffed office must execute it."
+              },
+              "consequence_note": {
+                "zh": "长期税基更清，短期阻力更大。",
+                "en": "A cleaner long-run base, with more resistance now."
+              },
+              "trigger": "{ ywc_nmg_land_administration_present = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "押后再议",
+                "en": "Defer the question"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1006 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "税册继续悬空。",
+                "en": "The roll stays suspended."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让地权结果真正进入税基。",
+            "en": "Carry the title outcome into the actual tax base."
+          },
+          "reads": [
+            "bureaucracy",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_nmg_land_reassessed"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1006",
+          "title": {
+            "zh": "六个月的地籍",
+            "en": "Six Months of Survey"
+          },
+          "desc": {
+            "zh": "六个月过去，官署是否仍在岗、田亩是否仍有收成、移民是否仍被挡在门外，决定这条路线站不站得住。任何一项断了，前面的钱就白花。",
+            "en": "Six months on, whether the office still stands staffed, the fields still yield and migrants are still shut out decides the route. If any one breaks, the money already spent is wasted."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1006 } }",
+          "options": [
+            {
+              "key": "hold_route",
+              "label": {
+                "zh": "维持既有安排",
+                "en": "Hold the arrangement"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_hold value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1007 }}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "路线继续；真实条件跌破时由月度复核记录受阻。",
+                "en": "The route continues; the monthly review records blockage if conditions slip."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "就地重议",
+                "en": "Renegotiate on the spot"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_renegotiated value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1007 }}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "条款放宽，回报相应缩水。",
+                "en": "Terms loosen and the payoff shrinks."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "再等一个季度",
+                "en": "Wait another quarter"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_land_pending value = 1007 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "观察期延长，机会成本上升。",
+                "en": "The watch stretches and opportunity cost rises."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让六个月观察真正决定成败。",
+            "en": "Let the six-month watch actually decide the outcome."
+          },
+          "reads": [
+            "bureaucracy",
+            "radicals"
+          ],
+          "writes": [
+            "ywc_nmg_land_hold",
+            "ywc_nmg_land_renegotiated"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1007",
+          "title": {
+            "zh": "海湾地权的结算",
+            "en": "Settling the Gulf Titles"
+          },
+          "desc": {
+            "zh": "结算日到了。地籍册抄本一份进宫署，一份进教区档案，一份交给地方议员。旧村的界桩仍立在原处，移民的渠已经见水，账要一次算清。",
+            "en": "Settlement day. One copy goes to the office, one to the parish archive, one to the council. The stones still stand, the canal already carries water, and the accounts must clear at once."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1007 } }",
+          "options": [
+            {
+              "key": "settle_full",
+              "label": {
+                "zh": "按既定条款结清",
+                "en": "Settle on the agreed terms"
+              },
+              "effect": "{ywc_nmg_close_land_as_established = yes}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "已付费用即为结算额。",
+                "en": "Fees already paid are the settlement."
+              },
+              "consequence_note": {
+                "zh": "写入完成结果并释放名额。",
+                "en": "Records completion and releases the slot."
+              },
+              "trigger": "{ ywc_nmg_land_route_ready = yes }"
+            },
+            {
+              "key": "settle_partial",
+              "label": {
+                "zh": "分年摊还",
+                "en": "Spread it over years"
+              },
+              "effect": "{ywc_nmg_close_land_as_compromise = yes}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "当年只出旧额的一半。",
+                "en": "Only half the legacy amount this year."
+              },
+              "consequence_note": {
+                "zh": "写入折中结果并释放名额，账面留尾数。",
+                "en": "A compromise, the slot freed, a residue left on the books."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "拒绝结算",
+                "en": "Refuse to settle"
+              },
+              "effect": "{ywc_nmg_close_land_as_breach = yes}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "已付费用不退。",
+                "en": "Paid fees are not refunded."
+              },
+              "consequence_note": {
+                "zh": "写入受挫结果并释放名额。",
+                "en": "Records a setback and releases the slot."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "用真实结果收束第一条线并释放名额。",
+            "en": "Close the first line on a real outcome and free the slot."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy",
+            "radicals"
+          ],
+          "writes": [
+            "ywc_nmg_land_closed",
+            "ywc_nmg_land_established",
+            "ywc_nmg_land_compromise",
+            "ywc_nmg_land_withdrawn"
+          ]
+        }
+      ],
+      "outcomes": [
+        "land_established",
+        "land_compromise",
+        "land_withdrawn"
+      ],
+      "legacy_links": [
+        "ywc_je_flavor_nmg_bargain_1",
+        "ywc_campaign_nmg_c1_outcome"
+      ]
+    },
+    {
+      "slug": "v03_nmg_bilingual_office",
+      "era": "foundation",
+      "participants": [
+        "新明官署书吏",
+        "华墨社群与港市商行",
+        "朱氏仪礼房",
+        "天主教教区",
+        "地方议员",
+        "墨西哥宗主代表"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_bilingual_office",
+          "title": {
+            "zh": "一份公文，两种语言",
+            "en": "One Document, Two Languages"
+          },
+          "desc": {
+            "zh": "双语常设、地方译员或单一官文加申诉。都要真付开办费，双语还需真识字率与在岗官署。六个月后看告示栏，识字没起色就得改路线，改不动就受挫。",
+            "en": "A standing bilingual office, local translators, or a single official language with appeals. Each needs a real opening fee, and the bilingual route needs real literacy and a staffed office. Six months later read the notice board: no literacy gain means changing the route, and an office with nobody left means a setback."
+          },
+          "script": "{\nis_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } }\npossible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_nmg_office_unsettled = yes ywc_nmg_v03_has_owned_state = yes }\nimmediate = { ywc_nmg_claim_bilingual_office = yes ywc_nmg_open_office_once = yes }\non_fail = { ywc_nmg_close_office_as_breach = yes }\non_monthly_pulse = {\neffect = {\nywc_nmg_office_monthly_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_office_pending = 1010 } remove_variable = ywc_nmg_office_pending trigger_event = { id = ywc_nmg.1010 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_office_pending = 1011 } remove_variable = ywc_nmg_office_pending trigger_event = { id = ywc_nmg.1011 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_office_pending = 1012 } remove_variable = ywc_nmg_office_pending trigger_event = { id = ywc_nmg.1012 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_office_pending = 1013 } remove_variable = ywc_nmg_office_pending trigger_event = { id = ywc_nmg.1013 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_office_pending = 1014 } remove_variable = ywc_nmg_office_pending trigger_event = { id = ywc_nmg.1014 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_office_pending = 1015 } remove_variable = ywc_nmg_office_pending trigger_event = { id = ywc_nmg.1015 } }\n}\n}\n}",
+          "goal": "{ has_variable = ywc_nmg_office_closed }",
+          "exit_conditions": "{ has_variable = ywc_nmg_office_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1010",
+          "title": {
+            "zh": "一份公文，两种语言",
+            "en": "One Document, Two Languages"
+          },
+          "desc": {
+            "zh": "官署贴出第一份告示，华墨社群读不懂上头的西班牙文，朱氏仪礼房读不懂下头的汉文。教区愿意腾出侧厅当读报处，但要官署承认教区的调解权。三条路，三本账。",
+            "en": "The office posts its first notice: the community cannot read the Spanish above, the ritual house cannot read the Chinese below. The parish offers a reading room if its mediation is recognized. Three roads, three ledgers."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1010 } }",
+          "options": [
+            {
+              "key": "bilingual",
+              "label": {
+                "zh": "设双语常设官署",
+                "en": "Establish a standing bilingual office"
+              },
+              "effect": "{ywc_nmg_choose_office_bilingual = yes set_variable = { name = ywc_nmg_office_pending value = 1011 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "付一次开办费，此后常年行政费。",
+                "en": "One opening fee, then permanent administrative cost."
+              },
+              "consequence_note": {
+                "zh": "识字与接受度上升，官僚效率下降。",
+                "en": "Literacy and acceptance rise; bureaucratic efficiency falls."
+              },
+              "trigger": "{ ywc_nmg_office_bilingual_ready = yes }"
+            },
+            {
+              "key": "local",
+              "label": {
+                "zh": "外包给地方译员",
+                "en": "Contract local translators"
+              },
+              "effect": "{ywc_nmg_choose_office_local = yes set_variable = { name = ywc_nmg_office_pending value = 1011 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "费用中低，按批结算。",
+                "en": "Moderate fee, settled per batch."
+              },
+              "consequence_note": {
+                "zh": "成本可控，覆盖不均；边远村镇仍读不懂。",
+                "en": "Costs stay controlled, coverage stays uneven."
+              },
+              "trigger": "{ ywc_nmg_office_local_ready = yes }"
+            },
+            {
+              "key": "single",
+              "label": {
+                "zh": "单一官文，另设申诉",
+                "en": "Single official language plus appeal"
+              },
+              "effect": "{ywc_nmg_choose_office_single = yes set_variable = { name = ywc_nmg_office_pending value = 1011 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "费用最低，几乎只花纸墨。",
+                "en": "Cheapest; almost only paper and ink."
+              },
+              "consequence_note": {
+                "zh": "接受度下降，动荡风险上升。",
+                "en": "Acceptance falls and the risk of unrest rises."
+              },
+              "trigger": "{ ywc_nmg_office_single_ready = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让语言选择付出真实行政成本，而不是免费的道德姿态。",
+            "en": "Make the language choice carry real administrative cost."
+          },
+          "reads": [
+            "literacy_rate",
+            "bureaucracy",
+            "gold_reserves",
+            "yearly_gross_income"
+          ],
+          "writes": [
+            "ywc_nmg_office_route",
+            "ywc_nmg_office_fee",
+            "ywc_nmg_office_pending"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1011",
+          "title": {
+            "zh": "译员的名单",
+            "en": "The Translators Roster"
+          },
+          "desc": {
+            "zh": "名单摊在桌上：三名教会学堂出身的青年、两名港市商行雇的抄写员，还有一位只会说不会写的旧村塾师。官署缺的不是意愿，是能同时写下两种文字的人。",
+            "en": "The roster lies open: three youths from the parish school, two copyists hired by the harbour firms, and one schoolmaster who speaks both tongues but writes one. What the office lacks is people who can write both."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1011 } }",
+          "options": [
+            {
+              "key": "hire_full",
+              "label": {
+                "zh": "全数录用",
+                "en": "Hire the whole roster"
+              },
+              "effect": "{add_treasury = { value = var:ywc_nmg_office_fee multiply = -1 } set_variable = { name = ywc_nmg_office_roster_full value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1012 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "再付一份等额薪饷。",
+                "en": "A second charge equal to the opening fee."
+              },
+              "consequence_note": {
+                "zh": "覆盖完整，短期财政吃紧。",
+                "en": "Coverage is complete; the treasury feels it now."
+              },
+              "trigger": "{ ywc_nmg_office_admin_present = yes }"
+            },
+            {
+              "key": "hire_thin",
+              "label": {
+                "zh": "只录前三名",
+                "en": "Take only the first three"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_roster_thin value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1012 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "主城够用，乡下仍靠口传。",
+                "en": "Enough for the capital; the countryside runs on word of mouth."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "名单押后",
+                "en": "Hold the roster"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_pending value = 1012 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "告示继续只有一种语言。",
+                "en": "Notices stay in one language."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把双语承诺落到真实官署用工上。",
+            "en": "Ground the bilingual promise in real office staffing."
+          },
+          "reads": [
+            "bureaucracy",
+            "literacy_rate"
+          ],
+          "writes": [
+            "ywc_nmg_office_roster_full",
+            "ywc_nmg_office_roster_thin"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1012",
+          "title": {
+            "zh": "士绅与教区的态度",
+            "en": "Gentry and Parish"
+          },
+          "desc": {
+            "zh": "地方议员担心双语官署让外来商行占了便宜，教区担心官署抢走调解权，朱氏仪礼房只关心名册上还写不写汉字。谁点头，谁就能让这道命令落地或者悬在半空。",
+            "en": "The council fears the office favours foreign firms, the parish fears losing its mediation, and the ritual house cares only whether Chinese stays on the register. Whoever nods decides whether the order lands."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1012 } }",
+          "options": [
+            {
+              "key": "court_parish",
+              "label": {
+                "zh": "让教区参与",
+                "en": "Bring the parish in"
+              },
+              "effect": "{ywc_nmg_office_record_parish = yes set_variable = { name = ywc_nmg_office_pending value = 1013 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "合法性与接受度上升，教区影响力扩大。",
+                "en": "Legitimacy and acceptance rise; parish influence grows."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "court_council",
+              "label": {
+                "zh": "让议员监督",
+                "en": "Let the council oversee it"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_oversight value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1013 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "账目更清楚，官署手脚被束。",
+                "en": "The books get clearer and the office hands get tied."
+              },
+              "trigger": "{ ywc_nmg_office_ig_support = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "两边都不表态",
+                "en": "Commit to neither"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_pending value = 1013 }}",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "命令悬空，识字进展停滞。",
+                "en": "The order hangs and literacy work stalls."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让利益集团支持度成为可读的门槛。",
+            "en": "Make interest-group support a readable gate."
+          },
+          "reads": [
+            "legitimacy",
+            "literacy_rate"
+          ],
+          "writes": [
+            "ywc_nmg_office_oversight",
+            "ywc_nmg_parish_acceptance"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1013",
+          "title": {
+            "zh": "学堂与官署的衔接",
+            "en": "Schools Feeding the Office"
+          },
+          "desc": {
+            "zh": "双语官署要人，学堂要钱。教育投入不足时，官署只能不断从港市商行借人，借来的人先认商行、后认官署。这笔账会一直算到下一任主事。",
+            "en": "The office needs people; the schools need money. With little school investment the office keeps borrowing clerks from the harbour firms, and borrowed clerks answer the firms first."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1013 } }",
+          "options": [
+            {
+              "key": "fund_schools",
+              "label": {
+                "zh": "加拨教育经费",
+                "en": "Fund the schools"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_schools value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1014 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "常设教育投入即为此项成本。",
+                "en": "Standing school investment is the cost."
+              },
+              "consequence_note": {
+                "zh": "识字增长更快，官署不必再借人。",
+                "en": "Literacy grows faster and the office stops borrowing clerks."
+              },
+              "trigger": "{ ywc_nmg_office_school_investment = yes }"
+            },
+            {
+              "key": "borrow_staff",
+              "label": {
+                "zh": "继续向商行借人",
+                "en": "Keep borrowing from the firms"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_borrowed value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1014 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "当期不花钱。",
+                "en": "Nothing this term."
+              },
+              "consequence_note": {
+                "zh": "外来资本影响加深，官署效率受制。",
+                "en": "Foreign capital influence deepens and the office is constrained."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "先维持现状",
+                "en": "Keep things as they are"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_pending value = 1014 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "缺口留到明年。",
+                "en": "The gap carries into next year."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把制度投资水平与实际用工缺口接上。",
+            "en": "Tie institutional investment to the real staffing gap."
+          },
+          "reads": [
+            "institution_investment_level",
+            "literacy_rate",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_office_schools",
+            "ywc_nmg_office_borrowed"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1014",
+          "title": {
+            "zh": "六个月后的告示栏",
+            "en": "The Notice Board After Six Months"
+          },
+          "desc": {
+            "zh": "六个月过去，告示栏前读报的人多了还是少了，官署自己算得出来。若识字没有起色，这条路线就得改；若官署已经无人可派，改也改不动。",
+            "en": "Six months on the office can count whether more or fewer people read the notice board. If literacy has not moved the route must change; if nobody is left to send, it cannot change either."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1014 } }",
+          "options": [
+            {
+              "key": "keep_route",
+              "label": {
+                "zh": "维持现有安排",
+                "en": "Keep the arrangement"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_hold value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1015 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "条件跌破时由月度复核记录受阻。",
+                "en": "If conditions slip the monthly review records blockage."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "switch_local",
+              "label": {
+                "zh": "改走地方译员",
+                "en": "Shift to local translators"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_office_route value = 2 } add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 } set_variable = { name = ywc_nmg_office_pending value = 1015 }}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "已付费用不退。",
+                "en": "Paid fees are not refunded."
+              },
+              "consequence_note": {
+                "zh": "成本下降，覆盖率下降。",
+                "en": "Costs fall and so does coverage."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回官署",
+                "en": "Withdraw the office"
+              },
+              "effect": "{ywc_nmg_close_office_as_breach = yes}",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "已付费用不退。",
+                "en": "Paid fees are not refunded."
+              },
+              "consequence_note": {
+                "zh": "写入受挫结果并释放名额。",
+                "en": "Records a setback and releases the slot."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让六个月观察成为分岔点而不是装饰。",
+            "en": "Make the six-month watch a fork, not decoration."
+          },
+          "reads": [
+            "literacy_rate",
+            "bureaucracy",
+            "radicals"
+          ],
+          "writes": [
+            "ywc_nmg_office_hold",
+            "ywc_nmg_office_route"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1015",
+          "title": {
+            "zh": "归档：两种文字的土地",
+            "en": "Filed: A Land in Two Scripts"
+          },
+          "desc": {
+            "zh": "最后一卷公文归档。社群的名册、教区的调解记录、议员的监督簿，都要在这里定下去留。写完这一笔，双语官署或者成为常制，或者退回一张告示。",
+            "en": "The last file goes into the archive. The community register, the parish mediation record and the oversight book are all settled here. The bilingual office either becomes standing law or shrinks back to a notice."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1015 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "定为常制",
+                "en": "Make it standing"
+              },
+              "effect": "{ywc_nmg_close_office_as_established = yes}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "写入完成结果并释放名额。",
+                "en": "Records completion and releases the slot."
+              },
+              "trigger": "{ ywc_nmg_office_route_ready = yes }"
+            },
+            {
+              "key": "close_partial",
+              "label": {
+                "zh": "降为临时",
+                "en": "Leave it provisional"
+              },
+              "effect": "{ywc_nmg_close_office_as_compromise = yes}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "写入折中结果并释放名额。",
+                "en": "Records a compromise and releases the slot."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回官署",
+                "en": "Withdraw the office"
+              },
+              "effect": "{ywc_nmg_close_office_as_breach = yes}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "已付费用不退。",
+                "en": "Paid fees are not refunded."
+              },
+              "consequence_note": {
+                "zh": "写入受挫结果并释放名额。",
+                "en": "Records a setback and releases the slot."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "用真实结果收束第二条线。",
+            "en": "Close the second line on a real outcome."
+          },
+          "reads": [
+            "literacy_rate",
+            "legitimacy",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_office_closed",
+            "ywc_nmg_office_established",
+            "ywc_nmg_office_compromise",
+            "ywc_nmg_office_withdrawn"
+          ]
+        }
+      ],
+      "outcomes": [
+        "office_established",
+        "office_compromise",
+        "office_withdrawn"
+      ],
+      "legacy_links": [
+        "ywc_je_flavor_nmg_bargain_1",
+        "ywc_campaign_nmg_c1_outcome"
+      ]
+    },
+    {
+      "slug": "v03_nmg_autonomy_revenue",
+      "era": "foundation",
+      "participants": [
+        "新明官署与本地预算房",
+        "墨西哥宗主与派驻专员",
+        "华墨社群商行",
+        "地方议员",
+        "港口与营房管事"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_revenue_opening",
+          "title": {
+            "zh": "墨城税单与本地预算",
+            "en": "The Mexico City Bill and the Local Budget"
+          },
+          "desc": {
+            "zh": "开账：固定分担、共同项目或旧额拖欠。先真读属邦关系与宗主态度，再把税源、防务与官署底账对上。本段只开账，不谈条款。",
+            "en": "Opening the account: a fixed share, a joint project, or arrears on the old figure. First read the real subject relation and the overlord's temper, then reconcile the tax base, garrison and office books. This stage opens the account only; terms come later."
+          },
+          "script": "{\nis_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }\npossible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_nmg_revenue_unsettled = yes ywc_nmg_v03_has_owned_state = yes }\nimmediate = { ywc_nmg_claim_autonomy_revenue = yes ywc_nmg_open_revenue_once = yes }\non_fail = { ywc_nmg_close_revenue_as_breach = yes }\non_monthly_pulse = {\neffect = {\nywc_nmg_revenue_monthly_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1020 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1020 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1021 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1021 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1022 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1022 } }\n}\n}\n}",
+          "goal": "{ has_variable = ywc_nmg_revenue_closed }",
+          "exit_conditions": "{ has_variable = ywc_nmg_revenue_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_revenue_negotiation",
+          "title": {
+            "zh": "谈判：条款与回文",
+            "en": "Negotiation: Terms and Replies"
+          },
+          "desc": {
+            "zh": "谈判：据实压价还是接受宗主底价，取决于真实两国关系与财政能力。共同项目需真建筑与真出资，拖欠则什么都写不下来。",
+            "en": "Negotiation: press for the real figure or accept the overlord's floor, depending on real relations and fiscal capacity. A joint project needs real buildings and real money; arrears writes nothing down at all."
+          },
+          "script": "{\nis_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized has_variable = ywc_nmg_revenue_stage2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }\npossible = { c:NMG ?= this has_variable = ywc_nmg_revenue_stage2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }\nimmediate = { if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } } set_variable = { name = ywc_nmg_revenue_pending value = 1023 } } }\non_fail = { ywc_nmg_close_revenue_as_breach = yes }\non_monthly_pulse = {\neffect = {\nywc_nmg_revenue_monthly_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1023 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1023 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1024 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1024 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1025 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1025 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1026 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1026 } }\n}\n}\n}",
+          "goal": "{ has_variable = ywc_nmg_revenue_closed }",
+          "exit_conditions": "{ has_variable = ywc_nmg_revenue_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_revenue_settlement",
+          "title": {
+            "zh": "结算：尾数与欠项",
+            "en": "Settlement: Residues and Arrears"
+          },
+          "desc": {
+            "zh": "结算：把当年的汇单、工料账与营房名册并成一卷。尾数认下来还是记成争议，直接改动真实外交关系。归档后让出名额。",
+            "en": "Settlement: fold the year's remittances, works accounts and garrison muster into one volume. Owning or disputing the residue moves real diplomatic relations. Filing frees the slot."
+          },
+          "script": "{\nis_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized has_variable = ywc_nmg_revenue_stage3 NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }\npossible = { c:NMG ?= this has_variable = ywc_nmg_revenue_stage3 NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }\nimmediate = { if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } } set_variable = { name = ywc_nmg_revenue_pending value = 1027 } } }\non_fail = { ywc_nmg_close_revenue_as_breach = yes }\non_monthly_pulse = {\neffect = {\nywc_nmg_revenue_monthly_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1027 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1027 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1028 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1028 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_revenue_pending = 1029 } remove_variable = ywc_nmg_revenue_pending trigger_event = { id = ywc_nmg.1029 } }\n}\n}\n}",
+          "goal": "{ has_variable = ywc_nmg_revenue_closed }",
+          "exit_conditions": "{ has_variable = ywc_nmg_revenue_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1020",
+          "title": {
+            "zh": "墨城税单",
+            "en": "The Bill from Mexico City"
+          },
+          "desc": {
+            "zh": "墨城的信使送来今年税单，数目比往年多了两成。新明是受保护的属邦，宗主有权查账、有权派员，也有权在属邦不听话时把舰队开进海湾。三条路都要真金白银，也都要真读墨城的态度。",
+            "en": "A courier brings this year budget, a fifth larger than last. Xinming is a protected subject: the overlord may audit its books, send officers, and sail a squadron into the gulf if it proves difficult. All three roads cost real money and must read Mexico City temper."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1020 } }",
+          "options": [
+            {
+              "key": "fixed",
+              "label": {
+                "zh": "改为固定分担",
+                "en": "Convert to a fixed share"
+              },
+              "effect": "{ywc_nmg_choose_revenue_fixed = yes set_variable = { name = ywc_nmg_revenue_pending value = 1021 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "付一次改约费，此后按季汇出固定额。",
+                "en": "One renegotiation fee, then a fixed quarterly remittance."
+              },
+              "consequence_note": {
+                "zh": "可预算，但弹性丧失；税基一缩也只能照汇。",
+                "en": "Budgetable, but flexibility is gone: a shrinking base still remits."
+              },
+              "trigger": "{ ywc_nmg_revenue_fixed_ready = yes }"
+            },
+            {
+              "key": "joint",
+              "label": {
+                "zh": "提议共同项目",
+                "en": "Propose a joint project"
+              },
+              "effect": "{ywc_nmg_choose_revenue_joint = yes set_variable = { name = ywc_nmg_revenue_pending value = 1021 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "付一次方案费，另需真实宗主同意。",
+                "en": "One proposal fee, and the overlord must actually agree."
+              },
+              "consequence_note": {
+                "zh": "成本分摊，但防务与港口的话事权让出一半。",
+                "en": "Costs are shared and half the say over port and garrison goes with them."
+              },
+              "trigger": "{ ywc_nmg_revenue_joint_ready = yes }"
+            },
+            {
+              "key": "arrears",
+              "label": {
+                "zh": "照旧额拖欠",
+                "en": "Keep the old figure and fall into arrears"
+              },
+              "effect": "{ywc_nmg_choose_revenue_arrears = yes set_variable = { name = ywc_nmg_revenue_pending value = 1021 }}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "当期不付，现金留在本库。",
+                "en": "Nothing paid now; the cash stays home."
+              },
+              "consequence_note": {
+                "zh": "关系立即受损，外债压力累积。",
+                "en": "Relations suffer at once and debt pressure accumulates."
+              },
+              "trigger": "{ ywc_nmg_revenue_arrears_ready = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把属邦关系写成真实外交状态下的三条财政路线。",
+            "en": "Turn the subject relation into three fiscal routes read from real diplomacy."
+          },
+          "reads": [
+            "gold_reserves",
+            "yearly_gross_income",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_route",
+            "ywc_nmg_revenue_quota",
+            "ywc_nmg_revenue_stage"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1021",
+          "title": {
+            "zh": "税源与防务的对账",
+            "en": "Checking Base Against Garrison"
+          },
+          "desc": {
+            "zh": "要谈税单，先得知道自己有什么。码头货物流水、田亩租册、营房在册兵额，三本账对不上，墨城派来的人一眼就能看出来。对不上账的属邦，谈不出好条件。",
+            "en": "Before arguing the bill Xinming must know what it holds: harbour cargo, field rolls, barracks musters. If the three do not reconcile, the overlord officer sees it at a glance, and a subject with bad books gets bad terms."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1021 } }",
+          "options": [
+            {
+              "key": "audit_strict",
+              "label": {
+                "zh": "闭门对账三月",
+                "en": "Three months of closed-door reconciliation"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_audit_strict value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "占用官署人力，不另收费。",
+                "en": "Ties up office staff; no extra fee."
+              },
+              "consequence_note": {
+                "zh": "账目可信，谈判有据；短期行政效率下降。",
+                "en": "Credible books and a basis for talks; efficiency drops meanwhile."
+              },
+              "trigger": "{ ywc_nmg_revenue_tax_base = yes }"
+            },
+            {
+              "key": "audit_public",
+              "label": {
+                "zh": "公开对账",
+                "en": "Reconcile in public"
+              },
+              "effect": "{add_loyalists_in_state = { value = small_loyalists } set_variable = { name = ywc_nmg_revenue_audit_public value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "本地社群得信心，墨城看得更清楚。",
+                "en": "The local community gains confidence; Mexico City sees more clearly."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "先押后",
+                "en": "Postpone the reconciliation"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1022 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "谈判没有底账，条件更差。",
+                "en": "With no ledger the terms only worsen."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让谈判建立在真实税源与防务之上。",
+            "en": "Base the negotiation on a genuine tax base and garrison."
+          },
+          "reads": [
+            "occupancy",
+            "bureaucracy",
+            "radicals"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_audit_strict",
+            "ywc_nmg_revenue_audit_public"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1022",
+          "title": {
+            "zh": "开账：第一笔汇出",
+            "en": "Account Opened: The First Remittance"
+          },
+          "desc": {
+            "zh": "账开出来了。按固定分担，本季就要汇出第一笔；按共同项目，先付方案费等墨城回文；按旧额拖欠，本季一分不出，代价写在关系表上。开账之后，谈的是条款，不是要不要给。",
+            "en": "The account is open. Under a fixed share the first instalment leaves this quarter; under a joint project the fee goes and Mexico City reply is awaited; under arrears nothing leaves and the cost lands in the relations ledger. After this the argument is about terms."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1022 } }",
+          "options": [
+            {
+              "key": "close_account",
+              "label": {
+                "zh": "开账完毕，转入谈判",
+                "en": "Close the account, move to negotiation"
+              },
+              "effect": "{ywc_nmg_revenue_open_negotiation = yes}",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "不再另收。",
+                "en": "No further charge."
+              },
+              "consequence_note": {
+                "zh": "进入谈判阶段，第一阶段日志完成。",
+                "en": "Enters negotiation; the first journal entry completes."
+              },
+              "trigger": "{ ywc_nmg_revenue_fixed_ready = yes }"
+            },
+            {
+              "key": "close_account_joint",
+              "label": {
+                "zh": "开账完毕（联合项目）",
+                "en": "Close the account (joint project)"
+              },
+              "effect": "{ywc_nmg_revenue_open_negotiation = yes}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不再另收。",
+                "en": "No further charge."
+              },
+              "consequence_note": {
+                "zh": "进入谈判阶段，需要真实宗主同意。",
+                "en": "Enters negotiation; needs genuine overlord consent."
+              },
+              "trigger": "{ ywc_nmg_revenue_joint_ready = yes }"
+            },
+            {
+              "key": "reopen",
+              "label": {
+                "zh": "暂不开账",
+                "en": "Hold the account open"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1020 }}",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "回到起点，墨城的耐心在减少。",
+                "en": "Back to the start, and Mexico City patience thins."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "完成三段顺序 JE 的第一段并释放到第二阶段。",
+            "en": "Close stage one of the ordered journal chain and hand off to stage two."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_stage",
+            "ywc_nmg_revenue_stage2",
+            "ywc_nmg_revenue_pending"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1023",
+          "title": {
+            "zh": "谈判桌上的两张纸",
+            "en": "Two Papers on the Table"
+          },
+          "desc": {
+            "zh": "墨城派来的专员带来两张纸：一张是宗主的最低要价，一张是新明能拿出的实际数目。两张纸之间的差距，就是这场谈判全部的内容。属邦没有议价权时，差距只能靠时间和关系去磨。",
+            "en": "The commissioner brings two sheets: the overlord floor and Xinming real capacity. The distance between them is the whole negotiation. A subject with no leverage can only wear that distance down with time and relations."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1023 } }",
+          "options": [
+            {
+              "key": "press_quota",
+              "label": {
+                "zh": "据实压价",
+                "en": "Press for the real figure"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_press value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "谈成则条件改善，谈崩则关系受损。",
+                "en": "Success improves terms; failure damages relations."
+              },
+              "trigger": "{ ywc_nmg_revenue_relations_ok = yes }"
+            },
+            {
+              "key": "accept_floor",
+              "label": {
+                "zh": "接受宗主底价",
+                "en": "Accept the overlord floor"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 }}",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不另收费，但汇额更高。",
+                "en": "No extra fee, but the remittance is larger."
+              },
+              "consequence_note": {
+                "zh": "关系稳住，财政长期吃紧。",
+                "en": "Relations hold; the treasury stays tight."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "休会",
+                "en": "Adjourn"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1024 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "拖一天，债就多一天利息。",
+                "en": "Every day of delay adds a day of interest."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把谈判建立在真实外交关系与财政能力上。",
+            "en": "Ground the negotiation in real relations and fiscal capacity."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_press",
+            "ywc_nmg_revenue_accept"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1024",
+          "title": {
+            "zh": "墨城的回文",
+            "en": "Mexico City Replies"
+          },
+          "desc": {
+            "zh": "回文到了。字面上公事公办，措辞里的温度取决于两国关系。关系尚可，专员愿意在港口问题上留一句活话；关系已冷，回文就只剩一句照原额办理。",
+            "en": "The reply arrives. On paper it is routine; its temperature depends on relations. In decent standing the commissioner leaves a door open on the harbour; in a cold standing the reply says only pay as before."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1024 } }",
+          "options": [
+            {
+              "key": "use_temperature",
+              "label": {
+                "zh": "顺着语气续谈",
+                "en": "Read the temper and keep talking"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1025 }}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "取决于真实外交关系，勉强不来。",
+                "en": "Depends on real relations; it cannot be forced."
+              },
+              "trigger": "{ ywc_nmg_revenue_relations_ok = yes }"
+            },
+            {
+              "key": "escalate",
+              "label": {
+                "zh": "把争执写进奏报",
+                "en": "Put the quarrel on the record"
+              },
+              "effect": "{change_relations = { country = c:MEX value = { add = -10 } } set_variable = { name = ywc_nmg_revenue_escalated value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1025 }}",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "不扣费，但关系受损。",
+                "en": "No fee, but relations suffer."
+              },
+              "consequence_note": {
+                "zh": "本地议员满意，墨城记住了这一笔。",
+                "en": "The council is pleased; Mexico City remembers the entry."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "不回文",
+                "en": "Leave it unanswered"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1025 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "沉默本身是一种答覆。",
+                "en": "Silence is itself an answer."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让宗主回应直接由真实关系值决定。",
+            "en": "Let the overlord reply follow the real relations value."
+          },
+          "reads": [
+            "bureaucracy",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_escalated"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1025",
+          "title": {
+            "zh": "港口与防务的分摊账",
+            "en": "Splitting Port and Garrison"
+          },
+          "desc": {
+            "zh": "共同项目要真东西：一座能靠船的码头，或者一支能在册的守备。新明出地、出人、出料，墨城出船、出教官。谁出得多，谁在港务和防务上就多说一句。",
+            "en": "A joint project needs substance: a quay that takes a ship, or a garrison that appears on the muster. Xinming brings land, men and materials; Mexico City brings ships and instructors. Whoever brings more speaks louder."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1025 } }",
+          "options": [
+            {
+              "key": "share_even",
+              "label": {
+                "zh": "对半分摊",
+                "en": "Split it evenly"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_share value = 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 }}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "按当期分摊额出账。",
+                "en": "Billed at the current share."
+              },
+              "consequence_note": {
+                "zh": "成本与话语权各让一半。",
+                "en": "Costs and influence are each split in two."
+              },
+              "trigger": "{ ywc_nmg_revenue_defense_present = yes }"
+            },
+            {
+              "key": "carry_heavy",
+              "label": {
+                "zh": "新明多出一些",
+                "en": "Xinming carries more"
+              },
+              "effect": "{add_treasury = { value = var:ywc_nmg_revenue_quota multiply = -1 } set_variable = { name = ywc_nmg_revenue_share value = 3 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 }}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "再出一份等额工料。",
+                "en": "Another charge equal to the quota."
+              },
+              "consequence_note": {
+                "zh": "话语权保住，国库再吃一次紧。",
+                "en": "Influence is kept; the treasury tightens again."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "项目压后",
+                "en": "Shelve the project"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1026 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "谈判少了最有力的一张牌。",
+                "en": "The talks lose their strongest card."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把共同项目落在真实建筑与出资上。",
+            "en": "Ground the joint project in real buildings and real payment."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_share"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1026",
+          "title": {
+            "zh": "谈判定稿",
+            "en": "Negotiation Concluded"
+          },
+          "desc": {
+            "zh": "条款终于定下来。固定分担写死了数字，共同项目写死了分摊比例，拖欠则什么都没写下来——拖到这一步，谈判已经不叫谈判了。定稿之后，剩下最后一笔要结。",
+            "en": "The terms are set. A fixed share writes the number down; a joint project writes the split; arrears writes nothing at all, because by now the talks are no longer talks. One last entry must still be settled."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1026 } }",
+          "options": [
+            {
+              "key": "conclude",
+              "label": {
+                "zh": "定稿，转入结算",
+                "en": "Conclude and move to settlement"
+              },
+              "effect": "{ywc_nmg_revenue_open_settlement = yes}",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "不再另收。",
+                "en": "No further charge."
+              },
+              "consequence_note": {
+                "zh": "进入结算阶段，第二阶段日志完成。",
+                "en": "Enters settlement; the second journal entry completes."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "walk_out",
+              "label": {
+                "zh": "离席",
+                "en": "Walk out"
+              },
+              "effect": "{change_relations = { country = c:MEX value = { add = -25 } } set_variable = { name = ywc_nmg_revenue_pending value = 1020 }}",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不扣费，但关系重损。",
+                "en": "No fee, but relations take a heavy hit."
+              },
+              "consequence_note": {
+                "zh": "回到开账阶段，代价已记在关系上。",
+                "en": "Back to the opening stage with the cost in relations."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "再议一次",
+                "en": "One more round"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1023 }}",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "谈判拖长，债息继续走。",
+                "en": "The talks drag and interest keeps running."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "完成第二段 JE 并转入结算。",
+            "en": "Close stage two and hand off to settlement."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_stage",
+            "ywc_nmg_revenue_stage3"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1027",
+          "title": {
+            "zh": "结算日",
+            "en": "Settlement Day"
+          },
+          "desc": {
+            "zh": "结算日，官署、议员、教区和社群代表都到场。桌上摆着这一年的汇单、港口的工料账和营房的在册名。拖欠那条路走不到这里——它只会在关系表上留下一道越来越深的痕。",
+            "en": "On settlement day the office, council, parish and community delegates attend. On the table lie the year remittances, the harbour accounts and the garrison muster. The arrears road does not arrive here: it only leaves a deepening mark."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1027 } }",
+          "options": [
+            {
+              "key": "settle_full",
+              "label": {
+                "zh": "一次结清",
+                "en": "Settle in full"
+              },
+              "effect": "{ywc_nmg_close_revenue_as_established = yes}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "已付费用即为结算额。",
+                "en": "Fees already paid are the settlement."
+              },
+              "consequence_note": {
+                "zh": "写入完成结果并释放名额。",
+                "en": "Records completion and releases the slot."
+              },
+              "trigger": "{ ywc_nmg_revenue_route_ready = yes }"
+            },
+            {
+              "key": "settle_partial",
+              "label": {
+                "zh": "分批结清",
+                "en": "Settle in instalments"
+              },
+              "effect": "{ywc_nmg_close_revenue_as_compromise = yes}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "当期只结一半。",
+                "en": "Only half is settled this term."
+              },
+              "consequence_note": {
+                "zh": "写入折中结果并释放名额，尾数挂账。",
+                "en": "A compromise, the slot freed, a residue left on the books."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "再押一月",
+                "en": "Hold one more month"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1028 }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "利息继续走。",
+                "en": "Interest keeps running."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "把结算阶段的结果写成国家实际状态。",
+            "en": "Write the settlement stage into real country state."
+          },
+          "reads": [
+            "gold_reserves",
+            "legitimacy",
+            "bureaucracy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_closed",
+            "ywc_nmg_revenue_established"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1028",
+          "title": {
+            "zh": "尾数与欠项",
+            "en": "Residues and Arrears"
+          },
+          "desc": {
+            "zh": "账上仍有尾数。拖欠过的那一季不会自己消失，它变成外债里的一行，也变成墨城派驻专员时多要的一间屋子。是认下来，还是记成争议，议员和社群代表各有主张。",
+            "en": "A residue remains. The quarter that went unpaid does not vanish: it becomes a line in the debt and one more room when Mexico City sends a commissioner. Whether to own it or dispute it divides the benches."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1028 } }",
+          "options": [
+            {
+              "key": "own_arrears",
+              "label": {
+                "zh": "认下欠项",
+                "en": "Own the arrears"
+              },
+              "effect": "{change_relations = { country = c:MEX value = { add = -5 } } set_variable = { name = ywc_nmg_revenue_arrears_owned value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1029 }}",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "按现额补缴。",
+                "en": "Settled at the current figure."
+              },
+              "consequence_note": {
+                "zh": "关系小幅受损，账目干净。",
+                "en": "Relations take a small hit and the books come clean."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "dispute",
+              "label": {
+                "zh": "记成争议",
+                "en": "Record it as disputed"
+              },
+              "effect": "{change_relations = { country = c:MEX value = { add = -25 } } set_variable = { name = ywc_nmg_revenue_disputed value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1029 }}",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "当期不出钱。",
+                "en": "Nothing leaves this term."
+              },
+              "consequence_note": {
+                "zh": "关系明显受损，外债压力上升。",
+                "en": "Relations worsen markedly and debt pressure rises."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "留给下一任",
+                "en": "Leave it to the next clerk"
+              },
+              "effect": "{set_variable = { name = ywc_nmg_revenue_pending value = 1029 }}",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "问题不解决，只是换人面对。",
+                "en": "The problem is not solved, only handed on."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让拖欠必须付出真实外交代价。",
+            "en": "Make arrears carry a real diplomatic price."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_arrears_owned",
+            "ywc_nmg_revenue_disputed"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1029",
+          "title": {
+            "zh": "归档：海湾的账",
+            "en": "Filed: The Gulf Ledger"
+          },
+          "desc": {
+            "zh": "最后一笔归档。墨城的税单、本地的预算、港口的工料、营房的名册，全部并成一卷。从此这条线退出日程，但它的结果会被下一份预算、下一次谈判、下一场危机读到。",
+            "en": "The final entry is filed. Mexico City bill, the local budget, the harbour accounts and the garrison muster go into one volume. The line leaves the agenda, but its result will be read by the next budget, negotiation and crisis."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1029 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "按定稿归档",
+                "en": "File on the concluded terms"
+              },
+              "effect": "{ywc_nmg_close_revenue_as_established = yes}",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "写入完成结果并释放名额。",
+                "en": "Records completion and releases the slot."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "close_partial",
+              "label": {
+                "zh": "附保留意见归档",
+                "en": "File with a reservation"
+              },
+              "effect": "{ywc_nmg_close_revenue_as_compromise = yes}",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不另收费。",
+                "en": "No extra fee."
+              },
+              "consequence_note": {
+                "zh": "写入折中结果并释放名额。",
+                "en": "Records a compromise and releases the slot."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "拒绝归档",
+                "en": "Refuse to file"
+              },
+              "effect": "{ywc_nmg_close_revenue_as_breach = yes change_relations = { country = c:MEX value = { add = -25 } }}",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "已付费用不退。",
+                "en": "Paid fees are not refunded."
+              },
+              "consequence_note": {
+                "zh": "写入受挫并释放名额，关系另行受损。",
+                "en": "Records a setback, frees the slot, and damages relations besides."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "收束第三条线，并把结果交给后续内容读取。",
+            "en": "Close the third line and hand its result to later content."
+          },
+          "reads": [
+            "gold_reserves",
+            "bureaucracy",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_nmg_revenue_closed",
+            "ywc_nmg_revenue_established",
+            "ywc_nmg_revenue_compromise",
+            "ywc_nmg_revenue_withdrawn"
+          ]
+        }
+      ],
+      "outcomes": [
+        "revenue_established",
+        "revenue_compromise",
+        "revenue_withdrawn",
+        "revenue_arrears"
+      ],
+      "legacy_links": [
+        "ywc_je_flavor_nmg_bargain_1",
+        "ywc_campaign_nmg_c1_outcome"
+      ]
+    }
+  ]
+}

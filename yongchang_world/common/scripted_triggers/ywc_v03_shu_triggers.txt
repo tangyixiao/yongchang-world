@@ -71,3 +71,88 @@ ywc_shu_v03_has_candidate_state = {
   any_scope_state = { is_owned_by = ROOT state_region = s:STATE_GUIZHOU }
  }
 }
+
+ywc_shu_v03_service_professional_ready = {
+	bureaucracy >= 0
+	ywc_shu_v03_has_pilot_state = yes
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_barrack
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.25
+			building_has_goods_shortage = no
+		}
+	}
+}
+ywc_shu_v03_service_route_ready = {
+	AND = {
+		ywc_shu_v03_finance_safe = yes
+		OR = {
+			AND = { var:ywc_shu_service_route = 1 ywc_shu_v03_real_execution_ready = yes }
+			AND = { var:ywc_shu_service_route = 2 ywc_shu_v03_limited_execution_ready = yes OR = { has_variable = ywc_shu_service_provincial_report has_variable = ywc_shu_service_joint_review has_variable = ywc_shu_service_local_voice } }
+			AND = { var:ywc_shu_service_route = 3 ywc_shu_v03_limited_execution_ready = yes }
+			AND = { NOT = { has_variable = ywc_shu_service_route } ywc_shu_v03_limited_execution_ready = yes }
+		}
+	}
+}
+ywc_shu_service_route_ready = {
+	OR = {
+		AND = { var:ywc_shu_service_route = 1 ywc_shu_v03_real_execution_ready = yes }
+		AND = { var:ywc_shu_service_route = 2 ywc_shu_v03_limited_execution_ready = yes }
+		AND = { var:ywc_shu_service_route = 3 ywc_shu_v03_limited_execution_ready = yes }
+		AND = { NOT = { has_variable = ywc_shu_service_route } ywc_shu_v03_limited_execution_ready = yes }
+	}
+}
+ywc_shu_service_actual_ready = {
+	OR = {
+		has_variable = ywc_shu_service_appointment_result
+		AND = { has_variable = ywc_shu_service_recommendation ywc_shu_service_route_ready = yes }
+	}
+}
+ywc_shu_v03_has_port = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_port
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+ywc_shu_v03_inland_office_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.25
+			building_has_goods_shortage = no
+		}
+	}
+}
+ywc_shu_v03_customs_law_ready = {
+	OR = {
+		has_law_or_variant = law_type:law_mercantilism
+		has_law_or_variant = law_type:law_protectionism
+		has_law_or_variant = law_type:law_free_trade
+	}
+}
+ywc_shu_v03_port_execution_ready = {
+	AND = {
+		ywc_shu_v03_finance_safe = yes
+		OR = {
+			AND = { var:ywc_shu_port_route = 1 ywc_shu_v03_has_port = yes ywc_shu_v03_customs_law_ready = yes }
+			AND = { var:ywc_shu_port_route = 2 ywc_shu_v03_has_port = yes }
+			AND = { var:ywc_shu_port_route = 3 ywc_shu_v03_inland_office_ready = yes }
+			AND = { var:ywc_shu_port_route = 4 ywc_shu_v03_inland_office_ready = yes }
+			AND = { NOT = { has_variable = ywc_shu_port_route } ywc_shu_v03_has_port = yes }
+		}
+	}
+}
