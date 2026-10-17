@@ -1,0 +1,206 @@
+﻿# JHG foundation scripted triggers. Owned by country_jhg.
+
+ywc_jhg_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+# --- v03_jhg_court_assembly ------------------------------------------------
+
+ywc_jhg_court_bureaucracy_ready = {
+	bureaucracy >= 40
+}
+
+ywc_jhg_court_administration_staffed = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_jhg_court_property_rep = {
+	OR = {
+		has_law_or_variant = law_type:law_landed_voting
+		has_law_or_variant = law_type:law_wealth_voting
+		has_law_or_variant = law_type:law_census_voting
+		has_law_or_variant = law_type:law_oligarchy
+		ig:ig_landowners ?= { is_powerful = yes }
+	}
+}
+
+ywc_jhg_court_route_one_ready = {
+	AND = {
+		var:ywc_jhg_court_route = 1
+		ywc_jhg_court_bureaucracy_ready = yes
+		ywc_jhg_court_administration_staffed = yes
+		government_legitimacy >= 40
+	}
+}
+
+ywc_jhg_court_route_two_ready = {
+	AND = {
+		var:ywc_jhg_court_route = 2
+		ywc_jhg_court_property_rep = yes
+		government_legitimacy >= 30
+	}
+}
+
+ywc_jhg_court_route_three_ready = {
+	AND = {
+		var:ywc_jhg_court_route = 3
+		ig:ig_industrialists ?= { is_powerful = yes }
+		NOT = { in_default = yes }
+	}
+}
+
+ywc_jhg_court_route_execution_ready = {
+	OR = {
+		ywc_jhg_court_route_one_ready = yes
+		ywc_jhg_court_route_two_ready = yes
+		ywc_jhg_court_route_three_ready = yes
+	}
+}
+
+ywc_jhg_court_can_pay = {
+	ywc_jhg_finance_safe = yes
+	gold_reserves >= var:ywc_jhg_court_filing_fee
+}
+
+# --- v03_jhg_convoy_capacity ----------------------------------------------
+
+ywc_jhg_convoy_navy_ready = {
+	navy_size >= 5
+	OR = {
+		has_law_or_variant = law_type:law_merchant_navy
+		has_law_or_variant = law_type:law_jeune_ecole
+		has_law_or_variant = law_type:law_professional_navy
+	}
+}
+
+ywc_jhg_convoy_port_ready = {
+	any_scope_state = {
+		is_owned_by = ROOT
+		any_scope_building = {
+			is_building_type = building_port
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_jhg_convoy_partner_ready = {
+	any_country = {
+		has_diplomatic_pact = { who = ROOT type = alliance }
+		relations:root >= relations_threshold:cordial
+		army_size >= 5
+	}
+}
+
+ywc_jhg_convoy_route_one_ready = {
+	AND = {
+		var:ywc_jhg_convoy_route = 1
+		ywc_jhg_convoy_navy_ready = yes
+		ywc_jhg_convoy_port_ready = yes
+	}
+}
+
+ywc_jhg_convoy_route_two_ready = {
+	AND = {
+		var:ywc_jhg_convoy_route = 2
+		ywc_jhg_convoy_navy_ready = yes
+		ywc_jhg_convoy_partner_ready = yes
+	}
+}
+
+ywc_jhg_convoy_route_three_ready = {
+	AND = {
+		var:ywc_jhg_convoy_route = 3
+		bureaucracy >= 20
+		NOT = { in_default = yes }
+	}
+}
+
+ywc_jhg_convoy_route_execution_ready = {
+	OR = {
+		ywc_jhg_convoy_route_one_ready = yes
+		ywc_jhg_convoy_route_two_ready = yes
+		ywc_jhg_convoy_route_three_ready = yes
+	}
+}
+
+# Deliberately unreachable: full sea-lane cover needs a standing fleet fund that
+# this country never creates, so "escort every sea lane for free" cannot happen.
+ywc_jhg_convoy_full_sea_lane_covered = {
+	has_variable = ywc_jhg_convoy_full_fleet_fee
+	var:ywc_jhg_convoy_lane_coverage >= 7
+	gold_reserves >= var:ywc_jhg_convoy_full_fleet_fee
+}
+
+ywc_jhg_convoy_can_pay = {
+	ywc_jhg_finance_safe = yes
+	gold_reserves >= var:ywc_jhg_convoy_filing_fee
+}
+
+# --- v03_jhg_tribute_autonomy ---------------------------------------------
+
+ywc_jhg_tribute_relationship_open = {
+	OR = {
+		exists = overlord
+		is_subject = yes
+		any_country = {
+			has_diplomatic_pact = { who = ROOT type = alliance }
+			relations:root >= relations_threshold:cordial
+		}
+	}
+}
+
+ywc_jhg_tribute_partner_ready = {
+	any_country = {
+		has_diplomatic_pact = { who = ROOT type = alliance }
+		relations:root >= relations_threshold:cordial
+		gold_reserves >= 10000
+	}
+}
+
+ywc_jhg_tribute_route_one_ready = {
+	AND = {
+		var:ywc_jhg_tribute_route = 1
+		ywc_jhg_tribute_relationship_open = yes
+		bureaucracy >= 20
+	}
+}
+
+ywc_jhg_tribute_route_two_ready = {
+	AND = {
+		var:ywc_jhg_tribute_route = 2
+		ywc_jhg_tribute_relationship_open = yes
+		ywc_jhg_tribute_partner_ready = yes
+	}
+}
+
+ywc_jhg_tribute_route_three_ready = {
+	AND = {
+		var:ywc_jhg_tribute_route = 3
+		ywc_jhg_tribute_relationship_open = yes
+		government_legitimacy >= 30
+	}
+}
+
+ywc_jhg_tribute_route_execution_ready = {
+	OR = {
+		ywc_jhg_tribute_route_one_ready = yes
+		ywc_jhg_tribute_route_two_ready = yes
+		ywc_jhg_tribute_route_three_ready = yes
+	}
+}
+
+ywc_jhg_tribute_can_pay = {
+	ywc_jhg_finance_safe = yes
+	gold_reserves >= var:ywc_jhg_tribute_filing_fee
+}
