@@ -66,7 +66,21 @@ def catalog():
 class V03CatalogTests(unittest.TestCase):
     def test_load_catalogs_reads_only_manifest_entries(self):
         catalogs = load_catalogs(ROOT)
-        self.assertEqual(set(catalogs), {"country_shu", "country_dmg", "country_kor"})
+        self.assertEqual(
+            set(catalogs),
+            {
+                "country_shu",
+                "country_dmg",
+                "country_kor",
+                "country_jhg",
+                "country_lan",
+                "country_nmg",
+                "country_nqg",
+                "country_oir",
+                "country_mgl",
+                "country_tib",
+            },
+        )
 
     def test_rejects_duplicate_ids_across_catalogs(self):
         first = catalog()
