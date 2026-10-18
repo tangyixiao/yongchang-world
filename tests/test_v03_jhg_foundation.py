@@ -4,6 +4,7 @@ import json
 import re
 import unittest
 from pathlib import Path
+from tests.clausewitz_harness import PulseWorld, parse
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = ROOT / "data" / "content" / "v03" / "countries" / "jhg.json"
@@ -86,6 +87,27 @@ PREFIX = {COURT: "ywc_jhg_court", CONVOY: "ywc_jhg_convoy", TRIBUTE: "ywc_jhg_tr
 CLOSERS = {COURT: 1007, CONVOY: 1018, TRIBUTE: 1025}
 
 
+class JhgTerminalWorld(PulseWorld):
+    """Run real JHG closers while fixture-driving only engine readiness predicates."""
+    def condition(self, node, tag):
+        key, comparison, value = node
+        if key.endswith(("_route_execution_ready", "_full_ready", "_compromise_ready")) and value == "yes":
+            return True
+        if comparison == "?=":
+            actual = bool(self.countries[tag].get(key, False))
+            return actual == (value == "yes")
+        if key in ("ywc_jhg_court_route", "ywc_jhg_convoy_route", "ywc_jhg_tribute_route"):
+            return {"=": lambda a, b: a == b, ">": lambda a, b: a > b, "<": lambda a, b: a < b,
+                    ">=": lambda a, b: a >= b, "<=": lambda a, b: a <= b, "!=": lambda a, b: a != b}[comparison](self.countries[tag].get(key, 0), float(value))
+        if key == "ywc_jhg_convoy_full_sea_lane_covered":
+            return False
+        return super().condition(node, tag)
+
+
+def _script_condition(world, block, tag):
+    return world.conditions(parse("condition = " + block)[0][2], tag)
+
+
 def catalog():
     with CATALOG_PATH.open(encoding="utf-8") as handle:
         return json.load(handle)
@@ -125,6 +147,38 @@ def option_by_key(event, key):
 
 
 class JhgFoundationTest(unittest.TestCase):
+    def test_real_terminal_closers_make_journal_goal_and_exit_exclusive(self):
+        effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")
+        cases = [
+            (COURT, "court_assembly", "ywc_jhg_court_close_as_established", "established"),
+            (COURT, "court_assembly", "ywc_jhg_court_close_as_compromise", "compromise"),
+            (COURT, "court_assembly", "ywc_jhg_court_close_as_breach", "withdrawn"),
+            (CONVOY, "convoy_capacity", "ywc_jhg_convoy_close_as_established", "established"),
+            (CONVOY, "convoy_capacity", "ywc_jhg_convoy_close_as_compromise", "compromise"),
+            (CONVOY, "convoy_capacity", "ywc_jhg_convoy_close_as_breach", "withdrawn"),
+        ]
+        for slug, slot, closer, terminal in cases:
+            with self.subTest(slug=slug, terminal=terminal):
+                tag = "JHG"
+                prefix = "ywc_jhg_" + ("court" if slot == "court_assembly" else "convoy")
+                start_var = "ywc_jhg_v03_jhg_" + slot + "_started"
+                route = 2 if slot == "convoy_capacity" else 1
+                world = JhgTerminalWorld(effects, {tag: {
+                    start_var: 1, "ywc_v03_active_arc_count": 1,
+                    "ywc_v03_visible_task_count": 1, prefix + "_route": route,
+                    prefix + "_shared_fund": 1 if slot == "convoy_capacity" and route == 2 else 0,
+                }})
+                world.run(closer, tag)
+                item = arc(slug)
+                for journal in item["journals"]:
+                    complete = _script_condition(world, journal["goal"], tag)
+                    fail = _script_condition(world, journal["exit_conditions"], tag)
+                    self.assertFalse(complete and fail, journal["id"])
+                    if journal["id"].endswith("_settlement"):
+                        self.assertEqual((complete, fail), (terminal != "withdrawn", terminal == "withdrawn"))
+                    if journal["id"].endswith("_partner_watch"):
+                        self.assertEqual((complete, fail), (terminal != "withdrawn", terminal == "withdrawn"))
+
     def test_arcs_are_registered_with_their_reserved_event_ranges(self):
         registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8-sig"))
         ranges = [r for r in registry["arc_ranges"] if r["catalog_key"] == "country_jhg"]

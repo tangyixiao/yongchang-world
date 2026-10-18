@@ -5,6 +5,7 @@ import json
 import re
 import unittest
 from pathlib import Path
+from tests.clausewitz_harness import PulseWorld, parse
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data" / "content" / "v03" / "countries" / "nqg.json"
@@ -17,6 +18,19 @@ ARCS = {
     "v03_nqg_hunting_rights": (1010, 1015, 6, 1, "hunting"),
     "v03_nqg_northern_port": (1020, 1027, 8, 2, "port"),
 }
+
+
+class NqgTerminalWorld(PulseWorld):
+    """Run real NQG route closers with readiness triggers fixture-driven."""
+    def condition(self, node, tag):
+        key, comparison, value = node
+        if key.endswith(("_full_ready", "_compromise_ready")) and value == "yes":
+            return True
+        return super().condition(node, tag)
+
+
+def _script_condition(world, block, tag):
+    return world.conditions(parse("condition = " + block)[0][2], tag)
 
 
 def _catalog():
@@ -300,6 +314,40 @@ class NqgObservationTest(unittest.TestCase):
             self.assertIn(f"ywc_nqg_{short}_compromise_ready = yes", compromise)
             self.assertNotIn("_full_ready", compromise)
             self.assertIn(f"ywc_v03_nqg_v03_nqg_{slot}_outcome value = 2", compromise)
+
+    def test_actual_route_closers_classify_settlement_and_withdrawal_exclusively(self):
+        effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")
+        for slug, (_, _, _, _, short) in ARCS.items():
+            if short not in ("winter", "port"):
+                continue
+            item = _arc(_catalog(), slug)
+            slot_name = "winter_court" if short == "winter" else "northern_port"
+            slot = f"ywc_v03_nqg_v03_nqg_{slot_name}_outcome"
+            start_var = f"ywc_v03_nqg_v03_nqg_{slot_name}_started"
+            settlement = item["journals"][-1]
+            first = item["journals"][0]
+            for terminal, helper, expected in (("established", "established", 3), ("compromise", "compromise", 2), ("withdrawn", "breach", 1)):
+                with self.subTest(arc=short, terminal=terminal):
+                    tag = "NQG"
+                    prefix = f"ywc_nqg_{short}"
+                    vars = {start_var: 1, "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1,
+                            f"{prefix}_route": 2, f"{prefix}_six_months_complete": 1}
+                    world = NqgTerminalWorld(effects, {tag: vars})
+                    world.run(f"{prefix}_close_as_{helper}", tag)
+                    country = world.countries[tag]
+                    self.assertEqual(country[slot], expected)
+                    complete = _script_condition(world, settlement["goal"], tag)
+                    fail = _script_condition(world, settlement["exit_conditions"], tag)
+                    self.assertEqual((complete, fail), (terminal != "withdrawn", terminal == "withdrawn"))
+                    self.assertFalse(complete and fail)
+                    self.assertEqual((_script_condition(world, first["goal"], tag), _script_condition(world, first["exit_conditions"], tag)), (terminal != "withdrawn", terminal == "withdrawn"))
+                    if short == "winter":
+                        review = item["journals"][1]
+                        self.assertEqual((_script_condition(world, review["goal"], tag), _script_condition(world, review["exit_conditions"], tag)), (terminal != "withdrawn", terminal == "withdrawn"))
+                    self.assertEqual((country["ywc_v03_active_arc_count"], country["ywc_v03_visible_task_count"]), (0, 0))
+                    world.run(f"{prefix}_close_as_breach", tag)
+                    self.assertEqual(country[slot], expected)
+                    self.assertEqual((country["ywc_v03_active_arc_count"], country["ywc_v03_visible_task_count"]), (0, 0))
 
 
 class NqgLegacyTest(unittest.TestCase):

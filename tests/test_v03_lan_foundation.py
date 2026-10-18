@@ -5,6 +5,7 @@ import json
 import re
 import unittest
 from pathlib import Path
+from tests.clausewitz_harness import PulseWorld, parse
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data" / "content" / "v03" / "countries" / "lan.json"
@@ -22,6 +23,24 @@ SLOTS = {
     "v03_lan_river_compacts": "river_compacts",
     "v03_lan_work_accident_fund": "work_accident_fund",
 }
+
+
+class LanTerminalWorld(PulseWorld):
+    """Run real LAN closers; engine readiness and legacy outcome effects are explicit fixtures."""
+    def condition(self, node, tag):
+        key, comparison, value = node
+        if key.endswith(("_full_ready", "_compromise_ready")) and value == "yes":
+            return True
+        return super().condition(node, tag)
+
+    def execute(self, nodes, tag):
+        # These are external legacy outcome effects beyond PulseWorld's supported subset.
+        self.legacy_outcomes = getattr(self, "legacy_outcomes", []) + [n[0] for n in nodes if n[0] in {"established_outcome", "compromise_outcome", "breach_outcome"}]
+        return super().execute([n for n in nodes if n[0] not in {"established_outcome", "compromise_outcome", "breach_outcome"}], tag)
+
+
+def _script_condition(world, block, tag):
+    return world.conditions(parse("condition = " + block)[0][2], tag)
 
 
 def _catalog():
@@ -258,8 +277,42 @@ class LanHonestyTest(unittest.TestCase):
         effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")
         self.assertIn("ywc_lan_guard_backlash",
                       _helper_body(effects, "ywc_lan_river_hire_guards"))
-        self.assertIn("ywc_lan_relief_gap",
-                      _helper_body(effects, "ywc_lan_choose_fund_private"))
+
+    def test_real_closers_keep_breach_distinct_and_journal_exit_exclusive(self):
+        effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")
+        short_for = {"mine_accounts": "mine", "river_compacts": "river", "work_accident_fund": "fund"}
+        for slug, short in SLOTS.items():
+            item = _arc(_catalog(), slug)
+            state_slot = "ywc_v03_lan_v03_lan_" + short + "_started"
+            outcome = "ywc_v03_lan_v03_lan_" + short + "_outcome"
+            for terminal, closer, expected in (
+                ("established", f"ywc_lan_close_{short_for[short]}_as_established", 2),
+                ("compromise", f"ywc_lan_close_{short_for[short]}_as_compromise", 2),
+                ("breach", f"ywc_lan_close_{short_for[short]}_as_breach", 0),
+            ):
+                with self.subTest(arc=short, terminal=terminal):
+                    tag = "LAN"
+                    world = LanTerminalWorld(effects, {tag: {
+                        state_slot: 1, "ywc_v03_active_arc_count": 1,
+                        "ywc_v03_visible_task_count": 1, f"ywc_lan_{short_for[short]}_route": 2,
+                    }})
+                    world.run(closer, tag)
+                    country = world.countries[tag]
+                    self.assertEqual(country[outcome], expected)
+                    self.assertTrue(country[f"ywc_lan_{short_for[short]}_settled"])
+                    if terminal == "breach":
+                        self.assertTrue(country[f"ywc_lan_{short_for[short]}_breach"])
+                    else:
+                        self.assertFalse(country.get(f"ywc_lan_{short_for[short]}_breach", False))
+                    self.assertEqual((country["ywc_v03_active_arc_count"], country["ywc_v03_visible_task_count"]), (0, 0))
+                    first, settlement = item["journals"]
+                    self.assertEqual((_script_condition(world, first["goal"], tag), _script_condition(world, first["exit_conditions"], tag)), (terminal != "breach", terminal == "breach"))
+                    self.assertEqual((_script_condition(world, settlement["goal"], tag), _script_condition(world, settlement["exit_conditions"], tag)), (terminal != "breach", terminal == "breach"))
+                    # Replaying an actual breach closer cannot write a new result or release twice.
+                    world.run(closer, tag)
+                    self.assertEqual(country[outcome], expected)
+                    self.assertEqual((country["ywc_v03_active_arc_count"], country["ywc_v03_visible_task_count"]), (0, 0))
+        self.assertIn("ywc_lan_relief_gap", _helper_body(effects, "ywc_lan_choose_fund_private"))
         modifiers = MODIFIERS_PATH.read_text(encoding="utf-8-sig")
         self.assertIn("country_legitimacy_base_add = -10", modifiers)
         self.assertIn("state_lower_strata_expected_sol_add = 1", modifiers)
