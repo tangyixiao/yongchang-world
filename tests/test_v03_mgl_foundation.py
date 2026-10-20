@@ -43,6 +43,12 @@ def _helper_body(text,name):
 class MglPulseWorld(PulseWorld):
  def condition(self,node,tag):
   key,comparison,value=node
+  if key=='ywc_v03_can_deliver_major': return True
+  if key.startswith('ywc_mgl_') and key.endswith('_execution_ready'):
+   pre=key.removeprefix('ywc_mgl_').removesuffix('_execution_ready')
+   route=int(self.countries[tag].get(f'ywc_mgl_{pre}_route',0))
+   suffix={1:'full',2:'one',3:'local'}.get(route)
+   return bool(suffix and self.condition((f'ywc_mgl_{pre}_{suffix}_ready','=','yes'),tag))
   if key.startswith('ywc_mgl_') and key.endswith(('_full_ready','_one_ready','_local_ready','_entry_1_ready','_entry_2_ready','_entry_3_ready')):
    return bool(self.countries[tag].get('test_'+key,False))
   return super().condition(node,tag)
@@ -293,7 +299,7 @@ class MglFoundationContractTest(unittest.TestCase):
   world.advance_months(13)
   for pre,notice in (('roads',1006),('debt',1016)):
    world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
-   self.assertEqual(world.countries['MGL'][f'ywc_mgl_{pre}_blocked_notice_event'],notice)
+   self.assertEqual(world.countries['MGL'][f'ywc_mgl_{pre}_blocked_12_notice_event'],notice)
    self.assertIn(f'ywc_mgl_{pre}_blocked_12_sent',world.countries['MGL'])
 
  def _execute_option(self,world,arc,event_index,key):
@@ -411,7 +417,7 @@ class MglFoundationContractTest(unittest.TestCase):
           f'ywc_v03_mgl_{arc["slug"]}_started':1,f'ywc_mgl_{pre}_fee':100,
           f'ywc_mgl_{pre}_double_fee':200,f'ywc_mgl_{pre}_half_fee':50,
           f'test_ywc_mgl_{pre}_entry_1_ready':True,
-          f'test_ywc_mgl_{pre}_full_ready':True,
+          f'test_ywc_mgl_{pre}_full_ready':False,
           f'test_ywc_mgl_{pre}_local_ready':True}
    world=MglPulseWorld(EFFECTS_PATH.read_text(encoding='utf-8-sig'),{'MGL':state})
    self._execute_option(world,arc,0,'dual')
@@ -419,7 +425,7 @@ class MglFoundationContractTest(unittest.TestCase):
    world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
    world.advance_months(13)
    world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
-   self.assertEqual(state[f'ywc_mgl_{pre}_blocked_notice_event'],start+6,arc['slug'])
+   self.assertEqual(state[f'ywc_mgl_{pre}_blocked_12_notice_event'],start+6,arc['slug'])
 
    # Complete the paid route-1 terms through actual event options while its
    # separately queued 12-month notice remains pending.
@@ -432,8 +438,8 @@ class MglFoundationContractTest(unittest.TestCase):
    self._execute_option(world,arc,5,'review')
    world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
    self.assertIn(f'ywc_mgl_{pre}_observation_open',state,arc['slug'])
-   self.assertIn(f'ywc_mgl_{pre}_full_watch',state,arc['slug'])
-   self.assertIn(f'ywc_mgl_{pre}_full_timer',state,arc['slug'])
+   self.assertNotIn(f'ywc_mgl_{pre}_full_watch',state,arc['slug'])
+   self.assertNotIn(f'ywc_mgl_{pre}_full_timer',state,arc['slug'])
    # A stale maturity marker is included to prove narrowing clears every watch.
    state[f'ywc_mgl_{pre}_full_mature']=1
    doc_flag=f'ywc_mgl_{pre}_documents_clarified'
@@ -445,7 +451,7 @@ class MglFoundationContractTest(unittest.TestCase):
    self.assertEqual(state[f'ywc_mgl_{pre}_route'],3,arc['slug'])
    self.assertEqual(state[f'ywc_mgl_{pre}_route_paid'],1,arc['slug'])
    self.assertEqual(state[f'ywc_mgl_{pre}_pending_event'],start+1,arc['slug'])
-   self.assertNotIn(f'ywc_mgl_{pre}_blocked_notice_event',state,arc['slug'])
+   self.assertNotIn(f'ywc_mgl_{pre}_blocked_12_notice_event',state,arc['slug'])
    for suffix in ('terms_committed','observation_open','documents_clarified','documents_refused','documents_resolved',
                   'papers_clarified','node_2_route_read','node_4_route_read',
                   'full_timer','full_watch','full_mature','limited_timer','limited_watch','limited_mature',
@@ -471,6 +477,124 @@ class MglFoundationContractTest(unittest.TestCase):
    world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
    self.assertEqual(state[f'ywc_v03_mgl_{arc["slug"]}_outcome'],3,arc['slug'])
    self.assertEqual(world.treasury['MGL'],-200,arc['slug'])
+
+ def test_final_observation_loss_keeps_live_je_and_dispatches_both_notices(self):
+  from clausewitz_harness import parse
+  for arc,pre,start in zip(self.arcs,('roads','debt','grain'),(1000,1010,1020)):
+   for notice_index in (6,7):
+    notice_id=f'ywc_mng.{start+notice_index}'
+    for action in ('narrow','withdraw'):
+     state={'gold_reserves':1000,'yearly_gross_income':5200,'in_default':False,
+      'ywc_v03_active_arc_count':0,'ywc_v03_visible_task_count':0,
+      'ywc_v03_mgl_'+arc['slug']+'_started':1,
+      f'ywc_mgl_{pre}_fee':100,f'ywc_mgl_{pre}_double_fee':200,f'ywc_mgl_{pre}_half_fee':50,
+      f'test_ywc_mgl_{pre}_entry_1_ready':True,
+      f'test_ywc_mgl_{pre}_full_ready':True,f'test_ywc_mgl_{pre}_one_ready':True,
+      f'test_ywc_mgl_{pre}_local_ready':True}
+     world=MglPulseWorld(self.effects,{'MGL':state})
+     # Enter from the country journal's real immediate setup, then take the shipped paid route.
+     entry=arc['journals'][0]['script'];nodes=parse(entry.strip()[1:-1])
+     immediate=next(v for k,_,v in nodes if k=='immediate')
+     world.execute(immediate,'MGL')
+     self.assertEqual(state[f'ywc_v03_mgl_{arc["slug"]}_started'],1)
+     self._execute_option(world,arc,0,'dual')
+     world.run(f'ywc_mgl_{pre}_pay_route_1','MGL')
+     self.assertEqual(world.treasury['MGL'],-200)
+     self._execute_option(world,arc,1,'review')
+     route1_terms=next(o for o in arc['events'][2]['options'] if f'name = ywc_mgl_{pre}_node_2_route_read value = 1' in o['effect'])
+     world.execute(parse('probe = '+route1_terms['effect'])[0][2],'MGL')
+     self._execute_option(world,arc,3,'clarify')
+     final_terms=next(o for o in arc['events'][4]['options'] if f'name = ywc_mgl_{pre}_terms_committed value = 1' in o['effect'])
+     world.execute(parse('probe = '+final_terms['effect'])[0][2],'MGL')
+     self._execute_option(world,arc,5,'review')
+     world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
+     self.assertEqual(state[f'ywc_mgl_{pre}_observation_open'],1,(arc['slug'],notice_index,action))
+     pulse=next(v for k,_,v in nodes if k=='on_monthly_pulse')
+     pulse_effect=next(v for k,_,v in pulse if k=='effect')
+     # The final ordinary event was already consumed; the primary JE remains active.
+     state.pop(f'ywc_mgl_{pre}_pending_event',None)
+     world.events.clear()
+     state[f'test_ywc_mgl_{pre}_full_ready']=False
+     state[f'test_ywc_mgl_{pre}_one_ready']=False
+     state[f'test_ywc_mgl_{pre}_local_ready']=False
+     journal=arc['journals'][0]
+     goal=parse(journal['goal'].strip()[1:-1]);exit_=parse(journal['exit_conditions'].strip()[1:-1])
+     delivered=False
+     for _month in range(38):
+      world.advance_months(1)
+      self.assertTrue(world.conditions(goal,'MGL'),(arc['slug'],'JE inactive before notice',notice_index,action))
+      self.assertFalse(world.conditions(exit_,'MGL'),(arc['slug'],'JE failed before notice',notice_index,action))
+      before=len(world.events);world.execute(pulse_effect,'MGL')
+      new_events=[event for _,event in world.events[before:]]
+      if notice_id in new_events:
+       delivered=True;break
+      if notice_index==7:
+       deferred=f'ywc_mng.{start+6}'
+       if deferred in new_events:
+        self._execute_option(world,arc,6,'defer')
+      world.events.clear()
+     self.assertTrue(delivered,(arc['slug'],notice_index,action,'notice not dispatched'))
+     self.assertIn(f'ywc_mgl_{pre}_observation_open',state,(arc['slug'],'observation lost before notice'))
+     self.assertTrue(world.conditions(goal,'MGL'))
+     notice=arc['events'][notice_index]
+     option=next(o for o in notice['options'] if o['key']==action)
+     world.execute(parse('probe = '+option['effect'])[0][2],'MGL')
+     if action=='narrow':
+      self.assertEqual(state[f'ywc_mgl_{pre}_route'],3)
+      self.assertEqual(state[f'ywc_mgl_{pre}_route_paid'],1)
+      self.assertNotIn(f'ywc_v03_mgl_{arc["slug"]}_settled',state)
+      self.assertEqual(world.treasury['MGL'],-200)
+     else:
+      self.assertEqual(state[f'ywc_v03_mgl_{arc["slug"]}_outcome'],4)
+      self.assertFalse(world.conditions(goal,'MGL'))
+      self.assertTrue(world.conditions(exit_,'MGL'))
+
+ def test_restored_final_qualification_clears_due_and_both_waiting_notice_queues(self):
+  for arc,pre,start in zip(self.arcs,('roads','debt','grain'),(1000,1010,1020)):
+   state={'ywc_v03_active_arc_count':1,'ywc_v03_visible_task_count':1,
+    f'ywc_v03_mgl_{arc["slug"]}_started':1,f'ywc_mgl_{pre}_route':1,
+    f'ywc_mgl_{pre}_route_paid':1,f'ywc_mgl_{pre}_terms_committed':1,
+    f'ywc_mgl_{pre}_observation_open':1,
+    f'test_ywc_mgl_{pre}_full_ready':False,f'test_ywc_mgl_{pre}_one_ready':False,
+    f'test_ywc_mgl_{pre}_local_ready':False}
+   world=MglPulseWorld(self.effects,{'MGL':state})
+   world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
+   world.advance_months(38);world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
+   self.assertEqual(state[f'ywc_mgl_{pre}_blocked_12_notice_event'],start+6,arc['slug'])
+   self.assertEqual(state[f'ywc_mgl_{pre}_blocked_36_notice_event'],start+7,arc['slug'])
+   state[f'test_ywc_mgl_{pre}_full_ready']=True
+   world.run(f'ywc_mgl_{pre}_monthly_review','MGL')
+   for suffix in ('blocked_12_due','blocked_36_due','blocked_12_started','blocked_36_started',
+                  'blocked_12_sent','blocked_36_sent','blocked_12_notice_event','blocked_36_notice_event'):
+    self.assertNotIn(f'ywc_mgl_{pre}_{suffix}',state,(arc['slug'],suffix))
+   self.assertIn(f'ywc_mgl_{pre}_observation_open',state,arc['slug'])
+   self.assertNotIn(f'ywc_v03_mgl_{arc["slug"]}_settled',state,arc['slug'])
+
+ def test_closer_legacy_bridge_preserves_all_existing_results_and_is_idempotent(self):
+  for arc,pre in zip(self.arcs,('roads','debt','grain')):
+   slug=arc['slug']
+   for prior in (1,2,3,4):
+    state={'ywc_v03_active_arc_count':1,'ywc_v03_visible_task_count':1,
+     f'ywc_v03_mgl_{slug}_started':1,'ywc_campaign_mng_c1_outcome':prior}
+    world=MglPulseWorld(self.effects,{'MGL':state})
+    world.run(f'ywc_mgl_{pre}_withdraw','MGL')
+    self.assertEqual(state['ywc_campaign_mng_c1_outcome'],prior,(slug,prior))
+    self.assertEqual(state[f'ywc_v03_mgl_{slug}_outcome'],4,(slug,prior))
+    self.assertEqual((state['ywc_v03_active_arc_count'],state['ywc_v03_visible_task_count']),(0,0))
+    after=dict(state);world.run(f'ywc_mgl_{pre}_withdraw','MGL')
+    self.assertEqual(state,after,(slug,prior,'withdraw replay'))
+  state={'ywc_v03_active_arc_count':3,'ywc_v03_visible_task_count':3}
+  world=MglPulseWorld(self.effects,{'MGL':state})
+  for (pre,arc),value in zip(zip(('roads','debt','grain'),self.arcs),(1,2,3)):
+   state[f'ywc_v03_mgl_{arc["slug"]}_started']=1
+   state[f'ywc_mgl_{pre}_close_value']=value
+   world.run(f'ywc_mgl_{pre}_close','MGL')
+   self.assertEqual(state[f'ywc_v03_mgl_{arc["slug"]}_outcome'],value)
+  self.assertEqual(state['ywc_campaign_mng_c1_outcome'],1)
+  self.assertEqual((state['ywc_v03_active_arc_count'],state['ywc_v03_visible_task_count']),(0,0))
+  after=dict(state)
+  for pre in ('roads','debt','grain'): world.run(f'ywc_mgl_{pre}_close','MGL')
+  self.assertEqual(state,after)
 
  def test_revised_route_labels_and_notice_cost_notes_are_specific(self):
   for arc in self.arcs:
