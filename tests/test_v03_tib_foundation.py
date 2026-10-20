@@ -51,6 +51,7 @@ class TibPulseWorld(PulseWorld):
     self.trigger_defs={key:body for key,_,body in parse(triggers)}
  def condition(self,node,tag):
     key,op,value=node; state=self.countries[tag]
+    if key=='c:TIB': return tag=='TIB'
     if key=='ywc_v03_can_deliver_major': return bool(state.get('test_deliver',True))
     if key in self.trigger_defs: return self.conditions(self.trigger_defs[key],tag)
     if key in ('market_capital.market','mg:grain','workplace ?'):
@@ -74,6 +75,55 @@ class TibFoundationTest(unittest.TestCase):
  def setUpClass(cls):
     cls.cat=json.loads(CAT.read_text(encoding='utf-8')); cls.reg=json.loads(REG.read_text(encoding='utf-8'))
     cls.effects=EFFECT.read_text(encoding='utf-8-sig'); cls.triggers=TRIGGER.read_text(encoding='utf-8-sig')
+
+ def _reach_final_observation(self, pre):
+    from clausewitz_harness import parse
+    paths={'register':([1000,1001,1002,1003,1004,1007,1008,1009],['route_1','review_next','review_next','review_next','review_next','review_next','review_next','review_next']),
+           'grain':([1010,1011,1012,1013,1016,1017],['route_1','review_next','review_next','review_next','review_next','review_next']),
+           'schools':([1020,1021,1022,1025],['route_1','review_next','review_next','review_next'])}
+    nodes,choices=paths[pre]; arc=self.cat['arcs'][PREFIX.index(pre)]
+    world=TibPulseWorld(self.effects,{'TIB':{'gold_reserves':1000,'net_fixed_income':10,'in_default':False,'test_ready':True,
+     'yearly_gross_income':5200,'ywc_v03_initialized':1,'ywc_campaign_tib_c1_outcome':0,
+     'ywc_v03_active_arc_count':0,'ywc_v03_visible_task_count':0}})
+    entry=arc['journals'][0]['script']; entry_immediate=parse('test_action = '+catalog_block(entry,'immediate'))[0][2]
+    world.execute(entry_immediate,'TIB')
+    def pulse_active_journal():
+     stage=world.countries['TIB'].get(f'ywc_tib_{pre}_stage',0)
+     index=(2 if pre=='register' and stage>1 else 1 if pre in ('register','grain') and stage>0 else 0)
+     active=arc['journals'][index]
+     if self._journal_status(world,active)!=(False,False): raise AssertionError(f'{active["id"]} is not live by its goal/exit predicates')
+     pulse=parse('test_action = '+catalog_block(active['script'],'on_monthly_pulse'))[0][2]
+     effect=next(v for k,_,v in pulse if k=='effect')
+     world.execute(effect,'TIB')
+    pulse_active_journal(); world.events.clear()
+    for idx,(node,key) in enumerate(zip(nodes,choices)):
+     event=next(e for e in arc['events'] if e['id']==f'ywc_tib.{node}')
+     option=next(o for o in event['options'] if o['key']==key)
+     world.execute(parse('test_action = '+option['effect'])[0][2],'TIB')
+     if node in (1003,1013):
+      immediate=parse('test_action = '+catalog_block(arc['journals'][1]['script'],'immediate'))[0][2]
+      world.execute(immediate,'TIB')
+     if node==1004:
+      immediate=parse('test_action = '+catalog_block(arc['journals'][2]['script'],'immediate'))[0][2]
+      world.execute(immediate,'TIB')
+     pulse_active_journal()
+     world.events.clear()
+    final_je=arc['journals'][-1]
+    final_pulse=parse('test_action = '+catalog_block(final_je['script'],'on_monthly_pulse'))[0][2]
+    final_effect=next(v for k,_,v in final_pulse if k=='effect')
+    return world,arc,final_je,final_effect
+
+ def _journal_status(self, world, journal):
+    from clausewitz_harness import parse
+    goal=parse('probe = '+journal['goal'])[0][2]
+    exit_condition=parse('probe = '+journal['exit_conditions'])[0][2]
+    return world.conditions(goal,'TIB'),world.conditions(exit_condition,'TIB')
+
+ def _journal_active(self, world, journal):
+    goal,exit_condition=self._journal_status(world,journal)
+    return bool(world.countries['TIB'].get('ywc_v03_tib_v03_tib_service_register_started',0)
+      or world.countries['TIB'].get('ywc_v03_tib_v03_tib_grain_credit_started',0)
+      or world.countries['TIB'].get('ywc_v03_tib_v03_tib_shared_schools_started',0)) and not goal and not exit_condition
  def test_arcs_are_registered_with_reserved_ranges_and_counts(self):
     rows={(x['catalog_key'],x['slug']):x for x in self.reg['arc_ranges']}
     for i,(slug,(lo,hi,n,j)) in enumerate(zip(SLUGS,RANGES)):
@@ -182,6 +232,73 @@ class TibFoundationTest(unittest.TestCase):
      self.assertEqual(state['ywc_tib_'+pre+'_route'],1,pre)
      self.assertEqual(state['ywc_tib_'+pre+'_paid'],1,pre)
      self.assertEqual(world.treasury['TIB'],-200,pre)
+
+ def test_final_observation_loss_keeps_live_je_and_unblocks_12_36_month_exits(self):
+    from clausewitz_harness import parse
+    for pre in PREFIX:
+     world,arc,final_je,pulse_effect=self._reach_final_observation(pre)
+     state=world.countries['TIB']
+     self.assertEqual(state[f'ywc_tib_{pre}_implementation_complete'],1,pre)
+     self.assertEqual(self._journal_status(world,final_je),(False,False),pre)
+     self.assertTrue(self._journal_active(world,final_je),pre)
+     state['test_ready']=False
+     state.pop('grain_price_gap',None)
+     world.execute(pulse_effect,'TIB')
+     self.assertNotIn(f'ywc_tib_{pre}_timer',state,pre)
+     self.assertNotIn(f'ywc_tib_{pre}_six_months_complete',state,pre)
+     self.assertIn(f'ywc_tib_{pre}_blocked_started',state,pre)
+     self.assertEqual(self._journal_status(world,final_je),(False,False),pre)
+     self.assertTrue(self._journal_active(world,final_je),pre)
+     world.advance_days(365)
+     self.assertEqual(self._journal_status(world,final_je),(False,False),pre)
+     self.assertTrue(self._journal_active(world,final_je),pre)
+     world.execute(pulse_effect,'TIB')
+     notice12={'register':1005,'grain':1014,'schools':1023}[pre]
+     self.assertIn(('TIB',f'ywc_tib.{notice12}'),world.events,pre)
+     world.events.clear()
+     event12=next(e for e in arc['events'] if e['id']==f'ywc_tib.{notice12}')
+     defer=next(o for o in event12['options'] if o['key']=='defer')
+     world.execute(parse('test_action = '+defer['effect'])[0][2],'TIB')
+     self.assertEqual(self._journal_status(world,final_je),(False,False),pre)
+     self.assertTrue(self._journal_active(world,final_je),pre)
+     world.advance_days(730)
+     self.assertEqual(self._journal_status(world,final_je),(False,False),pre)
+     world.execute(pulse_effect,'TIB')
+     notice36={'register':1006,'grain':1015,'schools':1024}[pre]
+     self.assertIn(('TIB',f'ywc_tib.{notice36}'),world.events,pre)
+     self.assertEqual(state[f'ywc_tib_{pre}_notice_last_delivered'],2,pre)
+     world.events.clear()
+     event36=next(e for e in arc['events'] if e['id']==f'ywc_tib.{notice36}')
+     withdraw=next(o for o in event36['options'] if o['key']=='withdraw')
+     world.execute(parse('test_action = '+withdraw['effect'])[0][2],'TIB')
+     self.assertEqual(self._journal_status(world,final_je),(False,True),pre)
+     self.assertFalse(self._journal_active(world,final_je),pre)
+     self.assertEqual(state['ywc_v03_active_arc_count'],0,pre)
+
+ def test_final_observation_narrow_and_restoration_keep_paid_arc_live(self):
+    from clausewitz_harness import parse
+    for pre in PREFIX:
+     world,arc,final_je,pulse_effect=self._reach_final_observation(pre)
+     state=world.countries['TIB']; baseline=world.treasury['TIB']
+     state['test_ready']=False; state.pop('grain_price_gap',None)
+     world.execute(pulse_effect,'TIB'); world.advance_days(365); world.execute(pulse_effect,'TIB')
+     notice12={'register':1005,'grain':1014,'schools':1023}[pre]
+     self.assertIn(('TIB',f'ywc_tib.{notice12}'),world.events,pre)
+     world.events.clear()
+     event12=next(e for e in arc['events'] if e['id']==f'ywc_tib.{notice12}')
+     narrow=next(o for o in event12['options'] if o['key']=='narrow_scope')
+     world.execute(parse('test_action = '+narrow['effect'])[0][2],'TIB')
+     self.assertEqual(state[f'ywc_tib_{pre}_paid'],1,pre)
+     self.assertEqual(state[f'ywc_tib_{pre}_route'],1,pre)
+     self.assertEqual(world.treasury['TIB'],baseline,pre)
+     self.assertNotIn(f'ywc_tib_{pre}_implementation_complete',state,pre)
+     self.assertEqual(self._journal_status(world,final_je),(False,False),pre)
+     self.assertTrue(self._journal_active(world,final_je),pre)
+     state['test_ready']=True
+     world.execute(pulse_effect,'TIB')
+     for suffix in ('blocked_started','blocked_12_due','blocked_36_due','notice_12_event','notice_36_event','notice_12_sent','notice_36_sent'):
+      self.assertNotIn(f'ywc_tib_{pre}_{suffix}',state,(pre,suffix))
+     self.assertFalse(any(event[1]==f'ywc_tib.{notice12}' for event in world.events),pre)
  def test_notice_dispatch_preserves_normal_queues_at_full_capacity(self):
     from clausewitz_harness import parse
     arc=self.cat['arcs'][0];j=arc['journals'][1]['script']
@@ -348,5 +465,49 @@ class TibFoundationTest(unittest.TestCase):
     self.assertEqual(state['ywc_v03_tib_v03_tib_grain_credit_outcome'],3)
     self.assertNotEqual(state['ywc_v03_tib_v03_tib_grain_credit_outcome'],1)
     self.assertEqual(state['ywc_v03_active_arc_count'],0)
+
+ def test_legacy_campaign_result_is_preserved_by_every_tib_closer(self):
+    for pre,slug in zip(PREFIX,SLUGS):
+     expected={'withdraw':4,'setback':4,'success':3}
+     for close_kind,outcome in expected.items():
+      for previous in (1,2,3,4):
+       state={'ywc_campaign_tib_c1_outcome':previous,'ywc_v03_active_arc_count':1,'ywc_v03_visible_task_count':1,
+        f'ywc_v03_tib_{slug}_started':1,'test_ready':True,'net_fixed_income':10,
+        f'ywc_tib_{pre}_route':3,f'ywc_tib_{pre}_paid':1,f'ywc_tib_{pre}_implementation_complete':1,
+        f'ywc_tib_{pre}_six_months_complete':1}
+       world=TibPulseWorld(self.effects,{'TIB':state})
+       if close_kind=='withdraw': world.run(f'ywc_tib_{pre}_withdraw','TIB')
+       elif close_kind=='setback': world.run(f'ywc_tib_{pre}_settle_setback','TIB')
+       else: world.run(f'ywc_tib_{pre}_monthly_review','TIB')
+       self.assertEqual(state['ywc_campaign_tib_c1_outcome'],previous,(pre,close_kind,previous))
+       self.assertEqual(state[f'ywc_v03_tib_{slug}_outcome'],outcome,(pre,close_kind,previous))
+       self.assertEqual(state['ywc_v03_active_arc_count'],0,(pre,close_kind,previous))
+       if close_kind=='withdraw': world.run(f'ywc_tib_{pre}_withdraw','TIB')
+       elif close_kind=='setback': world.run(f'ywc_tib_{pre}_settle_setback','TIB')
+       else: world.run(f'ywc_tib_{pre}_monthly_review','TIB')
+       self.assertEqual(state['ywc_campaign_tib_c1_outcome'],previous,(pre,close_kind,'replay'))
+       self.assertEqual(state['ywc_v03_active_arc_count'],0,(pre,close_kind,'replay'))
+
+ def test_missing_legacy_result_bridges_once_and_new_arcs_stay_independent(self):
+    expected={'withdraw':4,'setback':4,'success':3}
+    for i,(pre,slug) in enumerate(zip(PREFIX,SLUGS)):
+     for close_kind,outcome in expected.items():
+      state={'ywc_v03_active_arc_count':1,'ywc_v03_visible_task_count':1,
+       f'ywc_v03_tib_{slug}_started':1,'test_ready':True,'net_fixed_income':10,
+       f'ywc_tib_{pre}_route':3,f'ywc_tib_{pre}_paid':1,f'ywc_tib_{pre}_implementation_complete':1,
+       f'ywc_tib_{pre}_six_months_complete':1}
+      world=TibPulseWorld(self.effects,{'TIB':state})
+      close=(lambda:world.run(f'ywc_tib_{pre}_withdraw','TIB')) if close_kind=='withdraw' else (lambda:world.run(f'ywc_tib_{pre}_settle_setback','TIB')) if close_kind=='setback' else (lambda:world.run(f'ywc_tib_{pre}_monthly_review','TIB'))
+      close()
+      self.assertEqual(state['ywc_campaign_tib_c1_outcome'],outcome,(pre,close_kind))
+      self.assertEqual(state[f'ywc_v03_tib_{slug}_outcome'],outcome,(pre,close_kind))
+      close()
+      self.assertEqual(state['ywc_campaign_tib_c1_outcome'],outcome,(pre,close_kind,'idempotent'))
+      other=(i+1)%len(PREFIX); other_pre=PREFIX[other]; other_slug=SLUGS[other]
+      state['ywc_v03_active_arc_count']=1;state['ywc_v03_visible_task_count']=1
+      state[f'ywc_v03_tib_{other_slug}_started']=1
+      world.run(f'ywc_tib_{other_pre}_withdraw','TIB')
+      self.assertEqual(state['ywc_campaign_tib_c1_outcome'],outcome,(pre,close_kind,'cross_arc'))
+      self.assertEqual(state[f'ywc_v03_tib_{other_slug}_outcome'],4,(pre,other_pre))
 
 if __name__=='__main__': unittest.main()
