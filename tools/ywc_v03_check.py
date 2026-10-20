@@ -28,6 +28,7 @@ OWNER_QUOTAS = {
     "regional": (6, 2),
     "theme": (8, 1),
 }
+CANONICAL_COUNTRY_ERAS = ("foundation", "middle", "late")
 
 
 def check_complete_quotas(catalogs: dict[str, dict]) -> list[str]:
@@ -63,8 +64,15 @@ def check_complete_quotas(catalogs: dict[str, dict]) -> list[str]:
             if layer == "country" and sum(country_eras[owner].values()) < 9:
                 errors.append(f"country owner {owner} arc quota: {sum(country_eras[owner].values())}/9")
     for owner, eras in country_eras.items():
-        if len(eras) < 3 or any(count < 3 for count in eras.values()):
-            errors.append(f"country owner {owner} must cover three eras with three arcs each")
+        unrecognized = sorted(set(eras) - set(CANONICAL_COUNTRY_ERAS))
+        if unrecognized:
+            errors.append(f"country owner {owner} has unrecognized era {', '.join(unrecognized)}")
+        for era in CANONICAL_COUNTRY_ERAS:
+            count = eras.get(era, 0)
+            if count < 3:
+                errors.append(f"country owner {owner} era {era} arc quota: {count}/3")
+        if set(CANONICAL_COUNTRY_ERAS) - set(eras):
+            errors.append(f"country owner {owner} must cover canonical eras foundation, middle, late")
     return errors
 
 
