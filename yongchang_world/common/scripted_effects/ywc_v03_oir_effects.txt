@@ -13,15 +13,20 @@ ywc_oir_shift_cohesion = {
     }
 }
 ywc_oir_capture_legacy_context = {
-    if = { limit = { has_variable = ywc_campaign_oir_c1_outcome }
-        set_variable = { name = ywc_oir_prior_c1_outcome value = var:ywc_campaign_oir_c1_outcome }
-    }
-    else = {
-        set_variable = { name = ywc_oir_legacy_compatibility value = 1 }
-        if = { limit = { has_variable = ywc_flavor_oir_banner_cohesion }
-            change_variable = { name = ywc_flavor_oir_banner_cohesion add = -5 }
-            clamp_variable = { name = ywc_flavor_oir_banner_cohesion min = 0 max = 100 }
+    if = {
+        limit = { NOT = { has_variable = ywc_oir_legacy_context_captured } }
+        if = { limit = { has_variable = ywc_campaign_oir_c1_outcome }
+            set_variable = { name = ywc_oir_prior_c1_outcome value = var:ywc_campaign_oir_c1_outcome }
         }
+        else = {
+            set_variable = { name = ywc_oir_legacy_compatibility value = 1 }
+            if = { limit = { has_variable = ywc_flavor_oir_banner_cohesion }
+                change_variable = { name = ywc_flavor_oir_banner_cohesion add = -5 }
+                clamp_variable = { name = ywc_flavor_oir_banner_cohesion min = 0 max = 100 }
+            }
+            else = { add_modifier = { name = ywc_oir_legacy_compatibility_cost months = 12 } }
+        }
+        set_variable = { name = ywc_oir_legacy_context_captured value = 1 }
     }
 }
 ywc_oir_claim_pasture_boundaries = {
@@ -36,7 +41,7 @@ ywc_oir_claim_pasture_boundaries = {
     }
 }
 ywc_oir_open_pasture_boundaries = {
-    if = { limit = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started }
+    if = { limit = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled } }
         ywc_oir_capture_cost_base = yes
         ywc_oir_capture_legacy_context = yes
         if = { limit = { NOT = { has_variable = ywc_oir_pasture_fee_initialized } }
@@ -46,7 +51,7 @@ set_variable = { name = ywc_oir_coord_fee value = var:ywc_oir_weekly_cost }
             change_variable = { name = ywc_oir_coord_fee multiply = 0.5 }
 set_variable = { name = ywc_oir_pasture_fee_initialized value = 1 }
         }
-        if = { limit = { NOT = { has_variable = ywc_oir_pasture_pending_event } } set_variable = { name = ywc_oir_pasture_pending_event value = 1000 } }
+        if = { limit = { NOT = { has_variable = ywc_oir_pasture_pending_event } NOT = { has_variable = ywc_oir_pasture_route } } set_variable = { name = ywc_oir_pasture_pending_event value = 1000 } }
     }
 }
 ywc_oir_choose_pasture_court = {
@@ -373,7 +378,7 @@ ywc_oir_claim_common_supply = {
     }
 }
 ywc_oir_open_common_supply = {
-    if = { limit = { has_variable = ywc_v03_oir_v03_oir_common_supply_started }
+    if = { limit = { has_variable = ywc_v03_oir_v03_oir_common_supply_started NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } }
         ywc_oir_capture_cost_base = yes
         ywc_oir_capture_legacy_context = yes
         if = { limit = { NOT = { has_variable = ywc_oir_supply_fee_initialized } }
@@ -383,7 +388,7 @@ set_variable = { name = ywc_oir_quota_fee value = var:ywc_oir_weekly_cost }
             change_variable = { name = ywc_oir_quota_fee multiply = 0.6 }
 set_variable = { name = ywc_oir_supply_fee_initialized value = 1 }
         }
-        if = { limit = { NOT = { has_variable = ywc_oir_supply_pending_event } } set_variable = { name = ywc_oir_supply_pending_event value = 1010 } }
+        if = { limit = { NOT = { has_variable = ywc_oir_supply_pending_event } NOT = { has_variable = ywc_oir_supply_route } } set_variable = { name = ywc_oir_supply_pending_event value = 1010 } }
     }
 }
 ywc_oir_choose_supply_unified = {
@@ -751,7 +756,7 @@ ywc_oir_claim_caravan_tolls = {
     }
 }
 ywc_oir_open_caravan_tolls = {
-    if = { limit = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started }
+    if = { limit = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started NOT = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_settled } }
         ywc_oir_capture_cost_base = yes
         ywc_oir_capture_legacy_context = yes
         if = { limit = { NOT = { has_variable = ywc_oir_tolls_fee_initialized } }
@@ -761,7 +766,7 @@ set_variable = { name = ywc_oir_tolls_shared_fee value = var:ywc_oir_weekly_cost
             change_variable = { name = ywc_oir_tolls_shared_fee multiply = 0.4 }
 set_variable = { name = ywc_oir_tolls_fee_initialized value = 1 }
         }
-        if = { limit = { NOT = { has_variable = ywc_oir_tolls_pending_event } } set_variable = { name = ywc_oir_tolls_pending_event value = 1020 } }
+        if = { limit = { NOT = { has_variable = ywc_oir_tolls_pending_event } NOT = { has_variable = ywc_oir_tolls_route } } set_variable = { name = ywc_oir_tolls_pending_event value = 1020 } }
     }
 }
 ywc_oir_choose_tolls_single = {
