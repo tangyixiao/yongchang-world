@@ -4,5 +4,2319 @@
   "runtime_tags": [
     "OIR"
   ],
-  "arcs": []
+  "arcs": [
+    {
+      "slug": "v03_oir_pasture_boundaries",
+      "era": "foundation",
+      "participants": [
+        "准噶尔汗廷",
+        "各旗旗主",
+        "寺院调停者"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_oir_pasture_entry",
+          "title": {
+            "zh": "牧地议定",
+            "en": "Pasture Council"
+          },
+          "desc": {
+            "zh": "先议定界权，再核验牧场、官署与旗盟的实际执行。",
+            "en": "Settle authority first, then audit ranches, offices, and banner execution."
+          },
+          "script": "{ is_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_initialized var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 OR = { has_variable = ywc_campaign_oir_c1_outcome var:ywc_flavor_oir_banner_cohesion >= 0 } NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started } NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled } } possible = { c:OIR ?= this has_variable = ywc_v03_initialized var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 OR = { has_variable = ywc_campaign_oir_c1_outcome var:ywc_flavor_oir_banner_cohesion >= 0 } NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started } NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled } } immediate = { ywc_oir_claim_pasture_boundaries = yes ywc_oir_open_pasture_boundaries = yes } on_fail = { ywc_oir_close_pasture_as_breach = yes } on_monthly_pulse = { effect = { ywc_oir_pasture_monthly_review = yes ywc_oir_dispatch_pasture = yes } } }",
+          "goal": "{ OR = { has_variable = ywc_oir_pasture_route has_variable = ywc_oir_pasture_withdrawn has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled } }",
+          "exit_conditions": "{ AND = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled var:ywc_v03_oir_v03_oir_pasture_boundaries_outcome = 4 NOT = { has_variable = ywc_oir_pasture_withdrawn } } }"
+        },
+        {
+          "id": "ywc_je_v03_oir_pasture_settlement",
+          "title": {
+            "zh": "牧地议定",
+            "en": "Pasture Council"
+          },
+          "desc": {
+            "zh": "先议定界权，再核验牧场、官署与旗盟的实际执行。",
+            "en": "Settle authority first, then audit ranches, offices, and banner execution."
+          },
+          "script": "{ is_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started has_variable = ywc_oir_pasture_route NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled } } possible = { c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started has_variable = ywc_oir_pasture_route NOT = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled } } immediate = { set_variable = { name = ywc_oir_pasture_phase value = 2 } } on_fail = { ywc_oir_close_pasture_as_breach = yes } on_monthly_pulse = { effect = { ywc_oir_pasture_monthly_review = yes ywc_oir_dispatch_pasture = yes } } }",
+          "goal": "{ OR = { AND = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled OR = { var:ywc_v03_oir_v03_oir_pasture_boundaries_outcome = 1 var:ywc_v03_oir_v03_oir_pasture_boundaries_outcome = 2 var:ywc_v03_oir_v03_oir_pasture_boundaries_outcome = 3 } } has_variable = ywc_oir_pasture_withdrawn } }",
+          "exit_conditions": "{ AND = { has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_settled var:ywc_v03_oir_v03_oir_pasture_boundaries_outcome = 4 NOT = { has_variable = ywc_oir_pasture_withdrawn } } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_oir.1000",
+          "title": {
+            "zh": "转场路上的界碑",
+            "en": "Boundary Stones on the Seasonal Road"
+          },
+          "desc": {
+            "zh": "边地总管递来新税界图，牧群却沿旧水草路转场；测界、共管与寺院调停各有代价。",
+            "en": "The frontier governor presents a new tax map while herds follow old pasture roads; surveying, shared stewardship, and mediation each carry a cost."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_event value = 1000 } }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "汗廷测界",
+                "en": "Court survey"
+              },
+              "effect": "{ ywc_oir_choose_pasture_court = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "收入周基数的1.5倍；基数=年总收入快照/52，限制于100至1,000,000,000。",
+                "en": "1.5 times the captured weekly base: annual gross income / 52, clamped to 100–1,000,000,000."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started NOT = { has_variable = ywc_oir_pasture_route } ywc_oir_v03_pasture_court_ready = yes ywc_oir_v03_pasture_can_pay_survey = yes }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "各旗共管",
+                "en": "Banner co-management"
+              },
+              "effect": "{ ywc_oir_choose_pasture_banner = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "同一周基数的0.5倍，低收入时实付可低于100。",
+                "en": "Half of the same weekly base; at low income, the fee can be below 100."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started NOT = { has_variable = ywc_oir_pasture_route } ywc_oir_v03_pasture_banner_ready = yes ywc_oir_v03_pasture_can_pay_coord = yes }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "寺院调停",
+                "en": "Monastic mediation"
+              },
+              "effect": "{ ywc_oir_choose_pasture_custom = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不扣国库款；仍须满足牧场、土地法和旗盟条件。",
+                "en": "No treasury debit; ranch, land-law, and banner conditions still apply."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started NOT = { has_variable = ywc_oir_pasture_route } ywc_oir_v03_pasture_custom_ready = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_pending_event value = var:ywc_oir_pasture_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "边地总管递来新税界图，牧群却沿旧水草路转场；测界、共管与寺院调停各有代价。",
+            "en": "The frontier governor presents a new tax map while herds follow old pasture roads; surveying, shared stewardship, and mediation each carry a cost."
+          },
+          "reads": [
+            "ywc_campaign_oir_c1_outcome",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_pasture_last_event",
+            "ywc_oir_pasture_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1001",
+          "title": {
+            "zh": "丈量队过河",
+            "en": "The Surveyors Cross the River"
+          },
+          "desc": {
+            "zh": "测量队要进入牧场，旗主要求先标出水井与冬营地。",
+            "en": "Surveyors seek access to pasture; banner chiefs demand that wells and winter camps be marked first."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_event value = 1001 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "复核水井与冬营地",
+                "en": "Reconcile wells and winter camps"
+              },
+              "effect": "{ ywc_oir_advance_pasture = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started has_variable = ywc_oir_pasture_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_pending_event value = var:ywc_oir_pasture_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "测量队要进入牧场，旗主要求先标出水井与冬营地。",
+            "en": "Surveyors seek access to pasture; banner chiefs demand that wells and winter camps be marked first."
+          },
+          "reads": [
+            "ywc_oir_pasture_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_pasture_last_event",
+            "ywc_oir_pasture_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1002",
+          "title": {
+            "zh": "水井归谁看守",
+            "en": "Who Guards the Wells?"
+          },
+          "desc": {
+            "zh": "牧户不愿在夏营地承担固定税役，地方官怕争水引发骚动。",
+            "en": "Herders resist fixed summer levies, while officials fear water disputes."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_event value = 1002 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "对照旧约与旗盟承诺",
+                "en": "Compare the compact with banner obligations"
+              },
+              "effect": "{ ywc_oir_advance_pasture = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started has_variable = ywc_oir_pasture_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_pending_event value = var:ywc_oir_pasture_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "牧户不愿在夏营地承担固定税役，地方官怕争水引发骚动。",
+            "en": "Herders resist fixed summer levies, while officials fear water disputes."
+          },
+          "reads": [
+            "ywc_oir_pasture_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_pasture_last_event",
+            "ywc_oir_pasture_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1003",
+          "title": {
+            "zh": "寺院的旧账",
+            "en": "The Monastery’s Old Ledger"
+          },
+          "desc": {
+            "zh": "寺院保存的通行誓约与新税册日期不合。",
+            "en": "The monastery’s transit oath predates the new tax register."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_event value = 1003 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "请寺院核对通行誓词",
+                "en": "Verify the transit oath"
+              },
+              "effect": "{ ywc_oir_advance_pasture = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started has_variable = ywc_oir_pasture_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_pending_event value = var:ywc_oir_pasture_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "寺院保存的通行誓约与新税册日期不合。",
+            "en": "The monastery’s transit oath predates the new tax register."
+          },
+          "reads": [
+            "ywc_oir_pasture_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_pasture_last_event",
+            "ywc_oir_pasture_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1004",
+          "title": {
+            "zh": "谁来执行判词",
+            "en": "Who Enforces the Ruling?"
+          },
+          "desc": {
+            "zh": "旗主不愿让空缺编制的官署代管牧道。",
+            "en": "Banner chiefs will not entrust pasture roads to an understaffed office."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_event value = 1004 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "核定边界巡查责任",
+                "en": "Assign boundary patrols"
+              },
+              "effect": "{ ywc_oir_advance_pasture = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started has_variable = ywc_oir_pasture_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_pending_event value = var:ywc_oir_pasture_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "旗主不愿让空缺编制的官署代管牧道。",
+            "en": "Banner chiefs will not entrust pasture roads to an understaffed office."
+          },
+          "reads": [
+            "ywc_oir_pasture_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_pasture_last_event",
+            "ywc_oir_pasture_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1005",
+          "title": {
+            "zh": "最后一段界桩",
+            "en": "The Last Boundary Marker"
+          },
+          "desc": {
+            "zh": "旱季将至，巡牧人要知道界桩如何落地、谁承担巡查。",
+            "en": "The dry season approaches; herders ask where markers stand and who patrols them."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_event value = 1005 } ywc_oir_mark_pasture_final = yes }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "汗廷丈量结案",
+                "en": "Settle the court survey"
+              },
+              "effect": "{ ywc_oir_close_pasture_as_court = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_oir_pasture_scope_narrowed } var:ywc_oir_pasture_route = 1 ywc_oir_v03_pasture_high_ready = yes has_variable = ywc_oir_pasture_six_months_complete }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "各旗共管结案",
+                "en": "Settle banner co-management"
+              },
+              "effect": "{ ywc_oir_close_pasture_as_banner = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_oir_pasture_scope_narrowed } var:ywc_oir_pasture_route = 2 ywc_oir_v03_pasture_high_ready = yes has_variable = ywc_oir_pasture_six_months_complete }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "有限或旧例结案",
+                "en": "Settle the limited or customary compact"
+              },
+              "effect": "{ ywc_oir_close_pasture_as_custom = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ OR = { AND = { NOT = { has_variable = ywc_oir_pasture_scope_narrowed } var:ywc_oir_pasture_route = 3 ywc_oir_v03_pasture_high_ready = yes has_variable = ywc_oir_pasture_six_months_complete } AND = { has_variable = ywc_oir_pasture_scope_narrowed has_variable = ywc_oir_pasture_limited_six_months_complete ywc_oir_v03_pasture_reduced_ready = yes } } }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_pending_event value = var:ywc_oir_pasture_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "旱季将至，巡牧人要知道界桩如何落地、谁承担巡查。",
+            "en": "The dry season approaches; herders ask where markers stand and who patrols them."
+          },
+          "reads": [
+            "ywc_oir_pasture_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_pasture_last_event",
+            "ywc_oir_pasture_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1006",
+          "title": {
+            "zh": "牧地执行受阻：先缩小范围",
+            "en": "Pasture execution Blocked: Narrow the Scope"
+          },
+          "desc": {
+            "zh": "期限已过，所选路线仍缺真实执行条件。正常故事队列保留；可限缩到已付路线能够核实的目标。",
+            "en": "The deadline has passed and the route still lacks a real execution condition. The normal story queue remains; narrow only to a verifiable target on the paid route."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_notice_event value = 1006 } }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "限缩为已付路线的保守目标",
+                "en": "Narrow the paid route to a conservative target"
+              },
+              "effect": "{ ywc_oir_pasture_narrow_scope = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不额外收费；保留已付路线并降低结算门槛。",
+                "en": "No added fee; retain the paid route and lower the settlement threshold."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "稍后再议",
+                "en": "Defer this notice"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_12_notice_deferred value = 1 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；正常主线队列不变。",
+                "en": "No fee; the normal story queue is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "退出受阻议定，不改动正常主线队列。",
+                "en": "Leave the blocked compact without changing the normal story queue."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受阻通知只处理资格障碍，不取代正常实施节点。",
+            "en": "The notice addresses eligibility without replacing the normal implementation stage."
+          },
+          "reads": [
+            "ywc_oir_pasture_blocked_12_due",
+            "ywc_oir_pasture_blocked_36_due"
+          ],
+          "writes": [
+            "ywc_oir_pasture_scope_narrowed",
+            "ywc_oir_pasture_setback"
+          ]
+        },
+        {
+          "id": "ywc_oir.1007",
+          "title": {
+            "zh": "牧地执行久拖未决：择一结案",
+            "en": "Pasture execution Still Blocked: Choose an Ending"
+          },
+          "desc": {
+            "zh": "长期受阻已无新的自动期限。可限缩、如实结为受挫，或撤回释放名额。",
+            "en": "The long blockage has no further automatic deadline. Narrow the paid scope, record a setback honestly, or withdraw and release the slot."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_pasture_boundaries_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_pasture_last_notice_event value = 1007 } }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "限缩至已付路线的保守目标",
+                "en": "Narrow the paid route"
+              },
+              "effect": "{ ywc_oir_pasture_narrow_scope = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不额外收费；不更换已付路线。",
+                "en": "No added fee; the paid route does not change."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "settle_failure",
+              "label": {
+                "zh": "承认受挫并结案",
+                "en": "Record the setback and close"
+              },
+              "effect": "{ ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；以受挫结算，不冒充完成。",
+                "en": "No fee; close as a setback, not completion."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_withdrawn value = 1 } ywc_oir_close_pasture_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "保留受阻状态，暂不结案",
+                "en": "Keep the blockage open for now"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_pasture_36_notice_deferred value = 1 } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费；不改变正常主线队列。",
+                "en": "No fee; the normal story queue is unchanged."
+              },
+              "consequence_note": {
+                "zh": "暂缓结案，保留已付路线与正常实施节点。",
+                "en": "Delay closure while retaining the paid route and normal implementation stage."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受阻通知只处理资格障碍，不取代正常实施节点。",
+            "en": "The notice addresses eligibility without replacing the normal implementation stage."
+          },
+          "reads": [
+            "ywc_oir_pasture_blocked_12_due",
+            "ywc_oir_pasture_blocked_36_due"
+          ],
+          "writes": [
+            "ywc_oir_pasture_scope_narrowed",
+            "ywc_oir_pasture_setback"
+          ]
+        }
+      ],
+      "outcomes": [
+        "route_one_success",
+        "route_two_success",
+        "route_three_limited",
+        "withdrawn_setback"
+      ],
+      "legacy_links": [
+        "ywc_campaign_oir_c1_outcome",
+        "ywc_je_flavor_oir_banner_1"
+      ]
+    },
+    {
+      "slug": "v03_oir_common_supply",
+      "era": "foundation",
+      "participants": [
+        "准噶尔军务官",
+        "各旗旗主",
+        "军队与军需官"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_oir_supply_entry",
+          "title": {
+            "zh": "军需议约",
+            "en": "Supply Council"
+          },
+          "desc": {
+            "zh": "分阶段核对军册、营房、军饷与旗主承诺。",
+            "en": "Audit muster rolls, barracks, wages, and banner commitments in distinct phases."
+          },
+          "script": "{ is_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_initialized var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 OR = { has_variable = ywc_campaign_oir_c1_outcome var:ywc_flavor_oir_banner_cohesion >= 0 } NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_started } NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } } possible = { c:OIR ?= this has_variable = ywc_v03_initialized var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 OR = { has_variable = ywc_campaign_oir_c1_outcome var:ywc_flavor_oir_banner_cohesion >= 0 } NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_started } NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } } immediate = { ywc_oir_claim_common_supply = yes ywc_oir_open_common_supply = yes } on_fail = { ywc_oir_close_supply_as_breach = yes } on_monthly_pulse = { effect = { ywc_oir_supply_monthly_review = yes ywc_oir_dispatch_supply = yes } } }",
+          "goal": "{ OR = { has_variable = ywc_oir_supply_route has_variable = ywc_oir_supply_withdrawn has_variable = ywc_v03_oir_v03_oir_common_supply_settled } }",
+          "exit_conditions": "{ AND = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled var:ywc_v03_oir_v03_oir_common_supply_outcome = 4 NOT = { has_variable = ywc_oir_supply_withdrawn } } }"
+        },
+        {
+          "id": "ywc_je_v03_oir_supply_review",
+          "title": {
+            "zh": "军需议约",
+            "en": "Supply Council"
+          },
+          "desc": {
+            "zh": "分阶段核对军册、营房、军饷与旗主承诺。",
+            "en": "Audit muster rolls, barracks, wages, and banner commitments in distinct phases."
+          },
+          "script": "{ is_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } } possible = { c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } } immediate = { set_variable = { name = ywc_oir_supply_phase value = 2 } } on_fail = { ywc_oir_close_supply_as_breach = yes } on_monthly_pulse = { effect = { ywc_oir_supply_monthly_review = yes ywc_oir_dispatch_supply = yes } } }",
+          "goal": "{ OR = { has_variable = ywc_oir_supply_implementation_reached has_variable = ywc_oir_supply_withdrawn has_variable = ywc_v03_oir_v03_oir_common_supply_settled } }",
+          "exit_conditions": "{ AND = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled var:ywc_v03_oir_v03_oir_common_supply_outcome = 4 NOT = { has_variable = ywc_oir_supply_withdrawn } } }"
+        },
+        {
+          "id": "ywc_je_v03_oir_supply_settlement",
+          "title": {
+            "zh": "军需议约",
+            "en": "Supply Council"
+          },
+          "desc": {
+            "zh": "分阶段核对军册、营房、军饷与旗主承诺。",
+            "en": "Audit muster rolls, barracks, wages, and banner commitments in distinct phases."
+          },
+          "script": "{ is_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_implementation_reached NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } } possible = { c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_implementation_reached NOT = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled } } immediate = { ywc_oir_supply_record_final = yes } on_fail = { ywc_oir_close_supply_as_breach = yes } on_monthly_pulse = { effect = { ywc_oir_supply_monthly_review = yes ywc_oir_dispatch_supply = yes } } }",
+          "goal": "{ OR = { AND = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled OR = { var:ywc_v03_oir_v03_oir_common_supply_outcome = 1 var:ywc_v03_oir_v03_oir_common_supply_outcome = 2 var:ywc_v03_oir_v03_oir_common_supply_outcome = 3 } } has_variable = ywc_oir_supply_withdrawn } }",
+          "exit_conditions": "{ AND = { has_variable = ywc_v03_oir_v03_oir_common_supply_settled var:ywc_v03_oir_v03_oir_common_supply_outcome = 4 NOT = { has_variable = ywc_oir_supply_withdrawn } } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_oir.1010",
+          "title": {
+            "zh": "各旗出多少匹马",
+            "en": "How Many Horses Can Each Banner Supply?"
+          },
+          "desc": {
+            "zh": "军需官摊开军册：统一征调、按旗分摊、沿用旧额，决定谁付军饷、谁来交马。",
+            "en": "The quartermaster lays out the muster roll: central requisition, banner quotas, or old caps decide who pays and furnishes mounts."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1010 } }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "统一军需",
+                "en": "Central requisition"
+              },
+              "effect": "{ ywc_oir_choose_supply_unified = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "收入周基数；基数=年总收入快照/52，限制于100至1,000,000,000。",
+                "en": "Captured weekly base: annual gross income / 52, clamped to 100–1,000,000,000."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started NOT = { has_variable = ywc_oir_supply_route } ywc_oir_v03_supply_unified_ready = yes ywc_oir_v03_supply_can_pay = yes }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "按份旗兵",
+                "en": "Banner quotas"
+              },
+              "effect": "{ ywc_oir_choose_supply_quota = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "同一周基数的0.6倍，低收入时实付可低于100。",
+                "en": "0.6 times the same weekly base; at low income, the fee can be below 100."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started NOT = { has_variable = ywc_oir_supply_route } ywc_oir_v03_supply_quota_ready = yes ywc_oir_v03_supply_can_pay_quota = yes }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "限额旧制",
+                "en": "Capped old quotas"
+              },
+              "effect": "{ ywc_oir_choose_supply_capped = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不扣国库款；军制、兵额与军饷仍是硬门槛。",
+                "en": "No treasury debit; army law, force size, and wages remain hard gates."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started NOT = { has_variable = ywc_oir_supply_route } ywc_oir_v03_supply_capped_ready = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "军需官摊开军册：统一征调、按旗分摊、沿用旧额，决定谁付军饷、谁来交马。",
+            "en": "The quartermaster lays out the muster roll: central requisition, banner quotas, or old caps decide who pays and furnishes mounts."
+          },
+          "reads": [
+            "ywc_campaign_oir_c1_outcome",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1011",
+          "title": {
+            "zh": "军册与空缺营房",
+            "en": "Muster Rolls and Empty Barracks"
+          },
+          "desc": {
+            "zh": "账面兵额与实际在岗的营房不一致。",
+            "en": "Paper muster strength does not match staffed barracks."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1011 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "清点营房与在岗军需官",
+                "en": "Audit barracks and staffed quartermasters"
+              },
+              "effect": "{ ywc_oir_advance_supply = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "账面兵额与实际在岗的营房不一致。",
+            "en": "Paper muster strength does not match staffed barracks."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1012",
+          "title": {
+            "zh": "谁先领饲料",
+            "en": "Who Receives Fodder First?"
+          },
+          "desc": {
+            "zh": "边军与守备营都报缺料，旗主坚持先顾本旗。",
+            "en": "Frontier troops and garrisons report shortages; chiefs prioritize their own banners."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1012 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "核账饲料欠额",
+                "en": "Reconcile fodder arrears"
+              },
+              "effect": "{ ywc_oir_advance_supply = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "边军与守备营都报缺料，旗主坚持先顾本旗。",
+            "en": "Frontier troops and garrisons report shortages; chiefs prioritize their own banners."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1013",
+          "title": {
+            "zh": "军饷是否到账",
+            "en": "Did the Wages Arrive?"
+          },
+          "desc": {
+            "zh": "未到账的军饷让旗兵不愿出营。",
+            "en": "Unpaid wages keep banner troops in camp."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1013 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "确认发饷凭据",
+                "en": "Confirm wage receipts"
+              },
+              "effect": "{ ywc_oir_advance_supply = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "未到账的军饷让旗兵不愿出营。",
+            "en": "Unpaid wages keep banner troops in camp."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1014",
+          "title": {
+            "zh": "旗主的供马清单",
+            "en": "The Chiefs’ Mount Lists"
+          },
+          "desc": {
+            "zh": "牧场缺工时，纸面供马承诺无法按期兑现。",
+            "en": "A paper promise cannot deliver mounts on time when ranches lack workers."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1014 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "核对旗主供马清单",
+                "en": "Check banner mount lists"
+              },
+              "effect": "{ ywc_oir_advance_supply = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "牧场缺工时，纸面供马承诺无法按期兑现。",
+            "en": "A paper promise cannot deliver mounts on time when ranches lack workers."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1015",
+          "title": {
+            "zh": "护送队改道",
+            "en": "The Escort Turns Back"
+          },
+          "desc": {
+            "zh": "边路不安使补给车队绕行，前线继续等待。",
+            "en": "Insecurity diverts supply carts and leaves the frontier waiting."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1015 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "重排护送队次序",
+                "en": "Reroute the escort"
+              },
+              "effect": "{ ywc_oir_advance_supply = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "边路不安使补给车队绕行，前线继续等待。",
+            "en": "Insecurity diverts supply carts and leaves the frontier waiting."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1016",
+          "title": {
+            "zh": "共同军需的底册",
+            "en": "The Common Supply Ledger"
+          },
+          "desc": {
+            "zh": "各旗代表核对最后一份签押与发饷记录。",
+            "en": "Banner delegates reconcile the final seals and wage records."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1016 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "汇总共同军需底册",
+                "en": "Reconcile the common supply ledger"
+              },
+              "effect": "{ ywc_oir_advance_supply = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_common_supply_started has_variable = ywc_oir_supply_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "各旗代表核对最后一份签押与发饷记录。",
+            "en": "Banner delegates reconcile the final seals and wage records."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1017",
+          "title": {
+            "zh": "最后一批军需",
+            "en": "The Final Supply Train"
+          },
+          "desc": {
+            "zh": "军需官要求按既定分摊方式核验最后一批发放。",
+            "en": "The quartermaster audits the final distribution under its chosen rule."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_event value = 1017 } ywc_oir_mark_supply_final = yes }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "统一军需达标",
+                "en": "Settle central supply"
+              },
+              "effect": "{ ywc_oir_close_supply_as_unified = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_oir_supply_scope_narrowed } var:ywc_oir_supply_route = 1 ywc_oir_v03_supply_high_ready = yes has_variable = ywc_oir_supply_six_months_complete }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "按份供给达标",
+                "en": "Settle banner quotas"
+              },
+              "effect": "{ ywc_oir_close_supply_as_quota = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_oir_supply_scope_narrowed } var:ywc_oir_supply_route = 2 ywc_oir_v03_supply_high_ready = yes has_variable = ywc_oir_supply_six_months_complete }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "限额旧制或有限目标结案",
+                "en": "Settle capped supply or the limited target"
+              },
+              "effect": "{ ywc_oir_close_supply_as_capped = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ OR = { AND = { NOT = { has_variable = ywc_oir_supply_scope_narrowed } var:ywc_oir_supply_route = 3 ywc_oir_v03_supply_high_ready = yes has_variable = ywc_oir_supply_six_months_complete } AND = { has_variable = ywc_oir_supply_scope_narrowed has_variable = ywc_oir_supply_limited_six_months_complete ywc_oir_v03_supply_reduced_ready = yes } } }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_pending_event value = var:ywc_oir_supply_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "军需官要求按既定分摊方式核验最后一批发放。",
+            "en": "The quartermaster audits the final distribution under its chosen rule."
+          },
+          "reads": [
+            "ywc_oir_supply_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_supply_last_event",
+            "ywc_oir_supply_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1018",
+          "title": {
+            "zh": "军需调度受阻：先缩小范围",
+            "en": "Supply dispatch Blocked: Narrow the Scope"
+          },
+          "desc": {
+            "zh": "期限已过，所选路线仍缺真实执行条件。正常故事队列保留；可限缩到已付路线能够核实的目标。",
+            "en": "The deadline has passed and the route still lacks a real execution condition. The normal story queue remains; narrow only to a verifiable target on the paid route."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_notice_event value = 1018 } }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "限缩为已付路线的保守目标",
+                "en": "Narrow the paid route to a conservative target"
+              },
+              "effect": "{ ywc_oir_supply_narrow_scope = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不额外收费；保留已付路线并降低结算门槛。",
+                "en": "No added fee; retain the paid route and lower the settlement threshold."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "稍后再议",
+                "en": "Defer this notice"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_12_notice_deferred value = 1 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；正常主线队列不变。",
+                "en": "No fee; the normal story queue is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "退出受阻议定，不改动正常主线队列。",
+                "en": "Leave the blocked compact without changing the normal story queue."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受阻通知只处理资格障碍，不取代正常实施节点。",
+            "en": "The notice addresses eligibility without replacing the normal implementation stage."
+          },
+          "reads": [
+            "ywc_oir_supply_blocked_12_due",
+            "ywc_oir_supply_blocked_36_due"
+          ],
+          "writes": [
+            "ywc_oir_supply_scope_narrowed",
+            "ywc_oir_supply_setback"
+          ]
+        },
+        {
+          "id": "ywc_oir.1019",
+          "title": {
+            "zh": "军需调度久拖未决：择一结案",
+            "en": "Supply dispatch Still Blocked: Choose an Ending"
+          },
+          "desc": {
+            "zh": "长期受阻已无新的自动期限。可限缩、如实结为受挫，或撤回释放名额。",
+            "en": "The long blockage has no further automatic deadline. Narrow the paid scope, record a setback honestly, or withdraw and release the slot."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_common_supply_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_supply_last_notice_event value = 1019 } }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "限缩至已付路线的保守目标",
+                "en": "Narrow the paid route"
+              },
+              "effect": "{ ywc_oir_supply_narrow_scope = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不额外收费；不更换已付路线。",
+                "en": "No added fee; the paid route does not change."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "settle_failure",
+              "label": {
+                "zh": "承认受挫并结案",
+                "en": "Record the setback and close"
+              },
+              "effect": "{ ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；以受挫结算，不冒充完成。",
+                "en": "No fee; close as a setback, not completion."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_withdrawn value = 1 } ywc_oir_close_supply_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "保留受阻状态，暂不结案",
+                "en": "Keep the blockage open for now"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_supply_36_notice_deferred value = 1 } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费；不改变正常主线队列。",
+                "en": "No fee; the normal story queue is unchanged."
+              },
+              "consequence_note": {
+                "zh": "暂缓结案，保留已付路线与正常实施节点。",
+                "en": "Delay closure while retaining the paid route and normal implementation stage."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受阻通知只处理资格障碍，不取代正常实施节点。",
+            "en": "The notice addresses eligibility without replacing the normal implementation stage."
+          },
+          "reads": [
+            "ywc_oir_supply_blocked_12_due",
+            "ywc_oir_supply_blocked_36_due"
+          ],
+          "writes": [
+            "ywc_oir_supply_scope_narrowed",
+            "ywc_oir_supply_setback"
+          ]
+        }
+      ],
+      "outcomes": [
+        "route_one_success",
+        "route_two_success",
+        "route_three_limited",
+        "withdrawn_setback"
+      ],
+      "legacy_links": [
+        "ywc_campaign_oir_c1_outcome",
+        "ywc_je_flavor_oir_banner_1"
+      ]
+    },
+    {
+      "slug": "v03_oir_caravan_tolls",
+      "era": "foundation",
+      "participants": [
+        "伊犁商队",
+        "各旗关卡",
+        "汗廷税务官"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_oir_tolls_entry",
+          "title": {
+            "zh": "关税议约",
+            "en": "Toll Council"
+          },
+          "desc": {
+            "zh": "以市场实录、市场接入和真实旗盟同意核验商税安排。",
+            "en": "Audit customs against market records, access, and actual banner assent."
+          },
+          "script": "{ is_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_initialized var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 OR = { has_variable = ywc_campaign_oir_c1_outcome var:ywc_flavor_oir_banner_cohesion >= 0 } NOT = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started } NOT = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_settled } } possible = { c:OIR ?= this has_variable = ywc_v03_initialized var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 OR = { has_variable = ywc_campaign_oir_c1_outcome var:ywc_flavor_oir_banner_cohesion >= 0 } NOT = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started } NOT = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_settled } } immediate = { ywc_oir_claim_caravan_tolls = yes ywc_oir_open_caravan_tolls = yes } on_fail = { ywc_oir_close_tolls_as_breach = yes } on_monthly_pulse = { effect = { ywc_oir_tolls_monthly_review = yes ywc_oir_dispatch_tolls = yes } } }",
+          "goal": "{ OR = { has_variable = ywc_oir_tolls_route has_variable = ywc_oir_tolls_withdrawn has_variable = ywc_v03_oir_v03_oir_caravan_tolls_settled } }",
+          "exit_conditions": "{ AND = { has_variable = ywc_v03_oir_v03_oir_caravan_tolls_settled var:ywc_v03_oir_v03_oir_caravan_tolls_outcome = 4 NOT = { has_variable = ywc_oir_tolls_withdrawn } } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_oir.1020",
+          "title": {
+            "zh": "同一商队，四道关卡",
+            "en": "One Caravan, Four Checkpoints"
+          },
+          "desc": {
+            "zh": "商人递交关卡账簿：统一关单、共享商税、各旗自征，决定税权和重复设卡的代价。这里只核对市场流量，不宣称特定双边路线。",
+            "en": "Merchants submit checkpoint ledgers: a single customs roll, shared revenue, or banner tolls decide who collects. This checks market flow, not a bilateral route."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_tolls_last_event value = 1020 } }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "统一关单",
+                "en": "Single customs roll"
+              },
+              "effect": "{ ywc_oir_choose_tolls_single = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "收入周基数；基数=年总收入快照/52，限制于100至1,000,000,000。",
+                "en": "Captured weekly base: annual gross income / 52, clamped to 100–1,000,000,000."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started NOT = { has_variable = ywc_oir_tolls_route } ywc_oir_v03_tolls_single_ready = yes ywc_oir_v03_tolls_can_pay = yes }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "共享商税",
+                "en": "Shared toll revenue"
+              },
+              "effect": "{ ywc_oir_choose_tolls_shared = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "同一周基数的0.4倍，低收入时实付可低于100。",
+                "en": "0.4 times the same weekly base; at low income, the fee can be below 100."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started NOT = { has_variable = ywc_oir_tolls_route } ywc_oir_v03_tolls_shared_ready = yes ywc_oir_v03_tolls_can_pay_shared = yes }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "各旗自征",
+                "en": "Banner tolls"
+              },
+              "effect": "{ ywc_oir_choose_tolls_banner = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不扣国库款；市场流量和接入条件仍须成立。",
+                "en": "No treasury debit; market flow and access conditions still apply."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started NOT = { has_variable = ywc_oir_tolls_route } ywc_oir_v03_tolls_banner_ready = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_pending_event value = var:ywc_oir_tolls_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_withdrawn value = 1 } ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "商人递交关卡账簿：统一关单、共享商税、各旗自征，决定税权和重复设卡的代价。这里只核对市场流量，不宣称特定双边路线。",
+            "en": "Merchants submit checkpoint ledgers: a single customs roll, shared revenue, or banner tolls decide who collects. This checks market flow, not a bilateral route."
+          },
+          "reads": [
+            "ywc_campaign_oir_c1_outcome",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_tolls_last_event",
+            "ywc_oir_tolls_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1021",
+          "title": {
+            "zh": "商路账簿",
+            "en": "The Caravan Ledger"
+          },
+          "desc": {
+            "zh": "官署把粮食进口与茶叶出口逐项列入税册。",
+            "en": "Officials enter grain imports and tea exports in the customs ledger."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_tolls_last_event value = 1021 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "对照市场进出口账簿",
+                "en": "Reconcile recorded market flows"
+              },
+              "effect": "{ ywc_oir_advance_tolls = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started has_variable = ywc_oir_tolls_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_pending_event value = var:ywc_oir_tolls_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_withdrawn value = 1 } ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "官署把粮食进口与茶叶出口逐项列入税册。",
+            "en": "Officials enter grain imports and tea exports in the customs ledger."
+          },
+          "reads": [
+            "ywc_oir_tolls_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_tolls_last_event",
+            "ywc_oir_tolls_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1022",
+          "title": {
+            "zh": "旗盟分税条件",
+            "en": "Terms for Sharing the Toll"
+          },
+          "desc": {
+            "zh": "共享商税须有真实旗盟同意，不能由商人代签。",
+            "en": "Shared tolls require actual banner assent; merchants cannot sign for the chiefs."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_tolls_last_event value = 1022 } }",
+          "options": [
+            {
+              "key": "advance",
+              "label": {
+                "zh": "请旗盟代表签署分税条款",
+                "en": "Seek banner assent to the revenue split"
+              },
+              "effect": "{ ywc_oir_advance_tolls = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；把路线要求写入执行记录。",
+                "en": "No added fee; record an obligation under the chosen route."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started has_variable = ywc_oir_tolls_route }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_pending_event value = var:ywc_oir_tolls_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_withdrawn value = 1 } ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "共享商税须有真实旗盟同意，不能由商人代签。",
+            "en": "Shared tolls require actual banner assent; merchants cannot sign for the chiefs."
+          },
+          "reads": [
+            "ywc_oir_tolls_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_tolls_last_event",
+            "ywc_oir_tolls_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1023",
+          "title": {
+            "zh": "关卡撤并还是加码",
+            "en": "Close a Gate or Raise the Toll?"
+          },
+          "desc": {
+            "zh": "税吏与商队头人争论撤并重复关卡是否损失地方收入。",
+            "en": "Collectors and caravan leaders dispute whether removing duplicate gates costs local revenue."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_tolls_last_event value = 1023 } ywc_oir_mark_tolls_final = yes }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "统一关单达标",
+                "en": "Settle the single customs roll"
+              },
+              "effect": "{ ywc_oir_close_tolls_as_single = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_oir_tolls_scope_narrowed } var:ywc_oir_tolls_route = 1 ywc_oir_v03_tolls_high_ready = yes has_variable = ywc_oir_tolls_six_months_complete }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "共享商税达标",
+                "en": "Settle shared toll revenue"
+              },
+              "effect": "{ ywc_oir_close_tolls_as_shared = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_oir_tolls_scope_narrowed } var:ywc_oir_tolls_route = 2 ywc_oir_v03_tolls_high_ready = yes has_variable = ywc_oir_tolls_six_months_complete }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "各旗自征或有限目标结案",
+                "en": "Settle banner tolls or the limited target"
+              },
+              "effect": "{ ywc_oir_close_tolls_as_banner = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再收费；只结算已付路线的实际结果。",
+                "en": "No further fee; settle only the route already paid for."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              },
+              "trigger": "{ OR = { AND = { NOT = { has_variable = ywc_oir_tolls_scope_narrowed } var:ywc_oir_tolls_route = 3 ywc_oir_v03_tolls_high_ready = yes has_variable = ywc_oir_tolls_six_months_complete } AND = { has_variable = ywc_oir_tolls_scope_narrowed has_variable = ywc_oir_tolls_limited_six_months_complete ywc_oir_v03_tolls_reduced_ready = yes } } }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，等待下一份账册",
+                "en": "Defer until the next ledger"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_pending_event value = var:ywc_oir_tolls_last_event } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，不改变已选路线。",
+                "en": "No fee; the selected route is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_withdrawn value = 1 } ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "税吏与商队头人争论撤并重复关卡是否损失地方收入。",
+            "en": "Collectors and caravan leaders dispute whether removing duplicate gates costs local revenue."
+          },
+          "reads": [
+            "ywc_oir_tolls_route",
+            "ywc_flavor_oir_banner_cohesion"
+          ],
+          "writes": [
+            "ywc_oir_tolls_last_event",
+            "ywc_oir_tolls_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_oir.1024",
+          "title": {
+            "zh": "商路关卡受阻：先缩小范围",
+            "en": "Caravan checkpoints Blocked: Narrow the Scope"
+          },
+          "desc": {
+            "zh": "期限已过，所选路线仍缺真实执行条件。正常故事队列保留；可限缩到已付路线能够核实的目标。",
+            "en": "The deadline has passed and the route still lacks a real execution condition. The normal story queue remains; narrow only to a verifiable target on the paid route."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_tolls_last_notice_event value = 1024 } }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "限缩为已付路线的保守目标",
+                "en": "Narrow the paid route to a conservative target"
+              },
+              "effect": "{ ywc_oir_tolls_narrow_scope = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不额外收费；保留已付路线并降低结算门槛。",
+                "en": "No added fee; retain the paid route and lower the settlement threshold."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "稍后再议",
+                "en": "Defer this notice"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_12_notice_deferred value = 1 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；正常主线队列不变。",
+                "en": "No fee; the normal story queue is unchanged."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_withdrawn value = 1 } ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "退出受阻议定，不改动正常主线队列。",
+                "en": "Leave the blocked compact without changing the normal story queue."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受阻通知只处理资格障碍，不取代正常实施节点。",
+            "en": "The notice addresses eligibility without replacing the normal implementation stage."
+          },
+          "reads": [
+            "ywc_oir_tolls_blocked_12_due",
+            "ywc_oir_tolls_blocked_36_due"
+          ],
+          "writes": [
+            "ywc_oir_tolls_scope_narrowed",
+            "ywc_oir_tolls_setback"
+          ]
+        },
+        {
+          "id": "ywc_oir.1025",
+          "title": {
+            "zh": "商路关卡久拖未决：择一结案",
+            "en": "Caravan checkpoints Still Blocked: Choose an Ending"
+          },
+          "desc": {
+            "zh": "长期受阻已无新的自动期限。可限缩、如实结为受挫，或撤回释放名额。",
+            "en": "The long blockage has no further automatic deadline. Narrow the paid scope, record a setback honestly, or withdraw and release the slot."
+          },
+          "trigger": "{ c:OIR ?= this has_variable = ywc_v03_oir_v03_oir_caravan_tolls_started ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_oir_tolls_last_notice_event value = 1025 } }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "限缩至已付路线的保守目标",
+                "en": "Narrow the paid route"
+              },
+              "effect": "{ ywc_oir_tolls_narrow_scope = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不额外收费；不更换已付路线。",
+                "en": "No added fee; the paid route does not change."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "settle_failure",
+              "label": {
+                "zh": "承认受挫并结案",
+                "en": "Record the setback and close"
+              },
+              "effect": "{ ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；以受挫结算，不冒充完成。",
+                "en": "No fee; close as a setback, not completion."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回议定",
+                "en": "Withdraw from the compact"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_withdrawn value = 1 } ywc_oir_close_tolls_as_breach = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费；按撤回结算并释放名额。",
+                "en": "No fee; withdrawal closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "此项会改变后续执行条件或旗盟政治代价。",
+                "en": "This changes later execution requirements or banner politics."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "保留受阻状态，暂不结案",
+                "en": "Keep the blockage open for now"
+              },
+              "effect": "{ set_variable = { name = ywc_oir_tolls_36_notice_deferred value = 1 } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费；不改变正常主线队列。",
+                "en": "No fee; the normal story queue is unchanged."
+              },
+              "consequence_note": {
+                "zh": "暂缓结案，保留已付路线与正常实施节点。",
+                "en": "Delay closure while retaining the paid route and normal implementation stage."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受阻通知只处理资格障碍，不取代正常实施节点。",
+            "en": "The notice addresses eligibility without replacing the normal implementation stage."
+          },
+          "reads": [
+            "ywc_oir_tolls_blocked_12_due",
+            "ywc_oir_tolls_blocked_36_due"
+          ],
+          "writes": [
+            "ywc_oir_tolls_scope_narrowed",
+            "ywc_oir_tolls_setback"
+          ]
+        }
+      ],
+      "outcomes": [
+        "route_one_success",
+        "route_two_success",
+        "route_three_limited",
+        "withdrawn_setback"
+      ],
+      "legacy_links": [
+        "ywc_campaign_oir_c1_outcome",
+        "ywc_je_flavor_oir_banner_1"
+      ]
+    }
+  ]
 }
