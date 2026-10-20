@@ -4,5 +4,2295 @@
   "runtime_tags": [
     "TIB"
   ],
-  "arcs": []
+  "arcs": [
+    {
+      "slug": "v03_tib_service_register",
+      "era": "foundation",
+      "participants": [
+        "寺院财库",
+        "贵族地主",
+        "农民",
+        "官僚"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_tib_register_1",
+          "title": {
+            "zh": "山谷供役簿的新页",
+            "en": "A New Page in the Valley Service Register"
+          },
+          "desc": {
+            "zh": "旧役额、粮债与民户实际负担不再相称。贵族、寺院与村社须在现行土地法下核账，而非一纸诏令抹去土地制度。",
+            "en": "Old service quotas and grain debts no longer match household burdens. Nobles, monasteries and villages must reconcile accounts under the existing land law."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_started } OR = { var:ywc_campaign_tib_c1_outcome >= 0 has_variable = ywc_je_flavor_tib_estate_1_resolved has_variable = ywc_je_flavor_tib_estate_1_failed } ywc_tib_register_ready = yes } possible = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_started } OR = { var:ywc_campaign_tib_c1_outcome >= 0 has_variable = ywc_je_flavor_tib_estate_1_resolved has_variable = ywc_je_flavor_tib_estate_1_failed } ywc_tib_register_ready = yes } immediate = { if = { limit = { NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_started } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } set_variable = { name = ywc_v03_tib_v03_tib_service_register_started value = 1 } set_variable = { name = ywc_v03_tib_v03_tib_service_register_last_event value = 0 } ywc_tib_capture_register_fee = yes set_variable = { name = ywc_tib_register_pending_event value = 1000 } } } on_fail = { ywc_tib_register_withdraw = yes } on_monthly_pulse = { effect = { ywc_tib_register_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_12_event = 1005 NOT = { var:ywc_tib_register_notice_last_delivered = 1 } } remove_variable = ywc_tib_register_notice_12_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_36_event = 1006 } remove_variable = ywc_tib_register_notice_36_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 2 } trigger_event = { id = ywc_tib.1006 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_12_event = 1005 } remove_variable = ywc_tib_register_notice_12_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1000 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1000 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1001 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1001 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1002 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1002 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1003 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1003 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1004 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1004 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1007 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1007 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1008 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1008 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1009 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1009 } } } } }",
+          "goal": "{ var:ywc_tib_register_stage > 0 }",
+          "exit_conditions": "{ OR = { has_variable = ywc_tib_register_withdrawn has_variable = ywc_tib_register_setback } }"
+        },
+        {
+          "id": "ywc_je_v03_tib_register_2",
+          "title": {
+            "zh": "山谷供役簿的新页：复核 2",
+            "en": "A New Page in the Valley Service Register: Review 2"
+          },
+          "desc": {
+            "zh": "旧役额、粮债与民户实际负担不再相称。贵族、寺院与村社须在现行土地法下核账，而非一纸诏令抹去土地制度。",
+            "en": "Old service quotas and grain debts no longer match household burdens. Nobles, monasteries and villages must reconcile accounts under the existing land law."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_settled } has_variable = ywc_v03_tib_v03_tib_service_register_started var:ywc_tib_register_stage = 1 } possible = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_settled } has_variable = ywc_v03_tib_v03_tib_service_register_started var:ywc_tib_register_stage = 1 } immediate = { set_variable = { name = ywc_tib_register_phase_two_open value = 1 } } on_fail = { ywc_tib_register_withdraw = yes } on_monthly_pulse = { effect = { ywc_tib_register_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_12_event = 1005 NOT = { var:ywc_tib_register_notice_last_delivered = 1 } } remove_variable = ywc_tib_register_notice_12_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_36_event = 1006 } remove_variable = ywc_tib_register_notice_36_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 2 } trigger_event = { id = ywc_tib.1006 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_12_event = 1005 } remove_variable = ywc_tib_register_notice_12_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1000 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1000 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1001 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1001 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1002 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1002 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1003 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1003 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1004 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1004 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1007 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1007 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1008 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1008 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1009 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1009 } } } } }",
+          "goal": "{ var:ywc_tib_register_stage > 1 }",
+          "exit_conditions": "{ OR = { has_variable = ywc_tib_register_withdrawn has_variable = ywc_tib_register_setback } }"
+        },
+        {
+          "id": "ywc_je_v03_tib_register_3",
+          "title": {
+            "zh": "山谷供役簿的新页：复核 3",
+            "en": "A New Page in the Valley Service Register: Review 3"
+          },
+          "desc": {
+            "zh": "旧役额、粮债与民户实际负担不再相称。贵族、寺院与村社须在现行土地法下核账，而非一纸诏令抹去土地制度。",
+            "en": "Old service quotas and grain debts no longer match household burdens. Nobles, monasteries and villages must reconcile accounts under the existing land law."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_settled } has_variable = ywc_v03_tib_v03_tib_service_register_started var:ywc_tib_register_stage = 2 } possible = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_service_register_settled } has_variable = ywc_v03_tib_v03_tib_service_register_started var:ywc_tib_register_stage = 2 } immediate = { set_variable = { name = ywc_tib_register_pending_event value = 1007 } } on_fail = { ywc_tib_register_withdraw = yes } on_monthly_pulse = { effect = { ywc_tib_register_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_12_event = 1005 NOT = { var:ywc_tib_register_notice_last_delivered = 1 } } remove_variable = ywc_tib_register_notice_12_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_36_event = 1006 } remove_variable = ywc_tib_register_notice_36_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 2 } trigger_event = { id = ywc_tib.1006 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_notice_12_event = 1005 } remove_variable = ywc_tib_register_notice_12_event set_variable = { name = ywc_tib_register_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1000 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1000 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1001 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1001 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1002 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1002 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1003 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1003 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1004 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1004 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1007 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1007 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1008 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1008 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_register_pending_event = 1009 } remove_variable = ywc_tib_register_pending_event trigger_event = { id = ywc_tib.1009 } } } } }",
+          "goal": "{ has_variable = ywc_tib_register_six_months_complete }",
+          "exit_conditions": "{ OR = { has_variable = ywc_tib_register_withdrawn has_variable = ywc_tib_register_setback } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_tib.1000",
+          "title": {
+            "zh": "山谷供役簿的新页",
+            "en": "The register is opened"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "公布役额",
+                "en": "Publish the service register"
+              },
+              "effect": "{ ywc_tib_choose_register_1 = yes if = { limit = { has_variable = ywc_tib_register_paid } set_variable = { name = ywc_tib_register_pending_event value = 1001 } } else = { set_variable = { name = ywc_tib_register_pending_event value = 1000 } } }",
+              "ai_chance": "{ base = 34 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 1 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 1 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "发布透明役额，降低贵族集团支持并提高地方响应。",
+                "en": "Publishes obligations transparently, lowering Landowner approval and improving local response."
+              },
+              "trigger": "{ ywc_tib_register_route_1_ready = yes ywc_tib_payable_register_1 = yes }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "折役付费",
+                "en": "Pay cash in place of service"
+              },
+              "effect": "{ ywc_tib_choose_register_2 = yes if = { limit = { has_variable = ywc_tib_register_paid } set_variable = { name = ywc_tib_register_pending_event value = 1001 } } else = { set_variable = { name = ywc_tib_register_pending_event value = 1000 } } }",
+              "ai_chance": "{ base = 29 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 2 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 2 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "承担中等行政支出并压低乡民集团支持。",
+                "en": "Pays an intermediate administrative cost and reduces Rural Folk approval."
+              },
+              "trigger": "{ ywc_tib_register_route_2_ready = yes ywc_tib_payable_register_2 = yes }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "旧例设上限",
+                "en": "Cap the customary quota"
+              },
+              "effect": "{ ywc_tib_choose_register_3 = yes if = { limit = { has_variable = ywc_tib_register_paid } set_variable = { name = ywc_tib_register_pending_event value = 1001 } } else = { set_variable = { name = ywc_tib_register_pending_event value = 1000 } } }",
+              "ai_chance": "{ base = 24 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 3 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 3 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "以最低费用保留旧制，贵族集团支持略升。",
+                "en": "Keeps the customary system at the lowest cost and slightly raises Landowner approval."
+              },
+              "trigger": "{ ywc_tib_register_route_3_ready = yes ywc_tib_payable_register_3 = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1000 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1001",
+          "title": {
+            "zh": "官署核算与村社陈情",
+            "en": "Surveying the cultivated season"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_1 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1001 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1002",
+          "title": {
+            "zh": "复核实物役与劳力缺口",
+            "en": "Office accounts and village petitions"
+          },
+          "desc": {
+            "zh": "本次决定留下可复查的费用与制度责任，不替邻国作主。",
+            "en": "The decision records fiscal and institutional responsibility without deciding for neighboring polities."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_2 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1002 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1003",
+          "title": {
+            "zh": "选择可承受的年度账法",
+            "en": "Comparing labor with arrears"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_3 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1003 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1004",
+          "title": {
+            "zh": "十二月受阻通告",
+            "en": "A sustainable annual schedule"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_5 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1004 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1005",
+          "title": {
+            "zh": "十二个月受阻通告",
+            "en": "12-month obstruction notice"
+          },
+          "desc": {
+            "zh": "本次决定留下可复查的费用与制度责任，不替邻国作主。",
+            "en": "The decision records fiscal and institutional responsibility without deciding for neighboring polities."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "缩小已付款路线的实施范围并重试",
+                "en": "Narrow the paid route scope and retry"
+              },
+              "effect": "{ ywc_tib_register_narrow_scope = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "保留已付款路线，清旧实施标记并重新执行末端核验。",
+                "en": "Keep the paid route, clear old implementation state, and repeat final verification."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_notice_12_event value = 1005 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1006",
+          "title": {
+            "zh": "三十六月受阻通告",
+            "en": "36-month obstruction notice"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "settle_setback",
+              "label": {
+                "zh": "结算为受挫并结束",
+                "en": "Settle as a setback and close"
+              },
+              "effect": "{ ywc_tib_register_settle_setback = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "已付费用不退回，释放本线名额。",
+                "en": "Past costs are sunk; this closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "以受挫结局结束日志并释放名额。",
+                "en": "End this journal as a setback and release capacity."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "重谈条件并重新观察",
+                "en": "Renegotiate and restart observation"
+              },
+              "effect": "{ ywc_tib_register_renegotiate = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "重置连续观察并返回可重谈节点；不会自动结算。",
+                "en": "Reset continuous observation and return to the renegotiation node; no automatic settlement."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_notice_36_event value = 1006 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1007",
+          "title": {
+            "zh": "结算与地方回执",
+            "en": "Continuous compliance review"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_6 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1007 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1008",
+          "title": {
+            "zh": "终局复核",
+            "en": "Final accounts and local receipt"
+          },
+          "desc": {
+            "zh": "本次决定留下可复查的费用与制度责任，不替邻国作主。",
+            "en": "The decision records fiscal and institutional responsibility without deciding for neighboring polities."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_7 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1008 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1009",
+          "title": {
+            "zh": "末端核验与实际执行",
+            "en": "Final verification and implementation"
+          },
+          "desc": {
+            "zh": "按已付款路线完成末端核验；通过后才进入连续观察。",
+            "en": "Complete final verification under the paid route; only then does continuous observation begin."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_register_progress_8 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_register_pending_event value = 1009 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_register_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_register_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_register_stage",
+            "ywc_tib_register_pending_event"
+          ]
+        }
+      ],
+      "outcomes": [
+        "route_one_established",
+        "route_two_compromise",
+        "route_three_limited",
+        "withdrawn_or_blocked"
+      ],
+      "legacy_links": [
+        "ywc_campaign_tib_c1_outcome",
+        "ywc_je_flavor_tib_estate_1"
+      ]
+    },
+    {
+      "slug": "v03_tib_grain_credit",
+      "era": "foundation",
+      "participants": [
+        "寺院救济院",
+        "农民",
+        "粮商",
+        "财政官署"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_tib_grain_1",
+          "title": {
+            "zh": "借粮的季节",
+            "en": "The Season of Borrowed Grain"
+          },
+          "desc": {
+            "zh": "歉收风险、粮价、农户债务与救济预算相互牵连；粮仓不能靠空白账目充实。",
+            "en": "Harvest risk, grain prices, household debt and relief budgets are connected; a ledger cannot fill an empty granary."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_started } OR = { var:ywc_campaign_tib_c1_outcome >= 0 has_variable = ywc_je_flavor_tib_estate_1_resolved has_variable = ywc_je_flavor_tib_estate_1_failed } ywc_tib_grain_ready = yes } possible = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_started } OR = { var:ywc_campaign_tib_c1_outcome >= 0 has_variable = ywc_je_flavor_tib_estate_1_resolved has_variable = ywc_je_flavor_tib_estate_1_failed } ywc_tib_grain_ready = yes } immediate = { if = { limit = { NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_started } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } set_variable = { name = ywc_v03_tib_v03_tib_grain_credit_started value = 1 } set_variable = { name = ywc_v03_tib_v03_tib_grain_credit_last_event value = 0 } ywc_tib_capture_grain_fee = yes set_variable = { name = ywc_tib_grain_pending_event value = 1010 } } } on_fail = { ywc_tib_grain_withdraw = yes } on_monthly_pulse = { effect = { ywc_tib_grain_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_notice_12_event = 1014 NOT = { var:ywc_tib_grain_notice_last_delivered = 1 } } remove_variable = ywc_tib_grain_notice_12_event set_variable = { name = ywc_tib_grain_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1014 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_notice_36_event = 1015 } remove_variable = ywc_tib_grain_notice_36_event set_variable = { name = ywc_tib_grain_notice_last_delivered value = 2 } trigger_event = { id = ywc_tib.1015 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_notice_12_event = 1014 } remove_variable = ywc_tib_grain_notice_12_event set_variable = { name = ywc_tib_grain_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1014 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1010 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1010 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1011 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1011 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1012 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1012 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1013 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1013 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1016 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1017 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1017 } } } } }",
+          "goal": "{ var:ywc_tib_grain_stage > 0 }",
+          "exit_conditions": "{ OR = { has_variable = ywc_tib_grain_withdrawn has_variable = ywc_tib_grain_setback } }"
+        },
+        {
+          "id": "ywc_je_v03_tib_grain_2",
+          "title": {
+            "zh": "借粮的季节：复核 2",
+            "en": "The Season of Borrowed Grain: Review 2"
+          },
+          "desc": {
+            "zh": "歉收风险、粮价、农户债务与救济预算相互牵连；粮仓不能靠空白账目充实。",
+            "en": "Harvest risk, grain prices, household debt and relief budgets are connected; a ledger cannot fill an empty granary."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_settled } has_variable = ywc_v03_tib_v03_tib_grain_credit_started var:ywc_tib_grain_stage = 1 } possible = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_grain_credit_settled } has_variable = ywc_v03_tib_v03_tib_grain_credit_started var:ywc_tib_grain_stage = 1 } immediate = { set_variable = { name = ywc_tib_grain_phase_two_open value = 1 } } on_fail = { ywc_tib_grain_withdraw = yes } on_monthly_pulse = { effect = { ywc_tib_grain_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_notice_12_event = 1014 NOT = { var:ywc_tib_grain_notice_last_delivered = 1 } } remove_variable = ywc_tib_grain_notice_12_event set_variable = { name = ywc_tib_grain_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1014 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_notice_36_event = 1015 } remove_variable = ywc_tib_grain_notice_36_event set_variable = { name = ywc_tib_grain_notice_last_delivered value = 2 } trigger_event = { id = ywc_tib.1015 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_notice_12_event = 1014 } remove_variable = ywc_tib_grain_notice_12_event set_variable = { name = ywc_tib_grain_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1014 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1010 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1010 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1011 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1011 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1012 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1012 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1013 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1013 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1016 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_grain_pending_event = 1017 } remove_variable = ywc_tib_grain_pending_event trigger_event = { id = ywc_tib.1017 } } } } }",
+          "goal": "{ has_variable = ywc_tib_grain_six_months_complete }",
+          "exit_conditions": "{ OR = { has_variable = ywc_tib_grain_withdrawn has_variable = ywc_tib_grain_setback } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_tib.1010",
+          "title": {
+            "zh": "借粮的季节",
+            "en": "Grain prices and arrears reported"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "寺政共仓",
+                "en": "Joint monastic and public granary"
+              },
+              "effect": "{ ywc_tib_choose_grain_1 = yes if = { limit = { has_variable = ywc_tib_grain_paid } set_variable = { name = ywc_tib_grain_pending_event value = 1011 } } else = { set_variable = { name = ywc_tib_grain_pending_event value = 1010 } } }",
+              "ai_chance": "{ base = 34 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 1 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 1 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "支付共仓最高建设费用，提升寺院集团支持。",
+                "en": "Pays joint-store setup costs and raises Devout approval."
+              },
+              "trigger": "{ ywc_tib_grain_route_1_ready = yes ywc_tib_payable_grain_1 = yes }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "有限减息",
+                "en": "Limited interest relief"
+              },
+              "effect": "{ ywc_tib_choose_grain_2 = yes if = { limit = { has_variable = ywc_tib_grain_paid } set_variable = { name = ywc_tib_grain_pending_event value = 1011 } } else = { set_variable = { name = ywc_tib_grain_pending_event value = 1010 } } }",
+              "ai_chance": "{ base = 29 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 2 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 2 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "承担行政费用并降低地主集团支持。",
+                "en": "Pays an administrative cost and lowers Landowner approval."
+              },
+              "trigger": "{ ywc_tib_grain_route_2_ready = yes ywc_tib_payable_grain_2 = yes }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "保旧债并补助",
+                "en": "Preserve debts and subsidize households"
+              },
+              "effect": "{ ywc_tib_choose_grain_3 = yes if = { limit = { has_variable = ywc_tib_grain_paid } set_variable = { name = ywc_tib_grain_pending_event value = 1011 } } else = { set_variable = { name = ywc_tib_grain_pending_event value = 1010 } } }",
+              "ai_chance": "{ base = 24 }",
+              "cost_note": {
+                "zh": "按收入快照计费，为三条策略最高；付款后立即启动纾困修正。",
+                "en": "The highest captured-income charge; payment immediately activates the relief modifier."
+              },
+              "consequence_note": {
+                "zh": "费用最高；立即给低阶层提供一年纾困，三个月观察。",
+                "en": "Highest cost; provides immediate one-year lower-strata relief, with a three-month observation."
+              },
+              "trigger": "{ ywc_tib_grain_route_3_ready = yes ywc_tib_payable_grain_3 = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_pending_event value = 1010 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1011",
+          "title": {
+            "zh": "寺院粮簿与官仓核验",
+            "en": "Monastic and public stores reviewed"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_grain_progress_1 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_pending_event value = 1011 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1012",
+          "title": {
+            "zh": "救济预算审议",
+            "en": "Relief budget debated"
+          },
+          "desc": {
+            "zh": "本次决定留下可复查的费用与制度责任，不替邻国作主。",
+            "en": "The decision records fiscal and institutional responsibility without deciding for neighboring polities."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_grain_progress_2 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_pending_event value = 1012 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1013",
+          "title": {
+            "zh": "选择信用安排",
+            "en": "Choose a credit arrangement"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_grain_progress_3 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_pending_event value = 1013 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1014",
+          "title": {
+            "zh": "十二个月受阻通告",
+            "en": "12-month obstruction notice"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "缩小已付款路线的实施范围并重试",
+                "en": "Narrow the paid route scope and retry"
+              },
+              "effect": "{ ywc_tib_grain_narrow_scope = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "保留已付款路线，清旧实施标记并重新执行末端核验。",
+                "en": "Keep the paid route, clear old implementation state, and repeat final verification."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_notice_12_event value = 1014 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1015",
+          "title": {
+            "zh": "三十六月受阻通告",
+            "en": "36-month obstruction notice"
+          },
+          "desc": {
+            "zh": "本次决定留下可复查的费用与制度责任，不替邻国作主。",
+            "en": "The decision records fiscal and institutional responsibility without deciding for neighboring polities."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "settle_setback",
+              "label": {
+                "zh": "结算为受挫并结束",
+                "en": "Settle as a setback and close"
+              },
+              "effect": "{ ywc_tib_grain_settle_setback = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "已付费用不退回，释放本线名额。",
+                "en": "Past costs are sunk; this closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "以受挫结局结束日志并释放名额。",
+                "en": "End this journal as a setback and release capacity."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "重谈条件并重新观察",
+                "en": "Renegotiate and restart observation"
+              },
+              "effect": "{ ywc_tib_grain_renegotiate = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "重置连续观察并返回可重谈节点；不会自动结算。",
+                "en": "Reset continuous observation and return to the renegotiation node; no automatic settlement."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_notice_36_event value = 1015 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1016",
+          "title": {
+            "zh": "连续履约观察",
+            "en": "Continuous outcome review"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_grain_progress_4 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_pending_event value = 1016 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1017",
+          "title": {
+            "zh": "末端核验与实际执行",
+            "en": "Final verification and implementation"
+          },
+          "desc": {
+            "zh": "按已付款路线完成末端核验；通过后才进入连续观察。",
+            "en": "Complete final verification under the paid route; only then does continuous observation begin."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_grain_progress_6 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_grain_pending_event value = 1017 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_grain_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_grain_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_grain_stage",
+            "ywc_tib_grain_pending_event"
+          ]
+        }
+      ],
+      "outcomes": [
+        "route_one_established",
+        "route_two_compromise",
+        "route_three_limited",
+        "withdrawn_or_blocked"
+      ],
+      "legacy_links": [
+        "ywc_campaign_tib_c1_outcome",
+        "ywc_je_flavor_tib_estate_1"
+      ]
+    },
+    {
+      "slug": "v03_tib_shared_schools",
+      "era": "foundation",
+      "participants": [
+        "寺院学者",
+        "官僚",
+        "地主",
+        "知识分子"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_tib_schools_1",
+          "title": {
+            "zh": "经院门外的算簿",
+            "en": "The Arithmetic Ledger Outside the Monastery School"
+          },
+          "desc": {
+            "zh": "俗学人才需求与寺院教育权威可以协商，但须看真实教育法、学舍与可用经费。",
+            "en": "Demand for practical learning and monastic educational authority can be negotiated through existing laws, schools and budgets."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_shared_schools_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 NOT = { has_variable = ywc_v03_tib_v03_tib_shared_schools_started } OR = { var:ywc_campaign_tib_c1_outcome >= 0 has_variable = ywc_je_flavor_tib_estate_1_resolved has_variable = ywc_je_flavor_tib_estate_1_failed } ywc_tib_schools_ready = yes } possible = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_tib_v03_tib_shared_schools_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 NOT = { has_variable = ywc_v03_tib_v03_tib_shared_schools_started } OR = { var:ywc_campaign_tib_c1_outcome >= 0 has_variable = ywc_je_flavor_tib_estate_1_resolved has_variable = ywc_je_flavor_tib_estate_1_failed } ywc_tib_schools_ready = yes } immediate = { if = { limit = { NOT = { has_variable = ywc_v03_tib_v03_tib_shared_schools_started } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } set_variable = { name = ywc_v03_tib_v03_tib_shared_schools_started value = 1 } set_variable = { name = ywc_v03_tib_v03_tib_shared_schools_last_event value = 0 } ywc_tib_capture_schools_fee = yes set_variable = { name = ywc_tib_schools_pending_event value = 1020 } } } on_fail = { ywc_tib_schools_withdraw = yes } on_monthly_pulse = { effect = { ywc_tib_schools_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_notice_12_event = 1023 NOT = { var:ywc_tib_schools_notice_last_delivered = 1 } } remove_variable = ywc_tib_schools_notice_12_event set_variable = { name = ywc_tib_schools_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1023 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_notice_36_event = 1024 } remove_variable = ywc_tib_schools_notice_36_event set_variable = { name = ywc_tib_schools_notice_last_delivered value = 2 } trigger_event = { id = ywc_tib.1024 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_notice_12_event = 1023 } remove_variable = ywc_tib_schools_notice_12_event set_variable = { name = ywc_tib_schools_notice_last_delivered value = 1 } trigger_event = { id = ywc_tib.1023 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_pending_event = 1020 } remove_variable = ywc_tib_schools_pending_event trigger_event = { id = ywc_tib.1020 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_pending_event = 1021 } remove_variable = ywc_tib_schools_pending_event trigger_event = { id = ywc_tib.1021 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_pending_event = 1022 } remove_variable = ywc_tib_schools_pending_event trigger_event = { id = ywc_tib.1022 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_tib_schools_pending_event = 1025 } remove_variable = ywc_tib_schools_pending_event trigger_event = { id = ywc_tib.1025 } } } } }",
+          "goal": "{ has_variable = ywc_tib_schools_six_months_complete }",
+          "exit_conditions": "{ OR = { has_variable = ywc_tib_schools_withdrawn has_variable = ywc_tib_schools_setback } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_tib.1020",
+          "title": {
+            "zh": "经院门外的算簿",
+            "en": "School and clerical rolls"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "route_1",
+              "label": {
+                "zh": "共办学舍",
+                "en": "Shared monastic and public school"
+              },
+              "effect": "{ ywc_tib_choose_schools_1 = yes if = { limit = { has_variable = ywc_tib_schools_paid } set_variable = { name = ywc_tib_schools_pending_event value = 1021 } } else = { set_variable = { name = ywc_tib_schools_pending_event value = 1020 } } }",
+              "ai_chance": "{ base = 34 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 1 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 1 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "支付共办费用并提高寺院集团支持。",
+                "en": "Pays shared-school costs and raises Devout approval."
+              },
+              "trigger": "{ ywc_tib_schools_route_1_ready = yes ywc_tib_payable_schools_1 = yes }"
+            },
+            {
+              "key": "route_2",
+              "label": {
+                "zh": "官办算学",
+                "en": "Government arithmetic school"
+              },
+              "effect": "{ ywc_tib_choose_schools_2 = yes if = { limit = { has_variable = ywc_tib_schools_paid } set_variable = { name = ywc_tib_schools_pending_event value = 1021 } } else = { set_variable = { name = ywc_tib_schools_pending_event value = 1020 } } }",
+              "ai_chance": "{ base = 29 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 2 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 2 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "承担全额费用并降低寺院集团支持。",
+                "en": "Pays full costs and lowers Devout approval."
+              },
+              "trigger": "{ ywc_tib_schools_route_2_ready = yes ywc_tib_payable_schools_2 = yes }"
+            },
+            {
+              "key": "route_3",
+              "label": {
+                "zh": "经院增科",
+                "en": "Add arithmetic to monastic curricula"
+              },
+              "effect": "{ ywc_tib_choose_schools_3 = yes if = { limit = { has_variable = ywc_tib_schools_paid } set_variable = { name = ywc_tib_schools_pending_event value = 1021 } } else = { set_variable = { name = ywc_tib_schools_pending_event value = 1020 } } }",
+              "ai_chance": "{ base = 24 }",
+              "cost_note": {
+                "zh": "支付按年总收入除以52快照计算的第 3 路费用；财政不安全或国库不足时不可选。",
+                "en": "Pays route 3 costs based on the captured yearly gross income / 52; disabled when insolvent or unaffordable."
+              },
+              "consequence_note": {
+                "zh": "以较低费用调整课程并提高乡民集团支持。",
+                "en": "Uses a lower cost to expand curricula and raises Rural Folk approval."
+              },
+              "trigger": "{ ywc_tib_schools_route_3_ready = yes ywc_tib_payable_schools_3 = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_schools_pending_event value = 1020 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_schools_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_schools_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_schools_stage",
+            "ywc_tib_schools_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1021",
+          "title": {
+            "zh": "教育法与识字现况",
+            "en": "Education law and literacy reviewed"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_schools_progress_1 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_schools_pending_event value = 1021 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_schools_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_schools_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_schools_stage",
+            "ywc_tib_schools_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1022",
+          "title": {
+            "zh": "选择课程共管方式",
+            "en": "Choose a shared curriculum"
+          },
+          "desc": {
+            "zh": "本次决定留下可复查的费用与制度责任，不替邻国作主。",
+            "en": "The decision records fiscal and institutional responsibility without deciding for neighboring polities."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_schools_progress_3 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_schools_pending_event value = 1022 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_schools_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_schools_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_schools_stage",
+            "ywc_tib_schools_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1023",
+          "title": {
+            "zh": "十二个月受阻通告",
+            "en": "12-month obstruction notice"
+          },
+          "desc": {
+            "zh": "役额应依现行土地法、农业劳力、官署编制与地方政治压力逐项核对。",
+            "en": "Quotas are checked against current land law, agricultural work, staffed administration and local political pressure."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "narrow_scope",
+              "label": {
+                "zh": "缩小已付款路线的实施范围并重试",
+                "en": "Narrow the paid route scope and retry"
+              },
+              "effect": "{ ywc_tib_schools_narrow_scope = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "保留已付款路线，清旧实施标记并重新执行末端核验。",
+                "en": "Keep the paid route, clear old implementation state, and repeat final verification."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_schools_notice_12_event value = 1023 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_schools_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_schools_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_schools_stage",
+            "ywc_tib_schools_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1024",
+          "title": {
+            "zh": "三十六月受阻通告",
+            "en": "36-month obstruction notice"
+          },
+          "desc": {
+            "zh": "账目把真实财政、受雇岗位和粮食供给列入同一份复核。",
+            "en": "The review puts treasury, paid posts and grain supply in one account."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "settle_setback",
+              "label": {
+                "zh": "结算为受挫并结束",
+                "en": "Settle as a setback and close"
+              },
+              "effect": "{ ywc_tib_schools_settle_setback = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "已付费用不退回，释放本线名额。",
+                "en": "Past costs are sunk; this closes the arc and releases its slot."
+              },
+              "consequence_note": {
+                "zh": "以受挫结局结束日志并释放名额。",
+                "en": "End this journal as a setback and release capacity."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "重谈条件并重新观察",
+                "en": "Renegotiate and restart observation"
+              },
+              "effect": "{ ywc_tib_schools_renegotiate = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "重置连续观察并返回可重谈节点；不会自动结算。",
+                "en": "Reset continuous observation and return to the renegotiation node; no automatic settlement."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_schools_notice_36_event value = 1024 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_schools_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_schools_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_schools_stage",
+            "ywc_tib_schools_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_tib.1025",
+          "title": {
+            "zh": "末端核验与实际执行",
+            "en": "Final verification and implementation"
+          },
+          "desc": {
+            "zh": "按已付款路线完成末端核验；通过后才进入连续观察。",
+            "en": "Complete final verification under the paid route; only then does continuous observation begin."
+          },
+          "trigger": "{ c:TIB ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "review_next",
+              "label": {
+                "zh": "核实账册并继续下一阶段",
+                "en": "Verify the accounts and continue"
+              },
+              "effect": "{ ywc_tib_schools_progress_4 = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "不重复扣除已付开办费；若需新支出，财政不安全时不会推进。",
+                "en": "No duplicate opening charge; any new expense is gated and cannot advance on failure."
+              },
+              "consequence_note": {
+                "zh": "改变阶段与复核状态，后续会再次读取真实法律、就业或预算条件。",
+                "en": "Advances the review state, which rereads live law, employment or budget conditions."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂缓，待条件恢复后重试",
+                "en": "Defer and retry when conditions recover"
+              },
+              "effect": "{ set_variable = { name = ywc_tib_schools_pending_event value = 1025 } }",
+              "ai_chance": "{ base = 12 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No fee."
+              },
+              "consequence_note": {
+                "zh": "不判失败、不清除连续观察，保留当前任务等待下月重试。",
+                "en": "Does not fail the task or erase ongoing observation; retries next month."
+              },
+              "trigger": "{ always = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回本线并释放名额",
+                "en": "Withdraw and release this arc slot"
+              },
+              "effect": "{ ywc_tib_schools_withdraw = yes }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "既付费用不退；释放动作可重复执行。",
+                "en": "Past costs are sunk; withdrawal is idempotent."
+              },
+              "consequence_note": {
+                "zh": "记录受挫结局并只释放一次本线槽位。",
+                "en": "Records a setback and releases this arc slot once."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "以真实法制、财政、就业与地方反馈推进本线。",
+            "en": "Advance the arc through real laws, finances, employment and local feedback."
+          },
+          "reads": [
+            "ywc_tib_schools_route",
+            "yearly_gross_income",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_tib_schools_stage",
+            "ywc_tib_schools_pending_event"
+          ]
+        }
+      ],
+      "outcomes": [
+        "route_one_established",
+        "route_two_compromise",
+        "route_three_limited",
+        "withdrawn_or_blocked"
+      ],
+      "legacy_links": [
+        "ywc_campaign_tib_c1_outcome",
+        "ywc_je_flavor_tib_estate_1"
+      ]
+    }
+  ]
 }
