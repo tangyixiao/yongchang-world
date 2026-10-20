@@ -180,7 +180,7 @@ COUNTRY_CONTEXT = {
     "AKS": ("阿克苏把塔里木绿洲与伊犁商路相连，城镇守备和水源管理决定其能否抵御更强汗国。", "Aksu links Tarim oases with Ili trade; town defences and water management determine whether it can withstand stronger khanates."),
     "ODS": ("鄂尔多斯盟旗控制黄河套地和南下牧道，盟主需要协调牧地使用并防止大国把旗盟分化。", "Ordos banners control the Yellow River bend and southern grazing routes; their leader must share pasture and resist outside attempts to divide the league."),
     "CHR": ("察哈尔诸部位于草原与华北边缘，盟誓和骑兵调度是他们在大顺与北方强权间的筹码。", "Chahar clans lie between the steppe and North China, using oaths and cavalry coordination as bargaining power with Great Shun and northern rivals."),
-    "BKY": ("布凯汗国依赖伏尔加—乌拉尔草原牧道，俄国的定居边疆与商贸扩展正压缩部族迁徙空间。", "The Bukey Horde depends on Volga-Ural pasture routes as Russian settlement and commerce narrow the clans' room to migrate."),
+    "BKY": ("布克依汗国依赖伏尔加—乌拉尔草原牧道，俄国的定居边疆与商贸扩展正压缩部族迁徙空间。", "The Bukey Horde depends on Volga-Ural pasture routes as Russian settlement and commerce narrow the clans' room to migrate."),
     "SHB": ("沙赫里萨布兹依托绿洲农田和山口商路维持地方王权，布哈拉与周边汗国都觊觎其税源。", "Shahrisabz sustains local rule through oasis farms and mountain trade, while Bukhara and neighbouring khanates seek its revenue."),
     "QRT": ("卡拉特金山地领地控制通往费尔干纳的隘口，地方首领以通行权换取自治与安全保障。", "Karategin's mountain chiefs control passes toward Ferghana, exchanging access for autonomy and security guarantees."),
     "TKK": ("特克部族守卫希瓦以南的绿洲与商路，草场迁徙和俄国里海扩张共同威胁其独立。", "Teke clans guard oases and routes south of Khiva, facing threats to their independence from pasture pressures and Russian expansion around the Caspian."),
@@ -371,7 +371,7 @@ def outputs() -> dict[pathlib.Path, str]:
         "HXI": ("河西走廊的军镇依靠驿道、屯田与关隘维持补给。大顺朝廷需要它守住西行商路，地方将领则要求保留调兵与征粮的裁量；修复烽燧和仓站比经营森林河运更迫切。", "The Hexi corridor garrisons depend on relay roads, military farms, and passes for supply. Great Shun needs them to secure the western trade route, while commanders demand room over levies and provisions; restoring signal towers and depots matters more than river timber traffic."),
         "DRZ": ("达尔瓦兹沙国立足塔吉克山地河谷，水源、山路与中亚商队往来关系到地方关税和有限财政；地方权力需要在通行收益与自治之间协商。", "Darvaz is rooted in Tajikistan's mountain valleys. Wells, mountain roads, and Central Asian caravans shape local tolls and a limited treasury; local authorities bargain over passage and autonomy."),
         "HSR": ("希萨尔伯克国立足中亚的乌兹别克与塔吉克河谷地带，灌溉农田和商路通行税支撑有限财政；地方权力需要协商水渠与关卡的管理。", "The Hisar Begdom is rooted in Central Asian river valleys across Uzbek and Tajik lands. Irrigated farms and caravan tolls sustain a limited treasury; local authorities bargain over canals and checkpoints."),
-        "BKY": ("布凯汗国依赖里海北岸与乌拉尔河之间的草原牧道，俄国定居边疆与商贸扩展正压缩部族季节迁牧的空间。", "The Bukey Horde depends on pasture routes between the northern Caspian and the Ural River as Russian settlement and commerce narrow the clans' room for seasonal migration."),
+        "BKY": ("布克依汗国依赖里海北岸与乌拉尔河之间的草原牧道，俄国定居边疆与商贸扩展正压缩部族季节迁牧的空间。", "The Bukey Horde depends on pasture routes between the northern Caspian and the Ural River as Russian settlement and commerce narrow the clans' room for seasonal migration."),
     }
     for tag, row in sorted(countries.items()):
         if tag not in live or tag == "MGL":

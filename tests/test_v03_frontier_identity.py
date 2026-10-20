@@ -110,6 +110,8 @@ class FrontierIdentityTest(unittest.TestCase):
                 self.assertNotIn(wrong, text)
 
         self.assertIn("里海", zh["BKY"])
+        self.assertIn("布克依汗国", zh["BKY"])
+        self.assertNotIn("布凯汗国", zh["BKY"])
         self.assertIn("乌拉尔", zh["BKY"])
         self.assertIn("季节迁牧", zh["BKY"])
         self.assertIn("Caspian", en["BKY"])
