@@ -1,0 +1,254 @@
+﻿ywc_oir_v03_finance_safe = {
+    NOT = { in_default = yes }
+    NOT = { has_modifier = declared_bankruptcy }
+}
+ywc_oir_v03_has_owned_state = {
+    any_scope_state = { is_owned_by = ROOT }
+}
+ywc_oir_v03_has_staffed_administration = {
+    any_scope_state = {
+        is_owned_by = ROOT
+        any_scope_building = { is_building_type = building_government_administration occupancy >= 0.5 }
+    }
+}
+ywc_oir_v03_has_staffed_ranch = {
+    any_scope_state = {
+        is_owned_by = ROOT
+        any_scope_building = { is_building_type = building_livestock_ranch occupancy >= 0.6 }
+    }
+}
+ywc_oir_v03_has_any_ranch = {
+    any_scope_state = {
+        is_owned_by = ROOT
+        any_scope_building = { is_building_type = building_livestock_ranch occupancy >= 0.35 }
+    }
+}
+ywc_oir_v03_has_staffed_barracks = {
+    any_scope_state = {
+        is_owned_by = ROOT
+        any_scope_building = { is_building_type = building_barrack occupancy >= 0.5 building_has_goods_shortage = no }
+    }
+}
+ywc_oir_v03_pasture_land_roll_law = {
+    OR = {
+        has_law_or_variant = law_type:law_serfdom
+        has_law_or_variant = law_type:law_tenant_farmers
+        has_law_or_variant = law_type:law_collectivized_agriculture
+    }
+}
+ywc_oir_v03_pasture_quiet = {
+    NOT = {
+        any_scope_state = {
+            is_owned_by = ROOT
+            OR = { turmoil > 0.15 radical_fraction = { value > 0.25 pop_type = farmers } }
+        }
+    }
+}
+ywc_oir_v03_pasture_cohesion_holds = {
+    var:ywc_flavor_oir_banner_cohesion >= 35
+}
+ywc_oir_v03_pasture_court_ready = {
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_has_staffed_administration = yes
+    ywc_oir_v03_has_staffed_ranch = yes
+    ywc_oir_v03_pasture_land_roll_law = yes
+    ywc_oir_v03_pasture_quiet = yes
+    var:ywc_flavor_oir_banner_cohesion >= 45
+}
+ywc_oir_v03_pasture_banner_ready = {
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_has_staffed_ranch = yes
+    ywc_oir_v03_pasture_quiet = yes
+    var:ywc_flavor_oir_banner_cohesion >= 50
+}
+ywc_oir_v03_pasture_custom_ready = {
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_pasture_cohesion_holds = yes
+    ywc_oir_v03_pasture_quiet = yes
+}
+ywc_oir_v03_pasture_reduced_ready = {
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_has_any_ranch = yes
+    var:ywc_flavor_oir_banner_cohesion >= 20
+}
+ywc_oir_v03_pasture_route_execution_ready = {
+    ywc_oir_v03_has_owned_state = yes
+    OR = {
+        AND = { has_variable = ywc_oir_pasture_scope_narrowed ywc_oir_v03_pasture_reduced_ready = yes }
+        AND = {
+            NOT = { has_variable = ywc_oir_pasture_scope_narrowed }
+            OR = {
+                AND = { var:ywc_oir_pasture_route = 1 ywc_oir_v03_pasture_court_ready = yes }
+                AND = { var:ywc_oir_pasture_route = 2 ywc_oir_v03_pasture_banner_ready = yes }
+                AND = { var:ywc_oir_pasture_route = 3 ywc_oir_v03_pasture_custom_ready = yes }
+            }
+        }
+    }
+}
+ywc_oir_v03_pasture_high_ready = {
+    NOT = { has_variable = ywc_oir_pasture_scope_narrowed }
+    OR = {
+        AND = { var:ywc_oir_pasture_route = 1 ywc_oir_v03_pasture_court_ready = yes }
+        AND = { var:ywc_oir_pasture_route = 2 ywc_oir_v03_pasture_banner_ready = yes }
+        AND = { var:ywc_oir_pasture_route = 3 ywc_oir_v03_pasture_custom_ready = yes }
+    }
+}
+ywc_oir_v03_supply_army_law = {
+    OR = {
+        has_law_or_variant = law_type:law_warrior_caste
+        has_law_or_variant = law_type:law_peasant_levies
+        has_law_or_variant = law_type:law_professional_army
+        has_law_or_variant = law_type:law_national_militia
+        has_law_or_variant = law_type:law_mass_conscription
+    }
+}
+ywc_oir_v03_supply_wages_paid = {
+    OR = { has_modifier = military_wages_medium has_modifier = military_wages_high has_modifier = military_wages_very_high }
+}
+ywc_oir_v03_supply_goods_available = {
+    market_capital.market = { mg:small_arms = { market_goods_sell_orders > 200 } }
+}
+ywc_oir_v03_supply_unified_ready = {
+    ywc_oir_v03_supply_goods_available = yes
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_has_staffed_administration = yes
+    ywc_oir_v03_has_staffed_barracks = yes
+    ywc_oir_v03_supply_army_law = yes
+    ywc_oir_v03_supply_wages_paid = yes
+    army_size >= 1500
+}
+ywc_oir_v03_supply_quota_ready = {
+    ywc_oir_v03_supply_goods_available = yes
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_has_staffed_barracks = yes
+    ywc_oir_v03_supply_army_law = yes
+    army_size >= 700
+}
+ywc_oir_v03_supply_capped_ready = {
+    ywc_oir_v03_supply_goods_available = yes
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_supply_army_law = yes
+    army_size >= 500
+}
+ywc_oir_v03_supply_reduced_ready = {
+    ywc_oir_v03_supply_goods_available = yes
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_supply_army_law = yes
+    army_size >= 300
+}
+ywc_oir_v03_supply_route_execution_ready = {
+    ywc_oir_v03_has_owned_state = yes
+    OR = {
+        AND = { has_variable = ywc_oir_supply_scope_narrowed ywc_oir_v03_supply_reduced_ready = yes }
+        AND = {
+            NOT = { has_variable = ywc_oir_supply_scope_narrowed }
+            OR = {
+                AND = { var:ywc_oir_supply_route = 1 ywc_oir_v03_supply_unified_ready = yes }
+                AND = { var:ywc_oir_supply_route = 2 ywc_oir_v03_supply_quota_ready = yes }
+                AND = { var:ywc_oir_supply_route = 3 ywc_oir_v03_supply_capped_ready = yes }
+            }
+        }
+    }
+}
+ywc_oir_v03_supply_high_ready = {
+    NOT = { has_variable = ywc_oir_supply_scope_narrowed }
+    OR = {
+        AND = { var:ywc_oir_supply_route = 1 ywc_oir_v03_supply_unified_ready = yes }
+        AND = { var:ywc_oir_supply_route = 2 ywc_oir_v03_supply_quota_ready = yes }
+        AND = { var:ywc_oir_supply_route = 3 ywc_oir_v03_supply_capped_ready = yes }
+    }
+}
+ywc_oir_v03_tolls_trade_flow = {
+    OR = {
+        market_capital.market = { mg:grain = { market_goods_imports >= 200 } }
+        market_capital.market = { mg:tea = { market_goods_exports > 50 } }
+    }
+}
+ywc_oir_v03_tolls_trade_law = {
+    OR = {
+        has_law_or_variant = law_type:law_mercantilism
+        has_law_or_variant = law_type:law_protectionism
+        has_law_or_variant = law_type:law_free_trade
+    }
+}
+ywc_oir_v03_tolls_market_ready = {
+    any_scope_state = { is_owned_by = ROOT market_access >= 0.7 }
+}
+ywc_oir_v03_tolls_external_relations = {
+    OR = {
+        AND = { exists = c:SHU c:SHU.relations:this >= 0 }
+        AND = { exists = c:RUS c:RUS.relations:this >= 0 }
+    }
+}
+ywc_oir_v03_tolls_single_ready = {
+    ywc_oir_v03_tolls_external_relations = yes
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_tolls_trade_flow = yes
+    ywc_oir_v03_tolls_trade_law = yes
+    ywc_oir_v03_tolls_market_ready = yes
+    ywc_oir_v03_has_staffed_administration = yes
+}
+ywc_oir_v03_tolls_shared_ready = {
+    ywc_oir_v03_tolls_external_relations = yes
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_tolls_trade_flow = yes
+    ywc_oir_v03_has_staffed_administration = yes
+    ywc_oir_v03_tolls_trade_law = yes
+    var:ywc_flavor_oir_banner_cohesion >= 50
+}
+ywc_oir_v03_tolls_banner_ready = {
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_tolls_trade_flow = yes
+    any_scope_state = { is_owned_by = ROOT market_access >= 0.5 }
+}
+ywc_oir_v03_tolls_reduced_ready = {
+    ywc_oir_v03_finance_safe = yes
+    ywc_oir_v03_tolls_trade_flow = yes
+    any_scope_state = { is_owned_by = ROOT market_access >= 0.4 }
+}
+ywc_oir_v03_tolls_route_execution_ready = {
+    ywc_oir_v03_has_owned_state = yes
+    OR = {
+        AND = { has_variable = ywc_oir_tolls_scope_narrowed ywc_oir_v03_tolls_reduced_ready = yes }
+        AND = {
+            NOT = { has_variable = ywc_oir_tolls_scope_narrowed }
+            OR = {
+                AND = { var:ywc_oir_tolls_route = 1 ywc_oir_v03_tolls_single_ready = yes }
+                AND = { var:ywc_oir_tolls_route = 2 ywc_oir_v03_tolls_shared_ready = yes }
+                AND = { var:ywc_oir_tolls_route = 3 ywc_oir_v03_tolls_banner_ready = yes }
+            }
+        }
+    }
+}
+ywc_oir_v03_tolls_high_ready = {
+    NOT = { has_variable = ywc_oir_tolls_scope_narrowed }
+    OR = {
+        AND = { var:ywc_oir_tolls_route = 1 ywc_oir_v03_tolls_single_ready = yes }
+        AND = { var:ywc_oir_tolls_route = 2 ywc_oir_v03_tolls_shared_ready = yes }
+        AND = { var:ywc_oir_tolls_route = 3 ywc_oir_v03_tolls_banner_ready = yes }
+    }
+}
+ywc_oir_v03_pasture_can_pay_survey = {
+    ywc_oir_v03_finance_safe = yes
+    gold_reserves >= var:ywc_oir_survey_fee
+}
+ywc_oir_v03_pasture_can_pay_coord = {
+    ywc_oir_v03_finance_safe = yes
+    gold_reserves >= var:ywc_oir_coord_fee
+}
+ywc_oir_v03_supply_can_pay = {
+    ywc_oir_v03_finance_safe = yes
+    gold_reserves >= var:ywc_oir_supply_fee
+}
+ywc_oir_v03_supply_can_pay_quota = {
+    ywc_oir_v03_finance_safe = yes
+    gold_reserves >= var:ywc_oir_quota_fee
+}
+ywc_oir_v03_tolls_can_pay = {
+    ywc_oir_v03_finance_safe = yes
+    gold_reserves >= var:ywc_oir_tolls_fee
+}
+ywc_oir_v03_tolls_can_pay_shared = {
+    ywc_oir_v03_finance_safe = yes
+    gold_reserves >= var:ywc_oir_tolls_shared_fee
+}
