@@ -69,8 +69,9 @@ def render_country(root: Path, key: str) -> dict[Path, str]:
             rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
                          "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
         else:
-            rendered += ["# Generated DMG inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
-                         "# Generated DMG inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
+            country = "KOR" if key == "country_kor" else "DMG"
+            rendered += [f"# Generated {country} inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
+                         f"# Generated {country} inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
     return dict(zip(paths, rendered))
 
 
