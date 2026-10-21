@@ -686,10 +686,81 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
         world.execute(_nodes_field(event, "immediate"), "DMG")
         limited = _actual_option(event_id, "limited_settlement")
         self.assertTrue(world.conditions(_nodes_field(limited, "trigger"), "DMG"))
+        treasury_before = world.treasury["DMG"]
+        world.countries["DMG"]["in_default"] = 1
+        self.assertFalse(world.conditions(_nodes_field(limited, "trigger"), "DMG"))
         world.execute(_actual_option_effect(event_id, "limited_settlement"), "DMG")
-        self.assertEqual(world.countries["DMG"].get("ywc_dmg_court_outcome"), 4)
-        self.assertEqual(world.countries["DMG"].get("ywc_dmg_court_provinces_outcome"), 4)
-        self.assertEqual(world.countries["DMG"].get("ywc_v03_dmg_v03_dmg_court_provinces_settled"), 1)
+        vars_ = world.countries["DMG"]
+        self.assertEqual(vars_.get("ywc_dmg_court_pending_event"), 1023)
+        self.assertEqual(treasury_before, -2000)
+        self.assertEqual(world.treasury["DMG"], treasury_before)
+        for key in ("ywc_dmg_court_review_due", "ywc_dmg_court_observation_started",
+                    "ywc_dmg_court_review_matured", "ywc_dmg_court_route_ready"):
+            self.assertNotIn(key, vars_, f"limited rejection must clear lost readiness: {key}")
+        self.assertEqual(vars_.get("ywc_dmg_court_route"), 3)
+        self.assertEqual(vars_.get("ywc_dmg_court_charter_paid"), 1)
+        self.assertEqual(vars_.get("ywc_dmg_court_budget_paid"), 1)
+        self.assertEqual(vars_.get("ywc_dmg_court_representation"), 3)
+        self.assertEqual(vars_.get("ywc_dmg_court_defence_veto"), 3)
+        for key in ("ywc_dmg_court_outcome", "ywc_dmg_court_provinces_outcome",
+                    "ywc_v03_dmg_v03_dmg_court_provinces_settled"):
+            self.assertNotIn(key, vars_, f"limited rejection leaked {key}")
+        self.assertFalse(world.conditions(_nodes_field(entry, "complete"), "DMG"))
+        self.assertFalse(world.conditions(_nodes_field(entry, "fail"), "DMG"))
+        world.events.clear()
+        vars_["in_default"] = 0
+        world.execute(pulse, "DMG")
+        self.assertEqual(vars_.get("ywc_dmg_court_observation_started"), 1)
+        self.assertNotIn("ywc_dmg_court_review_matured", vars_)
+        fresh_months = 0
+        finalized_during_recovery = False
+        for _ in range(15):
+            world.execute(pulse, "DMG")
+            if world.events:
+                self.assertEqual(world.events[-1], ("DMG", "ywc_dmg.1023"))
+                retry_event = _generated_event("ywc_dmg.1023")
+                self.assertTrue(world.conditions(_nodes_field(retry_event, "trigger"), "DMG"))
+                world.execute(_nodes_field(retry_event, "immediate"), "DMG")
+                retry_limited = _actual_option("ywc_dmg.1023", "limited_settlement")
+                if vars_.get("ywc_dmg_court_review_matured"):
+                    self.assertTrue(world.conditions(_nodes_field(retry_limited, "trigger"), "DMG"))
+                    world.execute(_actual_option_effect("ywc_dmg.1023", "limited_settlement"), "DMG")
+                    finalized_during_recovery = True
+                    break
+                self.assertFalse(world.conditions(_nodes_field(retry_limited, "trigger"), "DMG"),
+                                 "limited terminal stays closed before a fresh 9-month review")
+                wait = _actual_option("ywc_dmg.1023", "renegotiate")
+                self.assertTrue(world.conditions(_nodes_field(wait, "trigger"), "DMG"))
+                timer_before = world.months_until_expiry["DMG"].get("ywc_dmg_court_review_due")
+                world.execute(_actual_option_effect("ywc_dmg.1023", "renegotiate"), "DMG")
+                self.assertEqual(world.months_until_expiry["DMG"].get("ywc_dmg_court_review_due"),
+                                 timer_before, "new immature retry must not restart the valid watch")
+                world.events.clear()
+            if vars_.get("ywc_dmg_court_review_matured"):
+                break
+            self.assertFalse(world.conditions(_nodes_field(limited, "trigger"), "DMG"),
+                             "limited terminal remains unavailable before fresh review maturity")
+            world.advance_months(1)
+            fresh_months += 1
+        self.assertGreaterEqual(fresh_months, 9)
+        self.assertEqual(vars_.get("ywc_dmg_court_review_matured"), 1)
+        if not finalized_during_recovery:
+            for _ in range(5):
+                world.execute(pulse, "DMG")
+                if world.events:
+                    break
+                world.advance_months(1)
+            self.assertEqual(world.events[-1], ("DMG", "ywc_dmg.1023"))
+            retry_event = _generated_event("ywc_dmg.1023")
+            self.assertTrue(world.conditions(_nodes_field(retry_event, "trigger"), "DMG"))
+            world.execute(_nodes_field(retry_event, "immediate"), "DMG")
+            retry_limited = _actual_option("ywc_dmg.1023", "limited_settlement")
+            self.assertTrue(world.conditions(_nodes_field(retry_limited, "trigger"), "DMG"))
+            world.execute(_actual_option_effect("ywc_dmg.1023", "limited_settlement"), "DMG")
+        self.assertEqual(vars_.get("ywc_dmg_court_outcome"), 4)
+        self.assertEqual(vars_.get("ywc_dmg_court_provinces_outcome"), 4)
+        self.assertEqual(vars_.get("ywc_v03_dmg_v03_dmg_court_provinces_settled"), 1)
+        self.assertEqual(world.treasury["DMG"], treasury_before)
         self.assertTrue(world.conditions(_nodes_field(entry, "complete"), "DMG"))
         self.assertFalse(world.conditions(_nodes_field(entry, "fail"), "DMG"))
 
@@ -958,9 +1029,6 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
         final_option = _actual_option("ywc_dmg.1023", "confirm_royal")
         world.countries["DMG"]["in_default"] = 1
         pulse = _nodes_field(_nodes_field(entry, "on_monthly_pulse"), "effect")
-        world.execute(pulse, "DMG")
-        self.assertNotIn("ywc_dmg_court_review_matured", world.countries["DMG"],
-                         "default pulse must erase the old court maturity")
         self.assertFalse(world.conditions(_nodes_field(final_option, "trigger"), "DMG"),
                          "stale final choice must close when default starts after the popup")
         world.execute(_actual_option_effect("ywc_dmg.1023", "confirm_royal"), "DMG")
@@ -1101,10 +1169,13 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
                 # trusted from the earlier popup trigger.
                 world.countries["DMG"]["fixture_agriculture_employment"] = 0
                 world.countries["DMG"]["in_default"] = 1
-                world.execute(pulse, "DMG")
-                self.assertNotIn("ywc_dmg_titles_review_matured", world.countries["DMG"])
                 self.assertFalse(world.conditions(option_trigger, "DMG"), "stale title target must close")
                 world.execute(_actual_option_effect(event_id, option_key), "DMG")
+                rejected = world.countries["DMG"]
+                self.assertEqual(rejected.get("ywc_dmg_titles_pending_event"), 1015)
+                for key in ("ywc_dmg_titles_review_due", "ywc_dmg_titles_observation_started",
+                            "ywc_dmg_titles_review_matured", "ywc_dmg_titles_route_ready"):
+                    self.assertNotIn(key, rejected, f"stale title readiness must clear at action time: {key}")
                 for key in ("ywc_dmg_titles_outcome", "ywc_dmg_two_land_titles_outcome",
                             "ywc_v03_dmg_v03_dmg_two_land_titles_settled"):
                     self.assertNotIn(key, world.countries["DMG"], f"stale close leaked {key}")
@@ -1114,12 +1185,14 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
                 world.execute(pulse, "DMG")
                 self.assertEqual(world.countries["DMG"].get("ywc_dmg_titles_observation_started"), 1)
                 self.assertNotIn("ywc_dmg_titles_review_matured", world.countries["DMG"])
-                safe_wait = _actual_option(event_id, "renegotiate")
-                self.assertTrue(world.conditions(_nodes_field(safe_wait, "trigger"), "DMG"),
-                                "recovery popup must offer a safe fresh-review wait")
-                world.execute(_actual_option_effect(event_id, "renegotiate"), "DMG")
-                self.assertEqual(world.countries["DMG"].get("ywc_dmg_titles_pending_event"), 1015)
-                self.assertNotIn("ywc_dmg_titles_outcome", world.countries["DMG"])
+                recovered = world.countries["DMG"]
+                self.assertEqual(recovered.get("ywc_dmg_titles_observation_started"), 1)
+                self.assertNotIn("ywc_dmg_titles_review_matured", recovered)
+                self.assertEqual(world.treasury["DMG"], -2000)
+                self.assertEqual(recovered.get("ywc_dmg_titles_route"), 2)
+                self.assertEqual(recovered.get("ywc_dmg_titles_registry_paid"), 1)
+                self.assertEqual(recovered.get("ywc_dmg_titles_compensation_paid"), 1)
+                self.assertNotIn("ywc_dmg_titles_outcome", recovered)
                 world.events.clear()
                 for _ in range(7):
                     self.assertTrue(any(tag == "DMG" and dict((k, v) for k, _, v in body).get("type") == je_id
@@ -1322,10 +1395,78 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
         world.execute(_nodes_field(event, "immediate"), "DMG")
         limited = _actual_option("ywc_dmg.1015", "limited_settlement")
         self.assertTrue(world.conditions(_nodes_field(limited, "trigger"), "DMG"))
+        treasury_before = world.treasury["DMG"]
+        world.countries["DMG"]["in_default"] = 1
+        self.assertFalse(world.conditions(_nodes_field(limited, "trigger"), "DMG"))
         world.execute(_actual_option_effect("ywc_dmg.1015", "limited_settlement"), "DMG")
+        vars_ = world.countries["DMG"]
+        self.assertEqual(vars_.get("ywc_dmg_titles_pending_event"), 1015)
+        self.assertEqual(world.treasury["DMG"], treasury_before)
+        self.assertEqual(vars_.get("ywc_dmg_titles_route"), 3)
+        self.assertEqual(vars_.get("ywc_dmg_titles_registry_paid"), 1)
+        self.assertEqual(vars_.get("ywc_dmg_titles_lower_target_selected"), 1)
+        for key in ("ywc_dmg_titles_review_due", "ywc_dmg_titles_observation_started",
+                    "ywc_dmg_titles_review_matured", "ywc_dmg_titles_route_ready"):
+            self.assertNotIn(key, vars_, f"limited rejection must clear lost readiness: {key}")
+        for key in ("ywc_dmg_titles_outcome", "ywc_dmg_two_land_titles_outcome",
+                    "ywc_v03_dmg_v03_dmg_two_land_titles_settled"):
+            self.assertNotIn(key, vars_, f"limited rejection leaked {key}")
+        self.assertFalse(world.conditions(_nodes_field(entry, "complete"), "DMG"))
+        self.assertFalse(world.conditions(_nodes_field(entry, "fail"), "DMG"))
+        world.events.clear()
+        vars_["in_default"] = 0
+        world.execute(pulse, "DMG")
+        self.assertEqual(vars_.get("ywc_dmg_titles_observation_started"), 1)
+        self.assertNotIn("ywc_dmg_titles_review_matured", vars_)
+        fresh_months = 0
+        finalized_during_recovery = False
+        for _ in range(12):
+            world.execute(pulse, "DMG")
+            if world.events:
+                self.assertEqual(world.events[-1], ("DMG", "ywc_dmg.1015"))
+                retry_event = _generated_event("ywc_dmg.1015")
+                self.assertTrue(world.conditions(_nodes_field(retry_event, "trigger"), "DMG"))
+                world.execute(_nodes_field(retry_event, "immediate"), "DMG")
+                retry_limited = _actual_option("ywc_dmg.1015", "limited_settlement")
+                if vars_.get("ywc_dmg_titles_review_matured"):
+                    self.assertTrue(world.conditions(_nodes_field(retry_limited, "trigger"), "DMG"))
+                    world.execute(_actual_option_effect("ywc_dmg.1015", "limited_settlement"), "DMG")
+                    finalized_during_recovery = True
+                    break
+                self.assertFalse(world.conditions(_nodes_field(retry_limited, "trigger"), "DMG"),
+                                 "limited terminal stays closed before a fresh 6-month review")
+                wait = _actual_option("ywc_dmg.1015", "renegotiate")
+                self.assertTrue(world.conditions(_nodes_field(wait, "trigger"), "DMG"))
+                timer_before = world.months_until_expiry["DMG"].get("ywc_dmg_titles_review_due")
+                world.execute(_actual_option_effect("ywc_dmg.1015", "renegotiate"), "DMG")
+                self.assertEqual(world.months_until_expiry["DMG"].get("ywc_dmg_titles_review_due"),
+                                 timer_before, "new immature retry must not restart the valid watch")
+                world.events.clear()
+            if vars_.get("ywc_dmg_titles_review_matured"):
+                break
+            self.assertFalse(world.conditions(_nodes_field(limited, "trigger"), "DMG"),
+                             "limited terminal remains unavailable before fresh review maturity")
+            world.advance_months(1)
+            fresh_months += 1
+        self.assertGreaterEqual(fresh_months, 6)
+        self.assertEqual(vars_.get("ywc_dmg_titles_review_matured"), 1)
+        if not finalized_during_recovery:
+            for _ in range(5):
+                world.execute(pulse, "DMG")
+                if world.events:
+                    break
+                world.advance_months(1)
+            self.assertEqual(world.events[-1], ("DMG", "ywc_dmg.1015"))
+            retry_event = _generated_event("ywc_dmg.1015")
+            self.assertTrue(world.conditions(_nodes_field(retry_event, "trigger"), "DMG"))
+            world.execute(_nodes_field(retry_event, "immediate"), "DMG")
+            retry_limited = _actual_option("ywc_dmg.1015", "limited_settlement")
+            self.assertTrue(world.conditions(_nodes_field(retry_limited, "trigger"), "DMG"))
+            world.execute(_actual_option_effect("ywc_dmg.1015", "limited_settlement"), "DMG")
         self.assertEqual(vars_.get("ywc_dmg_titles_outcome"), 4)
         self.assertEqual(vars_.get("ywc_dmg_two_land_titles_outcome"), 4)
         self.assertEqual(vars_.get("ywc_v03_dmg_v03_dmg_two_land_titles_settled"), 1)
+        self.assertEqual(world.treasury["DMG"], treasury_before)
         self.assertTrue(world.conditions(_nodes_field(entry, "complete"), "DMG"))
         self.assertFalse(world.conditions(_nodes_field(entry, "fail"), "DMG"))
 
@@ -1419,10 +1560,11 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
         stages_before_wait = {key: vars_.get(key) for key in (
             "ywc_dmg_court_budget_stage", "ywc_dmg_joint_appointment_clause",
             "ywc_dmg_court_representation", "ywc_dmg_court_defence_veto")}
-        safe_wait = _actual_option("ywc_dmg.1023", "renegotiate")
-        self.assertTrue(world.conditions(_nodes_field(safe_wait, "trigger"), "DMG"))
-        world.execute(_actual_option_effect("ywc_dmg.1023", "renegotiate"), "DMG")
-        self.assertEqual(vars_.get("ywc_dmg_court_pending_event"), 1023)
+        self.assertEqual(vars_.get("ywc_dmg_court_pending_event"), 1023,
+                         "consuming a rejected court terminal must queue its real retry")
+        for key in ("ywc_dmg_court_review_due", "ywc_dmg_court_observation_started",
+                    "ywc_dmg_court_review_matured", "ywc_dmg_court_route_ready"):
+            self.assertNotIn(key, vars_, f"lost court readiness must clear at action time: {key}")
         self.assertEqual(vars_.get("ywc_dmg_court_route"), 2)
         self.assertEqual(vars_.get("ywc_dmg_court_charter_paid"), 1)
         self.assertEqual(vars_.get("ywc_dmg_court_budget_paid"), 1)
@@ -1468,6 +1610,125 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
         self.assertEqual(vars_.get("ywc_v03_dmg_v03_dmg_court_provinces_settled"), 1)
         self.assertTrue(world.conditions(_nodes_field(entry, "complete"), "DMG"))
         self.assertFalse(world.conditions(_nodes_field(entry, "fail"), "DMG"))
+
+    def test_rejected_terminal_retry_preserves_live_watch_and_never_revives_closed_arc(self):
+        cases = (
+            ("titles", "ywc_dmg_foundation_close_titles", "ywc_dmg_titles",
+             "ywc_v03_dmg_v03_dmg_two_land_titles_started", 1015),
+            ("court", "ywc_dmg_foundation_close_court", "ywc_dmg_court",
+             "ywc_v03_dmg_v03_dmg_court_provinces_started", 1023),
+        )
+        for lane, helper, prefix, started, pending in cases:
+            for mature in (False,):
+                facts = {
+                    started: 1, "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1,
+                    f"{prefix}_route": 2, f"{prefix}_route_ready": 1,
+                    f"{prefix}_observation_started": 1, f"{prefix}_review_due": 1,
+                    "net_fixed_income": 0,
+                }
+                if mature:
+                    facts[f"{prefix}_review_matured"] = 1
+                if lane == "titles":
+                    facts.update({"ywc_dmg_titles_registry_paid": 1,
+                                  "ywc_dmg_titles_compensation_paid": 1,
+                                  "fixture_land_law_ready": 1,
+                                  "fixture_agriculture_employment": 1})
+                else:
+                    facts.update({"ywc_dmg_court_charter_paid": 1,
+                                  "ywc_dmg_court_budget_paid": 1,
+                                  "fixture_government_appointment_ready": 1,
+                                  "ywc_dmg_joint_appointment_clause": 1})
+                world = DmgWorld(EFFECTS, {"DMG": facts})
+                world.run(helper, "DMG")
+                state = world.countries["DMG"]
+                self.assertEqual(state.get(f"{prefix}_pending_event"), pending)
+                self.assertEqual(state.get(f"{prefix}_route"), 2)
+                self.assertEqual(state.get(f"{prefix}_observation_started"), 1)
+                self.assertEqual(state.get(f"{prefix}_review_due"), 1)
+                self.assertEqual(state.get(f"{prefix}_route_ready"), 1)
+                self.assertNotIn(f"{prefix}_review_matured", state,
+                                 "an immature valid retry keeps the existing watch without maturing it")
+                self.assertNotIn(f"{prefix}_outcome", state)
+
+            for terminal in ("settled", "withdrawn"):
+                facts = {started: 1, "ywc_v03_active_arc_count": 0,
+                         "ywc_v03_visible_task_count": 0,
+                         f"{prefix}_outcome": 5 if terminal == "withdrawn" else 2,
+                         f"{prefix}_withdraw_requested": 1 if terminal == "withdrawn" else 0,
+                         f"ywc_v03_dmg_{'v03_dmg_two_land_titles' if lane == 'titles' else 'v03_dmg_court_provinces'}_settled": 1}
+                world = DmgWorld(EFFECTS, {"DMG": facts})
+                world.run(helper, "DMG")
+                self.assertNotIn(f"{prefix}_pending_event", world.countries["DMG"],
+                                 f"a {terminal} {lane} arc must never be revived")
+
+    def test_rejected_limited_helpers_retry_without_weakening_gate_or_reviving_closed_arc(self):
+        cases = (
+            ("titles", "ywc_dmg_foundation_limit_titles", "ywc_dmg_titles",
+             "ywc_v03_dmg_v03_dmg_two_land_titles_started", 1015),
+            ("court", "ywc_dmg_foundation_limit_court", "ywc_dmg_court",
+             "ywc_v03_dmg_v03_dmg_court_provinces_started", 1023),
+        )
+        for lane, helper, prefix, started, pending in cases:
+            def qualifying_facts(mature):
+                facts = {
+                    started: 1, "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1,
+                    f"{prefix}_blocked_36_delivered": 1, f"{prefix}_lower_target_proposed": 1,
+                    f"{prefix}_lower_target_selected": 1, f"{prefix}_route": 3,
+                    f"{prefix}_route_ready": 1, f"{prefix}_observation_started": 1,
+                    f"{prefix}_review_due": 1, "net_fixed_income": 0,
+                    "fixture_land_law_ready": 1, "fixture_agriculture_employment": 1,
+                }
+                if mature:
+                    facts[f"{prefix}_review_matured"] = 1
+                if lane == "titles":
+                    facts.update({"ywc_dmg_titles_registry_paid": 1,
+                                  "ywc_dmg_titles_newcomer_mode": 3})
+                else:
+                    facts.update({"ywc_dmg_court_charter_paid": 1,
+                                  "ywc_dmg_court_budget_paid": 1,
+                                  "ywc_dmg_court_representation": 3,
+                                  "ywc_dmg_court_defence_veto": 3,
+                                  "fixture_secondary_office_ready": 1})
+                return facts
+
+            immature = qualifying_facts(False)
+            world = DmgWorld(EFFECTS, {"DMG": immature})
+            world.months_until_expiry["DMG"]["ywc_dmg_" + lane + "_review_due"] = 4
+            world.run(helper, "DMG")
+            state = world.countries["DMG"]
+            self.assertEqual(state.get(f"{prefix}_pending_event"), pending)
+            self.assertEqual(state.get(f"{prefix}_route"), 3)
+            self.assertEqual(state.get(f"{prefix}_observation_started"), 1)
+            self.assertEqual(state.get(f"{prefix}_review_due"), 1)
+            self.assertNotIn(f"{prefix}_review_matured", state)
+            self.assertEqual(world.months_until_expiry["DMG"].get(f"ywc_dmg_{lane}_review_due"), 4,
+                             "an eligible but immature limited retry must not reset the timer")
+            self.assertNotIn(f"{prefix}_outcome", state)
+
+            lost = qualifying_facts(True)
+            lost["in_default"] = 1
+            world = DmgWorld(EFFECTS, {"DMG": lost})
+            world.run(helper, "DMG")
+            state = world.countries["DMG"]
+            self.assertEqual(state.get(f"{prefix}_pending_event"), pending)
+            for suffix in ("review_due", "observation_started", "review_matured", "route_ready"):
+                self.assertNotIn(f"{prefix}_{suffix}", state,
+                                 f"失格 limited action must clear stale {suffix}")
+            self.assertEqual(state.get(f"{prefix}_route"), 3)
+            self.assertNotIn(f"{prefix}_outcome", state)
+
+            settled_name = ("ywc_v03_dmg_v03_dmg_two_land_titles_settled" if lane == "titles"
+                            else "ywc_v03_dmg_v03_dmg_court_provinces_settled")
+            for outcome, withdrawn in ((4, False), (5, True)):
+                facts = {started: 1, "ywc_v03_active_arc_count": 0,
+                         "ywc_v03_visible_task_count": 0, settled_name: 1,
+                         f"{prefix}_outcome": outcome}
+                if withdrawn:
+                    facts[f"{prefix}_withdraw_requested"] = 1
+                world = DmgWorld(EFFECTS, {"DMG": facts})
+                world.run(helper, "DMG")
+                self.assertNotIn(f"{prefix}_pending_event", world.countries["DMG"],
+                                 f"closed {lane} limited arc must not be revived")
 
     def test_actual_route_closers_produce_distinct_success_and_limited_terminals(self):
         routes = (
