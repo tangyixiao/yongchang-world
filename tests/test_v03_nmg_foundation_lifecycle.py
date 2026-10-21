@@ -45,7 +45,54 @@ class NmgWorld(PulseWorld):
         self.calendar_month += months
         return super().advance_months(months)
 
+    def _validate_condition_tree(self, nodes):
+        """Reject malformed supported primitives even beneath false branches."""
+        comparisons = {"=", "!=", ">", ">=", "<", "<="}
+        for key, comparison, value in nodes:
+            if isinstance(value, list):
+                self._validate_condition_tree(value)
+            if key == "institution_investment_level":
+                if comparison != "=" or not isinstance(value, list):
+                    raise ValueError("institution_investment_level requires a child block")
+                names = [child for child, _, _ in value]
+                if sorted(names) != ["institution", "value"]:
+                    raise ValueError("institution_investment_level requires one institution and one value")
+                institution_cmp, institution = next((cmp, body) for child, cmp, body in value if child == "institution")
+                target = next((cmp, body) for child, cmp, body in value if child == "value")
+                if institution_cmp != "=" or institution not in ("institution_schools",):
+                    raise ValueError(f"unsupported institution {institution!r}")
+                if target[0] not in comparisons or not isinstance(target[1], str):
+                    raise ValueError("institution investment value requires a supported numeric comparison")
+                try:
+                    float(target[1])
+                except ValueError as exc:
+                    raise ValueError("institution investment threshold must be numeric") from exc
+            elif key == "radical_fraction":
+                if comparison != "=" or not isinstance(value, list):
+                    raise ValueError("radical_fraction requires a value child block")
+                if len(value) != 1 or value[0][0] != "value":
+                    raise ValueError("radical_fraction requires exactly one value child")
+                _, child_cmp, child_value = value[0]
+                if child_cmp not in comparisons or not isinstance(child_value, str):
+                    raise ValueError("radical_fraction requires a supported numeric comparison")
+                try:
+                    float(child_value)
+                except ValueError as exc:
+                    raise ValueError("radical_fraction threshold must be numeric") from exc
+            elif key == "ig_approval":
+                if comparison not in comparisons or not isinstance(value, str):
+                    raise ValueError("ig_approval requires a supported numeric comparison")
+                try:
+                    float(value)
+                except ValueError as exc:
+                    raise ValueError("ig_approval threshold must be numeric") from exc
+
+    def conditions(self, nodes, tag):
+        self._validate_condition_tree(nodes)
+        return super().conditions(nodes, tag)
+
     def condition(self, node, tag):
+        self._validate_condition_tree([node])
         key, comparison, value = node
         v = self.countries[tag]
         if key in TRIGGER_MAP:
@@ -86,13 +133,20 @@ class NmgWorld(PulseWorld):
         if key == "has_law_or_variant":
             return value.removeprefix("law_type:") in v.get("fixture_laws", set())
         if key == "radical_fraction":
-            child = next(node for node in value if node[0] == "value")
-            return {">=": lambda a, b: a >= b, "=": lambda a, b: a == b}[child[1]](
+            child = value[0]
+            return {"=": lambda a,b:a==b, ">=":lambda a,b:a>=b, "<=":lambda a,b:a<=b,
+                    ">":lambda a,b:a>b, "<":lambda a,b:a<b, "!=":lambda a,b:a!=b}[child[1]](
                 v.get("radical_fraction", 0), float(child[2]))
         if key == "literacy_rate":
             return {"=":lambda a,b:a==b, ">=":lambda a,b:a>=b, "<=":lambda a,b:a<=b}[comparison](v.get(key, 0), float(value))
         if key == "institution_investment_level":
-            return v.get("fixture_schools_invested", 0) >= 1
+            child = next(node for node in value if node[0] == "value")
+            left = v.get("fixture_institutions", {}).get(
+                next(body for name, _, body in value if name == "institution"),
+                v.get("fixture_schools_invested", 0))
+            return {"=":lambda a,b:a==b, ">=":lambda a,b:a>=b, "<=":lambda a,b:a<=b,
+                    ">":lambda a,b:a>b, "<":lambda a,b:a<b, "!=":lambda a,b:a!=b}[child[1]](
+                left, float(child[2]))
         if key == "is_subject":
             return bool(v.get("fixture_subject", 0)) == (value == "yes")
         if key == "is_subject_of":
@@ -100,17 +154,19 @@ class NmgWorld(PulseWorld):
         if key == "overlord":
             return bool(v.get("fixture_mex_overlord", 0)) and self.conditions(value, "MEX")
         if key == "relations:root":
-            right = 0 if value == "relations_threshold:poor" else float(value)
+            right = -20 if value == "relations_threshold:poor" else float(value)
             return {">=": lambda a, b: a >= b, "=": lambda a, b: a == b,
                     ">": lambda a, b: a > b}[comparison](v.get("fixture_relations", 0), right)
         if key == "relations_threshold:poor":
-            return 0
+            return -20
         if key == "any_interest_group":
             return bool(v.get("fixture_ig_support", 0)) and self.conditions(value, tag)
         if key == "is_interest_group_type":
             return value == "ig_intelligentsia"
         if key == "ig_approval":
-            return v.get("fixture_ig_approval", 1) > 0
+            return {"=":lambda a,b:a==b, ">=":lambda a,b:a>=b, "<=":lambda a,b:a<=b,
+                    ">":lambda a,b:a>b, "<":lambda a,b:a<b, "!=":lambda a,b:a!=b}[comparison](
+                v.get("fixture_ig_approval", 1), float(value))
         return super().condition(node, tag)
 
     def execute(self, nodes, tag):
@@ -171,6 +227,55 @@ class NmgLifecycleTest(unittest.TestCase):
             world.condition(("not_a_real_game_primitive", "=", "yes"), "NMG")
         laws = v["fixture_laws"]
         self.assertFalse({"law_commercialized_agriculture", "law_tenant_farmers"} <= laws)
+
+    def test_world_fact_fixture_validates_nmg_comparison_schemas_and_values(self):
+        world = NmgWorld(fixture())
+        school_level = ("institution_investment_level", "=", [
+            ("institution", "=", "institution_schools"), ("value", ">=", "1")])
+        self.assertTrue(world.condition(school_level, "NMG"))
+        too_high = ("institution_investment_level", "=", [
+            ("institution", "=", "institution_schools"), ("value", ">=", "99")])
+        self.assertFalse(world.condition(too_high, "NMG"))
+        v = world.countries["NMG"]
+        v["fixture_relations"] = -20
+        self.assertTrue(world.condition(("relations:root", ">=", "relations_threshold:poor"), "NMG"))
+        v["fixture_relations"] = -21
+        self.assertFalse(world.condition(("relations:root", ">=", "relations_threshold:poor"), "NMG"))
+        v["radical_fraction"] = 0.2
+        radical = ("radical_fraction", "=", [("value", ">=", "0.25")])
+        self.assertFalse(world.condition(radical, "NMG"))
+        self.assertTrue(world.condition(("ig_approval", ">=", "1"), "NMG"))
+        self.assertFalse(world.condition(("ig_approval", ">=", "100"), "NMG"))
+
+        malformed = (
+            ("institution_investment_level", "=", [
+                ("institution", "=", "institution_schools"), ("value", ">=", "1"),
+                ("future_child", None, "yes")]),
+            ("institution_investment_level", "=", [
+                ("institution", "=", "institution_schools"), ("institution", "=", "institution_schools"),
+                ("value", ">=", "1")]),
+            ("institution_investment_level", "=", [
+                ("institution", "=", "institution_schools"), ("value", "~", "1")]),
+            ("institution_investment_level", "=", [
+                ("institution", "=", "institution_unknown"), ("value", ">=", "1")]),
+            ("institution_investment_level", "=", [
+                ("institution", ">", "institution_schools"), ("value", ">=", "1")]),
+            ("radical_fraction", "=", [("value", ">=", "0.2"), ("future_child", None, "1")]),
+            ("radical_fraction", "=", [("value", "~", "0.2")]),
+            ("ig_approval", "~", "1"),
+        )
+        for node in malformed:
+            with self.subTest(node=node), self.assertRaises(ValueError):
+                world.condition(node, "NMG")
+
+        # Schema validation precedes Boolean short-circuiting and empty-scope evaluation.
+        bad_nested = ("OR", None, [("always", None, "no"), malformed[0]])
+        with self.assertRaises(ValueError):
+            world.condition(bad_nested, "NMG")
+        empty_scope = ("any_scope_state", None, [malformed[1]])
+        world.countries["NMG"]["fixture_owned_state"] = 0
+        with self.assertRaises(ValueError):
+            world.condition(empty_scope, "NMG")
 
     def test_each_paid_arc_can_ack_12_choose_lower_at_36_and_close_limited_after_fresh_watch(self):
         cases = (
@@ -466,7 +571,6 @@ class NmgLifecycleTest(unittest.TestCase):
         cases={
             "ywc_nmg.1007":("settle_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4"),
             "ywc_nmg.1015":("close_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4"),
-            "ywc_nmg.1027":("settle_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4"),
             "ywc_nmg.1029":("close_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4")}
         eng=(MOD/"localization/english/ywc_v03_country_nmg_l_english.yml").read_text(encoding="utf-8-sig")
         zho=(MOD/"localization/simp_chinese/ywc_v03_country_nmg_l_simp_chinese.yml").read_text(encoding="utf-8-sig")
@@ -480,6 +584,81 @@ class NmgLifecycleTest(unittest.TestCase):
             key=f"{event_id}.{option_key}.consequence_tooltip:0"
             self.assertIn(f'{key} "{note["en"]}"',eng)
             self.assertIn(f'{key} "{note["zh"]}"',zho)
+
+        event_id="ywc_nmg.1027"; option_key="settle_partial"
+        event=next(e for a in CATALOG["arcs"] for e in a["events"] if e["id"]==event_id)
+        option=next(o for o in event["options"] if o["key"]==option_key)
+        note=option["consequence_note"]
+        self.assertIn("observation already mature",note["en"].casefold())
+        self.assertIn("conditions met",note["en"].casefold())
+        self.assertIn("no new payment",note["en"].casefold())
+        self.assertIn("\u89c2\u5bdf\u671f\u5df2\u6210\u719f",note["zh"])
+        self.assertIn("\u8def\u7ebf\u6761\u4ef6\u7b26\u5408",note["zh"])
+        self.assertIn("\u4e0d\u65b0\u4ed8\u6b3e",note["zh"])
+        key=f"{event_id}.{option_key}.consequence_tooltip:0"
+        self.assertIn(f'{key} "{note["en"]}"',eng)
+        self.assertIn(f'{key} "{note["zh"]}"',zho)
+
+    def test_real_revenue_1027_compromise_uses_matured_paid_contract_and_retries_after_popup_loss(self):
+        prefix=["fixed","audit_strict","close_account","press_quota","use_temperature","carry_heavy","conclude","wait_retry"]
+        def real_mature_popup():
+            world=self.finish_path(2,1,prefix)
+            v=world.countries["NMG"]
+            self.assertEqual(v.get("ywc_nmg_revenue_quota_paid"),1)
+            for _ in range(20):
+                eid=self.pulse_until_event(world,world.active_journal)
+                self.assertEqual(eid,"ywc_nmg.1027")
+                event=GENERATED_EVENTS[eid]
+                self.assertTrue(world.conditions(field(event,"trigger"),"NMG"))
+                world.execute(field(event,"immediate"),"NMG")
+                option=event_option(eid,"settle_partial")
+                if world.conditions(field(option,"trigger"),"NMG"):
+                    self.assertEqual(v.get("ywc_nmg_revenue_six_months_complete"),1)
+                    self.assertTrue(world.conditions(TRIGGER_MAP["ywc_nmg_revenue_route_ready"],"NMG"))
+                    return world,eid,v
+                wait=event_option(eid,"wait_retry")
+                self.assertTrue(world.conditions(field(wait,"trigger"),"NMG"))
+                effects=[n for n in wait if n[0] not in ("name","trigger","ai_chance","custom_tooltip")]
+                world.execute(effects,"NMG")
+                world.events.clear()
+                world.advance_months(1)
+            self.fail("the actual six-month NMG revenue watch did not mature")
+
+        world,eid,v=real_mature_popup()
+        option=event_option(eid,"settle_partial")
+        self.assertTrue(world.conditions(field(option,"trigger"),"NMG"))
+        treasury_before=world.treasury["NMG"]
+        nmg_relations_before=v["fixture_relations"]
+        mex_relations_before=world.countries["MEX"]["fixture_relations"]
+        effects=[n for n in option if n[0] not in ("name","trigger","ai_chance","custom_tooltip")]
+        world.execute(effects,"NMG")
+        self.assertEqual(v.get("ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome"),2)
+        self.assertEqual(v.get("ywc_v03_nmg_v03_nmg_autonomy_revenue_settled"),1)
+        self.assertEqual(v.get("ywc_v03_active_arc_count"),0)
+        self.assertEqual(v.get("ywc_v03_visible_task_count"),0)
+        self.assertEqual(world.treasury["NMG"],treasury_before,"1027 compromise does not charge again")
+        self.assertEqual(v["fixture_relations"],nmg_relations_before)
+        self.assertEqual(world.countries["MEX"]["fixture_relations"],mex_relations_before)
+        timer="ywc_nmg_revenue_watch_timer"
+        self.assertNotIn(timer,v)
+        self.assertNotIn(timer,world.months_until_expiry["NMG"],"mature 1027 does not restart the watch")
+
+        world,eid,v=real_mature_popup()
+        option=event_option(eid,"settle_partial")
+        v["fixture_buildings"].pop("building_barrack")
+        self.assertFalse(world.conditions(TRIGGER_MAP["ywc_nmg_revenue_route_ready"],"NMG"))
+        self.assertFalse(world.conditions(field(option,"trigger"),"NMG"),"stale matured popup cannot close after target loss")
+        wait=event_option(eid,"wait_retry")
+        self.assertTrue(world.conditions(field(wait,"trigger"),"NMG"))
+        effects=[n for n in wait if n[0] not in ("name","trigger","ai_chance","custom_tooltip")]
+        world.execute(effects,"NMG")
+        self.assertEqual(v.get("ywc_nmg_revenue_pending"),1027)
+        self.assertEqual(v.get("ywc_nmg_revenue_route"),1)
+        self.assertEqual(v.get("ywc_nmg_revenue_quota_paid"),1)
+        self.assertNotIn("ywc_v03_nmg_v03_nmg_autonomy_revenue_settled",v)
+        self.assertEqual(v.get("ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome"),0)
+        for suffix in ("watch_started","watch_timer","six_months_complete"):
+            self.assertNotIn(f"ywc_nmg_revenue_{suffix}",v)
 
     def test_revenue_12_notice_ack_preserves_real_opening_queue_and_resumes_after_recovery(self):
         world = NmgWorld(fixture())
