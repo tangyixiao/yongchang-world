@@ -392,8 +392,14 @@ class AggregateSchedulerContract(unittest.TestCase):
     def test_actual_card_fields_and_unknown_source_fields_validate_strictly(self):
         source=json.loads((ROOT/"data/content/v03/countries/nqg.json").read_text(encoding="utf-8-sig"))
         source=copy.deepcopy(source)
+        with self.assertRaisesRegex(ValueError,"unknown"):
+            validate_catalogue_adapters(source)
         for arc in source["arcs"]:
             if arc.get("era")!="foundation": continue
+            # This legacy scheduler test projects only its historical card
+            # fixture fields from the NQG inline catalog. The production NQG
+            # source is separately validated by the inline adapter contract.
+            arc.pop("inline_delivery_adapter",None)
             jid=arc["journals"][0]["id"]; eid=arc["events"][0]["id"]
             arc["events"]=[arc["events"][0]]
             arc["delivery_adapter"]={"owner_started":f"{arc['slug']}_started","owner_settled":f"{arc['slug']}_settled","source_dispatch_effect":f"source_dispatch_{arc['slug']}",
