@@ -112,6 +112,8 @@ def _helper_body(text, name):
 def _replace_lifecycle_facts(nodes):
     facts = {
         "ywc_shu_service_route_ready": "test_service_ready",
+        "ywc_shu_service_block_target_ready": "test_service_ready",
+        "ywc_shu_port_block_target_ready": "test_port_ready",
         "ywc_shu_v03_port_execution_ready": "test_port_ready",
         "ywc_v03_can_deliver_major": "test_cooldown_clear",
         "ywc_v03_has_capacity": "test_capacity",
@@ -214,6 +216,40 @@ class ShuFoundationContractTest(unittest.TestCase):
         self.assertIn("ywc_shu_service_withdrawn", withdraw)
         self.assertIn("ywc_shu_service_close_withdrawn", withdraw)
 
+    def test_service_fee_waiver_and_professional_qualification_are_route_scoped(self):
+        choose = _helper_body(self.effects, "ywc_shu_choose_service_route")
+        self.assertRegex(choose, r"var:ywc_shu_service_route_candidate = 2[\s\S]*ywc_shu_service_compact_fee_waived")
+        professional_trigger = _helper_body(self.triggers, "ywc_shu_service_professional_qualifies")
+        self.assertIn("has_law_or_variant = law_type:law_professional_army", professional_trigger)
+        self.assertIn("ywc_shu_v03_service_professional_ready = yes", professional_trigger)
+        payment = _helper_body(self.effects, "ywc_shu_pay_service_cost")
+        professional_branch = re.search(r"limit = \{ var:ywc_shu_service_route_candidate = 1 \}([\s\S]*?)\n\t\t}", payment)
+        self.assertIsNotNone(professional_branch)
+        self.assertIn("ywc_shu_service_professional_qualifies = yes", professional_branch.group(1))
+        self.assertNotIn("else_if", professional_branch.group(1))
+        event = next(row for row in self.service["events"] if row["id"] == "ywc_shu.1013")
+        option = next(row for row in event["options"] if row["key"] == "professional")
+        self.assertIn("ywc_shu_service_professional_qualifies = yes", option["trigger"])
+        self.assertNotIn("has_variable = ywc_shu_service_compact_fee_waived", option["effect"])
+        self.assertIn("value = 1013", option["effect"])
+        waiver = _helper_body(self.triggers, "ywc_shu_service_compact_waiver_eligible")
+        for fact in ("ywc_shu_service_provincial_report", "ywc_shu_service_joint_review", "ywc_shu_service_local_voice"):
+            self.assertIn(f"has_variable = {fact}", waiver)
+        provincial = next(row for row in self.service["events"][3]["options"] if row["key"] == "provincial_compact")
+        self.assertIn("ywc_shu_service_compact_waiver_eligible = yes", provincial["trigger"])
+        self.assertIn("ywc_shu_service_compact_waiver_eligible = yes", choose)
+        payroll = next(row for row in self.service["events"][1]["options"] if row["key"] == "verify_payroll")
+        self.assertIn("value = 1011", payroll["effect"])
+        self.assertIn("ywc_shu_pay_service_cost = yes", payroll["effect"])
+        port_fee = _helper_body(self.effects, "ywc_shu_pay_port_fee")
+        self.assertIn("ywc_shu_port_fee_half_mode", port_fee)
+        self.assertIn("gold_reserves >= { value = var:ywc_shu_port_cost }", port_fee)
+        port = _arc(self.catalog, PORT_SLUG)
+        verify = next(row for row in port["events"] if row["id"] == "ywc_shu.1022")
+        verification = next(row for row in verify["options"] if row["key"] == "pay_verification")
+        self.assertIn("gold_reserves >= { value = var:ywc_shu_port_cost }", verification["trigger"])
+        self.assertIn("One-time fee equals weekly income", verification["cost_note"]["en"])
+
     def test_charges_are_real_guarded_and_never_double_billed(self):
         expectations = {
             "ywc_shu_pay_service_cost": "ywc_shu_service_cost_paid",
@@ -264,13 +300,14 @@ class ShuFoundationContractTest(unittest.TestCase):
 
     def test_blockage_and_observation_clocks_are_armed(self):
         service_text = _arc_text(self.service)
-        self.assertIn("ywc_shu_service_block_12_due", service_text)
-        self.assertIn("ywc_shu_service_block_36_due", service_text)
-        port_text = _arc_text(self.port)
-        self.assertIn("ywc_shu_port_block_12_due", port_text)
-        self.assertIn("ywc_shu_port_block_36_due", port_text)
+        self.assertIn("ywc_shu_track_service_block = yes", service_text)
+        self.assertIn("ywc_shu_track_port_block = yes", _arc_text(self.port))
+        self.assertIn("ywc_shu_service_block_12_due", self.effects)
+        self.assertIn("ywc_shu_service_block_36_due", self.effects)
+        self.assertIn("ywc_shu_port_block_12_due", self.effects)
+        self.assertIn("ywc_shu_port_block_36_due", self.effects)
         self.assertIn("ywc_shu_service_review_mature", service_text)
-        self.assertIn("ywc_shu_port_review_mature", port_text)
+        self.assertIn("ywc_shu_port_review_mature", _arc_text(self.port))
 
     def test_added_arc_admission_does_not_cancel_its_own_predecessor(self):
         for arc, own_slug in ((self.service, SERVICE_SLUG), (self.port, PORT_SLUG)):
@@ -315,16 +352,21 @@ class ShuFoundationContractTest(unittest.TestCase):
     def test_blockage_notices_wait_for_elapsed_clocks_and_use_notice_queue(self):
         for arc, prefix in ((self.service, "service"), (self.port, "port")):
             script = arc["journals"][0]["script"]
-            self.assertIn(f"NOT = {{ has_variable = ywc_shu_{prefix}_block_12_due }}", script)
-            self.assertIn(f"ywc_shu_{prefix}_notice_pending_event", script)
-            self.assertIn(f"ywc_shu_{prefix}_block_12_started", script)
+            helper = _helper_body(self.effects, f"ywc_shu_track_{prefix}_block")
+            self.assertIn(f"NOT = {{ has_variable = ywc_shu_{prefix}_block_12_due }}", helper)
+            self.assertIn(f"NOT = {{ has_variable = ywc_shu_{prefix}_block_36_due }}", helper)
+            self.assertIn(f"ywc_shu_{prefix}_notice_pending_event", helper)
+            self.assertIn(f"ywc_shu_{prefix}_block_12_started", helper)
+            self.assertNotIn(f"set_variable = {{ name = ywc_shu_{prefix}_block_12_due days = 365 }}", script)
 
     def test_service_paid_routes_advance_only_after_effect_time_charge(self):
         for option in self.service["events"][3]["options"][:2]:
             effect = option["effect"]
             self.assertIn("has_variable = ywc_shu_service_cost_paid", effect)
             self.assertIn("set_variable = { name = ywc_shu_service_route", effect)
-            self.assertLess(effect.index("ywc_shu_pay_service_cost = yes"), effect.index("set_variable = { name = ywc_shu_service_route"))
+            self.assertLess(effect.index("set_variable = { name = ywc_shu_service_route_candidate"), effect.index("ywc_shu_pay_service_cost = yes"))
+            self.assertLess(effect.index("ywc_shu_pay_service_cost = yes"), effect.index("set_variable = { name = ywc_shu_service_route value"))
+            self.assertIn("remove_variable = ywc_shu_service_route_candidate", effect)
 
     def test_authored_service_review_pulse_matures_on_day_180_without_restart(self):
         journal = self.service["journals"][-1]
@@ -333,10 +375,12 @@ class ShuFoundationContractTest(unittest.TestCase):
         world = PulseWorld(self.effects, {"SHU": {"test_service_ready": 1, "test_cooldown_clear": 1}})
         world.run("ywc_shu_service_start_review")
         world.advance_days(179)
-        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        pulse_without_block_tracking = [node for node in effect if node[0] != "ywc_shu_track_service_block"]
+        world.execute(_replace_lifecycle_facts(pulse_without_block_tracking), "SHU")
         self.assertNotIn("ywc_shu_service_review_mature", world.countries["SHU"])
         world.advance_days(1)
-        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        pulse_without_block_tracking = [node for node in effect if node[0] != "ywc_shu_track_service_block"]
+        world.execute(_replace_lifecycle_facts(pulse_without_block_tracking), "SHU")
         self.assertEqual(world.countries["SHU"].get("ywc_shu_service_review_mature"), 1)
         self.assertNotIn("ywc_shu_service_review_due", world.countries["SHU"])
         self.assertIn(("SHU", "ywc_shu.1017"), world.events)
@@ -348,13 +392,14 @@ class ShuFoundationContractTest(unittest.TestCase):
         world = PulseWorld(self.effects, {"SHU": {"test_port_ready": 1, "test_cooldown_clear": 1}})
         world.run("ywc_shu_port_start_review")
         world.advance_days(179)
-        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        pulse_without_block_tracking = [node for node in effect if node[0] != "ywc_shu_track_port_block"]
+        world.execute(_replace_lifecycle_facts(pulse_without_block_tracking), "SHU")
         self.assertNotIn("ywc_shu_port_review_mature", world.countries["SHU"])
         world.advance_days(1)
-        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        world.execute(_replace_lifecycle_facts(pulse_without_block_tracking), "SHU")
         self.assertEqual(world.countries["SHU"].get("ywc_shu_port_review_mature"), 1)
         self.assertNotIn("ywc_shu_port_review_due", world.countries["SHU"])
-        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        world.execute(_replace_lifecycle_facts(pulse_without_block_tracking), "SHU")
         self.assertIn(("SHU", "ywc_shu.1025"), world.events)
 
     def test_port_route_readiness_is_route_dependent(self):
@@ -366,6 +411,9 @@ class ShuFoundationContractTest(unittest.TestCase):
         customs = _helper_body(self.triggers, "ywc_shu_v03_customs_law_ready")
         for law in ("law_mercantilism", "law_protectionism", "law_free_trade"):
             self.assertIn(law, customs)
+        narrow = _helper_body(self.triggers, "ywc_shu_v03_port_narrow_ready")
+        self.assertIn("ywc_shu_v03_inland_office_ready", narrow)
+        self.assertNotIn("ywc_shu_v03_has_port", narrow)
 
 
 if __name__ == "__main__":

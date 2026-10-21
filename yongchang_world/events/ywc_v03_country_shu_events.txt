@@ -747,7 +747,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1011 }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1011.verify_payroll.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1011.verify_payroll.consequence_tooltip }
-        ywc_shu_pay_service_cost = yes if = { limit = { has_variable = ywc_shu_service_cost_paid } set_variable = { name = ywc_shu_service_payroll_checked value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1012 } }
+        ywc_shu_pay_service_cost = yes if = { limit = { has_variable = ywc_shu_service_cost_paid } set_variable = { name = ywc_shu_service_payroll_checked value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1012 } } else = { set_variable = { name = ywc_shu_service_pending_event value = 1011 } }
     }
     option = {
         name = ywc_shu.1011.local_ledger
@@ -821,22 +821,22 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1013 }
     option = {
         name = ywc_shu.1013.professional
         trigger = {
-        OR = { has_law_or_variant = law_type:law_professional_army ywc_shu_v03_service_professional_ready = yes } net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_service_cost }
+        ywc_shu_service_professional_qualifies = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_service_cost_paid gold_reserves >= { value = var:ywc_shu_service_cost multiply = 0.5 } }
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1013.professional.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1013.professional.consequence_tooltip }
-        ywc_shu_choose_service_route = yes if = { limit = { has_variable = ywc_shu_service_compact_fee_due } ywc_shu_pay_service_cost = yes } if = { limit = { OR = { has_variable = ywc_shu_service_compact_fee_waived has_variable = ywc_shu_service_cost_paid } } set_variable = { name = ywc_shu_service_route value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1014 } }
+        if = { limit = { ywc_shu_service_professional_qualifies = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_service_cost_paid gold_reserves >= { value = var:ywc_shu_service_cost multiply = 0.5 } } } set_variable = { name = ywc_shu_service_route_candidate value = 1 } ywc_shu_choose_service_route = yes if = { limit = { has_variable = ywc_shu_service_compact_fee_due } ywc_shu_pay_service_cost = yes } if = { limit = { has_variable = ywc_shu_service_cost_paid } set_variable = { name = ywc_shu_service_route value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1014 } } remove_variable = ywc_shu_service_route_candidate } if = { limit = { NOT = { has_variable = ywc_shu_service_route } } set_variable = { name = ywc_shu_service_pending_event value = 1013 } }
     }
     option = {
         name = ywc_shu.1013.provincial_compact
         trigger = {
-        net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+        net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { ywc_shu_service_compact_waiver_eligible = yes has_variable = ywc_shu_service_cost_paid gold_reserves >= { value = var:ywc_shu_service_cost multiply = 0.25 } }
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1013.provincial_compact.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1013.provincial_compact.consequence_tooltip }
-        ywc_shu_choose_service_route = yes if = { limit = { has_variable = ywc_shu_service_compact_fee_due } ywc_shu_pay_service_cost = yes } if = { limit = { OR = { has_variable = ywc_shu_service_compact_fee_waived has_variable = ywc_shu_service_cost_paid } } set_variable = { name = ywc_shu_service_route value = 2 } set_variable = { name = ywc_shu_service_pending_event value = 1014 } }
+        if = { limit = { net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_service_route_candidate value = 2 } ywc_shu_choose_service_route = yes if = { limit = { has_variable = ywc_shu_service_compact_fee_due } ywc_shu_pay_service_cost = yes } if = { limit = { OR = { has_variable = ywc_shu_service_compact_fee_waived has_variable = ywc_shu_service_cost_paid } } set_variable = { name = ywc_shu_service_route value = 2 } set_variable = { name = ywc_shu_service_pending_event value = 1014 } } remove_variable = ywc_shu_service_route_candidate } if = { limit = { NOT = { has_variable = ywc_shu_service_route } } set_variable = { name = ywc_shu_service_pending_event value = 1013 } }
     }
     option = {
         name = ywc_shu.1013.legacy_cap
@@ -1176,12 +1176,12 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1020 }
     option = {
         name = ywc_shu.1020.consult_only
         trigger = {
-        net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 }
+        net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1020.consult_only.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1020.consult_only.consequence_tooltip }
-        ywc_shu_pay_port_fee = yes if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 } }
+        if = { limit = { net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_fee_half_mode value = 1 } ywc_shu_pay_port_fee = yes remove_variable = ywc_shu_port_fee_half_mode if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1020 } }
     }
     option = {
         name = ywc_shu.1020.refuse_credit
@@ -1251,19 +1251,22 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1022 }
     option = {
         name = ywc_shu.1022.pay_verification
         trigger = {
-        ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= { value = var:ywc_shu_port_cost }
+        ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid gold_reserves >= { value = var:ywc_shu_port_cost } }
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1022.pay_verification.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1022.pay_verification.consequence_tooltip }
-        ywc_shu_pay_port_fee = yes if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } }
+        if = { limit = { ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } ywc_shu_pay_port_fee = yes if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } } } if = { limit = { NOT = { has_variable = ywc_shu_port_receipts_checked } } set_variable = { name = ywc_shu_port_pending_event value = 1022 } }
     }
     option = {
         name = ywc_shu.1022.register_share
+        trigger = {
+        ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+        }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1022.register_share.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1022.register_share.consequence_tooltip }
-        set_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_arrears_open value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 }
+        if = { limit = { ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_arrears_open value = 1 } if = { limit = { OR = { var:ywc_shu_port_route = 3 has_variable = ywc_shu_port_fee_paid } } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1022 } } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1022 } }
     }
     option = {
         name = ywc_shu.1022.wait_receipts
@@ -1349,10 +1352,13 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1024 }
     }
     option = {
         name = ywc_shu.1024.reduce_burden
+        trigger = {
+        ywc_shu_v03_inland_office_ready = yes NOT = { ywc_shu_v03_has_port = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+        }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1024.reduce_burden.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1024.reduce_burden.consequence_tooltip }
-        set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_burden value = 3 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }
+        set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_route value = 4 } set_variable = { name = ywc_shu_port_burden value = 3 } remove_variable = ywc_shu_port_review_due remove_variable = ywc_shu_port_review_mature remove_variable = ywc_shu_port_review_interrupted set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }
     }
     option = {
         name = ywc_shu.1024.withdraw_port
@@ -1388,7 +1394,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1025 }
     option = {
         name = ywc_shu.1025.settle_unified
         trigger = {
-        var:ywc_shu_port_route = 1 has_variable = ywc_shu_port_review_mature ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+        ywc_shu_port_terminal_unified_ready = yes
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1025.settle_unified.cost_tooltip }
@@ -1398,7 +1404,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1025 }
     option = {
         name = ywc_shu.1025.settle_share
         trigger = {
-        var:ywc_shu_port_route = 2 has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_merchant_review has_variable = ywc_shu_port_local_share NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+        ywc_shu_port_terminal_shared_ready = yes
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1025.settle_share.cost_tooltip }
@@ -1408,7 +1414,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1025 }
     option = {
         name = ywc_shu.1025.settle_legacy
         trigger = {
-        OR = { var:ywc_shu_port_route = 3 var:ywc_shu_port_route = 4 } has_variable = ywc_shu_port_review_mature NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+        ywc_shu_port_terminal_limited_ready = yes
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1025.settle_legacy.cost_tooltip }
