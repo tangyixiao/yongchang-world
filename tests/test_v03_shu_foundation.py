@@ -12,9 +12,12 @@ import sys
 import unittest
 from pathlib import Path
 
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
 sys.path.insert(0, str(ROOT))
+
+from clausewitz_harness import PulseWorld, parse
 
 CATALOG_PATH = ROOT / "data/content/v03/countries/shu.json"
 EFFECTS_PATH = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_shu_effects.txt"
@@ -40,6 +43,7 @@ REQUIRED_EFFECTS = [
     "ywc_shu_pay_service_cost",
     "ywc_shu_pay_service_local_once",
     "ywc_shu_service_start_review",
+    "ywc_shu_port_start_review",
     "ywc_shu_service_withdraw",
     "ywc_shu_service_close_success",
     "ywc_shu_service_close_withdrawn",
@@ -104,6 +108,24 @@ def _helper_body(text, name):
         raise AssertionError(f"scripted definition missing: {name}") from None
     end = text.find("\n}", start)
     return text[start:end if end != -1 else len(text)]
+
+def _replace_lifecycle_facts(nodes):
+    facts = {
+        "ywc_shu_service_route_ready": "test_service_ready",
+        "ywc_shu_v03_port_execution_ready": "test_port_ready",
+        "ywc_v03_can_deliver_major": "test_cooldown_clear",
+        "ywc_v03_has_capacity": "test_capacity",
+    }
+    result = []
+    for key, comparison, value in nodes:
+        if key in facts:
+            result.append(("has_variable", "=", facts[key]))
+        elif isinstance(value, list):
+            result.append((key, comparison, _replace_lifecycle_facts(value)))
+        else:
+            result.append((key, comparison, value))
+    return result
+
 
 
 class ShuFoundationContractTest(unittest.TestCase):
@@ -249,6 +271,91 @@ class ShuFoundationContractTest(unittest.TestCase):
         self.assertIn("ywc_shu_port_block_36_due", port_text)
         self.assertIn("ywc_shu_service_review_mature", service_text)
         self.assertIn("ywc_shu_port_review_mature", port_text)
+
+    def test_added_arc_admission_does_not_cancel_its_own_predecessor(self):
+        for arc, own_slug in ((self.service, SERVICE_SLUG), (self.port, PORT_SLUG)):
+            script = arc["journals"][0]["script"]
+            settled = f"ywc_v03_shu_{own_slug}_settled"
+            started = f"ywc_v03_shu_{own_slug}_started"
+            self.assertNotIn("ywc_shu_v03_unsettled", script)
+            self.assertIn(f"NOT = {{ has_variable = {settled} }}", script)
+            self.assertIn(f"NOT = {{ has_variable = {started} }}", script)
+            self.assertIn("ywc_v03_shu_v03_shu_fiscal_register_settled", script)
+
+    def test_real_entry_predicates_accept_completed_prototype_and_block_replay(self):
+        facts = {"ywc_v03_initialized": 1, "test_capacity": 1,
+                 "ywc_v03_active_arc_count": 0, "ywc_v03_visible_task_count": 1,
+                 "ywc_v03_shu_v03_shu_fiscal_register_settled": 1}
+        for arc in (self.service, self.port):
+            script = parse(arc["journals"][0]["script"])
+            possible = next(body for key, _, body in script if key == "possible")
+            self.assertTrue(PulseWorld(self.effects, {"SHU": facts}).conditions(
+                _replace_lifecycle_facts(possible), "SHU"), arc["slug"])
+            own = f"ywc_v03_shu_{arc['slug']}_started"
+            self.assertFalse(PulseWorld(self.effects, {"SHU": {**facts, own: 1}}).conditions(
+                _replace_lifecycle_facts(possible), "SHU"), arc["slug"])
+
+    def test_terminal_predicates_are_named_and_exclusive(self):
+        for arc in (self.service, self.port):
+            for journal in arc["journals"]:
+                self.assertNotRegex(journal["exit_conditions"], r"\{\s*\{")
+                self.assertIn("has_variable =", journal["exit_conditions"])
+            journal = arc["journals"][-1]
+            self.assertRegex(journal["goal"], r"var:ywc_shu_(?:service|port)_outcome = 1")
+            self.assertNotRegex(journal["goal"], r"var:ywc_shu_(?:service|port)_outcome = 4")
+
+    def test_review_matures_before_restart_and_real_loss_resets_it(self):
+        journal = self.service["journals"][-1]
+        script = journal["script"]
+        maturity = script.index("set_variable = { name = ywc_shu_service_review_mature")
+        restart = script.index("ywc_shu_service_start_review = yes", script.index("on_monthly_pulse"))
+        self.assertLess(maturity, restart)
+        self.assertIn("remove_variable = ywc_shu_service_review_mature", script)
+
+    def test_blockage_notices_wait_for_elapsed_clocks_and_use_notice_queue(self):
+        for arc, prefix in ((self.service, "service"), (self.port, "port")):
+            script = arc["journals"][0]["script"]
+            self.assertIn(f"NOT = {{ has_variable = ywc_shu_{prefix}_block_12_due }}", script)
+            self.assertIn(f"ywc_shu_{prefix}_notice_pending_event", script)
+            self.assertIn(f"ywc_shu_{prefix}_block_12_started", script)
+
+    def test_service_paid_routes_advance_only_after_effect_time_charge(self):
+        for option in self.service["events"][3]["options"][:2]:
+            effect = option["effect"]
+            self.assertIn("has_variable = ywc_shu_service_cost_paid", effect)
+            self.assertIn("set_variable = { name = ywc_shu_service_route", effect)
+            self.assertLess(effect.index("ywc_shu_pay_service_cost = yes"), effect.index("set_variable = { name = ywc_shu_service_route"))
+
+    def test_authored_service_review_pulse_matures_on_day_180_without_restart(self):
+        journal = self.service["journals"][-1]
+        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
+        effect = next(body for key, _, body in pulse if key == "effect")
+        world = PulseWorld(self.effects, {"SHU": {"test_service_ready": 1, "test_cooldown_clear": 1}})
+        world.run("ywc_shu_service_start_review")
+        world.advance_days(179)
+        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        self.assertNotIn("ywc_shu_service_review_mature", world.countries["SHU"])
+        world.advance_days(1)
+        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        self.assertEqual(world.countries["SHU"].get("ywc_shu_service_review_mature"), 1)
+        self.assertNotIn("ywc_shu_service_review_due", world.countries["SHU"])
+        self.assertIn(("SHU", "ywc_shu.1017"), world.events)
+
+    def test_authored_port_review_pulse_waits_for_180_continuous_days(self):
+        journal = self.port["journals"][0]
+        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
+        effect = next(body for key, _, body in pulse if key == "effect")
+        world = PulseWorld(self.effects, {"SHU": {"test_port_ready": 1, "test_cooldown_clear": 1}})
+        world.run("ywc_shu_port_start_review")
+        world.advance_days(179)
+        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        self.assertNotIn("ywc_shu_port_review_mature", world.countries["SHU"])
+        world.advance_days(1)
+        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        self.assertEqual(world.countries["SHU"].get("ywc_shu_port_review_mature"), 1)
+        self.assertNotIn("ywc_shu_port_review_due", world.countries["SHU"])
+        world.execute(_replace_lifecycle_facts(effect), "SHU")
+        self.assertIn(("SHU", "ywc_shu.1025"), world.events)
 
     def test_port_route_readiness_is_route_dependent(self):
         body = _helper_body(self.triggers, "ywc_shu_v03_port_execution_ready")

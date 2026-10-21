@@ -695,7 +695,7 @@ ywc_shu.1010 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_contract
-ywc_shu_v03_unsettled = yes NOT = { has_variable = ywc_shu_service_route }
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled } NOT = { has_variable = ywc_shu_service_route }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -733,7 +733,7 @@ ywc_shu.1011 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_contract
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -774,7 +774,7 @@ ywc_shu.1012 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_contract
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -812,7 +812,7 @@ ywc_shu.1013 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_contract
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -826,7 +826,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1013 }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1013.professional.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1013.professional.consequence_tooltip }
-        ywc_shu_choose_service_route = yes set_variable = { name = ywc_shu_service_route value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1014 }
+        ywc_shu_choose_service_route = yes if = { limit = { has_variable = ywc_shu_service_compact_fee_due } ywc_shu_pay_service_cost = yes } if = { limit = { OR = { has_variable = ywc_shu_service_compact_fee_waived has_variable = ywc_shu_service_cost_paid } } set_variable = { name = ywc_shu_service_route value = 1 } set_variable = { name = ywc_shu_service_pending_event value = 1014 } }
     }
     option = {
         name = ywc_shu.1013.provincial_compact
@@ -836,7 +836,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1013 }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1013.provincial_compact.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1013.provincial_compact.consequence_tooltip }
-        ywc_shu_choose_service_route = yes set_variable = { name = ywc_shu_service_route value = 2 } set_variable = { name = ywc_shu_service_pending_event value = 1014 }
+        ywc_shu_choose_service_route = yes if = { limit = { has_variable = ywc_shu_service_compact_fee_due } ywc_shu_pay_service_cost = yes } if = { limit = { OR = { has_variable = ywc_shu_service_compact_fee_waived has_variable = ywc_shu_service_cost_paid } } set_variable = { name = ywc_shu_service_route value = 2 } set_variable = { name = ywc_shu_service_pending_event value = 1014 } }
     }
     option = {
         name = ywc_shu.1013.legacy_cap
@@ -856,7 +856,7 @@ ywc_shu.1014 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_appointments
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -900,7 +900,7 @@ ywc_shu.1015 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_appointments
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -943,26 +943,52 @@ ywc_shu.1016 = {
     trigger = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
-has_journal_entry = ywc_je_v03_shu_service_appointments
-ywc_shu_v03_unsettled = yes
+OR = { has_journal_entry = ywc_je_v03_shu_service_contract has_journal_entry = ywc_je_v03_shu_service_appointments has_journal_entry = ywc_je_v03_shu_service_successor }
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
 set_variable = { name = ywc_v03_shu_event_dispatch value = 1016 }
 }
     option = {
+        name = ywc_shu.1016.resume_service_contract
+        trigger = {
+        has_journal_entry = ywc_je_v03_shu_service_contract
+        }
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1016.resume_service_contract.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1016.resume_service_contract.consequence_tooltip }
+        remove_variable = ywc_shu_service_deferred set_variable = { name = ywc_shu_service_pending_event value = 1010 }
+    }
+    option = {
+        name = ywc_shu.1016.resume_service_appointments
+        trigger = {
+        has_journal_entry = ywc_je_v03_shu_service_appointments
+        }
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1016.resume_service_appointments.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1016.resume_service_appointments.consequence_tooltip }
+        set_variable = { name = ywc_shu_service_pending_event value = 1014 }
+    }
+    option = {
         name = ywc_shu.1016.retry_after_repair
+        trigger = {
+        has_journal_entry = ywc_je_v03_shu_service_successor
+        }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1016.retry_after_repair.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1016.retry_after_repair.consequence_tooltip }
-        remove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature remove_variable = ywc_shu_service_review_interrupted set_variable = { name = ywc_shu_service_pending_event value = 1014 }
+        ywc_shu_service_start_review = yes
     }
     option = {
         name = ywc_shu.1016.accept_cap
+        trigger = {
+        OR = { has_journal_entry = ywc_je_v03_shu_service_contract has_journal_entry = ywc_je_v03_shu_service_appointments has_journal_entry = ywc_je_v03_shu_service_successor }
+        }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1016.accept_cap.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1016.accept_cap.consequence_tooltip }
-        set_variable = { name = ywc_shu_service_route value = 3 } set_variable = { name = ywc_shu_service_target_reduced value = 1 } remove_variable = ywc_shu_service_review_due remove_variable = ywc_shu_service_review_mature remove_variable = ywc_shu_service_review_interrupted set_variable = { name = ywc_shu_service_pending_event value = 1014 }
+        set_variable = { name = ywc_shu_service_route value = 3 } set_variable = { name = ywc_shu_service_target_reduced value = 1 } ywc_shu_service_start_review = yes
     }
     option = {
         name = ywc_shu.1016.withdraw_service
@@ -982,7 +1008,7 @@ ywc_shu.1017 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_service_successor
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1026,7 +1052,7 @@ ywc_shu.1018 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1093,7 +1119,7 @@ ywc_shu.1019 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1131,7 +1157,7 @@ ywc_shu.1020 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1175,7 +1201,7 @@ ywc_shu.1021 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1216,7 +1242,7 @@ ywc_shu.1022 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1257,7 +1283,7 @@ ywc_shu.1023 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1298,7 +1324,7 @@ ywc_shu.1024 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
@@ -1328,6 +1354,20 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1024 }
         custom_tooltip = { text = ywc_shu.1024.reduce_burden.consequence_tooltip }
         set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_burden value = 3 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }
     }
+    option = {
+        name = ywc_shu.1024.withdraw_port
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1024.withdraw_port.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1024.withdraw_port.consequence_tooltip }
+        set_variable = { name = ywc_shu_port_withdrawn value = 1 } ywc_shu_port_close_withdrawn = yes
+    }
+    option = {
+        name = ywc_shu.1024.retry_after_repair
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1024.retry_after_repair.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1024.retry_after_repair.consequence_tooltip }
+        ywc_shu_port_start_review = yes
+    }
 }
 
 ywc_shu.1025 = {
@@ -1339,7 +1379,7 @@ ywc_shu.1025 = {
 c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
-ywc_shu_v03_unsettled = yes
+NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 }
     immediate = {
 ywc_v03_mark_major_delivered = yes
