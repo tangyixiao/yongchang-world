@@ -18,8 +18,12 @@ EFFECTS = (ROOT / "yongchang_world/common/scripted_effects/ywc_v03_dmg_effects.t
 SHARED_EFFECTS = (ROOT / "yongchang_world/common/scripted_effects/ywc_v03_effects.txt").read_text(encoding="utf-8-sig")
 SHARED_TRIGGERS = (ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_triggers.txt").read_text(encoding="utf-8-sig")
 DMG_TRIGGERS = (ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_dmg_triggers.txt").read_text(encoding="utf-8-sig")
+DELIVERY_EFFECTS = (ROOT / "yongchang_world/common/scripted_effects/ywc_v03_delivery_dmg_effects.txt").read_text(encoding="utf-8-sig")
+DELIVERY_TRIGGERS = (ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_delivery_dmg_triggers.txt").read_text(encoding="utf-8-sig")
 DMG_TRIGGER_MAP = {key: body for key, _, body in parse(DMG_TRIGGERS)}
+DMG_TRIGGER_MAP.update({key: body for key, _, body in parse(DELIVERY_TRIGGERS)})
 DMG_EFFECT_MAP = {key: body for key, _, body in parse(EFFECTS)}
+DMG_EFFECT_MAP.update({key: body for key, _, body in parse(DELIVERY_EFFECTS)})
 GENERATED_JE = parse((ROOT / "yongchang_world/common/journal_entries/ywc_v03_country_dmg_journal.txt").read_text(encoding="utf-8-sig"))
 GENERATED_EVENTS = parse((ROOT / "yongchang_world/events/ywc_v03_country_dmg_events.txt").read_text(encoding="utf-8-sig"))
 
@@ -36,6 +40,77 @@ class DmgWorld(PulseWorld):
         return super().execute(expanded, tag)
 
     def condition(self, node, tag):
+        if node[0] == "any_scope_state":
+            if node[1] != "=" or not isinstance(node[2], list):
+                raise AssertionError(f"unsupported any_scope_state shape: {node!r}")
+            owners = [child for child in node[2] if child[0] == "is_owned_by"]
+            if len(owners) != 1 or owners[0][1:] != ("=", "ROOT"):
+                raise AssertionError(f"unsupported any_scope_state ownership: {node!r}")
+            if any(child[0] not in {"is_owned_by", "any_scope_pop", "any_scope_building"}
+                   for child in node[2]):
+                raise AssertionError(f"unsupported any_scope_state child: {node!r}")
+            variables = self.countries[tag]
+            if not variables.get("fixture_owned_state", 0):
+                return False
+            return all(self.condition(child, tag) for child in node[2]
+                       if child[0] != "is_owned_by")
+        if node[0] == "is_owned_by":
+            if node[1:] != ("=", "ROOT"):
+                raise AssertionError(f"unsupported is_owned_by shape: {node!r}")
+            return bool(self.countries[tag].get("fixture_owned_state", 0))
+        if node[0] == "any_scope_pop":
+            if node[1] != "=" or not isinstance(node[2], list):
+                raise AssertionError(f"unsupported any_scope_pop shape: {node!r}")
+            allowed = {
+                ("pop_has_primary_culture", "=", "no"),
+                ("pop_acceptance", ">=", "acceptance_status_5"),
+                ("pop_acceptance", "<=", "acceptance_status_2"),
+                ("is_pop_type", "=", "bureaucrats"),
+                ("is_pop_type", "=", "soldiers"),
+                ("is_pop_type", "=", "officers"),
+                ("is_employed", "=", "yes"),
+                ("wealth", ">=", "ROOT.modifier:country_voting_power_wealth_threshold_add"),
+                ("workplace", "?=", "block"),
+                ("OR", "=", "block"),
+            }
+            for child in node[2]:
+                signature = (*child[:2], "block" if isinstance(child[2], list) else child[2])
+                if signature not in allowed:
+                    raise AssertionError(f"unsupported any_scope_pop child: {child!r}")
+                if isinstance(child[2], list):
+                    if child[0] == "workplace":
+                        workplace_allowed = {
+                            ("is_building_type", "=", "building_government_administration"),
+                            ("is_building_type", "=", "building_barrack"),
+                            ("occupancy", ">=", "0.8"),
+                            ("building_has_goods_shortage", "=", "no"),
+                        }
+                        if any(tuple(grandchild) not in workplace_allowed for grandchild in child[2]):
+                            raise AssertionError(f"unsupported workplace child: {child!r}")
+                    elif child[0] == "OR":
+                        if any(tuple(grandchild) not in {
+                            ("is_pop_type", "=", "bureaucrats"),
+                            ("is_pop_type", "=", "soldiers"),
+                            ("is_pop_type", "=", "officers"),
+                        } for grandchild in child[2]):
+                            raise AssertionError(f"unsupported pop OR child: {child!r}")
+            # Pop-level facts are explicit engine fixtures; absent facts fail closed.
+            variables = self.countries[tag]
+            return bool(variables.get("fixture_secondary_pop", 0))
+        if node[0] == "any_scope_building":
+            if node[1] != "=" or not isinstance(node[2], list):
+                raise AssertionError(f"unsupported any_scope_building shape: {node!r}")
+            allowed = {
+                ("is_building_group", "=", "bg_agriculture"),
+                ("occupancy", ">=", "0.5"),
+                ("building_has_goods_shortage", "=", "no"),
+            }
+            if any(tuple(child) not in allowed for child in node[2]):
+                raise AssertionError(f"unsupported any_scope_building child: {node!r}")
+            variables = self.countries[tag]
+            return bool(variables.get("fixture_agriculture_employment", 0)
+                        or variables.get("fixture_secondary_office_ready", 0)
+                        or variables.get("fixture_government_appointment_ready", 0))
         if node[0] == "ywc_dmg_v03_has_owned_state":
             return bool(self.countries[tag].get("fixture_owned_state", 0))
         engine_fact_fixtures = {
@@ -123,6 +198,28 @@ def _consume_court_priority_notice(world):
 
 
 class DmgFoundationLifecycleTest(unittest.TestCase):
+    def test_engine_scope_fixture_rejects_unknown_children_even_when_false_facts_precede_them(self):
+        world = DmgWorld(EFFECTS + "\n" + SHARED_EFFECTS, {"DMG": {"fixture_owned_state": 1}})
+        malformed = [
+            ("any_scope_state", "=", [("is_owned_by", "=", "ROOT"),
+                                        ("unknown_engine_fact", "=", "yes")]),
+            ("any_scope_state", "=", [("is_owned_by", "=", "OTHER"),
+                                        ("unknown_engine_fact", "=", "yes")]),
+            ("any_scope_pop", "=", [("pop_has_primary_culture", "=", "yes")]),
+            ("any_scope_building", "=", [("is_building_group", "=", "bg_unknown")]),
+        ]
+        for node in malformed:
+            with self.subTest(node=node), self.assertRaises(AssertionError):
+                world.condition(node, "DMG")
+
+    def test_engine_scope_fixture_accepts_only_authored_false_facts(self):
+        world = DmgWorld(EFFECTS + "\n" + SHARED_EFFECTS, {"DMG": {"fixture_owned_state": 1}})
+        authored = ("any_scope_state", "=", [
+            ("is_owned_by", "=", "ROOT"),
+            ("any_scope_pop", "=", [("pop_has_primary_culture", "=", "no")]),
+        ])
+        self.assertFalse(world.condition(authored, "DMG"))
+
     def test_terminal_limit_tooltips_match_titles_and_court_runtime_contracts(self):
         expectations = {
             "ywc_dmg.1015": ("titles", "v03_dmg_two_land_titles", ("登记费", "六个月"), ("registry fee", "six-month")),
@@ -442,18 +539,20 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
             entry = _generated_je(je_id)
             pulse = _nodes_field(_nodes_field(entry, "on_monthly_pulse"), "effect")
             world = DmgWorld(EFFECTS + "\n" + SHARED_EFFECTS, {"DMG": {
-                started: 1,
+                "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                "yearly_gross_income": 52000, "gold_reserves": 50000, "net_fixed_income": 0,
                 "ywc_v03_active_arc_count": 1,
                 "ywc_v03_visible_task_count": 1,
                 "fixture_owned_state": 1,
-                f"{prefix}_pending_event": queued,
             }})
             if prefix == "ywc_dmg_court":
                 world.countries["DMG"].update({
-                    "ywc_dmg_court_route": 3, "ywc_dmg_court_lower_target_selected": 1,
-                    "ywc_dmg_court_charter_paid": 1, "ywc_dmg_court_budget_paid": 1,
-                    "ywc_dmg_court_representation": 3, "ywc_dmg_court_defence_veto": 3,
+                "ywc_dmg_court_route": 3, "ywc_dmg_court_lower_target_selected": 1,
+                "ywc_dmg_court_charter_paid": 1, "ywc_dmg_court_budget_paid": 1,
+                "ywc_dmg_court_representation": 3, "ywc_dmg_court_defence_veto": 3,
                 })
+            self.assertTrue(world.conditions(_nodes_field(entry, "possible"), "DMG"), je_id)
+            world.execute(_nodes_field(entry, "immediate"), "DMG")
             world.journals.append(("DMG", [("type", "=", je_id)]))
             world.execute(pulse, "DMG")
             for month in range(1, 37):
@@ -465,7 +564,7 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
                         event = _generated_event(dispatched)
                         world.execute(_nodes_field(event, "immediate"), "DMG")
                         renegotiate = _actual_option(dispatched, "renegotiate")
-                        self.assertTrue(world.conditions(_nodes_field(renegotiate, "trigger"), "DMG"))
+                        self.assertTrue(world.conditions(_nodes_field(renegotiate, "trigger"), "DMG"), world.countries["DMG"])
                         world.execute(_actual_option_effect(dispatched, "renegotiate"), "DMG")
                         world.events.clear()
                     elif dispatched != f"ywc_dmg.{remedy}":
@@ -678,7 +777,11 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
                 break
             world.advance_months(1)
         self.assertEqual(world.countries["DMG"].get("ywc_dmg_court_review_matured"), 1)
-        self.assertTrue(world.events, "the actual final review event is retried after the fresh nine-month window")
+        # Maturity is written late in this monthly pulse; sender selection
+        # resumes on the next native monthly pulse.
+        world.advance_months(1)
+        world.execute(pulse, "DMG")
+        self.assertTrue(world.events, f"the actual final review event is retried after the fresh nine-month window: candidates={[i for i in range(1,49) if world.condition((f'ywc_v03_dmg_inline_candidate_{i}', '=', 'yes'), 'DMG')]}, turn45={world.condition(('ywc_v03_dmg_inline_turn_45', '=', 'yes'), 'DMG')}, {world.countries['DMG']}")
         event_id = world.events[-1][1]
         event = _generated_event(event_id)
         self.assertEqual(event_id, "ywc_dmg.1023")
@@ -862,13 +965,21 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
             entry = _generated_je(je_id)
             pulse = _nodes_field(_nodes_field(entry, "on_monthly_pulse"), "effect")
             world = DmgWorld(EFFECTS + "\n" + SHARED_EFFECTS, {"DMG": {
-                "ywc_v03_dmg_v03_dmg_two_land_titles_started" if prefix == "ywc_dmg_titles" else "ywc_v03_dmg_v03_dmg_court_provinces_started": 1,
+                "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                "yearly_gross_income": 52000, "gold_reserves": 50000, "net_fixed_income": 0,
                 "ywc_v03_active_arc_count": 1,
                 "ywc_v03_visible_task_count": 1,
                 "fixture_owned_state": 1,
-                "ywc_dmg_titles_pending_event" if prefix == "ywc_dmg_titles" else "ywc_dmg_court_pending_event": queued,
                 notice: 1,
             }})
+            if prefix == "ywc_dmg_court":
+                world.countries["DMG"].update({
+                    "ywc_dmg_court_route": 3, "ywc_dmg_court_lower_target_selected": 1,
+                    "ywc_dmg_court_charter_paid": 1, "ywc_dmg_court_budget_paid": 1,
+                    "ywc_dmg_court_representation": 3, "ywc_dmg_court_defence_veto": 3,
+                })
+            self.assertTrue(world.conditions(_nodes_field(entry, "possible"), "DMG"), je_id)
+            world.execute(_nodes_field(entry, "immediate"), "DMG")
             world.journals.append(("DMG", [("type", "=", je_id)]))
             world.execute(pulse, "DMG")
             self.assertEqual(world.events, [("DMG", f"ywc_dmg.{remedy}")])
@@ -1103,7 +1214,11 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
             world.advance_months(1)
         self.assertTrue(world.countries["DMG"].get("ywc_dmg_court_review_matured"), "court retry must reobserve nine months")
         world.events.clear()
-        self.assertTrue(world.conditions(_nodes_field(event, "trigger"), "DMG"), "real final court event must retry")
+        # Maturity is written late in this monthly pulse; the authored sender
+        # runs on the next native monthly pulse.
+        world.advance_months(1)
+        world.execute(pulse, "DMG")
+        self.assertTrue(world.conditions(_nodes_field(event, "trigger"), "DMG"), f"real final court event must retry: {world.countries['DMG']}")
         world.execute(_nodes_field(event, "immediate"), "DMG")
         self.assertTrue(world.conditions(_nodes_field(final_option, "trigger"), "DMG"), "court retry trigger")
         world.execute(_actual_option_effect("ywc_dmg.1023", "confirm_royal"), "DMG")
@@ -1203,7 +1318,12 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
                     if world.events:
                         break
                     world.advance_months(1)
-                self.assertEqual(world.events, [("DMG", "ywc_dmg.1015")], "real retry node must return after a fresh watch")
+                if not world.events:
+                    # The last wait pulse may be the pulse that first writes
+                    # maturity; selection happens on the following month.
+                    world.advance_months(1)
+                    world.execute(pulse, "DMG")
+                self.assertEqual(world.events, [("DMG", "ywc_dmg.1015")], f"real retry node must return after a fresh watch: {world.countries['DMG']}")
                 retry_event = _generated_event("ywc_dmg.1015")
                 self.assertTrue(world.conditions(_nodes_field(retry_event, "trigger"), "DMG"))
                 world.events.clear()
