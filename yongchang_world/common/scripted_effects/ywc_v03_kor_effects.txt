@@ -1,4 +1,4 @@
-﻿# KOR-local military budget. The opening snapshot uses the official yearly gross
+# KOR-local military budget. The opening snapshot uses the official yearly gross
 # government income divided by 52; each actual debit is separately guarded.
 ywc_kor_capture_cost_base = {
 	if = {
@@ -336,10 +336,10 @@ ywc_kor_close_school_as_established = {
 		limit = {
 			has_variable = ywc_v03_kor_v03_kor_school_factions_started
 			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
-			NOT = { has_variable = ywc_kor_school_established }
-			NOT = { has_variable = ywc_kor_school_compromise }
 			NOT = { has_variable = ywc_kor_school_withdrawn }
+			has_variable = ywc_kor_school_six_months_complete
 			ywc_kor_school_full_ready = yes
+			ywc_kor_school_observation_target_ready = yes
 		}
 		set_variable = { name = ywc_kor_school_established value = 1 }
 		set_variable = { name = ywc_kor_school_pending_event value = 1017 }
@@ -351,10 +351,10 @@ ywc_kor_close_school_as_compromise = {
 		limit = {
 			has_variable = ywc_v03_kor_v03_kor_school_factions_started
 			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
-			NOT = { has_variable = ywc_kor_school_established }
-			NOT = { has_variable = ywc_kor_school_compromise }
 			NOT = { has_variable = ywc_kor_school_withdrawn }
+			has_variable = ywc_kor_school_limited_six_months_complete
 			ywc_kor_school_limited_ready = yes
+			ywc_kor_school_observation_target_ready = yes
 		}
 		set_variable = { name = ywc_kor_school_compromise value = 1 }
 		set_variable = { name = ywc_kor_school_pending_event value = 1017 }
@@ -366,8 +366,6 @@ ywc_kor_close_school_as_breach = {
 		limit = {
 			has_variable = ywc_v03_kor_v03_kor_school_factions_started
 			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
-			NOT = { has_variable = ywc_kor_school_established }
-			NOT = { has_variable = ywc_kor_school_compromise }
 			NOT = { has_variable = ywc_kor_school_withdrawn }
 		}
 		set_variable = { name = ywc_kor_school_withdrawn value = 1 }
@@ -389,6 +387,8 @@ ywc_kor_school_finalize = {
 			has_variable = ywc_v03_kor_v03_kor_school_factions_started
 			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
 			has_variable = ywc_kor_school_established
+			has_variable = ywc_kor_school_six_months_complete
+			ywc_kor_school_observation_target_ready = yes
 		}
 		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 1 }
 		if = { limit = { var:ywc_kor_school_route = 2 } set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 2 } }
@@ -409,6 +409,8 @@ ywc_kor_school_finalize = {
 			has_variable = ywc_v03_kor_v03_kor_school_factions_started
 			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
 			has_variable = ywc_kor_school_compromise
+			has_variable = ywc_kor_school_limited_six_months_complete
+			ywc_kor_school_observation_target_ready = yes
 		}
 		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 3 }
 		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
@@ -471,12 +473,10 @@ ywc_kor_school_reset_observation = {
 ywc_kor_school_monthly_review = {
 	if = {
 		limit = {
-			NOT = { has_variable = ywc_kor_school_established }
-			NOT = { has_variable = ywc_kor_school_compromise }
 			NOT = { has_variable = ywc_kor_school_withdrawn }
 		}
 		if = {
-			limit = { ywc_kor_school_route_execution_ready = yes }
+			limit = { ywc_kor_school_observation_target_ready = yes }
 			if = {
 				limit = { has_variable = ywc_kor_school_observation_started NOT = { has_variable = ywc_kor_school_observation_timer } }
 				set_variable = { name = ywc_kor_school_six_months_complete value = 1 }
@@ -546,6 +546,11 @@ ywc_kor_school_monthly_review = {
 	}
 }
 
+ywc_kor_school_defer_notice = {
+	remove_variable = ywc_kor_school_notice_event
+	if = { limit = { NOT = { has_variable = ywc_kor_school_pending_event } } set_variable = { name = ywc_kor_school_pending_event value = 1016 } }
+}
+
 ywc_kor_choose_port_designated = {
 	if = {
 		limit = { NOT = { has_variable = ywc_kor_ports_filing_fee_paid } }
@@ -606,6 +611,10 @@ ywc_kor_choose_port_shore = {
 	}
 	if = {
 		limit = { has_variable = ywc_kor_ports_filing_fee_paid }
+		if = {
+			limit = { OR = { has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_general_paid } }
+			set_variable = { name = ywc_kor_ports_shore_prior_funding_credit value = 1 }
+		}
 		set_variable = { name = ywc_kor_ports_route value = 3 }
 		set_variable = { name = ywc_kor_ports_fee value = var:ywc_kor_port_fee }
 	}
@@ -619,6 +628,8 @@ ywc_kor_close_ports_as_established = {
 			NOT = { has_variable = ywc_kor_ports_established }
 			NOT = { has_variable = ywc_kor_ports_compromise }
 			NOT = { has_variable = ywc_kor_ports_withdrawn }
+			has_variable = ywc_kor_ports_six_months_complete
+			ywc_kor_ports_observation_target_ready = yes
 			ywc_kor_ports_full_ready = yes
 		}
 		set_variable = { name = ywc_kor_ports_established value = 1 }
@@ -647,6 +658,8 @@ ywc_kor_close_ports_as_compromise = {
 			NOT = { has_variable = ywc_kor_ports_established }
 			NOT = { has_variable = ywc_kor_ports_compromise }
 			NOT = { has_variable = ywc_kor_ports_withdrawn }
+			has_variable = ywc_kor_ports_limited_six_months_complete
+			ywc_kor_ports_observation_target_ready = yes
 			ywc_kor_ports_shore_ready = yes
 		}
 		set_variable = { name = ywc_kor_ports_compromise value = 1 }
@@ -753,7 +766,7 @@ ywc_kor_ports_monthly_review = {
 			NOT = { has_variable = ywc_kor_ports_withdrawn }
 		}
 		if = {
-			limit = { ywc_kor_ports_current_route_ready = yes }
+			limit = { ywc_kor_ports_observation_target_ready = yes }
 			remove_variable = ywc_kor_ports_blocked_timer_started
 			remove_variable = ywc_kor_ports_blocked_12_due
 			remove_variable = ywc_kor_ports_blocked_36_due
@@ -830,4 +843,9 @@ ywc_kor_ports_monthly_review = {
 		remove_variable = ywc_kor_ports_final_review_waiting
 		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
 	}
+}
+
+ywc_kor_ports_defer_notice = {
+	remove_variable = ywc_kor_ports_notice_event
+	if = { limit = { NOT = { has_variable = ywc_kor_ports_pending_event } } set_variable = { name = ywc_kor_ports_pending_event value = 1022 } }
 }
