@@ -1026,8 +1026,8 @@
             "zh": "连续六个月检查实际任用机构、供给与财政安全。坏月清零；受阻十二个月给修复提示，三十六个月可退出。",
             "en": "Check the actual employer, supplies and fiscal safety for six continuous months. A bad month resets the clock; after 12 blocked months repair is offered and after 36 withdrawal is allowed."
           },
-          "script": "{ immediate = { set_variable = { name = ywc_kor_school_pending_event value = 1016 } } on_monthly_pulse = { effect = { if = { limit = { NOT = { has_variable = ywc_kor_school_pending_event } has_variable = ywc_kor_pending_event var:ywc_kor_pending_event >= 1010 var:ywc_kor_pending_event <= 1017 } set_variable = { name = ywc_kor_school_pending_event value = var:ywc_kor_pending_event } remove_variable = ywc_kor_pending_event }  ywc_kor_school_monthly_review = yes  if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_school_pending_event = 1016 } remove_variable = ywc_kor_school_pending_event trigger_event = { id = ywc_kor.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_school_pending_event = 1017 } remove_variable = ywc_kor_school_pending_event trigger_event = { id = ywc_kor.1017 } } else_if = { limit = { ywc_v03_can_deliver_major = yes NOT = { has_variable = ywc_kor_school_pending_event } var:ywc_kor_school_notice_event = 1016 } remove_variable = ywc_kor_school_notice_event trigger_event = { id = ywc_kor.1016 } } } } }",
-          "goal": "{ OR = { has_variable = ywc_v03_kor_v03_kor_school_factions_outcome var:ywc_v03_kor_v03_kor_school_factions_outcome = 1 var:ywc_v03_kor_v03_kor_school_factions_outcome = 2 var:ywc_v03_kor_v03_kor_school_factions_outcome = 3 } }",
+          "script": "{ immediate = { set_variable = { name = ywc_kor_school_pending_event value = 1016 } } on_monthly_pulse = { effect = { if = { limit = { NOT = { has_variable = ywc_kor_school_pending_event } has_variable = ywc_kor_pending_event var:ywc_kor_pending_event >= 1010 var:ywc_kor_pending_event <= 1017 } set_variable = { name = ywc_kor_school_pending_event value = var:ywc_kor_pending_event } remove_variable = ywc_kor_pending_event }  ywc_kor_school_monthly_review = yes  if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_school_notice_event = 1016 } remove_variable = ywc_kor_school_notice_event trigger_event = { id = ywc_kor.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_school_pending_event = 1016 } remove_variable = ywc_kor_school_pending_event trigger_event = { id = ywc_kor.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_school_pending_event = 1017 } remove_variable = ywc_kor_school_pending_event trigger_event = { id = ywc_kor.1017 } } } } }",
+          "goal": "{ OR = { var:ywc_v03_kor_v03_kor_school_factions_outcome = 1 var:ywc_v03_kor_v03_kor_school_factions_outcome = 2 var:ywc_v03_kor_v03_kor_school_factions_outcome = 3 } NOT = { has_variable = ywc_kor_school_withdrawn } }",
           "exit_conditions": "{ has_variable = ywc_kor_school_withdrawn }"
         }
       ],
@@ -1171,7 +1171,7 @@
                 "zh": "列明旧军账与本次准备金",
                 "en": "Record the old account and current reserve"
               },
-              "effect": "{ ywc_kor_school_record_old_account = yes set_variable = { name = ywc_kor_school_pending_event value = 1012 } }",
+              "effect": "{ ywc_kor_school_record_old_account = yes if = { limit = { has_variable = ywc_kor_school_old_invoice_paid } set_variable = { name = ywc_kor_school_pending_event value = 1012 } } else = { set_variable = { name = ywc_kor_school_pending_event value = 1011 } } }",
               "ai_chance": "{ base = 70 }",
               "cost_note": {
                 "zh": "不重复扣除已付旧账；若旧线受挫，另付半份基础登记费。",
@@ -1664,7 +1664,7 @@
                 "zh": "仅当高目标连续合格时确立；不授予法律或学历。",
                 "en": "Establishes only after the full target passes continuously; grants no law or degree."
               },
-              "trigger": "{ ywc_kor_school_full_ready = yes has_variable = ywc_kor_school_six_months_complete }"
+              "trigger": "{ ywc_kor_school_full_ready = yes has_variable = ywc_kor_school_six_months_complete ywc_kor_school_observation_target_ready = yes }"
             },
             {
               "key": "compromise",
@@ -1682,7 +1682,7 @@
                 "zh": "只兑现低目标，不将低门槛冒认为全面任用。",
                 "en": "Settles only the lower target and never mislabels it as full appointments."
               },
-              "trigger": "{ ywc_kor_school_limited_ready = yes has_variable = ywc_kor_school_limited_six_months_complete }"
+              "trigger": "{ ywc_kor_school_limited_ready = yes has_variable = ywc_kor_school_limited_six_months_complete ywc_kor_school_observation_target_ready = yes }"
             },
             {
               "key": "wait_for_observation",
@@ -1708,7 +1708,7 @@
                 "zh": "收到十二个月受阻提示，继续暂缓",
                 "en": "Acknowledge the 12-month block and defer"
               },
-              "effect": "{ set_variable = { name = ywc_kor_school_pending_event value = 1016 } }",
+              "effect": "{ ywc_kor_school_defer_notice = yes }",
               "ai_chance": "{ base = 1 }",
               "cost_note": {
                 "zh": "不收取新费用。",
@@ -1718,7 +1718,7 @@
                 "zh": "暂缓不结案；三十六个月受阻提示仍会送达，也可随时退出。",
                 "en": "Deferral does not settle the review; the 36-month notice remains deliverable and withdrawal is always available."
               },
-              "trigger": "{ has_variable = ywc_kor_school_12_notice }"
+              "trigger": "{ OR = { has_variable = ywc_kor_school_12_notice has_variable = ywc_kor_school_36_notice } }"
             },
             {
               "key": "repair",
@@ -1801,7 +1801,7 @@
                 "zh": "保留真实任用路径及其集团影响。",
                 "en": "Retains the real appointment route and its group effects."
               },
-              "trigger": "{ has_variable = ywc_kor_school_established }"
+              "trigger": "{ has_variable = ywc_kor_school_established has_variable = ywc_kor_school_six_months_complete ywc_kor_school_observation_target_ready = yes }"
             },
             {
               "key": "settle_compromise",
@@ -1819,7 +1819,7 @@
                 "zh": "保留窄目标，不追授全面教育结局。",
                 "en": "Retains the narrow target and cannot claim full education results."
               },
-              "trigger": "{ has_variable = ywc_kor_school_compromise }"
+              "trigger": "{ has_variable = ywc_kor_school_compromise has_variable = ywc_kor_school_limited_six_months_complete ywc_kor_school_observation_target_ready = yes }"
             },
             {
               "key": "retry",
@@ -1908,7 +1908,7 @@
             "zh": "指定港、一般通商与保留禁例的岸市都要按真实法律、港务岗位和官署供给持续核账。六个月连续安全后才能结项。",
             "en": "A designated port, general trade, or a restricted shore office must be audited against real trade laws, port jobs and administrative supply. Settlement requires six continuous safe months."
           },
-          "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized OR = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled var:ywc_campaign_kor_c1_outcome >= 1 has_variable = ywc_je_flavor_kor_reform_1_resolved has_variable = ywc_je_flavor_kor_reform_1_failed } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } possible = { c:KOR ?= this has_variable = ywc_v03_initialized OR = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled var:ywc_campaign_kor_c1_outcome >= 1 has_variable = ywc_je_flavor_kor_reform_1_resolved has_variable = ywc_je_flavor_kor_reform_1_failed } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } immediate = { if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_started value = 1 } set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_last_event value = 0 } set_variable = { name = ywc_kor_port_captured_income value = yearly_gross_income } change_variable = { name = ywc_kor_port_captured_income divide = 52 } clamp_variable = { name = ywc_kor_port_captured_income min = 100 max = 1000000000 } set_variable = { name = ywc_kor_port_fee value = var:ywc_kor_port_captured_income } } set_variable = { name = ywc_kor_ports_pending_event value = 1018 } } on_fail = { ywc_kor_close_ports_as_breach = yes } on_monthly_pulse = { effect = { if = { limit = { NOT = { has_variable = ywc_kor_ports_pending_event } has_variable = ywc_kor_pending_event var:ywc_kor_pending_event >= 1018 var:ywc_kor_pending_event <= 1023 } set_variable = { name = ywc_kor_ports_pending_event value = var:ywc_kor_pending_event } remove_variable = ywc_kor_pending_event }  ywc_kor_ports_monthly_review = yes  if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1018 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1018 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1019 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1019 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1020 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1020 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1021 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1021 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1022 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1022 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1023 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1023 } } else_if = { limit = { ywc_v03_can_deliver_major = yes NOT = { has_variable = ywc_kor_ports_pending_event } var:ywc_kor_ports_notice_event = 1022 } remove_variable = ywc_kor_ports_notice_event trigger_event = { id = ywc_kor.1022 } } } } }",
+          "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized OR = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled var:ywc_campaign_kor_c1_outcome >= 1 has_variable = ywc_je_flavor_kor_reform_1_resolved has_variable = ywc_je_flavor_kor_reform_1_failed } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } possible = { c:KOR ?= this has_variable = ywc_v03_initialized OR = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled var:ywc_campaign_kor_c1_outcome >= 1 has_variable = ywc_je_flavor_kor_reform_1_resolved has_variable = ywc_je_flavor_kor_reform_1_failed } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } immediate = { if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started } NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_started value = 1 } set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_last_event value = 0 } set_variable = { name = ywc_kor_port_captured_income value = yearly_gross_income } change_variable = { name = ywc_kor_port_captured_income divide = 52 } clamp_variable = { name = ywc_kor_port_captured_income min = 100 max = 1000000000 } set_variable = { name = ywc_kor_port_fee value = var:ywc_kor_port_captured_income } } set_variable = { name = ywc_kor_ports_pending_event value = 1018 } } on_fail = { ywc_kor_close_ports_as_breach = yes } on_monthly_pulse = { effect = { if = { limit = { NOT = { has_variable = ywc_kor_ports_pending_event } has_variable = ywc_kor_pending_event var:ywc_kor_pending_event >= 1018 var:ywc_kor_pending_event <= 1023 } set_variable = { name = ywc_kor_ports_pending_event value = var:ywc_kor_pending_event } remove_variable = ywc_kor_pending_event }  ywc_kor_ports_monthly_review = yes  if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_notice_event = 1022 } remove_variable = ywc_kor_ports_notice_event trigger_event = { id = ywc_kor.1022 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1018 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1018 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1019 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1019 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1020 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1020 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1021 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1021 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_notice_event = 1022 } remove_variable = ywc_kor_ports_notice_event trigger_event = { id = ywc_kor.1022 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1022 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1022 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_ports_pending_event = 1023 } remove_variable = ywc_kor_ports_pending_event trigger_event = { id = ywc_kor.1023 } } } } }",
           "goal": "{ OR = { has_variable = ywc_kor_ports_established has_variable = ywc_kor_ports_compromise } }",
           "exit_conditions": "{ has_variable = ywc_kor_ports_withdrawn }"
         }
@@ -2070,17 +2070,17 @@
                 "zh": "贸易法不允时缩为岸市账",
                 "en": "Narrow to shore accounts if trade law forbids trade"
               },
-              "effect": "{ ywc_kor_choose_port_shore = yes set_variable = { name = ywc_kor_ports_pending_event value = 1020 } }",
+              "effect": "{ ywc_kor_ports_record_prior_outcomes = yes ywc_kor_ports_authorize_review = yes ywc_kor_choose_port_shore = yes set_variable = { name = ywc_kor_ports_pending_event value = 1020 } }",
               "ai_chance": "{ base = 25 }",
               "cost_note": {
                 "zh": "不追加费用。",
-                "en": "No added fee."
+                "en": "The previously paid filing fee funds the reduced shore target; no refund, new fee or loss of old accounts."
               },
               "consequence_note": {
                 "zh": "旧禁例保留，后续只检查官署账簿。",
                 "en": "Keeps existing restrictions; later checks only office ledgers."
               },
-              "trigger": "{ ywc_kor_ports_shore_ready = yes }"
+              "trigger": "{ ywc_kor_ports_shore_ready = yes has_variable = ywc_kor_ports_filing_fee_paid }"
             },
             {
               "key": "defer",
@@ -2170,17 +2170,17 @@
                 "zh": "港务岗位不足，改为岸上核账",
                 "en": "Port staff are unavailable; use shore accounts"
               },
-              "effect": "{ ywc_kor_choose_port_shore = yes set_variable = { name = ywc_kor_ports_pending_event value = 1021 } }",
+              "effect": "{ ywc_kor_ports_record_prior_outcomes = yes ywc_kor_ports_authorize_review = yes ywc_kor_choose_port_shore = yes set_variable = { name = ywc_kor_ports_pending_event value = 1021 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
                 "zh": "不退款、不新增费用。",
-                "en": "No refund and no new fee."
+                "en": "No refund or new fee; prior filing funds shore review and all outstanding accounts remain due."
               },
               "consequence_note": {
                 "zh": "明确缩限为国内岸市账，不冒称港口已通商。",
                 "en": "Explicitly narrows to domestic shore accounts without claiming an open port."
               },
-              "trigger": "{ ywc_kor_ports_shore_ready = yes }"
+              "trigger": "{ ywc_kor_ports_shore_ready = yes has_variable = ywc_kor_ports_filing_fee_paid }"
             },
             {
               "key": "defer",
@@ -2270,17 +2270,17 @@
                 "zh": "旧账或港务不足，缩为岸市核验",
                 "en": "Narrow to shore review if invoices or port staff fall short"
               },
-              "effect": "{ ywc_kor_choose_port_shore = yes set_variable = { name = ywc_kor_ports_pending_event value = 1022 } }",
+              "effect": "{ ywc_kor_ports_record_prior_outcomes = yes ywc_kor_ports_authorize_review = yes ywc_kor_choose_port_shore = yes set_variable = { name = ywc_kor_ports_pending_event value = 1022 } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
                 "zh": "不追加费用；旧军账按原期付款。",
-                "en": "No new fee; old military accounts continue on their original schedule."
+                "en": "No new fee; prior payment funds the shore target and old military accounts stay on schedule."
               },
               "consequence_note": {
                 "zh": "只登记岸上市簿，保留禁例。",
                 "en": "Registers shore ledgers only and retains restrictions."
               },
-              "trigger": "{ ywc_kor_ports_shore_ready = yes }"
+              "trigger": "{ ywc_kor_ports_shore_ready = yes has_variable = ywc_kor_ports_filing_fee_paid }"
             },
             {
               "key": "defer",
@@ -2361,7 +2361,7 @@
                 "zh": "观察从零开始；低目标仍只能妥协结项。",
                 "en": "Review starts at zero; a reduced route can only compromise."
               },
-              "trigger": "{ ywc_kor_ports_current_route_ready = yes }"
+              "trigger": "{ ywc_kor_ports_current_route_ready = yes has_variable = ywc_kor_ports_prior_contracts_checked is_at_war = no NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }"
             },
             {
               "key": "narrow",
@@ -2369,17 +2369,17 @@
                 "zh": "改为保留禁例的岸市账",
                 "en": "Narrow to shore accounts under existing restrictions"
               },
-              "effect": "{ ywc_kor_choose_port_shore = yes ywc_kor_ports_reset_observation = yes set_variable = { name = ywc_kor_ports_pending_event value = 1023 } }",
+              "effect": "{ ywc_kor_ports_record_prior_outcomes = yes ywc_kor_ports_authorize_review = yes ywc_kor_choose_port_shore = yes ywc_kor_ports_reset_observation = yes set_variable = { name = ywc_kor_ports_pending_event value = 1023 } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "不新增费用；已签合同照常支付。",
-                "en": "No new fee; signed contracts remain payable."
+                "zh": "不再收费；此前已实缴的港务费用转作岸务核验额度，不退款。",
+                "en": "No new fee; the previously paid port fee funds the reduced shore review, with no refund."
               },
               "consequence_note": {
-                "zh": "新目标重新观察，绝不冒称全面通商。",
-                "en": "The new target is reviewed from zero and never claims general trade."
+                "zh": "登记旧账与已付合同后按岸务目标重新观察六个月，不宣称全面通商。",
+                "en": "Record prior accounts and paid contracts, then restart six months for the shore target without claiming general trade."
               },
-              "trigger": "{ ywc_kor_ports_shore_ready = yes }"
+              "trigger": "{ ywc_kor_ports_shore_ready = yes has_variable = ywc_kor_ports_filing_fee_paid is_at_war = no NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }"
             },
             {
               "key": "defer",
@@ -2387,7 +2387,7 @@
                 "zh": "在十二个月受阻时继续等待",
                 "en": "Continue waiting at the 12-month blockage point"
               },
-              "effect": "{ set_variable = { name = ywc_kor_ports_pending_event value = 1022 } }",
+              "effect": "{ ywc_kor_ports_defer_notice = yes }",
               "ai_chance": "{ base = 10 }",
               "cost_note": {
                 "zh": "不另收费用。",
@@ -2397,7 +2397,25 @@
                 "zh": "可以重试；退出保留已付费用并记录受挫。",
                 "en": "Retry is available; withdrawal keeps paid fees and records a setback."
               },
-              "trigger": "{ has_variable = ywc_kor_ports_12_notice }"
+              "trigger": "{ OR = { has_variable = ywc_kor_ports_12_notice has_variable = ywc_kor_ports_36_notice } }"
+            },
+            {
+              "key": "record_prior_contracts",
+              "label": {
+                "zh": "复核旧账后继续委派审计",
+                "en": "Reconsider: record prior contracts and continue to auditor assignment"
+              },
+              "effect": "{ ywc_kor_ports_record_prior_outcomes = yes set_variable = { name = ywc_kor_ports_pending_event value = 1020 } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不新增费用；保留已实缴费用和未结旧账。",
+                "en": "No new fee; retain prior payments and all outstanding old accounts."
+              },
+              "consequence_note": {
+                "zh": "三十六个月复核可登记旧账并回到委派审计，不跳过合同记录或追加收费。",
+                "en": "At the 36-month review, record old accounts and return to auditor assignment without skipping contracts or adding a fee."
+              },
+              "trigger": "{ has_variable = ywc_kor_ports_36_notice NOT = { has_variable = ywc_kor_ports_prior_contracts_checked } has_variable = ywc_kor_ports_filing_fee_paid ywc_kor_ports_current_route_ready = yes is_at_war = no NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }"
             },
             {
               "key": "withdraw",
@@ -2462,7 +2480,7 @@
                 "zh": "不创建贸易路线或改变主权。",
                 "en": "Creates no trade route and changes no sovereignty."
               },
-              "trigger": "{ ywc_kor_ports_full_ready = yes has_variable = ywc_kor_ports_six_months_complete }"
+              "trigger": "{ ywc_kor_ports_full_ready = yes has_variable = ywc_kor_ports_six_months_complete ywc_kor_ports_observation_target_ready = yes }"
             },
             {
               "key": "settle_shore",
@@ -2480,7 +2498,7 @@
                 "zh": "低目标不冒认港口开放或一般通商。",
                 "en": "The lower target never claims an open port or general trade."
               },
-              "trigger": "{ ywc_kor_ports_shore_ready = yes has_variable = ywc_kor_ports_limited_six_months_complete }"
+              "trigger": "{ ywc_kor_ports_shore_ready = yes has_variable = ywc_kor_ports_limited_six_months_complete ywc_kor_ports_observation_target_ready = yes }"
             },
             {
               "key": "wait_for_observation",

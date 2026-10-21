@@ -164,6 +164,15 @@ ywc_kor_school_employer_office_ready = {
 	ywc_kor_v03_finance_safe = yes
 }
 
+ywc_kor_school_selected_employer_ready = {
+	has_variable = ywc_kor_school_employer_confirmed
+	var:ywc_kor_school_employer_confirmed = 1
+	OR = {
+		AND = { var:ywc_kor_school_employer = 1 ywc_kor_school_university_ready = yes }
+		AND = { var:ywc_kor_school_employer = 2 ywc_kor_school_employer_office_ready = yes }
+	}
+}
+
 ywc_kor_school_route_execution_ready = {
 	OR = {
 		AND = {
@@ -193,6 +202,24 @@ ywc_kor_school_full_ready = {
 		}
 	}
 	ywc_kor_school_old_contracts_clear = yes
+}
+
+# Observation and terminal effects must watch the exact target that the chosen
+# full or limited ending requires, with a live, paid, implemented KOR program.
+ywc_kor_school_observation_target_ready = {
+	is_at_war = no
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_v03_has_owned_state = yes
+	has_variable = ywc_kor_school_filing_fee_paid
+	has_variable = ywc_kor_school_old_invoice_paid
+	has_variable = ywc_kor_school_funding_decided
+	has_variable = ywc_kor_school_appointment_decided
+	ywc_kor_school_selected_employer_ready = yes
+	OR = {
+		AND = { var:ywc_kor_school_route = 1 ywc_kor_school_full_ready = yes }
+		AND = { var:ywc_kor_school_route = 2 ywc_kor_school_full_ready = yes }
+		AND = { var:ywc_kor_school_route = 3 ywc_kor_school_limited_ready = yes }
+	}
 }
 
 ywc_kor_school_old_contracts_clear = {
@@ -273,11 +300,38 @@ ywc_kor_ports_full_ready = {
 	}
 }
 
+ywc_kor_ports_shore_funding_ready = {
+	has_variable = ywc_kor_ports_filing_fee_paid
+	OR = {
+		has_variable = ywc_kor_ports_shore_paid
+		AND = {
+			has_variable = ywc_kor_ports_shore_prior_funding_credit
+			OR = { has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_general_paid }
+		}
+	}
+}
+
+ywc_kor_ports_observation_target_ready = {
+	is_at_war = no
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_v03_has_owned_state = yes
+	has_variable = ywc_kor_ports_filing_fee_paid
+	OR = {
+		AND = { var:ywc_kor_ports_route = 1 has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_prior_contracts_checked ywc_kor_ports_designated_ready = yes ywc_kor_ports_auditor_ready = yes }
+		AND = { var:ywc_kor_ports_route = 2 has_variable = ywc_kor_ports_general_paid has_variable = ywc_kor_ports_prior_contracts_checked ywc_kor_ports_general_ready = yes ywc_kor_ports_auditor_ready = yes }
+		AND = { var:ywc_kor_ports_route = 3 ywc_kor_ports_shore_funding_ready = yes ywc_kor_ports_shore_ready = yes }
+	}
+}
+
 ywc_kor_ports_auditor_ready = {
 	OR = {
-		AND = { var:ywc_kor_school_route = 1 ywc_kor_school_coop_ready = yes }
+		AND = { var:ywc_kor_school_route = 1 ywc_kor_school_full_ready = yes }
 		AND = { var:ywc_kor_school_route = 2 ywc_kor_school_office_ready = yes }
 		AND = { var:ywc_kor_school_route = 3 ywc_kor_school_limited_ready = yes }
+		NOT = { has_variable = ywc_kor_school_route }
+	}
+	OR = {
+		AND = { has_variable = ywc_kor_school_route ywc_kor_school_selected_employer_ready = yes }
 		NOT = { has_variable = ywc_kor_school_route }
 	}
 	ywc_kor_ports_current_route_ready = yes
