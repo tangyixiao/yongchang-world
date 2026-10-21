@@ -6,6 +6,8 @@ ROOT=Path(__file__).resolve().parents[1]
 CAT=ROOT/'data/content/v03/countries/oir.json'
 EFF=ROOT/'yongchang_world/common/scripted_effects/ywc_v03_oir_effects.txt'
 TRG=ROOT/'yongchang_world/common/scripted_triggers/ywc_v03_oir_triggers.txt'
+SCHED_E=ROOT/'yongchang_world/common/scripted_effects/ywc_v03_delivery_oir_effects.txt'
+SCHED_T=ROOT/'yongchang_world/common/scripted_triggers/ywc_v03_delivery_oir_triggers.txt'
 CORE_E=ROOT/'yongchang_world/common/scripted_effects/ywc_v03_effects.txt'
 CORE_T=ROOT/'yongchang_world/common/scripted_triggers/ywc_v03_triggers.txt'
 MOD=ROOT/'yongchang_world'
@@ -46,8 +48,8 @@ class OIRWorld(PulseWorld):
     'buildings':[{'type':'building_government_administration','occupancy':0.8},
      {'type':'building_livestock_ranch','occupancy':0.8},
      {'type':'building_barrack','occupancy':0.8,'shortage':False}]}]}
-  super().__init__(EFF.read_text(encoding='utf-8-sig')+'\n'+CORE_E.read_text(encoding='utf-8-sig'),{'OIR':facts,'SHU':{},'RUS':{}})
-  self.triggers={k:b for k,_,b in parse(TRG.read_text(encoding='utf-8-sig')+'\n'+CORE_T.read_text(encoding='utf-8-sig'))}
+  super().__init__(EFF.read_text(encoding='utf-8-sig')+'\n'+SCHED_E.read_text(encoding='utf-8-sig')+'\n'+CORE_E.read_text(encoding='utf-8-sig'),{'OIR':facts,'SHU':{},'RUS':{}})
+  self.triggers={k:b for k,_,b in parse(TRG.read_text(encoding='utf-8-sig')+'\n'+SCHED_T.read_text(encoding='utf-8-sig')+'\n'+CORE_T.read_text(encoding='utf-8-sig'))}
   self.managed={};self.active=set();self.completed=set();self.failed=set()
  def _cmp(self,left,op,right,v):
   if isinstance(right,str) and right.startswith('var:'):right=v.get(right[4:],0)
@@ -124,7 +126,11 @@ def pulse_current(w,arc):
  pulse(w,ids[0])
 def fire(w,arc,eid):
  ev=next(e for e in arc['events'] if e['id']==f'ywc_oir.{eid}')
- assert w.conditions(nodes(ev['trigger']),'OIR');w.execute(nodes(ev['immediate']),'OIR');sync(w);return ev
+ source=parse((MOD/'events/ywc_v03_country_oir_events.txt').read_text(encoding='utf-8-sig'))
+ generated=next(block for key,_,block in source if key==ev['id'])
+ trigger=next(block for key,_,block in generated if key=='trigger')
+ immediate=next(block for key,_,block in generated if key=='immediate')
+ assert w.conditions(trigger,'OIR');w.execute(immediate,'OIR');sync(w);return ev
 def choose(w,ev,key):
  o=next(o for o in ev['options'] if o['key']==key)
  if o.get('trigger'):assert w.conditions(nodes(o['trigger']),'OIR'),(ev['id'],key)
@@ -277,7 +283,9 @@ class OIRContract(unittest.TestCase):
   for other in self.arcs[1:]:start(w,other)
   self.assertEqual(w.countries['OIR']['ywc_v03_active_arc_count'],3)
   w.advance_days(89);self.assertFalse(w.conditions(w.triggers['ywc_v03_can_deliver_major'],'OIR'))
-  w.advance_days(1);ev=deliver(w,a,0);self.assertEqual(ev['id'],'ywc_oir.1001')
+  w.advance_days(1);before=len(w.events);pulse_current(w,a);self.assertEqual(len(w.events),before+1)
+  tag,event_id=w.events[-1];self.assertEqual(tag,'OIR');recipient=next(x for x in self.arcs if any(e['id']==event_id for e in x['events']))
+  ev=fire(w,recipient,int(event_id.rsplit('.',1)[1]));self.assertEqual(ev['id'],'ywc_oir.1010')
  def test_material_route_effects_two_downstream_nodes_and_legacy_preservation(self):
   for a in self.arcs:
    for route in (1,2,3):
