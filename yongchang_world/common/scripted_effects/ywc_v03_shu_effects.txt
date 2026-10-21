@@ -459,6 +459,9 @@ ywc_v03_claim_arc_shu_v03_shu_port_treasury = {
 	}
 }
 ywc_shu_choose_service_route = {
+	remove_variable = ywc_shu_service_compact_fee_waived
+	remove_variable = ywc_shu_service_compact_fee_due
+	remove_variable = ywc_shu_service_professional_qualified
 	set_variable = { name = ywc_shu_service_contract_active value = 1 }
 	set_variable = { name = ywc_shu_service_route_recorded value = 1 }
 	if = {
@@ -466,38 +469,39 @@ ywc_shu_choose_service_route = {
 		set_variable = { name = ywc_shu_service_audit_settled value = 1 }
 	}
 	if = {
-		limit = { has_variable = ywc_shu_service_provincial_report }
-		set_variable = { name = ywc_shu_service_compact_fee_waived value = 1 }
+		limit = { var:ywc_shu_service_route_candidate = 1 }
+		if = { limit = { ywc_shu_service_professional_qualifies = yes } set_variable = { name = ywc_shu_service_professional_qualified value = 1 } set_variable = { name = ywc_shu_service_compact_fee_due value = 1 } }
 	}
 	else_if = {
-		limit = { has_variable = ywc_shu_service_joint_review }
-		set_variable = { name = ywc_shu_service_compact_fee_waived value = 1 }
+		limit = { var:ywc_shu_service_route_candidate = 2 }
+		if = { limit = { ywc_shu_service_compact_waiver_eligible = yes } set_variable = { name = ywc_shu_service_compact_fee_waived value = 1 } }
+		else = { set_variable = { name = ywc_shu_service_compact_fee_due value = 1 } }
 	}
 	else = {
 		set_variable = { name = ywc_shu_service_compact_fee_due value = 1 }
 	}
 	if = {
-		limit = { OR = { has_law_or_variant = law_type:law_professional_army ywc_shu_v03_service_professional_ready = yes } }
-		set_variable = { name = ywc_shu_service_professional_qualified value = 1 }
-	}
-	if = {
 		limit = { has_variable = ywc_shu_service_route }
-		if = { limit = { var:ywc_shu_service_route = 1 } set_variable = { name = ywc_shu_service_route_professional value = 1 } }
-		else_if = { limit = { var:ywc_shu_service_route = 2 } set_variable = { name = ywc_shu_service_route_compact value = 1 } }
+		if = { limit = { var:ywc_shu_service_route_candidate = 1 } set_variable = { name = ywc_shu_service_route_professional value = 1 } }
+		else_if = { limit = { var:ywc_shu_service_route_candidate = 2 } set_variable = { name = ywc_shu_service_route_compact value = 1 } }
 		else = { set_variable = { name = ywc_shu_service_route_legacy value = 1 } }
 	}
 }
 ywc_shu_pay_service_cost = {
 	if = {
-		limit = {
-			NOT = { has_variable = ywc_shu_service_cost_paid }
-			net_fixed_income >= 0
-			in_default = no
-			NOT = { has_modifier = declared_bankruptcy }
-			gold_reserves >= { value = var:ywc_shu_service_cost }
+		limit = { NOT = { has_variable = ywc_shu_service_cost_paid } net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		if = {
+			limit = { var:ywc_shu_service_route_candidate = 1 }
+			if = { limit = { ywc_shu_service_professional_qualifies = yes gold_reserves >= { value = var:ywc_shu_service_cost multiply = 0.5 } } set_variable = { name = ywc_shu_service_paid_amount value = var:ywc_shu_service_cost } change_variable = { name = ywc_shu_service_paid_amount multiply = 0.5 } set_variable = { name = ywc_shu_service_cost_paid value = 1 } add_treasury = { value = var:ywc_shu_service_paid_amount multiply = -1 } }
 		}
-		set_variable = { name = ywc_shu_service_cost_paid value = 1 }
-		add_treasury = { value = var:ywc_shu_service_cost multiply = -1 }
+		else_if = {
+			limit = { var:ywc_shu_service_route_candidate = 2 }
+			if = { limit = { ywc_shu_service_compact_waiver_eligible = yes } set_variable = { name = ywc_shu_service_compact_fee_waived value = 1 } }
+			else_if = { limit = { gold_reserves >= { value = var:ywc_shu_service_cost multiply = 0.25 } } set_variable = { name = ywc_shu_service_paid_amount value = var:ywc_shu_service_cost } change_variable = { name = ywc_shu_service_paid_amount multiply = 0.25 } set_variable = { name = ywc_shu_service_cost_paid value = 1 } add_treasury = { value = var:ywc_shu_service_paid_amount multiply = -1 } }
+		}
+		else = {
+			if = { limit = { gold_reserves >= { value = var:ywc_shu_service_cost } } set_variable = { name = ywc_shu_service_paid_amount value = var:ywc_shu_service_cost } set_variable = { name = ywc_shu_service_cost_paid value = 1 } add_treasury = { value = var:ywc_shu_service_paid_amount multiply = -1 } }
+		}
 	}
 }
 ywc_shu_pay_service_local_once = {
@@ -538,6 +542,7 @@ ywc_shu_service_close_success = {
 			has_variable = ywc_v03_shu_v03_shu_service_compact_started
 			NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
 			NOT = { has_variable = ywc_shu_service_outcome }
+			ywc_shu_service_terminal_ready = yes
 		}
 		if = { limit = { var:ywc_shu_service_route = 1 } set_variable = { name = ywc_shu_service_outcome value = 1 } }
 		else_if = { limit = { var:ywc_shu_service_route = 2 } set_variable = { name = ywc_shu_service_outcome value = 2 } }
@@ -587,15 +592,20 @@ ywc_shu_accept_port_advance = {
 }
 ywc_shu_pay_port_fee = {
 	if = {
-		limit = {
-			NOT = { has_variable = ywc_shu_port_fee_paid }
-			net_fixed_income >= 0
-			in_default = no
-			NOT = { has_modifier = declared_bankruptcy }
-			gold_reserves >= { value = var:ywc_shu_port_cost }
+		limit = { NOT = { has_variable = ywc_shu_port_fee_paid } net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		if = {
+			limit = { has_variable = ywc_shu_port_fee_half_mode gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
+			set_variable = { name = ywc_shu_port_fee_amount value = var:ywc_shu_port_cost }
+			change_variable = { name = ywc_shu_port_fee_amount multiply = 0.5 }
+			set_variable = { name = ywc_shu_port_fee_paid value = 1 }
+			add_treasury = { value = var:ywc_shu_port_fee_amount multiply = -1 }
 		}
-		set_variable = { name = ywc_shu_port_fee_paid value = 1 }
-		add_treasury = { value = var:ywc_shu_port_cost multiply = -1 }
+		else_if = {
+			limit = { gold_reserves >= { value = var:ywc_shu_port_cost } }
+			set_variable = { name = ywc_shu_port_fee_amount value = var:ywc_shu_port_cost }
+			set_variable = { name = ywc_shu_port_fee_paid value = 1 }
+			add_treasury = { value = var:ywc_shu_port_fee_amount multiply = -1 }
+		}
 	}
 }
 ywc_shu_port_close_unified = {
@@ -604,6 +614,7 @@ ywc_shu_port_close_unified = {
 			has_variable = ywc_v03_shu_v03_shu_port_treasury_started
 			NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 			NOT = { has_variable = ywc_shu_port_outcome }
+			ywc_shu_port_terminal_unified_ready = yes
 		}
 		set_variable = { name = ywc_shu_port_outcome value = 1 }
 		if = {
@@ -632,6 +643,7 @@ ywc_shu_port_close_shared = {
 			has_variable = ywc_v03_shu_v03_shu_port_treasury_started
 			NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 			NOT = { has_variable = ywc_shu_port_outcome }
+			ywc_shu_port_terminal_shared_ready = yes
 		}
 		set_variable = { name = ywc_shu_port_outcome value = 2 }
 		if = {
@@ -660,6 +672,7 @@ ywc_shu_port_close_legacy = {
 			has_variable = ywc_v03_shu_v03_shu_port_treasury_started
 			NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
 			NOT = { has_variable = ywc_shu_port_outcome }
+			ywc_shu_port_terminal_limited_ready = yes
 		}
 		set_variable = { name = ywc_shu_port_outcome value = 3 }
 		if = {
@@ -700,4 +713,25 @@ ywc_shu_port_close_withdrawn = {
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
 	}
+}
+
+ywc_shu_track_service_block = {
+	if = {
+		limit = { NOT = { ywc_shu_service_block_target_ready = yes } }
+		if = { limit = { NOT = { has_variable = ywc_shu_service_block_12_started } } set_variable = { name = ywc_shu_service_block_12_started value = 1 } set_variable = { name = ywc_shu_service_block_12_due days = 365 } }
+		if = { limit = { NOT = { has_variable = ywc_shu_service_block_36_started } } set_variable = { name = ywc_shu_service_block_36_started value = 1 } set_variable = { name = ywc_shu_service_block_36_due days = 1095 } }
+		if = { limit = { has_variable = ywc_shu_service_block_12_started NOT = { has_variable = ywc_shu_service_block_12_due } NOT = { has_variable = ywc_shu_service_block_12_prompted } } set_variable = { name = ywc_shu_service_block_12_prompted value = 1 } set_variable = { name = ywc_shu_service_notice_pending_event value = 1016 } }
+		if = { limit = { has_variable = ywc_shu_service_block_36_started NOT = { has_variable = ywc_shu_service_block_36_due } NOT = { has_variable = ywc_shu_service_block_36_prompted } } set_variable = { name = ywc_shu_service_block_36_prompted value = 1 } set_variable = { name = ywc_shu_service_notice_pending_event value = 1016 } }
+	}
+	else = { remove_variable = ywc_shu_service_block_12_started remove_variable = ywc_shu_service_block_12_due remove_variable = ywc_shu_service_block_12_prompted remove_variable = ywc_shu_service_block_36_started remove_variable = ywc_shu_service_block_36_due remove_variable = ywc_shu_service_block_36_prompted if = { limit = { var:ywc_shu_service_notice_pending_event = 1016 } remove_variable = ywc_shu_service_notice_pending_event } }
+}
+ywc_shu_track_port_block = {
+	if = {
+		limit = { NOT = { ywc_shu_port_block_target_ready = yes } }
+		if = { limit = { NOT = { has_variable = ywc_shu_port_block_12_started } } set_variable = { name = ywc_shu_port_block_12_started value = 1 } set_variable = { name = ywc_shu_port_block_12_due days = 365 } }
+		if = { limit = { NOT = { has_variable = ywc_shu_port_block_36_started } } set_variable = { name = ywc_shu_port_block_36_started value = 1 } set_variable = { name = ywc_shu_port_block_36_due days = 1095 } }
+		if = { limit = { has_variable = ywc_shu_port_block_12_started NOT = { has_variable = ywc_shu_port_block_12_due } NOT = { has_variable = ywc_shu_port_block_12_prompted } } set_variable = { name = ywc_shu_port_block_12_prompted value = 1 } set_variable = { name = ywc_shu_port_notice_pending_event value = 1024 } }
+		if = { limit = { has_variable = ywc_shu_port_block_36_started NOT = { has_variable = ywc_shu_port_block_36_due } NOT = { has_variable = ywc_shu_port_block_36_prompted } } set_variable = { name = ywc_shu_port_block_36_prompted value = 1 } set_variable = { name = ywc_shu_port_notice_pending_event value = 1024 } }
+	}
+	else = { remove_variable = ywc_shu_port_block_12_started remove_variable = ywc_shu_port_block_12_due remove_variable = ywc_shu_port_block_12_prompted remove_variable = ywc_shu_port_block_36_started remove_variable = ywc_shu_port_block_36_due remove_variable = ywc_shu_port_block_36_prompted if = { limit = { var:ywc_shu_port_notice_pending_event = 1024 } remove_variable = ywc_shu_port_notice_pending_event } }
 }
