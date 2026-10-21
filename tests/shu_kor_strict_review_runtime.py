@@ -8,11 +8,23 @@ from test_v03_tib_foundation_lifecycle import TibWorldFacts
 def field(ns,k,d=None):return next((v for n,_,v in ns if n==k),d if d is not None else [])
 def body(s):return parse(s.strip()[1:-1]) if s else []
 class Strict(TibWorldFacts):
- def __init__(self,t):
+ def __init__(self,t,*,load_inline=None):
   self.tag=t.upper(); self.t=t
   def rd(p):return Path(p).read_text('utf-8-sig')
   self.cat=json.loads(rd(f'data/content/v03/countries/{t}.json'))
-  super().__init__(rd('yongchang_world/common/scripted_effects/ywc_v03_effects.txt')+'\n'+rd(f'yongchang_world/common/scripted_effects/ywc_v03_{t}_effects.txt'),rd('yongchang_world/common/scripted_triggers/ywc_v03_triggers.txt')+'\n'+rd(f'yongchang_world/common/scripted_triggers/ywc_v03_{t}_triggers.txt'),{self.tag:{}})
+  if load_inline is None: load_inline=(t=='shu' and any('inline_delivery_adapter' in arc for arc in self.cat.get('arcs',[])))
+  effect_sources=[rd('yongchang_world/common/scripted_effects/ywc_v03_effects.txt'),rd(f'yongchang_world/common/scripted_effects/ywc_v03_{t}_effects.txt')]
+  trigger_sources=[rd('yongchang_world/common/scripted_triggers/ywc_v03_triggers.txt'),rd(f'yongchang_world/common/scripted_triggers/ywc_v03_{t}_triggers.txt')]
+  if load_inline and any('inline_delivery_adapter' in arc for arc in self.cat.get('arcs',[])):
+   effect_sources.append(rd(f'yongchang_world/common/scripted_effects/ywc_v03_delivery_{t}_effects.txt'))
+   trigger_sources.append(rd(f'yongchang_world/common/scripted_triggers/ywc_v03_delivery_{t}_triggers.txt'))
+  def unique_defs(sources,kind):
+   names=[]
+   for source in sources:
+    names.extend(k for k,_,_ in parse(source) if isinstance(k,str))
+   if len(names)!=len(set(names)): raise AssertionError(('duplicate_scripted_'+kind, sorted(n for n in set(names) if names.count(n)>1)))
+  unique_defs(effect_sources,'effect'); unique_defs(trigger_sources,'trigger')
+  super().__init__('\n'.join(effect_sources),'\n'.join(trigger_sources),{self.tag:{}})
   self.journal_defs=dict((k,v)for k,_,v in parse(rd(f'yongchang_world/common/journal_entries/ywc_v03_country_{t}_journal.txt')))
   self.event_defs=dict((k,v)for k,_,v in parse(rd(f'yongchang_world/events/ywc_v03_country_{t}_events.txt')) if isinstance(v,list))
   self.active={self.tag:[]};self.history={self.tag:{}};self.requests=[];self.elapsed_months=0;self.trace=[];self.scope_ig=None;self.request_cursor=0

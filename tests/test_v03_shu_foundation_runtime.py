@@ -885,6 +885,7 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
     def test_m1_fiscal_catalog_arc_matches_reviewfix_before_snapshot(self):
         current_arc = next(a for a in CATALOG["arcs"] if a["slug"] == "v03_shu_fiscal_register")
         baseline = json.loads(json.dumps(current_arc, ensure_ascii=False))
+        baseline.pop("inline_delivery_adapter", None)
         compensation = next(o for e in baseline["events"] if e["id"] == "ywc_shu.1002" for o in e["options"] if o["key"] == "collect_with_compensation")
         compensation["ai_chance"] = "{\nbase = 100\n}"
         canonical = json.dumps(baseline, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")

@@ -288,7 +288,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                 except ValueError as exc:
                     errors.append(f"{where}.delivery_adapter: {exc}")
         if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])):
-            if key not in {"country_dmg", "country_kor", "country_nqg"}:
+            if key not in {"country_dmg", "country_kor", "country_nqg", "country_shu"}:
                 errors.append(f"{where}.inline_delivery_adapter is not registered for {key}")
             else:
                 try:
@@ -324,7 +324,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor", "country_nqg"} else set())
+            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor", "country_nqg", "country_shu"} else set())
             _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional=arc_optional)
             owner = arc_owner(layer, arc, tags)
             if layer == "country":
@@ -546,7 +546,7 @@ def _outputs_for(key: str, *, adapter: bool = False) -> list[Path]:
         Path(f"localization/english/ywc_v03_{key}_l_english.yml"),
     ]
     if adapter:
-        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else "nqg" if key == "country_nqg" else None
+        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else "nqg" if key == "country_nqg" else "shu" if key == "country_shu" else None
         if not country: raise ValueError(f"no registered adapter output namespace for {key}")
         paths.extend((Path(f"common/scripted_effects/ywc_v03_delivery_{country}_effects.txt"),
                       Path(f"common/scripted_triggers/ywc_v03_delivery_{country}_triggers.txt")))
@@ -662,7 +662,8 @@ def _adapter_event_immediate(event: dict, adapter: dict | None) -> str:
     # itself must use the captured snapshot after this guarded source operation.
     guard = " OR = { " + " ".join(f"{name} = yes" for name in guards) + " }"
     body = _inner(original)
-    effects = " ".join(part for part in (body, " ".join(f"{name} = yes" for name in hooks)) if part)
+    proofs = (adapter or {}).get("inline_proofs", {}).get(event["id"], [])
+    effects = " ".join(part for part in (body, " ".join(proofs), " ".join(f"{name} = yes" for name in hooks)) if part)
     return "{ if = { limit = {" + guard + "} " + effects + " } }"
 
 
@@ -759,7 +760,7 @@ def render_all(root: Path) -> dict[Path, str]:
                 rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
                              "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
             else:
-                country = "KOR" if key == "country_kor" else "NQG" if key == "country_nqg" else "DMG"
+                country = "SHU" if key == "country_shu" else "KOR" if key == "country_kor" else "NQG" if key == "country_nqg" else "DMG"
                 rendered += [f"# Generated {country} inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
                              f"# Generated {country} inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
         outputs.update(zip(paths, rendered))
