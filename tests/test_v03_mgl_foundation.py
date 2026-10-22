@@ -41,8 +41,60 @@ def _helper_body(text,name):
  return m.group(0)
 
 class MglPulseWorld(PulseWorld):
+ def __init__(self,effects,countries):
+  super().__init__(effects,countries)
+  # The old fixture is intentionally a unit model. Resolve the production
+  # helper definitions, while leaving native world facts at the fixture edge.
+  from clausewitz_harness import parse
+  self._mgl_trigger_definitions=dict((name,body) for name,_,body in parse(TRIGGERS_PATH.read_text(encoding='utf-8-sig')))
+  self._mgl_selected_obligation_boundary=0
+  self._mgl_selected_obligation_prefix=None
+  self._mgl_trigger_stack=[]
+
+ def conditions(self,nodes,tag):
+  # Evaluate each child even after a false one so unsupported atoms never hide
+  # behind Python's all(generator) short-circuit.
+  results=[self.condition(node,tag) for node in nodes]
+  return all(results)
+
  def condition(self,node,tag):
   key,comparison,value=node
+  if (key in self._mgl_trigger_definitions and key.startswith('ywc_mgl_')
+      and key.endswith(('_any_affordable_entry_offer','_selected_current_obligation','_current_obligation_ready'))):
+   if comparison!='=' or value not in ('yes','no'):
+    raise AssertionError(f'unsupported test trigger comparison or literal: {node}')
+   if key in self._mgl_trigger_stack:
+    chain=' -> '.join((*self._mgl_trigger_stack,key))
+    raise AssertionError(f'cyclic test trigger helper: {chain}')
+   expected=value=='yes'
+   self._mgl_trigger_stack.append(key)
+   if key.endswith('_selected_current_obligation'):
+    previous=self._mgl_selected_obligation_prefix
+    self._mgl_selected_obligation_prefix=key.removeprefix('ywc_mgl_').removesuffix('_selected_current_obligation')
+    self._mgl_selected_obligation_boundary+=1
+    try: result=self.conditions(self._mgl_trigger_definitions[key],tag)
+    finally:
+     self._mgl_selected_obligation_boundary-=1
+     self._mgl_selected_obligation_prefix=previous
+     self._mgl_trigger_stack.pop()
+   else:
+    try: result=self.conditions(self._mgl_trigger_definitions[key],tag)
+    finally: self._mgl_trigger_stack.pop()
+   return result==expected
+  # Old unit scenarios do not model laws, markets, states, pops, or IGs.
+  # Bind those world-only leaves to the existing route-specific readiness
+  # fact, and only while evaluating the selected-obligation production helper.
+  # Route selection, paid state, and all Boolean composition remain parsed
+  # production logic; unknown leaves still fail in PulseWorld.condition.
+  if self._mgl_selected_obligation_boundary and key in {
+   'has_law','any_scope_state','market_capital.market',
+   'country_has_building_group_levels','ig:ig_devout',
+   'military_expenses_share','exists','c:SHU','c:RUS',
+   'c:SHU.relations:this','c:RUS.relations:this'
+  }:
+   pre=getattr(self,'_mgl_selected_obligation_prefix',None)
+   route_suffix={1:'full',2:'one',3:'local'}.get(self.countries[tag].get(f'ywc_mgl_{pre}_route',0)) if pre else None
+   return bool(pre and route_suffix and self.countries[tag].get(f'test_ywc_mgl_{pre}_{route_suffix}_ready',False))
   if key=='ywc_v03_can_deliver_major': return True
   if key.startswith('ywc_mgl_') and key.endswith('_execution_ready'):
    pre=key.removeprefix('ywc_mgl_').removesuffix('_execution_ready')
