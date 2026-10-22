@@ -100,13 +100,27 @@ def _candidates(world):
 
 
 def _callback_fields(world, candidate_id):
-    effect = world.effects[f"ywc_v03_kor_inline_callback_{candidate_id}"]
-    guarded = next(value for key, _, value in effect if key == "if")
-    return {
-        str(dict((key, value) for key, _, value in node).get("name"))
-        for key, _, node in guarded
-        if key == "set_variable"
+    candidate = _candidates(world)[candidate_id]
+    event = world.event_defs[candidate["branch"]["event"]]
+    expected = {
+        f"ywc_v03_kor_inline_callback_{candidate_id}",
+        f"ywc_v03_kor_inline_callback_candidate_{candidate_id}",
+        f"ywc_v03_kor_inline_callback_epoch_{candidate_id}",
+        f"ywc_v03_kor_inline_callback_queue_{candidate_id}",
     }
+    found = set()
+
+    def walk(node):
+        if isinstance(node, (list, tuple)):
+            if isinstance(node, tuple) and len(node) == 3 and node[0] == "set_variable":
+                fields = {key: value for key, _, value in node[2]}
+                if fields.get("name") in expected:
+                    found.add(fields["name"])
+            for child in node:
+                walk(child)
+
+    walk(field(event, "immediate"))
+    return found
 
 
 def _queue_state(state, names):
