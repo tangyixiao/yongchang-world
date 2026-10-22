@@ -316,6 +316,73 @@ def _kor_queue_exclusions(branch_source: str) -> list[dict[str, Any]]:
     return exclusions
 
 
+def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
+    """Parse LAN's deliberately narrow positive queue predicate grammar."""
+    roots = parse_block("{ " + branch_source + " }")
+    if len(roots) != 1 or roots[0].key not in {"if", "else_if"}:
+        raise ValueError("LAN source site must be one if/else_if branch")
+    limits = direct_values(children(roots[0]), "limit")
+    if len(limits) != 1:
+        raise ValueError("LAN sender branch must have exactly one limit")
+    found: list[dict[str, Any]] = []
+    def visit(items: tuple[Node, ...], excluded: bool = False, nested_logic: bool = False) -> None:
+        for node in items:
+            negative = excluded or node.key == "NOT"
+            if isinstance(node.value, tuple):
+                if node.key not in {"AND", "NOT", "limit"}:
+                    raise ValueError(f"LAN queue dispatch does not support Boolean/container {node.key}")
+                if node.key == "NOT" and excluded:
+                    raise ValueError("LAN queue dispatch does not support nested negative queue logic")
+                visit(node.value, negative, nested_logic or node.key in {"OR", "XOR"})
+                continue
+            if negative:
+                continue
+            if node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_") and node.value.endswith(("_pending_event", "_notice_event")):
+                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)", node.value):
+                    raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.value}")
+                continue
+            if not node.key.startswith("var:ywc_lan_"):
+                if node.key.startswith("var:ywc_") and node.key.removeprefix("var:").endswith(("_pending_event", "_notice_event")):
+                    raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.key}")
+                continue
+            queue = node.key.removeprefix("var:")
+            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)", queue)
+            if not match:
+                raise ValueError(f"LAN sender contains an unknown queue predicate: {queue}")
+            if node.op != "=" or not isinstance(node.value, str) or not node.value.isdigit():
+                raise ValueError(f"LAN queue predicate must be an exact integer equality: {queue}")
+            value = int(node.value)
+            kind = "normal" if match.group(2) == "pending_event" else "notice"
+            if kind == "notice" and value not in {12, 36}:
+                raise ValueError(f"LAN notice queue must equal 12 or 36: {queue}={value}")
+            found.append({"queue": queue, "kind": kind, "mode": "exact", "value": value})
+    visit(children(limits[0]))
+    if len(found) != 1:
+        raise ValueError(f"each LAN sender must bind exactly one positive exact queue candidate; got {found!r}")
+    return found
+
+
+def _lan_queue_exclusions(branch_source: str) -> list[dict[str, Any]]:
+    """Reject unsupported negative queue predicates; current LAN has none."""
+    roots = parse_block("{ " + branch_source + " }")
+    if len(roots) != 1 or roots[0].key not in {"if", "else_if"}:
+        raise ValueError("LAN source site must be one if/else_if branch")
+    limits = direct_values(children(roots[0]), "limit")
+    if len(limits) != 1:
+        raise ValueError("LAN sender branch must have exactly one limit")
+    negative: list[dict[str, Any]] = []
+    def visit(items: tuple[Node, ...], under_not: bool = False) -> None:
+        for node in items:
+            neg = under_not or node.key == "NOT"
+            if isinstance(node.value, tuple):
+                visit(node.value, neg); continue
+            is_queue = (node.key.startswith("var:ywc_") and node.key.removeprefix("var:").endswith(("_pending_event", "_notice_event"))) or (node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_") and node.value.endswith(("_pending_event", "_notice_event")))
+            if neg and is_queue:
+                raise ValueError("LAN source contains an unsupported negative queue predicate")
+    visit(children(limits[0]))
+    return negative
+
+
 def _kor_source_binding(journal_id: str, pulse: str, *, candidate_parser=_kor_queue_candidates, exclusion_parser=_kor_queue_exclusions) -> dict[str, Any]:
     """Bind each native KOR sender, its chain and all earlier-branch predicates."""
     top = parse_block(pulse)
@@ -615,8 +682,163 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
     if observed_direct_adds != _SHU_DIRECT_ADD_BASELINE:
         raise ValueError("SHU native direct-add caller/target baseline drift")
 
+def _lan_source_binding(journal_id: str, pulse: str) -> dict[str, Any]:
+    binding = _kor_source_binding(journal_id, pulse, candidate_parser=_lan_queue_candidates,
+                                  exclusion_parser=_lan_queue_exclusions)
+    for branch in binding["branches"]:
+        if len(branch["candidates"]) != 1:
+            raise ValueError(f"{journal_id}: LAN sender lacks one exact queue candidate")
+        candidate = branch["candidates"][0]
+        if candidate["kind"] == "normal" and candidate["value"] != int(branch["event"].rsplit(".", 1)[-1]):
+            raise ValueError(f"{journal_id}: pending queue value must match its native event ID")
+    return binding
+
+
+def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
+    """Bound LAN's exact six-JE source and native immediate contract."""
+    expected_slugs = {"v03_lan_mine_accounts", "v03_lan_river_compacts", "v03_lan_work_accident_fund"}
+    if catalog.get("key") != "country_lan" or not isinstance(catalog.get("arcs"), list):
+        raise ValueError("LAN inline adapter requires the LAN catalog")
+    active = [a for a in catalog["arcs"] if isinstance(a, dict) and a.get("era") == "foundation"]
+    if len(active) != 3 or {a.get("slug") for a in active} != expected_slugs:
+        raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
+    counts = {"ywc_je_v03_lan_mine_ledger": 7, "ywc_je_v03_lan_mine_settlement": 5,
+              "ywc_je_v03_lan_river_compacts": 8, "ywc_je_v03_lan_river_settlement": 4,
+              "ywc_je_v03_lan_accident_fund": 7, "ywc_je_v03_lan_fund_settlement": 5}
+    all_events: set[str] = set()
+    witnesses: set[str] = set()
+    modes = {"normal": 0, "notice12": 0, "notice36": 0}
+    for arc in active:
+        adapter = arc.get("inline_delivery_adapter")
+        if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches", "direct_adds"} or adapter.get("schema") != "v03.foundation_inline_adapter.v2":
+            raise ValueError(f"{arc['slug']}: LAN requires strict v2 inline metadata")
+        journals = arc.get("journals")
+        if not isinstance(journals, list) or not journals:
+            raise ValueError(f"{arc['slug']}: source journals are required")
+        phases = adapter["live_phases"]
+        if not isinstance(phases, list) or len(phases) != len(journals):
+            raise ValueError(f"{arc['slug']}: every source JE needs one live phase")
+        for phase, journal in zip(phases, journals):
+            if not isinstance(phase, dict) or set(phase) != {"journal", "live_witness", "source_script_sha256", "goal_sha256", "exit_sha256"} or phase.get("journal") != journal.get("id"):
+                raise ValueError(f"{arc['slug']}: malformed LAN live phase binding")
+            for field, source_key in (("source_script_sha256", "script"), ("goal_sha256", "goal"), ("exit_sha256", "exit_conditions")):
+                if type(phase.get(field)) is not str or phase[field] != hashlib.sha256(journal[source_key].encode()).hexdigest():
+                    raise ValueError(f"{arc['slug']}/{journal['id']}: LAN source {source_key} drift")
+            witness = phase["live_witness"]
+            if type(witness) is not str or not re.fullmatch(r"ywc_v03_lan_inline_live_[a-z0-9_]+", witness) or witness in witnesses:
+                raise ValueError(f"{arc['slug']}/{journal['id']}: invalid LAN live witness")
+            witnesses.add(witness)
+        expected: list[tuple[str, dict[str, Any]]] = []
+        for journal in journals:
+            expected.extend((journal["id"], row) for row in _lan_source_binding(journal["id"], journal["script"])["branches"])
+        records = adapter["branches"]
+        if not isinstance(records, list) or len(records) != len(expected):
+            raise ValueError(f"{arc['slug']}: all LAN sender sites must be bound")
+        event_ids = {e.get("id") for e in arc.get("events", []) if isinstance(e, dict)}
+        expected_base={"v03_lan_mine_accounts":1000,"v03_lan_river_compacts":1010,"v03_lan_work_accident_fund":1020}[arc["slug"]]
+        if event_ids != {f"ywc_lan.{n}" for n in range(expected_base,expected_base+8)}:
+            raise ValueError(f"{arc['slug']}: LAN native event inventory drift")
+        all_events |= event_ids
+        for proof, (jid, source) in zip(records, expected):
+            required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
+            if not isinstance(proof, dict) or set(proof) != required:
+                raise ValueError(f"{arc['slug']}/{jid}: malformed LAN sender record")
+            checks = {"journal": jid, "branch_index": source["branch_index"], "statement_ordinal": source["statement_ordinal"], "chain_index": source["chain_index"], "branch_kind": source["branch_kind"], "event": source["event"], "branch_sha256": source["sha256"], "limit_sha256": source["limit_sha256"], "chain_prior": source["chain_prior"], "chain_sha256": source["chain_sha256"], "candidates": source["candidates"], "queue_exclusions": source["queue_exclusions"]}
+            if any(proof.get(k) != v for k, v in checks.items()) or any(type(proof.get(k)) is not int for k in ("branch_index", "statement_ordinal", "chain_index")):
+                raise ValueError(f"{arc['slug']}/{jid}: LAN source branch/chain binding drift")
+            if proof["event"] not in event_ids:
+                raise ValueError(f"{arc['slug']}/{jid}: LAN sender event is not owned by its arc")
+            cand = proof["candidates"][0]
+            stem = re.match(r"ywc_lan_(mine|river|fund)_", cand["queue"])
+            expected_stem = {"v03_lan_mine_accounts": "mine", "v03_lan_river_compacts": "river", "v03_lan_work_accident_fund": "fund"}[arc["slug"]]
+            if not stem or stem.group(1) != expected_stem or cand["mode"] != "exact":
+                raise ValueError(f"{arc['slug']}/{jid}: LAN queue is not exact and arc-owned")
+            if cand["kind"] == "notice":
+                if cand["queue"] != f"ywc_lan_{expected_stem}_notice_event" or cand["value"] not in {12, 36}:
+                    raise ValueError(f"{arc['slug']}/{jid}: malformed LAN notice queue")
+                modes[f"notice{cand['value']}"] += 1
+            elif cand["kind"] == "normal" and cand["queue"] == f"ywc_lan_{expected_stem}_pending_event":
+                modes["normal"] += 1
+            else:
+                raise ValueError(f"{arc['slug']}/{jid}: unsupported LAN queue kind")
+            script = next(j["script"] for j in journals if j["id"] == jid)
+            node = _branch_node(script, source)[0]
+            ops = [n for n in children(node) if n.key not in {"limit", "trigger_event"}]
+            expected_ops = (["remove_variable"] if cand["kind"] == "normal" else ["remove_variable", "set_variable", "set_variable"])
+            if [n.key for n in ops] != expected_ops:
+                raise ValueError(f"{arc['slug']}/{jid}: unsupported LAN native pre-trigger operations")
+            first_fields = children(ops[0]) if isinstance(ops[0].value, tuple) else ()
+            if ops[0].op != "=" or len(first_fields) != 0 or ops[0].value != cand["queue"]:
+                raise ValueError(f"{arc['slug']}/{jid}: LAN sender must remove only its selected queue")
+            if cand["kind"] == "notice":
+                values = []
+                for n in ops[1:]:
+                    fields = children(n)
+                    names, vals = direct_values(fields, "name"), direct_values(fields, "value")
+                    if (n.op != "=" or len(fields) != 2 or any(field.key not in {"name", "value"} or field.op != "=" for field in fields)
+                            or len(names) != 1 or names[0].op != "=" or len(vals) != 1 or vals[0].op != "=" or not isinstance(vals[0].value, str)):
+                        raise ValueError(f"{arc['slug']}/{jid}: malformed LAN notice write")
+                    values.append((names[0].value, vals[0].value))
+                suffix = "12" if cand["value"] == 12 else "36"
+                if values != [(f"ywc_lan_{expected_stem}_notice_current", str(cand["value"])), (f"ywc_lan_{expected_stem}_notice{suffix}_sent", "1")]:
+                    raise ValueError(f"{arc['slug']}/{jid}: LAN notice writes/order drift")
+        direct_adds = adapter["direct_adds"]
+        if not isinstance(direct_adds, list) or direct_adds != _kor_direct_adds(arc):
+            raise ValueError(f"{arc['slug']}: LAN direct-add inventory drift")
+        if len(expected) != counts.get(journals[0]["id"], -1) + (counts.get(journals[1]["id"], -1) if len(journals) > 1 else 0):
+            raise ValueError(f"{arc['slug']}: LAN source sender count drift")
+        for event in arc.get("events", []):
+            if not isinstance(event, dict) or not re.fullmatch(r"ywc_lan\.(100[0-7]|101[0-7]|102[0-7])", event.get("id", "")):
+                continue
+            trigger = parse_block(event.get("trigger", ""))
+            if len(trigger) != 2 or [(n.key,n.op,n.value) for n in trigger] != [("c:LAN","?=","this"),("ywc_v03_can_deliver_major","=","yes")]:
+                raise ValueError(f"{arc['slug']}/{event['id']}: LAN native trigger drift")
+            if event.get("immediate") != "{ ywc_v03_mark_major_delivered = yes }":
+                raise ValueError(f"{arc['slug']}/{event['id']}: LAN native immediate must remain the pinned complete body")
+    if modes != {"normal": 24, "notice12": 6, "notice36": 6}:
+        raise ValueError(f"LAN sender class inventory drift: {modes}")
+
+
+def validate_lan_native_helper_source(source: str) -> None:
+    """Require LAN's unchanged, full 90-day native cooldown helper AST."""
+    if not isinstance(source, str):
+        raise ValueError("LAN native helper source must be text")
+    source = source.removeprefix("\ufeff")
+    try:
+        definitions = parse_block("{\n" + source + "\n}")
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"LAN native helper source is not a complete script: {exc}") from exc
+    helpers = [node for node in definitions if node.key == "ywc_v03_mark_major_delivered"]
+    if len(helpers) != 1:
+        raise ValueError(f"LAN native cooldown helper must have exactly one top-level definition; got {len(helpers)}")
+    helper = helpers[0]
+    if helper.op != "=" or not isinstance(helper.value, tuple):
+        raise ValueError("LAN native cooldown helper definition must use an equals block")
+    if len(helper.value) != 1 or helper.value[0].key != "if" or helper.value[0].op != "=":
+        raise ValueError("LAN native cooldown helper AST changed")
+    inner = children(helper.value[0])
+    limits = direct_values(inner, "limit")
+    sets = direct_values(inner, "set_variable")
+    if len(limits) != 1 or len(sets) != 1 or len(inner) != 2 or any(n.key not in {"limit", "set_variable"} or n.op != "=" for n in inner):
+        raise ValueError("LAN native cooldown helper operation inventory changed")
+    lim = children(limits[0]); neg = direct_values(lim, "NOT")
+    if limits[0].op != "=" or len(lim) != 1 or len(neg) != 1 or neg[0].op != "=" or len(children(neg[0])) != 1:
+        raise ValueError("LAN native cooldown helper guard changed")
+    guarded = children(neg[0])[0]
+    if guarded.key != "has_variable" or guarded.op != "=" or guarded.value != "ywc_v03_major_event_cooldown":
+        raise ValueError("LAN native cooldown helper guard changed")
+    set_fields = children(sets[0]); names = direct_values(set_fields, "name"); values = direct_values(set_fields, "value"); days = direct_values(set_fields, "days")
+    if (sets[0].op != "=" or len(set_fields) != 3 or any(n.key not in {"name", "value", "days"} or n.op != "=" for n in set_fields)
+            or len(names) != 1 or names[0].value != "ywc_v03_major_event_cooldown"
+            or len(values) != 1 or values[0].value != "1" or len(days) != 1 or days[0].value != "90"):
+        raise ValueError("LAN native cooldown helper effect changed")
+
+
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
     """Validate exact inline branch/source ownership for explicitly opted-in arcs."""
+    if isinstance(catalog, dict) and catalog.get("key") == "country_lan":
+        _validate_lan_inline_catalog(catalog)
+        return
     if isinstance(catalog, dict) and catalog.get("key") == "country_shu":
         _validate_shu_inline_catalog(catalog)
         return
@@ -1009,8 +1231,9 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     is_nqg = catalog["key"] == "country_nqg"
     is_shu = catalog["key"] == "country_shu"
     is_dmg = catalog["key"] == "country_dmg"
-    is_supported_inline_country = is_dmg or is_kor or is_nqg or is_shu
-    prefix = "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
+    is_lan = catalog["key"] == "country_lan"
+    is_supported_inline_country = is_dmg or is_kor or is_nqg or is_shu or is_lan
+    prefix = "ywc_v03_lan_inline" if is_lan else "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
     arcs = [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"]
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}
@@ -1024,13 +1247,18 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             source_by_journal[journal["id"]] = journal
         for proof in ad["branches"]:
             journal = source_by_journal[proof["journal"]]
-            binding = _kor_source_binding(journal["id"], journal["script"], candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal["id"], journal["script"]) if (is_kor or is_nqg) else source_binding(journal["id"], journal["script"])
+            binding = _lan_source_binding(journal["id"], journal["script"]) if is_lan else _kor_source_binding(journal["id"], journal["script"], candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal["id"], journal["script"]) if (is_kor or is_nqg) else source_binding(journal["id"], journal["script"])
             branch = binding["branches"][proof["branch_index"]]
             for queue in proof["candidates"]:
                 event = next(e for e in arc["events"] if e["id"] == proof["event"])
                 receipt_pattern = r"name\s*=\s*(ywc_v03_dmg_[a-z0-9_]*_last_event)\s+value\s*=\s*([0-9]+)"
                 receipt_match = re.search(receipt_pattern, event["immediate"])
-                if is_shu:
+                if is_lan:
+                    receipt_variable, receipt_value = None, None
+                    nodes = parse_block(event["immediate"])
+                    if len(nodes) != 1 or nodes[0].key != "ywc_v03_mark_major_delivered" or nodes[0].op != "=" or nodes[0].value != "yes":
+                        raise ValueError(f"{event['id']}: unsupported LAN immediate body")
+                elif is_shu:
                     receipt_variable, receipt_value = _shu_expected_receipt(event["id"])
                     native_receipt = re.search(rf"name\s*=\s*{re.escape(receipt_variable)}\s+value\s*=\s*([0-9]+)", event["immediate"])
                     if not native_receipt or int(native_receipt.group(1)) != receipt_value:
@@ -1038,7 +1266,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 else:
                     receipt_variable = receipt_match.group(1) if receipt_match else None
                     receipt_value = int(receipt_match.group(2)) if receipt_match else None
-                if not receipt_match and not (is_kor or is_nqg or is_shu): raise ValueError(f"{event['id']}: source immediate lacks a last_event receipt")
+                if not receipt_match and not (is_kor or is_nqg or is_shu or is_lan): raise ValueError(f"{event['id']}: source immediate lacks a last_event receipt")
                 intent_variable = open_variable = None
                 if is_nqg and queue["kind"] in {"notice12", "notice36"}:
                     suffix = "12" if queue["kind"] == "notice12" else "36"
@@ -1046,7 +1274,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     intent_variable = stem + f"notice{suffix}_intent"
                     open_variable = stem + f"notice{suffix}_open"
                     receipt_variable = stem + f"blocked_{suffix}_delivered"
-                rank_map = ({"normal": 0, "notice": 1} if is_kor else {"normal": 1, "notice": 0} if is_shu else {"normal": 0, "notice36": 1, "notice12": 2} if not is_nqg else {"normal_queued_event": 0, "notice36": 1, "notice12": 2, "remedy_final": 3})
+                rank_map = ({"normal": 0, "notice": 1} if (is_kor or is_lan) else {"normal": 1, "notice": 0} if is_shu else {"normal": 0, "notice36": 1, "notice12": 2} if not is_nqg else {"normal_queued_event": 0, "notice36": 1, "notice12": 2, "remedy_final": 3})
                 candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "rank": rank_map[queue["kind"]]})
     cid = lambda c: f"{prefix}_candidate_{c['id']}"
     turn = lambda c: f"{prefix}_turn_{c['id']}"
@@ -1071,7 +1299,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         queue_gate = f"has_variable = {q['queue']}" if q["mode"] == "presence" else f"var:{q['queue']} = {q['value']}"
         source_class = "AND = { " + lim + " " + queue_gate + " }"
         parts = [f"has_journal_entry = {c['journal']['id']}", f"has_variable = {c['phase']['live_witness']}", source_class, event_guard]
-        if is_kor or is_nqg or is_shu:
+        if is_kor or is_nqg or is_shu or is_lan:
             for prior in c["proof"].get("chain_prior", []):
                 parts.append("NOT = { " + _limit_inner_source(prior["limit_source"]) + " }")
         if is_nqg and c["event"]["id"] in {"ywc_nqg.1009", "ywc_nqg.1015", "ywc_nqg.1027"}:
@@ -1101,7 +1329,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             if other["id"] == c["id"]: continue
             higher = other["rank"] > c["rank"]
             earlier_tie = other["rank"] == c["rank"] and (arc_order[other["arc"]["slug"]] < arc_order[slug] or (other["arc"]["slug"] == slug and other["id"] < c["id"]))
-            if higher or earlier_tie:
+            if (higher or earlier_tie) and not (is_lan and other["arc"]["slug"] != slug):
                 if other["arc"]["slug"] == slug:
                     blockers.append(f"{cid(other)} = yes")
                 else:
@@ -1124,7 +1352,24 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                                 f"has_variable = {prefix}_candidate_epoch_{c['id']}",
                                 f"var:{prefix}_candidate_epoch_{c['id']} > 0",
                                 f"var:{prefix}_candidate_epoch_{c['id']} = var:{epoch}"]
-        if is_nqg:
+        if is_lan:
+            stem=q["queue"].split("_")[2]
+            dispatch_checks += [f"has_journal_entry = {c['journal']['id']}", f"has_variable = {c['phase']['live_witness']}", source_class, event_guard]
+            if goal: dispatch_checks.append(f"NOT = {{ {goal} }}")
+            if fail: dispatch_checks.append(f"NOT = {{ {fail} }}")
+            for prior in c["proof"].get("chain_prior", []):
+                dispatch_checks.append("NOT = { " + _limit_inner_source(prior["limit_source"]) + " }")
+            dispatch_checks.append(f"NOT = {{ var:{served[slug]} = var:{roundv} }}")
+            dispatch_checks.extend(eligibility_terms[2:])
+            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            for name in dict.fromkeys(tracked):
+                if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
+                    expected_post=str(q["value"]) if name.endswith("notice_current") else "1"
+                    dispatch_checks += [f"has_variable = {name}",f"var:{name} = {expected_post}"]
+                    continue
+                pv=_queue_snapshot_name(c["id"],name,"present",prefix); vv=_queue_snapshot_name(c["id"],name,"value",prefix)
+                dispatch_checks.append("OR = { "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 1 has_variable = {name} var:{name} = var:{vv} }} "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 0 var:{vv} = 0 NOT = {{ has_variable = {name} }} }} }}")
+        elif is_nqg:
             dispatch_checks += [f"has_journal_entry = {c['journal']['id']}", f"has_variable = {c['phase']['live_witness']}", source_class, event_guard]
             if goal: dispatch_checks.append(f"NOT = {{ {goal} }}")
             if fail: dispatch_checks.append(f"NOT = {{ {fail} }}")
@@ -1151,7 +1396,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             for candidate in candidates
             if candidate["arc"]["slug"] == c["arc"]["slug"]
             and candidate["queue"]["kind"].startswith("notice")
-        }) if not is_kor else []
+        }) if not (is_kor or is_lan) else []
         if not is_nqg:
             tracked = set()
             for notice in notice_queues:
@@ -1198,6 +1443,12 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                    f"{prefix}_callback_epoch_{ident}", f"{prefix}_callback_queue_{ident}",
                    f"{prefix}_candidate_epoch_{ident}", _queue_snapshot_name(ident,qvar,"present",prefix),
                    _queue_snapshot_name(ident,qvar,"value",prefix)]
+            if is_lan:
+                stem=qvar.split("_")[2]
+                names += [f"{prefix}_rollback_armed_{ident}", f"{prefix}_body_completed_{ident}", f"{prefix}_body_completed_epoch_{ident}"]
+                names += [f"{prefix}_snapshot_complete_{ident}"]
+                tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                names += [_queue_snapshot_name(ident,state,suffix,prefix) for state in tracked for suffix in ("present","value")]
             if is_shu and ident == 2:
                 names.extend([f"{prefix}_aux_waiting_present_2", f"{prefix}_aux_waiting_value_2"])
             if is_nqg:
@@ -1211,7 +1462,23 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     if is_supported_inline_country and not is_shu:
         effects.append(f"{shared_cleanup} = {{ {kor_cleanup} }}")
     prep=[f"{prefix}_prepare = {{",f"    if = {{ limit = {{ NOT = {{ has_variable = {roundv} }} }} set_variable = {{ name = {roundv} value = 1 }} }}"]
-    if is_nqg:
+    if is_lan:
+        for c in candidates:
+            ident=c["id"]; q=c["queue"]; stem=q["queue"].split("_")[2]
+            armed=f"{prefix}_rollback_armed_{ident}"; completed=f"{prefix}_body_completed_{ident}"
+            rollback=[]
+            if q["kind"] == "notice":
+                for name,post in ((f"ywc_lan_{stem}_notice_current",str(q["value"])),(f"ywc_lan_{stem}_notice{q['value']}_sent","1")):
+                    pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
+                    owned=f"has_variable = {pv} has_variable = {vv} OR = {{ AND = {{ var:{pv} = 1 has_variable = {name} var:{name} = {post} }} AND = {{ var:{pv} = 0 var:{vv} = 0 has_variable = {name} var:{name} = {post} }} }}"
+                    restore=f"if = {{ limit = {{ var:{pv} = 1 }} set_variable = {{ name = {name} value = var:{vv} }} }} if = {{ limit = {{ var:{pv} = 0 var:{vv} = 0 }} remove_variable = {name} }}"
+                    rollback.append(f"if = {{ limit = {{ has_variable = {prefix}_snapshot_complete_{ident} var:{prefix}_snapshot_complete_{ident} = 1 has_variable = {armed} var:{armed} = 1 NOT = {{ has_variable = {completed} }} {owned} }} {restore} }}")
+            clear=" ".join(f"remove_variable = {x}" for x in ephemeral_by_candidate[ident]); base=f"var:{reservation} = {ident}"; roll=" ".join(rollback)
+            prep.append(f"    if = {{ limit = {{ {base} NOT = {{ has_variable = {timer} }} }} {roll} remove_variable = {reservation} {clear} }}")
+            prep.append(f"    if = {{ limit = {{ {base} has_variable = {timer} NOT = {{ {dispatch(c)} = yes }} }} {roll} remove_variable = {reservation} remove_variable = {timer} {clear} }}")
+        known="OR = { "+" ".join(f"var:{reservation} = {c['id']}" for c in candidates)+" }"
+        prep.append(f"    if = {{ limit = {{ has_variable = {reservation} NOT = {{ {known} }} }} remove_variable = {reservation} remove_variable = {timer} {shared_cleanup_call} }}")
+    elif is_nqg:
         for c in candidates:
             ident=c["id"]; intent=c.get("intent_variable")
             baseguard=[f"var:{reservation} = {ident}"]
@@ -1265,7 +1532,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         callback_id = f"{prefix}_callback_candidate_{ident}"
         callback_epoch = f"{prefix}_callback_epoch_{ident}"
         callback_queue = f"{prefix}_callback_queue_{ident}"
-        notice_queues=sorted({x["queue"]["queue"] for x in candidates if x["arc"]["slug"]==c["arc"]["slug"] and x["queue"]["kind"].startswith("notice")})
+        notice_queues=sorted({x["queue"]["queue"] for x in candidates if x["arc"]["slug"]==c["arc"]["slug"] and x["queue"]["kind"].startswith("notice")}) if not is_lan else []
         capture=[f"if = {{ limit = {{ {turn(c)} = yes {cid(c)} = yes NOT = {{ has_variable = {reservation} }} }}"]
         if is_supported_inline_country and not is_shu:
             capture += [f"    {shared_cleanup_call}"]
@@ -1276,7 +1543,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             capture += [f"    remove_variable = {name}" for name in (ephemeral_by_candidate[ident] if is_nqg else kor_ephemeral)]
             capture += [f"    set_variable = {{ name = {prefix}_candidate_epoch_{ident} value = var:{epoch} }}"]
         capture += [f"    set_variable = {{ name = {reservation} value = {ident} }}",f"    set_variable = {{ name = {snap_present} value = 1 }}",f"    set_variable = {{ name = {snap_value} value = var:{qvar} }}",f"    set_variable = {{ name = {timer} value = 1 days = 1 }}"]
-        if is_nqg:
+        if is_lan:
+            stem=qvar.split("_")[2]
+            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            for name in dict.fromkeys(tracked):
+                pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
+                capture += [f"    set_variable = {{ name = {pv} value = 0 }}",f"    set_variable = {{ name = {vv} value = 0 }}",f"    if = {{ limit = {{ has_variable = {name} }} set_variable = {{ name = {pv} value = 1 }} set_variable = {{ name = {vv} value = var:{name} }} }}"]
+            if q["kind"] == "notice": capture += [f"    set_variable = {{ name = {prefix}_rollback_armed_{ident} value = 1 }}"]
+            capture += [f"    set_variable = {{ name = {prefix}_snapshot_complete_{ident} value = 1 }}"]
+            capture += [f"    remove_variable = {prefix}_body_completed_{ident}",f"    remove_variable = {prefix}_body_completed_epoch_{ident}"]
+        elif is_nqg:
             for name in _nqg_candidate_state(c, candidates):
                 pvar=_queue_snapshot_name(ident,name,"present",prefix); vvar=_queue_snapshot_name(ident,name,"value",prefix)
                 capture += [f"    remove_variable = {pvar}", f"    remove_variable = {vvar}", f"    if = {{ limit = {{ has_variable = {name} }} set_variable = {{ name = {pvar} value = 1 }} set_variable = {{ name = {vvar} value = var:{name} }} }}"]
@@ -1322,9 +1598,24 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             else:
                 checks += [f"has_variable = {q['queue']}",f"var:{q['queue']} = var:{snap_value}"]
         goal=_inner_text(c["journal"]["goal"]); fail=_inner_text(c["journal"]["exit_conditions"])
-        if goal and not is_shu: checks.append(f"NOT = {{ {goal} }}")
-        if fail and not is_shu: checks.append(f"NOT = {{ {fail} }}")
+        if goal and not (is_shu or is_lan): checks.append(f"NOT = {{ {goal} }}")
+        if fail and not (is_shu or is_lan): checks.append(f"NOT = {{ {fail} }}")
+        if is_lan:
+            checks += [f"has_variable = {prefix}_body_completed_{ident}",f"var:{prefix}_body_completed_{ident} = 1",f"has_variable = {prefix}_body_completed_epoch_{ident}",f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}",f"has_variable = {epoch}",f"var:{epoch} > 0"]
+            stem=qvar.split("_")[2]
+            expected_aux=((f"ywc_lan_{stem}_notice_current",str(q["value"])),(f"ywc_lan_{stem}_notice{q['value']}_sent","1")) if q["kind"] == "notice" else ()
+            for name,value in expected_aux: checks += [f"has_variable = {name}",f"var:{name} = {value}"]
         if q["mode"]=="exact": checks.append(f"var:{snap_value} = {q['value']}")
+        if is_lan:
+            stem=qvar.split("_")[2]
+            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            for name in dict.fromkeys(tracked):
+                if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
+                    post=str(q["value"]) if name.endswith("notice_current") else "1"
+                    checks += [f"has_variable = {name}",f"var:{name} = {post}"]
+                    continue
+                pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
+                checks.append("OR = { "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 1 has_variable = {name} var:{name} = var:{vv} }} "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 0 var:{vv} = 0 NOT = {{ has_variable = {name} }} }} }}")
         restore=[]
         for notice in notice_queues:
             if notice==qvar: continue
@@ -1345,13 +1636,24 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         if is_supported_inline_country:
             callback_guard = [f"var:{reservation} = {ident}", f"has_variable = {timer}", f"has_variable = {snap_present}", f"has_variable = {snap_value}", f"has_variable = {qvar}", f"var:{qvar} = var:{snap_value}", f"has_journal_entry = {c['journal']['id']}", f"has_variable = {c['phase']['live_witness']}"]
             if q["mode"] == "exact": callback_guard.append(f"var:{snap_value} = {q['value']}")
-            if goal and not is_shu: callback_guard.append(f"NOT = {{ {goal} }}")
-            if fail and not is_shu: callback_guard.append(f"NOT = {{ {fail} }}")
+            if goal and not (is_shu or is_lan): callback_guard.append(f"NOT = {{ {goal} }}")
+            if fail and not (is_shu or is_lan): callback_guard.append(f"NOT = {{ {fail} }}")
             callback_guard.append(f"NOT = {{ var:{served[c['arc']['slug']]} = var:{roundv} }}")
             callback_guard += [f"has_variable = {epoch}",
                                f"has_variable = {prefix}_candidate_epoch_{ident}",
                                f"var:{epoch} > 0",
                                f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}"]
+            if is_lan:
+                callback_guard += [f"has_variable = {prefix}_body_completed_{ident}",f"var:{prefix}_body_completed_{ident} = 1",f"has_variable = {prefix}_body_completed_epoch_{ident}",f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
+                stem=qvar.split("_")[2]
+                tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                for name in dict.fromkeys(tracked):
+                    if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
+                        post=str(q["value"]) if name.endswith("notice_current") else "1"
+                        callback_guard += [f"has_variable = {name}",f"var:{name} = {post}"]
+                        continue
+                    pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
+                    callback_guard.append("OR = { "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 1 has_variable = {name} var:{name} = var:{vv} }} "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 0 var:{vv} = 0 NOT = {{ has_variable = {name} }} }} }}")
             if is_nqg:
                 callback_guard.append(f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}")
                 calls_notice_helper = _nqg_event_calls_notice_helper(c["event"], c["arc"]["slug"])
@@ -1382,7 +1684,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     journal_scripts={}
     # Splice only proven sender limits and insert candidate-owned reservations before native source ops.
     for journal_id, journal_info in phases.items():
-        journal=journal_info["journal"]; script=journal["script"]; binding=_kor_source_binding(journal_id,script,candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal_id,script) if (is_kor or is_nqg) else source_binding(journal_id,script)
+        journal=journal_info["journal"]; script=journal["script"]; binding=_lan_source_binding(journal_id,script) if is_lan else _kor_source_binding(journal_id,script,candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal_id,script) if (is_kor or is_nqg) else source_binding(journal_id,script)
         edits=[]
         for branch_index, group in branches_by_journal.get(journal_id,{}).items():
             branch=binding["branches"][branch_index]
@@ -1412,7 +1714,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         event_hooks[event_id]=[dispatch(c) for c in group]
         hooks=[]
         for c in group:
-            hooks.append(f"{prefix}_callback_{c['id']}" if (is_kor or is_nqg or is_shu) else f"ywc_v03_dmg_inline_ack_{c['id']}")
+            hooks.append(f"{prefix}_callback_{c['id']}" if (is_kor or is_nqg or is_shu or is_lan) else f"ywc_v03_dmg_inline_ack_{c['id']}")
         ack_hooks[event_id]=hooks
     inline_proofs={}
     if is_supported_inline_country:
@@ -1422,6 +1724,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 ident=c["id"]; qvar=c["queue"]["queue"]; sp=_queue_snapshot_name(ident,qvar,"present",prefix); sv=_queue_snapshot_name(ident,qvar,"value",prefix)
                 proof=f"{prefix}_callback_{ident}"; cidvar=f"{prefix}_callback_candidate_{ident}"; epvar=f"{prefix}_callback_epoch_{ident}"; qproof=f"{prefix}_callback_queue_{ident}"
                 checks=[f"var:{reservation} = {ident}",f"has_variable = {timer}",f"has_variable = {epoch}",f"has_variable = {prefix}_candidate_epoch_{ident}",f"var:{epoch} > 0",f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}",f"has_variable = {sp}",f"has_variable = {sv}",f"has_journal_entry = {c['journal']['id']}",f"has_variable = {c['phase']['live_witness']}"]
+                if is_lan:
+                    checks += [f"has_variable = {prefix}_body_completed_{ident}",f"var:{prefix}_body_completed_{ident} = 1",f"has_variable = {prefix}_body_completed_epoch_{ident}",f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
                 if is_shu:
                     checks += [f"has_variable = {qvar}",f"var:{qvar} = var:{sv}",f"NOT = {{ var:{served[c['arc']['slug']]} = var:{roundv} }}"]
                 else:
@@ -1456,7 +1760,26 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 elif c.get("receipt_variable") and type(c.get("receipt_value")) is int:
                     checks += [f"has_variable = {c['receipt_variable']}", f"var:{c['receipt_variable']} = {c['receipt_value']}"]
                 if c["queue"]["mode"]=="exact": checks.append(f"var:{sv} = {c['queue']['value']}")
+                if is_lan:
+                    stem=qvar.split("_")[2]; queue=c["queue"]
+                    tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                    for name in dict.fromkeys(tracked):
+                        if queue["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{queue['value']}_sent"}:
+                            post=str(queue["value"]) if name.endswith("notice_current") else "1"
+                            checks += [f"has_variable = {name}",f"var:{name} = {post}"]
+                            continue
+                        pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
+                        checks.append("OR = { "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 1 has_variable = {name} var:{name} = var:{vv} }} "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 0 var:{vv} = 0 NOT = {{ has_variable = {name} }} }} }}")
                 queue_proof_value = f"var:{qvar}" if is_shu else f"var:{sv}"
-                proofs.append(f"if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}")
+                if is_lan:
+                    # The outer guarded immediate already admitted one unique candidate.
+                    # After the complete native body, reservation identity alone must
+                    # disarm rollback even if a native/fault boundary removed timer or
+                    # epochs. Completion inhibits rollback only; ACK still checks epochs.
+                    completion = f"if = {{ limit = {{ var:{reservation} = {ident} }} set_variable = {{ name = {prefix}_body_completed_{ident} value = 1 }} if = {{ limit = {{ has_variable = {prefix}_candidate_epoch_{ident} }} set_variable = {{ name = {prefix}_body_completed_epoch_{ident} value = var:{prefix}_candidate_epoch_{ident} }} }} remove_variable = {prefix}_rollback_armed_{ident} }}"
+                    proof_body=f"{completion} if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}"
+                    proofs.append(proof_body)
+                else:
+                    proofs.append(f"if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}")
             inline_proofs[event_id]=proofs
     return {"triggers":"\n\n".join(triggers)+"\n","effects":"\n\n".join(effects)+"\n","event_hooks":event_hooks,"ack_hooks":ack_hooks,"inline_proofs":inline_proofs,"guarded_immediate_events":sorted(event_hooks),"journal_scripts":journal_scripts,"live_witnesses":{j:p["phase"]["live_witness"] for j,p in phases.items()}}
