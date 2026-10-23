@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 import re
 from typing import Any
 
@@ -82,6 +83,40 @@ def parse_block(text: str) -> tuple[Node, ...]:
 
 def render_node(node: Node, source: str) -> str:
     return source[node.start:node.end]
+
+
+def _mgl_render_nodes(nodes: tuple[Node, ...]) -> str:
+    """Render parsed MGL guard nodes without carrying comments into joins."""
+    rendered: list[str] = []
+    for node in nodes:
+        if isinstance(node.value, tuple):
+            value = "{ " + _mgl_render_nodes(node.value) + " }"
+        else:
+            value = node.value
+        rendered.append(f"{node.key} {node.op} {value}")
+    return " ".join(rendered)
+
+
+def _mgl_inner_text(block: str) -> str:
+    """Canonicalize an MGL source block through the strict AST parser."""
+    value = block.strip()
+    nodes = parse_block(value)
+    return _mgl_render_nodes(nodes)
+
+
+def _mgl_exact_typed_equal(actual: Any, expected: Any) -> bool:
+    """Compare JSON-like MGL metadata without Python bool/int/float coercion."""
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(
+            _mgl_exact_typed_equal(actual[key], value) for key, value in expected.items()
+        )
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(
+            _mgl_exact_typed_equal(left, right) for left, right in zip(actual, expected)
+        )
+    return actual == expected
 
 
 def children(node: Node) -> tuple[Node, ...]:
@@ -438,6 +473,61 @@ def _kor_source_binding(journal_id: str, pulse: str, *, candidate_parser=_kor_qu
     if sorted(actual) != sorted(event_spans):
         raise ValueError(f"{journal_id}: unsupported or duplicated trigger_event source site")
     return {"journal": journal_id, "branches": entries}
+
+
+def _mgl_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
+    """Bind one MGL sender to its exact queue predicate; queue name owns kind."""
+    roots = parse_block("{ " + branch_source + " }")
+    if len(roots) != 1 or roots[0].key not in {"if", "else_if"}:
+        raise ValueError("MGL source site must be one if/else_if branch")
+    limits = direct_values(children(roots[0]), "limit")
+    if len(limits) != 1:
+        raise ValueError("MGL sender must have exactly one limit")
+    found: list[dict[str, Any]] = []
+    def visit(items: tuple[Node, ...], negative: bool = False) -> None:
+        for node in items:
+            if node.key in {"OR", "XOR", "NOR"}:
+                raise ValueError(f"unsupported MGL queue Boolean/container {node.key}")
+            is_negative = negative or node.key == "NOT"
+            if isinstance(node.value, tuple):
+                visit(node.value, is_negative)
+                continue
+            if is_negative or not node.key.startswith("var:ywc_mgl_") or node.op != "=" or not isinstance(node.value, str) or not node.value.isdigit():
+                continue
+            queue = node.key.removeprefix("var:")
+            if queue.endswith("_pending_event"):
+                kind = "normal"
+            elif queue.endswith(("_blocked_12_notice_event", "_blocked_36_notice_event")):
+                kind = "notice"
+            else:
+                continue
+            found.append({"queue": queue, "kind": kind, "mode": "exact", "value": int(node.value)})
+    visit(children(limits[0]))
+    if len(found) != 1:
+        raise ValueError(f"MGL sender must have one positive exact source queue predicate; got {found!r}")
+    return found
+
+
+def _mgl_source_binding(journal_id: str, pulse: str) -> dict[str, Any]:
+    """Bind MGL's flat monthly sender chain, retaining full predecessor ASTs."""
+    bound = _kor_source_binding(journal_id, pulse, candidate_parser=_mgl_queue_candidates,
+                                exclusion_parser=lambda _src: [])
+    top = parse_block(pulse)
+    monthly = direct_values(top, "on_monthly_pulse")
+    effects = direct_values(children(monthly[0]), "effect") if len(monthly) == 1 else []
+    if len(effects) != 1:
+        raise ValueError(f"{journal_id}: expected exactly one monthly pulse effect")
+    nodes = children(effects[0])
+    out = []
+    for source in bound["branches"]:
+        node = next((item for item in nodes if item.start == source["start"] and item.end == source["end"]), None)
+        if node is None:
+            raise ValueError(f"{journal_id}: MGL sender source span was lost")
+        source_text = render_node(node, pulse)
+        out.append({**source, "statement_ordinal": nodes.index(node), "chain_index": 0,
+                    "branch_kind": node.key, "candidates": _mgl_queue_candidates(source_text),
+                    "queue_exclusions": []})
+    return {"journal": journal_id, "branches": out}
 
 
 def _nmg_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
@@ -947,6 +1037,131 @@ def validate_lan_native_helper_source(source: str) -> None:
         raise ValueError("LAN native cooldown helper effect changed")
 
 
+_MGL_JOURNAL_SHA256 = {
+    "ywc_je_v03_mgl_roads_register": ("c7edcbf5a0e1702e0d025fb234bdea8ece643a2dedccada3afc3e6acad42cab8", "2a5605fa9efca852e3f45d8f93b548fb10e3645631f8974d0c66dc1339b3a4cd", "f9d6a68d2deb4dd0cc0e3f659f318f9546624fca3c8490fc244986391e53e5e5"),
+    "ywc_je_v03_mgl_roads_review": ("c7e26ac7e2d54375cc725780fdfe8b3f6950f3690601dab4120d2576c6404671", "10c3d1c1cc02dca15fd09a2272133a39ad1121ed240a7f4efc8651a50ef285dd", "f9d6a68d2deb4dd0cc0e3f659f318f9546624fca3c8490fc244986391e53e5e5"),
+    "ywc_je_v03_mgl_debt_register": ("5904164e5d12901d6f2acaa83bbd58d616ab8f56aec06f372f1253f9feb8242b", "bc766f8736bfdb726eabbea42efad339da61180b87ce86023f79509f7e202985", "9fd4f6eb93eb0141c3d5c4a2b4491a7ed1b99560e84ec1bbfe7ff63f712740ad"),
+    "ywc_je_v03_mgl_debt_review": ("bed570184eb79a8d7211eeb6cb943ec29866fd93ab4885252fcc36d961325f7f", "81485e63f5eaff9048a83ce517d8e23b7b2c655f9a1419a2692219c4965fd1e3", "9fd4f6eb93eb0141c3d5c4a2b4491a7ed1b99560e84ec1bbfe7ff63f712740ad"),
+    "ywc_je_v03_mgl_grain_register": ("18db800cebefb5a42bdb3b1b927e29f400d90c1bb2d003aa5696c8ec6778d20d", "d93925d377f35c15bf774d37d7c2ac61a576c81f833e4a36cd26547d4ce0d51f", "03edf9b9633f151b999ed97f2f05eac13e9b96b28ae8fce68e93f5905c53efd8"),
+    "ywc_je_v03_mgl_grain_review": ("3d0fd162a58964cf58ab385d7a10634249d123525fb64ec7022d28c863ae1f10", "32aa32a3bff0d953201d7c81ece335a4934e674975b32dfcfd1830ca15075a3a", "03edf9b9633f151b999ed97f2f05eac13e9b96b28ae8fce68e93f5905c53efd8"),
+}
+_MGL_EVENT_AST_SHA256 = {
+    "ywc_mng.1005": "03139b5b6e4c470075e4f410f00c44f0ffa8d27ffdbde594d36afb20d4ab3490",
+    "ywc_mng.1015": "08719bb26d3732e53c1e53a27580d4942ef7e66959e8dfc9e256d6bfd8f8c818",
+    "ywc_mng.1025": "38afd922adcdb693fed06e87603ecceb333c8a56135ed97180b94a65b2569420",
+    **{f"ywc_mng.{n}": "4c2d62dd649e12e6b2ee771fcaee2d62b8063c145521792c52cb4e47c8fb3440"
+       for n in (*range(1000, 1005), 1006, 1007, *range(1010, 1015), 1016, 1017,
+                 *range(1020, 1025), 1026, 1027)},
+}
+_MGL_HELPER_AST_SHA256 = {
+    "ywc_mgl_roads_any_affordable_entry_offer": "9ece4fdcd6f5312a9c89b66ed20678ff97e902bddf846afe4ff5415f5925ffb9",
+    "ywc_mgl_roads_selected_current_obligation": "e8908d6adfdbdfa24d3766fb600b2e7e592838b61626e398980e35f42d1df882",
+    "ywc_mgl_roads_current_obligation_ready": "1519fdf9f228bf4fd68d97fcb46d1c6e2015dec76893305e8cb1ac99c4c7f849",
+    "ywc_mgl_debt_any_affordable_entry_offer": "89cebf280c303cd8e6b0c54e63eb1164ae43dd6dd66a118c7007feafc7d4a83c",
+    "ywc_mgl_debt_selected_current_obligation": "224913258a2b88fd90d1eaee44b26fbe5a19821ee9474e9d7405d87e46ae3c3b",
+    "ywc_mgl_debt_current_obligation_ready": "f5b9b595f29719f1f97dbc02b8ad52bcb4ff70f91a6088c85ac928adc952ca53",
+    "ywc_mgl_grain_any_affordable_entry_offer": "1cb660e5f28574767cea48611c36e049d99dcda76ccf11af95a029adc2e2d3b3",
+    "ywc_mgl_grain_selected_current_obligation": "75e09126159745f4e06b2111f2c79c0ce66485fbdff37cc2d42ddbfe3b2dbcd8",
+    "ywc_mgl_grain_current_obligation_ready": "2254e59832c107b3cb52fb3da9db7e38ac41078d0d7fbb599bf3af87e0ee68ab",
+}
+
+
+def _mgl_native_event_digest(event: dict[str, Any]) -> str:
+    nodes = parse_block("{ trigger = " + event["trigger"] + " immediate = " + event["immediate"] + " }")
+    return hashlib.sha256(repr(tuple(_nqg_node_shape(node) for node in nodes)).encode("utf-8")).hexdigest()
+
+
+def validate_mgl_native_helper_source(source: str) -> None:
+    """Validate all nine authored MGL obligation helper ASTs independent of formatting."""
+    if type(source) is not str:
+        raise ValueError("MGL scripted-trigger source must be text")
+    nodes = parse_block("{\n" + source.lstrip("\ufeff") + "\n}")
+    found: dict[str, Node] = {}
+    for node in nodes:
+        if node.key not in _MGL_HELPER_AST_SHA256:
+            continue
+        if node.key in found or node.op != "=":
+            raise ValueError(f"duplicate or invalid MGL native helper {node.key}")
+        found[node.key] = node
+    if set(found) != set(_MGL_HELPER_AST_SHA256):
+        raise ValueError("MGL source must define all nine native obligation helpers exactly once")
+    for name, expected in _MGL_HELPER_AST_SHA256.items():
+        digest = hashlib.sha256(json.dumps(_nqg_node_shape(found[name]), separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+        if digest != expected:
+            raise ValueError(f"{name}: full native helper AST drift")
+
+
+def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
+    expected_arcs = {"v03_mgl_two_trade_roads", "v03_mgl_pastoral_debt", "v03_mgl_princes_monasteries"}
+    arcs = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("era") == "foundation"]
+    if catalog.get("key") != "country_mgl" or len(arcs) != 3 or {arc.get("slug") for arc in arcs} != expected_arcs:
+        raise ValueError("MGL inline adapter requires exactly its three foundation arcs")
+    witnesses: set[str] = set()
+    event_ids: set[str] = set()
+    event_count = 0
+    total_branches = 0
+    for arc in arcs:
+        adapter = arc.get("inline_delivery_adapter")
+        if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches", "direct_adds"} or adapter.get("schema") != "v03.foundation_inline_adapter.v2":
+            raise ValueError(f"{arc['slug']}: MGL requires strict v2 inline metadata")
+        journals = arc.get("journals")
+        if not isinstance(journals, list) or len(journals) != 2:
+            raise ValueError(f"{arc['slug']}: exactly two native JEs are required")
+        phases = adapter.get("live_phases")
+        if not isinstance(phases, list) or len(phases) != len(journals):
+            raise ValueError(f"{arc['slug']}: every native JE needs a live phase")
+        actual: list[tuple[str, dict[str, Any]]] = []
+        for phase, journal in zip(phases, journals):
+            jid = journal.get("id")
+            if jid not in _MGL_JOURNAL_SHA256:
+                raise ValueError(f"{arc['slug']}: unexpected MGL journal {jid}")
+            if not isinstance(phase, dict) or set(phase) != {"journal", "live_witness", "source_script_sha256", "goal_sha256", "exit_sha256"} or phase.get("journal") != jid:
+                raise ValueError(f"{arc['slug']}/{jid}: malformed live phase metadata")
+            for field, source_key, index in (("source_script_sha256", "script", 0), ("goal_sha256", "goal", 1), ("exit_sha256", "exit_conditions", 2)):
+                value = journal.get(source_key)
+                if type(value) is not str or hashlib.sha256(value.encode("utf-8")).hexdigest() != _MGL_JOURNAL_SHA256[jid][index] or phase.get(field) != _MGL_JOURNAL_SHA256[jid][index]:
+                    raise ValueError(f"{jid}: protected native JE {source_key} drift")
+            witness = phase.get("live_witness")
+            suffix = jid.removeprefix("ywc_je_v03_mgl_")
+            if type(witness) is not str or witness != f"ywc_v03_mgl_inline_live_{suffix}" or witness in witnesses:
+                raise ValueError(f"{jid}: invalid or aliased MGL phase witness")
+            witnesses.add(witness)
+            binding = _mgl_source_binding(jid, journal["script"])
+            actual.extend((jid, branch) for branch in binding["branches"])
+        recorded = adapter.get("branches")
+        if not isinstance(recorded, list) or len(recorded) != len(actual):
+            raise ValueError(f"{arc['slug']}: MGL sender branch inventory must be complete")
+        for item, (jid, branch) in zip(recorded, actual):
+            fields = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
+            if not isinstance(item, dict) or set(item) != fields:
+                raise ValueError(f"{jid}: malformed MGL source branch binding")
+            expected = {"journal": jid, "branch_index": branch["branch_index"], "statement_ordinal": branch["statement_ordinal"], "chain_index": branch["chain_index"], "branch_kind": branch["branch_kind"], "event": branch["event"], "branch_sha256": branch["sha256"], "limit_sha256": branch["limit_sha256"], "chain_prior": branch["chain_prior"], "chain_sha256": branch["chain_sha256"], "candidates": branch["candidates"], "queue_exclusions": branch["queue_exclusions"]}
+            if not _mgl_exact_typed_equal(item, expected):
+                raise ValueError(f"{jid}: exact MGL branch/chain/queue/auxiliary source binding drift")
+            if any(type(item.get(key)) is not int for key in ("branch_index", "statement_ordinal", "chain_index")):
+                raise ValueError(f"{jid}: MGL source ordinals must be integers")
+            if item["event"] not in {event.get("id") for event in arc.get("events", [])}:
+                raise ValueError(f"{jid}: MGL event is not owned by the same arc")
+            total_branches += 1
+        if len(recorded) != 22:
+            raise ValueError(f"{arc['slug']}: each arc must retain its 22 source sender sites")
+        if adapter.get("direct_adds") != _kor_direct_adds(arc):
+            raise ValueError(f"{arc['slug']}: MGL direct journal-entry source bindings drift")
+        for record in adapter["direct_adds"]:
+            if record["journal"] not in {journal["id"] for journal in journals}:
+                raise ValueError(f"{arc['slug']}: direct-add target is outside the source arc")
+        for event in arc.get("events", []):
+            event_id = event.get("id")
+            if event_id in event_ids:
+                raise ValueError(f"{event_id}: duplicate MGL event definition")
+            if event_id not in _MGL_EVENT_AST_SHA256 or _mgl_native_event_digest(event) != _MGL_EVENT_AST_SHA256[event_id]:
+                raise ValueError(f"{event_id}: full native MGL event trigger/immediate AST drift")
+            event_ids.add(event_id)
+            event_count += 1
+    if total_branches != 66 or event_count != 24 or event_ids != set(_MGL_EVENT_AST_SHA256):
+        raise ValueError("MGL native source inventory must contain exactly 66 sender sites and 24 event bodies")
+
+
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
     """Validate exact inline branch/source ownership for explicitly opted-in arcs."""
     if isinstance(catalog, dict) and catalog.get("key") == "country_lan":
@@ -963,6 +1178,9 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
         return
     if isinstance(catalog, dict) and catalog.get("key") == "country_nmg":
         _validate_nmg_inline_catalog(catalog)
+        return
+    if isinstance(catalog, dict) and catalog.get("key") == "country_mgl":
+        _validate_mgl_inline_catalog(catalog)
         return
     if not isinstance(catalog, dict) or catalog.get("key") != "country_dmg": raise ValueError("inline adapter is currently enabled only for registered inline countries")
     arcs = catalog.get("arcs")
@@ -1472,6 +1690,31 @@ def _nmg_native_postchecks(c: dict[str, Any], prefix: str) -> list[str]:
     return checks
 
 
+def _mgl_tracked_state(c: dict[str, Any]) -> list[str]:
+    stem = {"v03_mgl_two_trade_roads": "roads", "v03_mgl_pastoral_debt": "debt",
+            "v03_mgl_princes_monasteries": "grain"}[c["arc"]["slug"]]
+    return [f"ywc_mgl_{stem}_pending_event", f"ywc_mgl_{stem}_blocked_12_notice_event",
+            f"ywc_mgl_{stem}_blocked_36_notice_event", f"ywc_mgl_{stem}_blocked_notice_last_delivered"]
+
+
+def _mgl_snapshot_checks(c: dict[str, Any], prefix: str) -> list[str]:
+    phase = c["phase"]["live_witness"]
+    checks = [f"has_variable = {phase}", f"var:{phase} = 1"]
+    ident = c["id"]
+    for name in _mgl_tracked_state(c):
+        present = _queue_snapshot_name(ident, name, "present", prefix)
+        value = _queue_snapshot_name(ident, name, "value", prefix)
+        if name == c.get("native_notice_marker"):
+            checks += [f"has_variable = {name}", f"var:{name} = {c['native_notice_marker_value']}"]
+        else:
+            checks.append("OR = { "
+                          f"AND = {{ has_variable = {present} has_variable = {value} var:{present} = 1 "
+                          f"has_variable = {name} var:{name} = var:{value} }} "
+                          f"AND = {{ has_variable = {present} has_variable = {value} var:{present} = 0 "
+                          f"var:{value} = 0 NOT = {{ has_variable = {name} }} }} }}")
+    return checks
+
+
 def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     """Render source-bound per-branch dispatch gates, snapshots and immediate ACKs."""
     validate_inline_catalog(catalog)
@@ -1481,8 +1724,9 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     is_dmg = catalog["key"] == "country_dmg"
     is_lan = catalog["key"] == "country_lan"
     is_nmg = catalog["key"] == "country_nmg"
-    is_supported_inline_country = is_dmg or is_kor or is_nqg or is_shu or is_lan or is_nmg
-    prefix = "ywc_v03_nmg_inline" if is_nmg else "ywc_v03_lan_inline" if is_lan else "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
+    is_mgl = catalog["key"] == "country_mgl"
+    is_supported_inline_country = is_dmg or is_kor or is_nqg or is_shu or is_lan or is_nmg or is_mgl
+    prefix = "ywc_v03_mgl_inline" if is_mgl else "ywc_v03_nmg_inline" if is_nmg else "ywc_v03_lan_inline" if is_lan else "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
     arcs = [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"]
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}
@@ -1496,12 +1740,14 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             source_by_journal[journal["id"]] = journal
         for proof in ad["branches"]:
             journal = source_by_journal[proof["journal"]]
-            binding = _nmg_source_binding(journal["id"], journal["script"]) if is_nmg else _lan_source_binding(journal["id"], journal["script"]) if is_lan else _kor_source_binding(journal["id"], journal["script"], candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal["id"], journal["script"]) if (is_kor or is_nqg) else source_binding(journal["id"], journal["script"])
+            binding = _mgl_source_binding(journal["id"], journal["script"]) if is_mgl else _nmg_source_binding(journal["id"], journal["script"]) if is_nmg else _lan_source_binding(journal["id"], journal["script"]) if is_lan else _kor_source_binding(journal["id"], journal["script"], candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal["id"], journal["script"]) if (is_kor or is_nqg) else source_binding(journal["id"], journal["script"])
             branch = binding["branches"][proof["branch_index"]]
             for queue in proof["candidates"]:
                 event = next(e for e in arc["events"] if e["id"] == proof["event"])
                 native_short = queue["queue"].split("_")[2] if is_nmg else None
-                if is_nmg:
+                if is_mgl:
+                    receipt_variable, receipt_value, receipt_match = None, None, True
+                elif is_nmg:
                     receipt_variable, receipt_value = _nmg_native_receipt(event, native_short)
                     receipt_match = True
                 else:
@@ -1517,10 +1763,12 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     native_receipt = re.search(rf"name\s*=\s*{re.escape(receipt_variable)}\s+value\s*=\s*([0-9]+)", event["immediate"])
                     if not native_receipt or int(native_receipt.group(1)) != receipt_value:
                         raise ValueError(f"{event['id']}: SHU immediate must write its exact native receipt")
-                elif not is_nmg:
+                elif not (is_nmg or is_mgl):
                     receipt_variable = receipt_match.group(1) if receipt_match else None
                     receipt_value = int(receipt_match.group(2)) if receipt_match else None
-                if not receipt_match and not (is_kor or is_nqg or is_shu or is_lan or is_nmg): raise ValueError(f"{event['id']}: source immediate lacks a last_event receipt")
+                if is_mgl:
+                    receipt_variable, receipt_value = None, None
+                if not receipt_match and not (is_kor or is_nqg or is_shu or is_lan or is_nmg or is_mgl): raise ValueError(f"{event['id']}: source immediate lacks a last_event receipt")
                 intent_variable = open_variable = None
                 if is_nqg and queue["kind"] in {"notice12", "notice36"}:
                     suffix = "12" if queue["kind"] == "notice12" else "36"
@@ -1547,8 +1795,15 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 native_threshold = {1006: 12, 1007: 36, 1014: 12, 1015: 36, 1028: 12, 1029: 36}.get(int(event["id"].rsplit(".", 1)[1])) if native_notice else None
                 native_due = f"ywc_nmg_{native_short}_notice{native_threshold}_due" if native_threshold else None
                 native_delivered = f"ywc_nmg_{native_short}_notice{native_threshold}_delivered" if native_threshold else None
+                native_notice_marker = None
+                native_notice_marker_value = None
+                if is_mgl and queue["kind"] == "notice":
+                    native_notice_marker = queue["queue"].split("_blocked_", 1)[0] + "_blocked_notice_last_delivered"
+                    native_notice_marker_value = 1 if queue["queue"].endswith("_blocked_12_notice_event") else 2
                 rank_map = ({"normal": 0, "notice": 1} if (is_kor or is_lan or is_nmg) else {"normal": 1, "notice": 0} if is_shu else {"normal": 0, "notice36": 1, "notice12": 2} if not is_nqg else {"normal_queued_event": 0, "notice36": 1, "notice12": 2, "remedy_final": 3})
-                candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "native_return": native_return, "native_context": native_context, "native_notice": native_notice, "native_due": native_due, "native_delivered": native_delivered, "rank": rank_map[queue["kind"]]})
+                if is_mgl:
+                    rank_map = {"normal": 0, "notice": 1}
+                candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "native_return": native_return, "native_context": native_context, "native_notice": native_notice, "native_due": native_due, "native_delivered": native_delivered, "native_notice_marker": native_notice_marker, "native_notice_marker_value": native_notice_marker_value, "rank": rank_map[queue["kind"]]})
     cid = lambda c: f"{prefix}_candidate_{c['id']}"
     turn = lambda c: f"{prefix}_turn_{c['id']}"
     dispatch = lambda c: f"{prefix}_dispatch_{c['id']}"
@@ -1564,15 +1819,18 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     for c in candidates:
         branches_by_journal.setdefault(c["journal"]["id"], {}).setdefault(c["branch"]["branch_index"], []).append(c)
         candidates_by_event.setdefault(c["event"]["id"], []).append(c)
-        lim = _inner_text(c["branch"]["limit_source"][c["branch"]["limit_source"].find("{"):])
-        event_guard = _inner_text(c["event"]["trigger"])
-        goal = _inner_text(c["journal"]["goal"])
-        fail = _inner_text(c["journal"]["exit_conditions"])
+        source_inner = _mgl_inner_text if is_mgl else _inner_text
+        lim = source_inner(c["branch"]["limit_source"][c["branch"]["limit_source"].find("{"):])
+        event_guard = source_inner(c["event"]["trigger"])
+        goal = source_inner(c["journal"]["goal"])
+        fail = source_inner(c["journal"]["exit_conditions"])
         q = c["queue"]
         queue_gate = f"has_variable = {q['queue']}" if q["mode"] == "presence" else f"var:{q['queue']} = {q['value']}"
         source_class = "AND = { " + lim + " " + queue_gate + " }"
         parts = [f"has_journal_entry = {c['journal']['id']}", f"has_variable = {c['phase']['live_witness']}", source_class, event_guard]
-        if is_kor or is_nqg or is_shu or is_lan:
+        if is_mgl:
+            parts.append(f"var:{c['phase']['live_witness']} = 1")
+        if is_kor or is_nqg or is_shu or is_lan or is_mgl:
             for prior in c["proof"].get("chain_prior", []):
                 parts.append("NOT = { " + _limit_inner_source(prior["limit_source"]) + " }")
         if is_nqg and c["event"]["id"] in {"ywc_nqg.1009", "ywc_nqg.1015", "ywc_nqg.1027"}:
@@ -1592,17 +1850,18 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         # Rebuild all source-derived guards from this candidate. The earlier
         # candidate-predicate loop uses the same local names; relying on those
         # values here would leave every dispatch guard pinned to the final row.
-        lim = _inner_text(c["branch"]["limit_source"][c["branch"]["limit_source"].find("{"):])
-        event_guard = _inner_text(c["event"]["trigger"])
-        goal = _inner_text(c["journal"]["goal"])
-        fail = _inner_text(c["journal"]["exit_conditions"])
+        source_inner = _mgl_inner_text if is_mgl else _inner_text
+        lim = source_inner(c["branch"]["limit_source"][c["branch"]["limit_source"].find("{"):])
+        event_guard = source_inner(c["event"]["trigger"])
+        goal = source_inner(c["journal"]["goal"])
+        fail = source_inner(c["journal"]["exit_conditions"])
         queue_gate = f"has_variable = {q['queue']}" if q["mode"] == "presence" else f"var:{q['queue']} = {q['value']}"
         source_class = "AND = { " + lim + " " + queue_gate + " }"
         for other in candidates:
             if other["id"] == c["id"]: continue
             higher = other["rank"] > c["rank"]
             earlier_tie = other["rank"] == c["rank"] and (arc_order[other["arc"]["slug"]] < arc_order[slug] or (other["arc"]["slug"] == slug and other["id"] < c["id"]))
-            if (higher or earlier_tie) and not (is_lan and other["arc"]["slug"] != slug) and not (is_nmg and other["arc"]["slug"] != slug):
+            if (higher or earlier_tie) and not (is_lan and other["arc"]["slug"] != slug) and not (is_nmg and other["arc"]["slug"] != slug) and not (is_mgl and other["arc"]["slug"] != slug):
                 if other["arc"]["slug"] == slug:
                     blockers.append(f"{cid(other)} = yes")
                 else:
@@ -1624,6 +1883,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             # NMG queue snapshots record both presence and the exact selected
             # source event. Presence alone (or a present marker of 0/7) is not
             # sufficient authorization to enter the native event body.
+            dispatch_checks += [f"var:{snapshot_present} = 1", f"var:{snapshot_value} = {q['value']}"]
+        if is_mgl:
             dispatch_checks += [f"var:{snapshot_present} = 1", f"var:{snapshot_value} = {q['value']}"]
         if is_supported_inline_country and not is_shu:
             dispatch_checks += [f"has_variable = {epoch}", f"var:{epoch} > 0",
@@ -1655,6 +1916,13 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 dispatch_checks.append("NOT = { " + _limit_inner_source(prior["limit_source"]) + " }")
             dispatch_checks.append(f"NOT = {{ var:{served[slug]} = var:{roundv} }}")
             dispatch_checks.extend(eligibility_terms[2:])
+        elif is_mgl:
+            dispatch_checks += [f"has_journal_entry = {c['journal']['id']}",
+                                f"has_variable = {c['phase']['live_witness']}", event_guard,
+                                f"NOT = {{ var:{served[slug]} = var:{roundv} }}"]
+            if goal: dispatch_checks.append(f"NOT = {{ {goal} }}")
+            if fail: dispatch_checks.append(f"NOT = {{ {fail} }}")
+            dispatch_checks.extend(_mgl_snapshot_checks(c, prefix))
         else:
             dispatch_checks += eligibility_terms
         # Preserve SHU's pre-existing term order byte-for-byte. Its original
@@ -1674,7 +1942,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             for candidate in candidates
             if candidate["arc"]["slug"] == c["arc"]["slug"]
             and candidate["queue"]["kind"].startswith("notice")
-        }) if not (is_kor or is_lan or is_nmg) else []
+        }) if not (is_kor or is_lan or is_nmg or is_mgl) else []
         if not is_nqg:
             tracked = set()
             for notice in notice_queues:
@@ -1737,6 +2005,10 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                           _queue_snapshot_name(ident, c["receipt_variable"], "native_value", prefix)]
             if is_nmg:
                 names += [f"{prefix}_body_completed_{ident}", f"{prefix}_body_completed_epoch_{ident}"]
+            if is_mgl:
+                names += [f"{prefix}_body_completed_{ident}", f"{prefix}_body_completed_epoch_{ident}"]
+                names += [_queue_snapshot_name(ident, state, suffix, prefix)
+                          for state in _mgl_tracked_state(c) for suffix in ("present", "value")]
             ephemeral_by_candidate[ident] = names
             kor_ephemeral.extend(names)
     kor_cleanup = " ".join(f"remove_variable = {name}" for name in kor_ephemeral)
@@ -1812,6 +2084,19 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             prep.append(f"    if = {{ limit = {{ has_variable = {timer} {base} NOT = {{ {dispatch(c)} = yes }} }} remove_variable = {reservation} remove_variable = {timer} {clear} }}")
         unknown_clear = " ".join(f"remove_variable = {name}" for name in kor_ephemeral)
         prep.append(f"    if = {{ limit = {{ has_variable = {reservation} NOT = {{ {known_ids} }} }} remove_variable = {reservation} remove_variable = {timer} {unknown_clear} }}")
+    elif is_mgl:
+        # MGL reservations are valid only while the exact source candidate,
+        # positive epoch, live timer and phase witness still authorize dispatch.
+        # Invalid or expired reservations release adapter-private fields only;
+        # native queues and notice markers may already reflect a completed body.
+        known_ids = "OR = { " + " ".join(f"var:{reservation} = {c['id']}" for c in candidates) + " }"
+        for c in candidates:
+            ident = c["id"]
+            base = f"var:{reservation} = {ident}"
+            clear = " ".join(f"remove_variable = {name}" for name in ephemeral_by_candidate[ident])
+            prep.append(f"    if = {{ limit = {{ {base} NOT = {{ has_variable = {timer} }} }} remove_variable = {reservation} {clear} }}")
+            prep.append(f"    if = {{ limit = {{ has_variable = {timer} {base} NOT = {{ {dispatch(c)} = yes }} }} remove_variable = {reservation} remove_variable = {timer} {clear} }}")
+        prep.append(f"    if = {{ limit = {{ has_variable = {reservation} NOT = {{ {known_ids} }} }} remove_variable = {reservation} remove_variable = {timer} {shared_cleanup_call} }}")
     else:
         prep.append(f"    if = {{ limit = {{ has_variable = {reservation} NOT = {{ has_variable = {timer} }} }} remove_variable = {reservation} {shared_cleanup_call} }}")
         known_ids = "OR = { " + " ".join(f"var:{reservation} = {c['id']}" for c in candidates) + " }"
@@ -1830,7 +2115,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         callback_id = f"{prefix}_callback_candidate_{ident}"
         callback_epoch = f"{prefix}_callback_epoch_{ident}"
         callback_queue = f"{prefix}_callback_queue_{ident}"
-        notice_queues=sorted({x["queue"]["queue"] for x in candidates if x["arc"]["slug"]==c["arc"]["slug"] and x["queue"]["kind"].startswith("notice")}) if not (is_lan or is_nmg) else []
+        notice_queues=sorted({x["queue"]["queue"] for x in candidates if x["arc"]["slug"]==c["arc"]["slug"] and x["queue"]["kind"].startswith("notice")}) if not (is_lan or is_nmg or is_mgl) else []
         capture=[f"if = {{ limit = {{ {turn(c)} = yes {cid(c)} = yes NOT = {{ has_variable = {reservation} }} }}"]
         if is_supported_inline_country and not is_shu:
             capture += [f"    {shared_cleanup_call}"]
@@ -1854,6 +2139,15 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             for name in _nqg_candidate_state(c, candidates):
                 pvar=_queue_snapshot_name(ident,name,"present",prefix); vvar=_queue_snapshot_name(ident,name,"value",prefix)
                 capture += [f"    remove_variable = {pvar}", f"    remove_variable = {vvar}", f"    if = {{ limit = {{ has_variable = {name} }} set_variable = {{ name = {pvar} value = 1 }} set_variable = {{ name = {vvar} value = var:{name} }} }}"]
+        elif is_mgl:
+            for name in _mgl_tracked_state(c):
+                pvar = _queue_snapshot_name(ident, name, "present", prefix)
+                vvar = _queue_snapshot_name(ident, name, "value", prefix)
+                capture += [f"    remove_variable = {pvar}", f"    remove_variable = {vvar}",
+                            f"    set_variable = {{ name = {pvar} value = 0 }}", f"    set_variable = {{ name = {vvar} value = 0 }}",
+                            f"    if = {{ limit = {{ has_variable = {name} }} set_variable = {{ name = {pvar} value = 1 }} set_variable = {{ name = {vvar} value = var:{name} }} }}"]
+            capture += [f"    remove_variable = {prefix}_body_completed_{ident}",
+                        f"    remove_variable = {prefix}_body_completed_epoch_{ident}"]
         else:
             if is_shu and ident == 2:
                 ap=f"{prefix}_aux_waiting_present_2"; av=f"{prefix}_aux_waiting_value_2"; aux="ywc_shu_waiting_for_capacity"
@@ -1892,6 +2186,10 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             if is_nmg:
                 checks += [f"has_variable = {prefix}_body_completed_{ident}", f"var:{prefix}_body_completed_{ident} = 1",
                            f"has_variable = {prefix}_body_completed_epoch_{ident}", f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
+            if is_mgl:
+                checks += [f"has_variable = {prefix}_body_completed_{ident}", f"var:{prefix}_body_completed_{ident} = 1",
+                           f"has_variable = {prefix}_body_completed_epoch_{ident}", f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
+                checks += _mgl_snapshot_checks(c, prefix)
             if is_shu:
                 checks += [f"has_variable = {epoch}", f"has_variable = {prefix}_candidate_epoch_{ident}",
                            f"var:{epoch} > 0",
@@ -1904,7 +2202,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 checks.append("OR = { AND = { has_variable = " + q["queue"] + f" var:{q['queue']} = var:{snap_value} }} {consumed} }}")
             else:
                 checks += [f"has_variable = {q['queue']}",f"var:{q['queue']} = var:{snap_value}"]
-        goal=_inner_text(c["journal"]["goal"]); fail=_inner_text(c["journal"]["exit_conditions"])
+        source_inner = _mgl_inner_text if is_mgl else _inner_text
+        goal=source_inner(c["journal"]["goal"]); fail=source_inner(c["journal"]["exit_conditions"])
         if goal and not (is_shu or is_lan): checks.append(f"NOT = {{ {goal} }}")
         if fail and not (is_shu or is_lan): checks.append(f"NOT = {{ {fail} }}")
         if is_lan:
@@ -1961,6 +2260,12 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                         continue
                     pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
                     callback_guard.append("OR = { "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 1 has_variable = {name} var:{name} = var:{vv} }} "+f"AND = {{ has_variable = {pv} has_variable = {vv} var:{pv} = 0 var:{vv} = 0 NOT = {{ has_variable = {name} }} }} }}")
+            if is_mgl:
+                callback_guard += [f"has_variable = {prefix}_body_completed_{ident}",
+                                   f"var:{prefix}_body_completed_{ident} = 1",
+                                   f"has_variable = {prefix}_body_completed_epoch_{ident}",
+                                   f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
+                callback_guard.extend(_mgl_snapshot_checks(c, prefix))
             if is_nqg:
                 callback_guard.append(f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}")
                 calls_notice_helper = _nqg_event_calls_notice_helper(c["event"], c["arc"]["slug"])
@@ -1991,7 +2296,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     journal_scripts={}
     # Splice only proven sender limits and insert candidate-owned reservations before native source ops.
     for journal_id, journal_info in phases.items():
-        journal=journal_info["journal"]; script=journal["script"]; binding=_nmg_source_binding(journal_id,script) if is_nmg else _lan_source_binding(journal_id,script) if is_lan else _kor_source_binding(journal_id,script,candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal_id,script) if (is_kor or is_nqg) else source_binding(journal_id,script)
+        journal=journal_info["journal"]; script=journal["script"]; binding=_mgl_source_binding(journal_id,script) if is_mgl else _nmg_source_binding(journal_id,script) if is_nmg else _lan_source_binding(journal_id,script) if is_lan else _kor_source_binding(journal_id,script,candidate_parser=_shu_queue_candidates) if is_shu else _kor_source_binding(journal_id,script) if (is_kor or is_nqg) else source_binding(journal_id,script)
         edits=[]
         for branch_index, group in branches_by_journal.get(journal_id,{}).items():
             branch=binding["branches"][branch_index]
@@ -2022,7 +2327,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         event_hooks[event_id]=[dispatch(c) for c in group]
         hooks=[]
         for c in group:
-            hooks.append(f"{prefix}_callback_{c['id']}" if (is_kor or is_nqg or is_shu or is_lan or is_nmg) else f"ywc_v03_dmg_inline_ack_{c['id']}")
+            hooks.append(f"{prefix}_callback_{c['id']}" if (is_kor or is_nqg or is_shu or is_lan or is_nmg or is_mgl) else f"ywc_v03_dmg_inline_ack_{c['id']}")
         ack_hooks[event_id]=hooks
     inline_proofs={}
     if is_supported_inline_country:
@@ -2034,6 +2339,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 checks=[f"var:{reservation} = {ident}",f"has_variable = {timer}",f"has_variable = {epoch}",f"has_variable = {prefix}_candidate_epoch_{ident}",f"var:{epoch} > 0",f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}",f"has_variable = {sp}",f"has_variable = {sv}",f"has_journal_entry = {c['journal']['id']}",f"has_variable = {c['phase']['live_witness']}"]
                 if is_lan:
                     checks += [f"has_variable = {prefix}_body_completed_{ident}",f"var:{prefix}_body_completed_{ident} = 1",f"has_variable = {prefix}_body_completed_epoch_{ident}",f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
+                if is_mgl:
+                    checks += [f"has_variable = {prefix}_body_completed_{ident}",
+                               f"var:{prefix}_body_completed_{ident} = 1",
+                               f"has_variable = {prefix}_body_completed_epoch_{ident}",
+                               f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
                 if is_shu:
                     checks += [f"has_variable = {qvar}",f"var:{qvar} = var:{sv}",f"NOT = {{ var:{served[c['arc']['slug']]} = var:{roundv} }}"]
                 else:
@@ -2069,6 +2379,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     checks += [f"has_variable = {c['receipt_variable']}", f"var:{c['receipt_variable']} = {c['receipt_value']}"]
                 if is_nmg:
                     checks += _nmg_native_postchecks(c, prefix)
+                if is_mgl:
+                    checks.extend(_mgl_snapshot_checks(c, prefix))
                 if c["queue"]["mode"]=="exact": checks.append(f"var:{sv} = {c['queue']['value']}")
                 if is_lan:
                     stem=qvar.split("_")[2]; queue=c["queue"]
@@ -2089,7 +2401,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     completion = f"if = {{ limit = {{ var:{reservation} = {ident} }} set_variable = {{ name = {prefix}_body_completed_{ident} value = 1 }} if = {{ limit = {{ has_variable = {prefix}_candidate_epoch_{ident} }} set_variable = {{ name = {prefix}_body_completed_epoch_{ident} value = var:{prefix}_candidate_epoch_{ident} }} }} remove_variable = {prefix}_rollback_armed_{ident} }}"
                     proof_body=f"{completion} if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}"
                     proofs.append(proof_body)
-                elif is_nmg:
+                elif is_nmg or is_mgl:
                     completion = (f"if = {{ limit = {{ var:{reservation} = {ident} }} "
                                   f"set_variable = {{ name = {prefix}_body_completed_{ident} value = 1 }} "
                                   f"set_variable = {{ name = {prefix}_body_completed_epoch_{ident} value = var:{prefix}_candidate_epoch_{ident} }} }}")
@@ -2098,4 +2410,4 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 else:
                     proofs.append(f"if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}")
             inline_proofs[event_id]=proofs
-    return {"triggers":"\n\n".join(triggers)+"\n","effects":"\n\n".join(effects)+"\n","event_hooks":event_hooks,"ack_hooks":ack_hooks,"inline_proofs":inline_proofs,"guarded_immediate_events":sorted(event_hooks),"journal_scripts":journal_scripts,"live_witnesses":{j:p["phase"]["live_witness"] for j,p in phases.items()}}
+    return {"triggers":"\n\n".join(triggers)+"\n","effects":"\n\n".join(effects)+"\n","event_hooks":event_hooks,"ack_hooks":ack_hooks,"inline_proofs":inline_proofs,"guarded_immediate_events":sorted(event_hooks),"journal_scripts":journal_scripts,"live_witnesses":{j:p["phase"]["live_witness"] for j,p in phases.items()},"mgl_safe_comment_boundaries":is_mgl}

@@ -20,6 +20,29 @@ def _definitions(text):
     return {key: body for key, _, body in parse(text)}
 
 
+def _native_business_projection(catalog):
+    """Render current authored business source without inline transport.
+
+    Integrated delivery is exercised by the separate inline fixture, which
+    installs real renderer registries and wrappers before root activation.
+    """
+    from tools import build_v03_content
+    def definitions(text, expected, label):
+        result = {}
+        for key, _, body in parse(text):
+            if key == "namespace":
+                continue
+            if key in result:
+                raise AssertionError(("native_projection_collision", label, key))
+            result[key] = body
+        if len(result) != expected:
+            raise AssertionError(("native_projection_count", label, len(result), expected))
+        return result
+    journals = definitions(build_v03_content._render_journal_file(catalog, None), 6, "journals")
+    events = definitions(build_v03_content._render_event_file(catalog, ROOT, None), 24, "events")
+    return journals, events
+
+
 def _block(fields, name):
     return next(value for key, _, value in fields if key == name)
 
@@ -168,8 +191,7 @@ class MglStrictLifecycleTest(unittest.TestCase):
                        + "\n" + (MOD / "common/scripted_effects/ywc_v03_mgl_effects.txt").read_text(encoding="utf-8-sig"))
         cls.triggers = ((MOD / "common/scripted_triggers/ywc_v03_triggers.txt").read_text(encoding="utf-8-sig")
                         + "\n" + (MOD / "common/scripted_triggers/ywc_v03_mgl_triggers.txt").read_text(encoding="utf-8-sig"))
-        cls.generated_journals = _definitions((MOD / "common/journal_entries/ywc_v03_country_mgl_journal.txt").read_text(encoding="utf-8-sig"))
-        cls.generated_events = _definitions((MOD / "events/ywc_v03_country_mgl_events.txt").read_text(encoding="utf-8-sig"))
+        cls.generated_journals, cls.generated_events = _native_business_projection(COUNTRY)
         cls.arc_by_slug = {arc["slug"]: arc for arc in CATALOG_ARCS}
 
     def _facts(self, pre, route, cash, legacy=1):
