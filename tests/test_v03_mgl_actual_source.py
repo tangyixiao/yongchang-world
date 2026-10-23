@@ -164,18 +164,28 @@ def actual_mgl_admission_world(admission_order=None, ordinary_facts=None):
     world = _StrictMglWorld("\n".join(_read(p) for p in effects_paths),
                             "\n".join(_read(p) for p in trigger_paths),
                             {TAG: state, "SHU": {"relations": {TAG: 0}}, "RUS": {"relations": {TAG: 0}}})
-    world.journal_defs = _defs(("yongchang_world/common/journal_entries/ywc_mng.txt",
-                                "yongchang_world/common/journal_entries/ywc_v03_country_mgl_journal.txt"))
+    # Keep legacy source on disk and project current formal v03 native business.
+    # The separate inline fixture overlays real transport before root activation.
+    native_journals, native_events = base._native_business_projection(
+        json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8")))
+    world.journal_defs = _defs(("yongchang_world/common/journal_entries/ywc_mng.txt",))
+    for key, body in native_journals.items():
+        if key in world.journal_defs:
+            raise AssertionError(("native_definition_collision", key, "v03_native_projection"))
+        world.journal_defs[key] = body
     world.event_defs = {}
     for path in ("yongchang_world/events/ywc_steppe_highland_events.txt",
-                 "yongchang_world/events/ywc_large_campaign_events.txt",
-                 "yongchang_world/events/ywc_v03_country_mgl_events.txt"):
+                 "yongchang_world/events/ywc_large_campaign_events.txt"):
         for key, _, body in parse(_read(path)):
             if key == "namespace":
                 continue
             if key in world.event_defs:
                 raise AssertionError(("native_event_collision", key, path))
             world.event_defs[key] = body
+    for key, body in native_events.items():
+        if key in world.event_defs:
+            raise AssertionError(("native_event_collision", key, "v03_native_projection"))
+        world.event_defs[key] = body
     world.generated_journals = world.journal_defs
     world.generated_events = world.event_defs
     world.arc_by_slug = {arc["slug"]: arc for arc in MGL_ARCS}
