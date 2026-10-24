@@ -296,8 +296,10 @@ class TibStrictLifecycleTest(unittest.TestCase):
                        + "\n" + (MOD / "common/scripted_effects/ywc_v03_tib_effects.txt").read_text(encoding="utf-8-sig"))
         cls.triggers = ((MOD / "common/scripted_triggers/ywc_v03_triggers.txt").read_text(encoding="utf-8-sig")
                         + "\n" + (MOD / "common/scripted_triggers/ywc_v03_tib_triggers.txt").read_text(encoding="utf-8-sig"))
-        cls.journals = definitions((MOD / "common/journal_entries/ywc_v03_country_tib_journal.txt").read_text(encoding="utf-8-sig"))
-        cls.events = definitions((MOD / "events/ywc_v03_country_tib_events.txt").read_text(encoding="utf-8-sig"))
+        # Native-source unit fixture; generated adapter coverage lives in the inline tests.
+        from tools import build_v03_content
+        cls.journals = definitions(build_v03_content._render_journal_file(CATALOG, None))
+        cls.events = definitions(build_v03_content._render_event_file(CATALOG, ROOT, None))
         cls.arcs = {arc["slug"]: arc for arc in CATALOG["arcs"]}
 
     def world(self, pre, route, cash, legacy=None):
