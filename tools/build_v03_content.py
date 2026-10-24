@@ -21,9 +21,11 @@ except ModuleNotFoundError:
 try:
     from tools.v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
     from tools.v03_inline_delivery_adapter import validate_inline_catalog, validate_nqg_native_helper_source, validate_lan_native_helper_source, validate_nmg_native_helper_source, validate_mgl_native_helper_source, render_inline_country_adapters
+    from tools.v03_jhg_inline_delivery_adapter import validate_jhg_native_helper_source
 except ModuleNotFoundError:
     from v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
     from v03_inline_delivery_adapter import validate_inline_catalog, validate_nqg_native_helper_source, validate_lan_native_helper_source, validate_nmg_native_helper_source, validate_mgl_native_helper_source, render_inline_country_adapters
+    from v03_jhg_inline_delivery_adapter import validate_jhg_native_helper_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -288,7 +290,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                 except ValueError as exc:
                     errors.append(f"{where}.delivery_adapter: {exc}")
         if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])):
-            if key not in {"country_dmg", "country_kor", "country_nqg", "country_shu", "country_lan", "country_nmg", "country_mgl"}:
+            if key not in {"country_dmg", "country_kor", "country_nqg", "country_shu", "country_lan", "country_nmg", "country_mgl", "country_jhg"}:
                 errors.append(f"{where}.inline_delivery_adapter is not registered for {key}")
             else:
                 try:
@@ -309,6 +311,12 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                         validate_mgl_native_helper_source(native_triggers.read_text(encoding="utf-8-sig"))
                         native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
                         validate_nmg_native_helper_source(native_effects.read_text(encoding="utf-8"))
+                    if key == "country_jhg":
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_jhg_effects.txt")
+                        native_triggers = _safe_relative(root, "yongchang_world/common/scripted_triggers/ywc_v03_jhg_triggers.txt")
+                        validate_jhg_native_helper_source(native_effects.read_text(encoding="utf-8-sig"), native_triggers.read_text(encoding="utf-8-sig"))
+                        shared_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
+                        validate_nmg_native_helper_source(shared_effects.read_text(encoding="utf-8-sig"))
                 except ValueError as exc:
                     errors.append(f"{where}.inline_delivery_adapter: {exc}")
                 except OSError as exc:
@@ -337,7 +345,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor", "country_nqg", "country_shu", "country_lan", "country_nmg", "country_mgl"} else set())
+            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor", "country_nqg", "country_shu", "country_lan", "country_nmg", "country_mgl", "country_jhg"} else set())
             _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional=arc_optional)
             owner = arc_owner(layer, arc, tags)
             if layer == "country":
@@ -559,7 +567,7 @@ def _outputs_for(key: str, *, adapter: bool = False) -> list[Path]:
         Path(f"localization/english/ywc_v03_{key}_l_english.yml"),
     ]
     if adapter:
-        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else "nqg" if key == "country_nqg" else "shu" if key == "country_shu" else "lan" if key == "country_lan" else "nmg" if key == "country_nmg" else "mgl" if key == "country_mgl" else None
+        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else "nqg" if key == "country_nqg" else "shu" if key == "country_shu" else "lan" if key == "country_lan" else "nmg" if key == "country_nmg" else "mgl" if key == "country_mgl" else "jhg" if key == "country_jhg" else None
         if not country: raise ValueError(f"no registered adapter output namespace for {key}")
         paths.extend((Path(f"common/scripted_effects/ywc_v03_delivery_{country}_effects.txt"),
                       Path(f"common/scripted_triggers/ywc_v03_delivery_{country}_triggers.txt")))
@@ -779,7 +787,7 @@ def render_all(root: Path) -> dict[Path, str]:
                 rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
                              "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
             else:
-                country = "SHU" if key == "country_shu" else "KOR" if key == "country_kor" else "NQG" if key == "country_nqg" else "LAN" if key == "country_lan" else "NMG" if key == "country_nmg" else "MGL" if key == "country_mgl" else "DMG"
+                country = "SHU" if key == "country_shu" else "KOR" if key == "country_kor" else "NQG" if key == "country_nqg" else "LAN" if key == "country_lan" else "NMG" if key == "country_nmg" else "MGL" if key == "country_mgl" else "JHG" if key == "country_jhg" else "DMG"
                 rendered += [f"# Generated {country} inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
                              f"# Generated {country} inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
         outputs.update(zip(paths, rendered))
