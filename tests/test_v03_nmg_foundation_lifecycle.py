@@ -40,7 +40,7 @@ class NmgWorld(PulseWorld):
         "has_variable", "has_modifier", "exists", "always", "net_fixed_income",
         "bureaucracy", "gold_reserves", "yearly_gross_income", "scaled_debt",
         "in_default", "is_at_war", "trigger_if", "calc_true_if", "ywc_nmg_v03_has_owned_state",
-        "is_owned_by", "any_scope_state", "any_scope_building", "is_building_type",
+        "owner", "is_owned_by", "any_scope_state", "any_scope_building", "is_building_type",
         "occupancy", "building_has_goods_shortage", "has_law_or_variant", "radical_fraction",
         "literacy_rate", "institution_investment_level", "is_subject", "is_subject_of",
         "overlord", "relations:root", "relations_threshold:poor", "any_interest_group",
@@ -67,6 +67,8 @@ class NmgWorld(PulseWorld):
         """Reject malformed supported primitives even beneath false branches."""
         comparisons = {"=", "!=", ">", ">=", "<", "<="}
         for key, comparison, value in nodes:
+            if key == "owner" and (comparison, value) != ("=", "ROOT"):
+                raise AssertionError(("unsupported NMG ownership shape", (key, comparison, value)))
             if isinstance(value, list):
                 self._validate_condition_tree(value)
             if key == "institution_investment_level":
@@ -194,7 +196,9 @@ class NmgWorld(PulseWorld):
             return result == (value == "yes")
         if key == "has_journal_entry":
             return comparison == "=" and tag == "NMG" and value in self.active_journals
-        if key == "ywc_nmg_v03_has_owned_state" or key == "is_owned_by":
+        if key == "owner" and (comparison, value) != ("=", "ROOT"):
+            raise AssertionError(("unsupported NMG ownership shape", node))
+        if key in ("ywc_nmg_v03_has_owned_state", "owner", "is_owned_by"):
             return bool(v.get("fixture_owned_state", 0)) and v.get("fixture_state_owner", "NMG") == tag
         if key == "any_scope_state":
             if not v.get("fixture_owned_state", 0) or v.get("fixture_state_owner", "NMG") != tag:

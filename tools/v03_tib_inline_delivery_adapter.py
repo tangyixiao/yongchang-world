@@ -16,8 +16,8 @@ EXPECTED_ARCS = {
     "v03_tib_service_register",
     "v03_tib_shared_schools",
 }
-EFFECTS_AST_SHA256 = '32b91ecc2cb8ff8f0a1c94138a6ac1a684206d6fc7636d210aafc01b451c4d4a'
-TRIGGERS_AST_SHA256 = 'a2a6e7e808b79797e699788f080e2bdaa76f4c87f0a07332cfee9a98229e62d6'
+EFFECTS_AST_SHA256 = '7f881249c308c25d42d95a1d654091b44fa504fded2799b4c12d15c2f3fe76f0'
+TRIGGERS_AST_SHA256 = 'd1232cce1f1c6f465a1b2c69edf6626d42aeecd57dfcdfe8c311baa0ef2784ee'
 
 
 def _int_tree(value: Any, where: str = "metadata") -> None:

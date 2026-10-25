@@ -207,7 +207,10 @@ class JhgTerminalWorld(PulseWorld):
 
     def _state_matches(self, nodes, state):
         for key, comparison, value in nodes:
-            if key == "is_owned_by":
+            # Legacy spelling remains fixture compatibility only.
+            if key in ("owner", "is_owned_by"):
+                if key == "owner" and (comparison, value) != ("=", "ROOT"):
+                    raise AssertionError(f"unsupported JHG ownership shape: {(key, comparison, value)}")
                 if not self._compare(state.get("owned_by_root", False), comparison, value == "ROOT"):
                     return False
             elif key == "any_scope_building":
