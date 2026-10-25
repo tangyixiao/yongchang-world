@@ -297,7 +297,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                     validate_inline_catalog(catalog)
                     if key == "country_nqg":
                         native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_nqg_effects.txt")
-                        validate_nqg_native_helper_source(catalog, native_effects.read_text(encoding="utf-8"))
+                        validate_nqg_native_helper_source(catalog, native_effects.read_text(encoding="utf-8-sig"))
                     if key == "country_lan":
                         # LAN has no receipt variable. Validate the one native cooldown helper
                         # as a complete AST definition before accepting its inline proof path.
