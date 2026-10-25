@@ -12,12 +12,13 @@ No external documents, private evidence or installed game files are read.
 """
 import copy
 from dataclasses import replace
+from datetime import date
 import sys
 from pathlib import Path
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from kor_partner_protocol_runtime import PartnerWorld
+from kor_partner_protocol_runtime import PartnerWorld, UnsupportedSubset
 from shu_kor_strict_review_runtime import facts
 from clausewitz_harness import parse
 
@@ -95,6 +96,76 @@ def offer(w, target="SHU", generation=1, price=12, days=0, timer=30):
 
 
 class PartnerRuntimeTests(unittest.TestCase):
+    def test_game_year_month_named_value_and_calendar_rollover(self):
+        countries = {"KOR": copy.deepcopy(facts())}
+        for start, expected in ((date(1836, 12, 31), 1836 * 12 + 11),
+                                (date(1837, 1, 1), 1837 * 12)):
+            with self.subTest(start=start):
+                w = PartnerWorld(countries, start_date=start)
+                w.run_script("set_variable = { name = calendar_token value = ywc_kor_current_calendar_month }")
+                self.assertEqual(w.countries["KOR"]["calendar_token"], expected)
+        w = PartnerWorld({"KOR": copy.deepcopy(facts())}, start_date=date(1836, 12, 31))
+        w.advance_days()
+        self.assertEqual(w.date, date(1837, 1, 1))
+        w.run_script("set_variable = { name = calendar_token value = ywc_kor_current_calendar_month }")
+        self.assertEqual(w.countries["KOR"]["calendar_token"], 1837 * 12)
+
+    def test_integer_month_jobs_keep_immutable_context(self):
+        w = world()
+        w.date = w._epoch = date(1837, 1, 31)
+        w.event_defs["test.month"] = parse("trigger = { scope:captured = 7 } immediate = { set_variable = { name = arrived value = scope:captured } }")
+        w.run_script("save_scope_value_as = { name = captured value = 7 } trigger_event = { id = test.month months = 1 }")
+        job = w.jobs[-1]
+        self.assertEqual(job.due_day, 28)
+        w.run_script("set_variable = { name = changed value = 99 }")
+        w.advance_months()
+        self.assertEqual(w.date, date(1837, 2, 28))
+        self.assertTrue(w.display_job(job))
+        self.assertEqual(w.countries["KOR"]["arrived"], 7)
+        w = PartnerWorld({"KOR": copy.deepcopy(facts())}, start_date=date(1836, 1, 31))
+        w.event_defs["test.month"] = parse("trigger = { always = yes }")
+        w.run_script("trigger_event = { id = test.month months = 1 }")
+        self.assertEqual(w.jobs[-1].due_day, 29)
+        w.advance_months()
+        self.assertEqual(w.date, date(1836, 2, 29))
+
+    def test_calendar_timers_and_modifier_expiry(self):
+        w = PartnerWorld({"KOR": copy.deepcopy(facts())}, start_date=date(1837, 1, 31))
+        w.run_script("set_variable = { name = timed value = 1 months = 1 } add_modifier = { name = ywc_v03_kor_paid_instructor_training months = 1 }")
+        self.assertIn("timed", w.countries["KOR"])
+        self.assertTrue(w.modifiers)
+        w.advance_days(27)
+        self.assertIn("timed", w.countries["KOR"])
+        w.advance_days()
+        self.assertNotIn("timed", w.countries["KOR"])
+        self.assertFalse(w.modifiers)
+        w = PartnerWorld({"KOR": copy.deepcopy(facts())}, start_date=date(1836, 1, 31))
+        w.run_script("set_variable = { name = timed value = 1 months = 1 }")
+        w.advance_days(29)
+        self.assertNotIn("timed", w.countries["KOR"])
+
+    def test_hidden_due_immediate_without_option_choice(self):
+        w = world()
+        w.run_script("set_variable = { name = ywc_kor_instructor_contract_generation value = 4 } save_scope_as = ywc_kor_service_end_owner save_scope_value_as = { name = ywc_kor_service_end_generation value = 4 } trigger_event = { id = ywc_kor.1032 months = 12 }")
+        job = w.jobs[-1]
+        self.assertTrue(job.explicit_delay)
+        self.assertEqual(job.due_day, 366)
+        w.advance_months(12)
+        w.run_due_hidden()
+        self.assertEqual(w.countries["KOR"]["ywc_kor_instructor_service_ended_generation"], 4)
+        w.run_due_hidden()
+        self.assertEqual(len(w._displayed), 1)
+
+    def test_unsupported_calendar_values_fail_closed(self):
+        w = world()
+        w.event_defs["test.month"] = parse("trigger = { always = yes }")
+        for source in ("trigger_event = { id = test.month months = 1 days = 1 }",
+                       "trigger_event = { id = test.month months = 1.5 }",
+                       "trigger_event = { id = test.month months = yes }",
+                       "set_variable = { name = x value = unknown_calendar_value }"):
+            with self.subTest(source=source), self.assertRaises(UnsupportedSubset):
+                w.run_script(source)
+
     def test_documented_and_legacy_ownership_in_foreign_recipient_event(self):
         for spelling in ("owner", "is_owned_by"):
             for recipient in ("SHU", "JHG"):
@@ -186,18 +257,18 @@ class PartnerRuntimeTests(unittest.TestCase):
 
         w.pulse = pulse
         w.deliver({}, "test.clock")
-        self.assertEqual(observations, [(0, 0), (30, 1)])
-        self.assertEqual((w.day, w.elapsed_months), (30, 1))
+        self.assertEqual(observations, [(0, 0), (31, 1)])
+        self.assertEqual((w.day, w.elapsed_months), (31, 1))
         w.advance_months(2)
-        self.assertEqual((w.day, w.elapsed_months), (90, 3))
+        self.assertEqual((w.day, w.elapsed_months), (91, 3))
         # Ensure ownership is restored even if inherited delivery raises.
         w.events.clear()
         w.run_script("set_variable = { name = wait value = yes months = 1 }")
         with self.assertRaisesRegex(AssertionError, "unexpected_event"):
             w.deliver({}, "test.different")
-        self.assertEqual((w.day, w.elapsed_months), (120, 4))
+        self.assertEqual((w.day, w.elapsed_months), (121, 4))
         w.advance_months()
-        self.assertEqual((w.day, w.elapsed_months), (150, 5))
+        self.assertEqual((w.day, w.elapsed_months), (152, 5))
 
     def test_event_root_ownership_and_country_prev_boundary(self):
         w = world()
@@ -318,7 +389,7 @@ class PartnerRuntimeTests(unittest.TestCase):
         for generation in (2, 3):
             with self.subTest(month=generation):
                 offer(w, generation=generation, days=30, timer=30)
-                w.advance_months()
+                w.advance_days(30)
                 self.assertFalse(w.check_script("has_variable = timer"))
                 self.assertTrue(w.display_job(w.jobs[-1]))
                 w.choose_job(w.jobs[-1], "accept")
@@ -478,7 +549,8 @@ class PartnerRuntimeTests(unittest.TestCase):
         for source in bad_effects:
             with self.subTest(effect=source), self.assertRaisesRegex(AssertionError, "unsupported|undefined|numeric|country"):
                 w.run_script(source)
-        for source in ("var:country = 1", "var:flag = 1", "var:country > c:SHU", "unknown_predicate = yes", "var:missing = 0", "is_subject = typo", "always = typo"):
+        self.assertFalse(w.check_script("var:missing = 0"))
+        for source in ("var:country = 1", "var:flag = 1", "var:country > c:SHU", "unknown_predicate = yes", "scope:missing = 0", "is_subject = typo", "always = typo"):
             with self.subTest(predicate=source), self.assertRaisesRegex(AssertionError, "unsupported|undefined|typed|numeric"):
                 w.check_script(source)
 

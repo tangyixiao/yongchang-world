@@ -30,11 +30,20 @@ def trigger_source(country):
     return source(f"yongchang_world/common/scripted_triggers/ywc_v03_{country}_triggers.txt")
 
 
-def walk(nodes, state=False):
+def walk(nodes, scope="country"):
     for key, op, value in nodes:
-        yield key, op, value, state
+        yield key, op, value, scope
         if isinstance(value, list):
-            yield from walk(value, state or key in ("any_scope_state", "every_scope_state"))
+            next_scope = scope
+            if key in ("any_scope_state", "every_scope_state"):
+                next_scope = "state"
+            elif key in ("any_scope_building", "every_scope_building"):
+                next_scope = "building"
+            elif key in ("any_scope_pop", "every_scope_pop"):
+                next_scope = "pop"
+            elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
+                next_scope = "country"
+            yield from walk(value, next_scope)
 
 
 class StateOwnerVocabularyTests(unittest.TestCase):
@@ -43,8 +52,20 @@ class StateOwnerVocabularyTests(unittest.TestCase):
         self.assertEqual(text.count("owner = ROOT"), count)
         predicates = [n for n in walk(parse(text)) if n[0] == "owner" and n[2] == "ROOT"]
         self.assertEqual(len(predicates), count)
-        for key, op, value, in_state in predicates:
-            self.assertEqual((op, value, in_state), ("=", "ROOT", True))
+        for key, op, value, current_scope in predicates:
+            self.assertEqual((op, value, current_scope), ("=", "ROOT", "state"))
+
+    def test_inventory_rejects_owner_after_non_state_scope_transition(self):
+        for nested in ("any_scope_building", "any_scope_pop", "c:SHU", "scope:ywc_kor_requester"):
+            with self.subTest(nested=nested):
+                script = f"any_scope_state = {{ {nested} = {{ owner = ROOT }} }}"
+                owner = [row for row in walk(parse(script)) if row[0] == "owner"]
+                self.assertNotEqual(owner[0][3], "state")
+
+    def test_inventory_keeps_state_through_logical_blocks(self):
+        script = "any_scope_state = { AND = { OR = { NOT = { owner = ROOT } } } }"
+        owner = [row for row in walk(parse(script)) if row[0] == "owner"]
+        self.assertEqual(owner[0][3], "state")
 
     def test_actual_inventory_and_state_scoped_scalar_shapes(self):
         for country, count in COUNTS.items():

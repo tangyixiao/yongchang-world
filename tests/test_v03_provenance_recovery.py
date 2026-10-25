@@ -212,7 +212,7 @@ class Accepted4CleanupAndRecovery(unittest.TestCase):
              "ywc_v03_dmg_inline_callback_1", "ywc_v03_dmg_inline_reservation"),
             ("KOR", lambda: (lambda w, e: (w, None, "ywc_kor.1010"))(
                 *kor.KorFairDeliveryContract()._reserve_school_event()),
-             "ywc_v03_kor_inline_ack_11", "ywc_v03_kor_inline_callback_11",
+             "ywc_v03_kor_inline_ack_13", "ywc_v03_kor_inline_callback_13",
              "ywc_v03_kor_inline_reservation"),
             ("NQG", lambda: (lambda w, j, e, c: (w, j, e))(
                 *nqg._reserve_first_source_popup()),

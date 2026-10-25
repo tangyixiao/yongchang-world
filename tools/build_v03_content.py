@@ -484,7 +484,10 @@ def _validate_event(value: object, where: str, key: str, slug: str, reservation:
     if not isinstance(value, dict):
         errors.append(f"{where} must be an object")
         return
-    _fields(value, {"id", "title", "desc", "trigger", "immediate", "options", "purpose", "reads", "writes"}, where, errors)
+    _fields(value, {"id", "title", "desc", "trigger", "immediate", "options", "purpose", "reads", "writes"}, where, errors, optional={"hidden"})
+    hidden = value.get("hidden", False)
+    if type(hidden) is not bool:
+        errors.append(f"{where}.hidden must be a boolean")
     identifier = value.get("id")
     _unique_id(identifier, where, all_ids, errors)
     if reservation is None:
@@ -518,8 +521,8 @@ def _validate_event(value: object, where: str, key: str, slug: str, reservation:
         if not isinstance(entries, list) or any(not isinstance(item, str) or not item for item in entries):
             errors.append(f"{where}.{field} must be a list of non-empty strings")
     options = value.get("options")
-    if not isinstance(options, list) or not options:
-        errors.append(f"{where}.options must contain at least one option")
+    if not isinstance(options, list) or (hidden is True and options) or (hidden is not True and not options):
+        errors.append(f"{where}.options must be empty for hidden events and nonempty for visible events")
         return
     option_keys: set[str] = set()
     for index, option in enumerate(options):
@@ -661,6 +664,18 @@ def _render_event_file(catalog: dict, root: Path, adapter: dict | None = None) -
             lines.extend([
                 f"{event['id']} = {{",
                 "    type = country_event",
+            ])
+            if event.get("hidden") is True:
+                if (adapter or {}).get("event_hooks", {}).get(event["id"]) or (adapter or {}).get("ack_hooks", {}).get(event["id"]):
+                    raise ValueError(f"hidden event {event['id']} cannot be an inline major candidate")
+                lines.extend([
+                    "    hidden = yes",
+                    f"    trigger = {event['trigger'].strip()}",
+                    f"    immediate = {event['immediate'].strip()}",
+                ])
+                lines.extend(["}", ""])
+                continue
+            lines.extend([
                 '    event_image = { video = "unspecific_politicians_arguing" }',
                 f"    title = {event['id']}.t",
                 f"    desc = {event['id']}.d",
@@ -680,9 +695,11 @@ def _render_event_file(catalog: dict, root: Path, adapter: dict | None = None) -
                     f"{event['id']}.{option['key']}.cost_tooltip }}",
                     "        custom_tooltip = { text = "
                     f"{event['id']}.{option['key']}.consequence_tooltip }}",
-                    f"        { _inner(option['effect']).replace(chr(10), chr(10) + '        ') }",
-                    "    }",
                 ])
+                effect_text = _inner(option['effect']).replace(chr(10), chr(10) + '        ')
+                if effect_text.strip():
+                    lines.append(f"        {effect_text}")
+                lines.append("    }")
             lines.extend(["}", ""])
     return "\n".join(lines).rstrip() + "\n"
 
