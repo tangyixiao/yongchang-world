@@ -882,12 +882,21 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_compact_fee_waived"), 1)
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 2)
 
-    def test_m1_fiscal_catalog_arc_matches_reviewfix_before_snapshot(self):
+    def test_m1_fiscal_catalog_preserves_historical_digest_after_owner_vocabulary_inverse(self):
         current_arc = next(a for a in CATALOG["arcs"] if a["slug"] == "v03_shu_fiscal_register")
         baseline = json.loads(json.dumps(current_arc, ensure_ascii=False))
         baseline.pop("inline_delivery_adapter", None)
         compensation = next(o for e in baseline["events"] if e["id"] == "ywc_shu.1002" for o in e["options"] if o["key"] == "collect_with_compensation")
         compensation["ai_chance"] = "{\nbase = 100\n}"
+        # This arc had exactly 14 legacy predicates and no owner = ROOT.
+        # Invert only those exact migrated predicates before historical hashing.
+        migrated = json.dumps(baseline, ensure_ascii=False)
+        self.assertEqual(migrated.count("owner = ROOT"), 14)
+        self.assertNotIn("is_owned_by", migrated)
+        historical = migrated.replace("owner = ROOT", "is_owned_by = ROOT")
+        self.assertEqual(historical.count("is_owned_by = ROOT"), 14)
+        self.assertEqual(historical.replace("is_owned_by = ROOT", "owner = ROOT"), migrated)
+        baseline = json.loads(historical)
         canonical = json.dumps(baseline, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         self.assertEqual(hashlib.sha256(canonical).hexdigest(), "c9d2097f2d67b9a1ad0781cac6f047ab07372db905c0fcf83fe860f5ed75da92")
 

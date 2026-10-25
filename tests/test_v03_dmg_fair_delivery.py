@@ -100,7 +100,7 @@ class DmgInlineWorld(DmgWorld):
         if key == "any_scope_state":
             # Only the country-owned-state fact is represented here; deeper
             # population/building facts remain unknown and fail in the parent.
-            if all(k == "is_owned_by" and v == "ROOT" for k, _, v in value):
+            if all(child in (("owner", "=", "ROOT"), ("is_owned_by", "=", "ROOT")) for child in value):
                 return bool(self.countries[tag].get("fixture_owned_state", 0))
         if key == "ywc_dmg_v03_government_appointment_ready":
             return bool(self.countries[tag].get("fixture_government_appointment_ready", 0)) == (value == "yes")
