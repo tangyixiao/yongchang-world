@@ -1,5 +1,6 @@
 """B0 reservations and complete-campaign era contract."""
 import json
+import copy
 import re
 import tempfile
 import unittest
@@ -86,7 +87,14 @@ class V03CampaignReservationTests(unittest.TestCase):
     def test_registry_preserves_foundation_and_matches_all_sixty_approved_middle_late_slots(self):
         current = registry()
         before = json.loads(FOUNDATION_REGISTRY_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(current["arc_ranges"][:len(before["arc_ranges"])], before["arc_ranges"])
+        foundation = copy.deepcopy(current["arc_ranges"][:len(before["arc_ranges"])])
+        for row in foundation:
+            if (row["catalog_key"], row["slug"]) in {
+                ("country_kor", "v03_kor_military_accounts"),
+                ("country_nqg", "v03_nqg_winter_court"),
+            }:
+                self.assertEqual(row.pop("additional_ranges"), [{"start": 1030, "end": 1039}])
+        self.assertEqual(foundation, before["arc_ranges"])
         self.assertEqual(len(before["arc_ranges"]), 30)
         self.assertEqual(current["reservations"], before["reservations"])
         self.assertEqual(current["namespace_limits"], before["namespace_limits"])
