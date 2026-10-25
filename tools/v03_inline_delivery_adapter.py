@@ -1173,6 +1173,12 @@ def validate_jhg_native_helper_source(effects_source: str, triggers_source: str)
 
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
     """Validate exact inline branch/source ownership for explicitly opted-in arcs."""
+    if isinstance(catalog, dict) and catalog.get("key") == "country_tib":
+        try:
+            from tools.v03_tib_inline_delivery_adapter import validate_tib_inline_catalog
+        except ModuleNotFoundError:
+            from v03_tib_inline_delivery_adapter import validate_tib_inline_catalog
+        return validate_tib_inline_catalog(catalog)
     if isinstance(catalog, dict) and catalog.get("key") == "country_jhg":
         try:
             from tools.v03_jhg_inline_delivery_adapter import validate_jhg_inline_catalog
@@ -1733,6 +1739,12 @@ def _mgl_snapshot_checks(c: dict[str, Any], prefix: str) -> list[str]:
 
 def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     """Render source-bound per-branch dispatch gates, snapshots and immediate ACKs."""
+    if isinstance(catalog, dict) and catalog.get("key") == "country_tib":
+        try:
+            from tools.v03_tib_inline_delivery_adapter import render_tib_inline_country_adapters
+        except ModuleNotFoundError:
+            from v03_tib_inline_delivery_adapter import render_tib_inline_country_adapters
+        return render_tib_inline_country_adapters(catalog)
     if isinstance(catalog, dict) and catalog.get("key") == "country_jhg":
         try:
             from tools.v03_jhg_inline_delivery_adapter import render_jhg_inline_country_adapters
@@ -2433,3 +2445,12 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     proofs.append(f"if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}")
             inline_proofs[event_id]=proofs
     return {"triggers":"\n\n".join(triggers)+"\n","effects":"\n\n".join(effects)+"\n","event_hooks":event_hooks,"ack_hooks":ack_hooks,"inline_proofs":inline_proofs,"guarded_immediate_events":sorted(event_hooks),"journal_scripts":journal_scripts,"live_witnesses":{j:p["phase"]["live_witness"] for j,p in phases.items()},"mgl_safe_comment_boundaries":is_mgl}
+
+
+def validate_tib_native_helper_source(effects_source: str, triggers_source: str) -> None:
+    """Validate the complete native TIB helper ABI supplied by the caller."""
+    try:
+        from tools.v03_tib_inline_delivery_adapter import validate_tib_native_helper_source as validate
+    except ModuleNotFoundError:
+        from v03_tib_inline_delivery_adapter import validate_tib_native_helper_source as validate
+    validate(effects_source, triggers_source)
