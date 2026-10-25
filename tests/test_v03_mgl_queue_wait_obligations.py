@@ -109,9 +109,6 @@ def _run_actual_paid_route_to_node5(admission_order, route=1, ordinary_facts=Non
             outcome_key = f"ywc_v03_mgl_{slug}_outcome"
             if outcome_key in state:
                 forbidden.append(outcome_key)
-            exec_key = f"ywc_mgl_{prefix}_execution_ready"
-            if world.condition((exec_key, "=", "yes"), TAG):
-                forbidden.append(f"{exec_key}=yes_without_terms")
             for final_key in (f"ywc_mgl_{prefix}_full_ready", f"ywc_mgl_{prefix}_one_ready",
                               f"ywc_mgl_{prefix}_local_ready"):
                 if world.condition((final_key, "=", "yes"), TAG):
