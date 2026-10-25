@@ -16,7 +16,7 @@ EFFECTS_PATH = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_kor_effec
 TRIGGERS_PATH = ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_kor_triggers.txt"
 SHARED_EFFECTS_PATH = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_effects.txt"
 LEGACY_JOURNAL_PATH = ROOT / "yongchang_world/common/journal_entries/ywc_kor.txt"
-EVENT_IDS = [f"ywc_kor.{number}" for number in range(1000, 1010)] + [f"ywc_kor.{number}" for number in range(1030, 1033)]
+EVENT_IDS = [f"ywc_kor.{number}" for number in range(1000, 1010)] + [f"ywc_kor.{number}" for number in range(1030, 1036)]
 JE_IDS = ["ywc_je_v03_kor_military_audit", "ywc_je_v03_kor_service_settlement"]
 
 _NATIVE_TRIGGER_DEFS = None
@@ -102,7 +102,7 @@ class KorMilitaryAccountsTest(unittest.TestCase):
             for field in ("title", "desc", "purpose"):
                 self.assertTrue(event[field]["zh"] and event[field]["en"])
             if event.get("hidden", False):
-                self.assertEqual(event["id"], "ywc_kor.1032")
+                self.assertIn(event["id"], {"ywc_kor.1032", "ywc_kor.1035"})
                 self.assertEqual(event["options"], [])
             else:
                 self.assertGreaterEqual(len(event["options"]), 2)
@@ -617,7 +617,7 @@ class KorMilitaryAccountsTest(unittest.TestCase):
         self.assertIn("NOT = { has_variable = ywc_kor_blocked_36_due }", audit["script"])
         self.assertIn("ywc_v03_can_deliver_major = yes", audit["script"])
         self.assertIn("ywc_v03_can_deliver_major = yes", settlement["script"])
-        major_event_ids = {f"ywc_kor.{number}" for number in range(1000, 1010)} | {"ywc_kor.1031"}
+        major_event_ids = {f"ywc_kor.{number}" for number in range(1000, 1010)} | {"ywc_kor.1031", "ywc_kor.1034"}
         for event in self.arc["events"]:
             if event["id"] in major_event_ids:
                 self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"])
@@ -626,9 +626,16 @@ class KorMilitaryAccountsTest(unittest.TestCase):
         self.assertIn("ywc_kor_instructor_offer_matches = yes", foreign_event["trigger"])
         self.assertNotIn("ywc_v03_can_deliver_major = yes", foreign_event["trigger"])
         self.assertEqual(foreign_event["immediate"].strip(), "{ }")
+        procurement_quote_event = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1033")
+        self.assertIn("ywc_kor_procurement_quote_matches = yes", procurement_quote_event["trigger"])
+        self.assertNotIn("ywc_v03_can_deliver_major = yes", procurement_quote_event["trigger"])
+        self.assertEqual(procurement_quote_event["immediate"].strip(), "{ }")
         hidden_event = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1032")
         self.assertNotIn("ywc_v03_can_deliver_major = yes", hidden_event["trigger"])
         self.assertNotIn("ywc_v03_mark_major_delivered = yes", hidden_event["immediate"])
+        procurement_endpoint = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1035")
+        self.assertNotIn("ywc_v03_can_deliver_major = yes", procurement_endpoint["trigger"])
+        self.assertNotIn("ywc_v03_mark_major_delivered = yes", procurement_endpoint["immediate"])
         self.assertEqual(validate_catalogs({"country_kor": self.catalog}), [])
         self.assertIn("effect =", audit["script"])
         self.assertIn("effect =", settlement["script"])

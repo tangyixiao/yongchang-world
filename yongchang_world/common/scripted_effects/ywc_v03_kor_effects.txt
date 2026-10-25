@@ -1177,3 +1177,459 @@ ywc_kor_ports_defer_notice = {
 	remove_variable = ywc_kor_ports_notice_event
 	if = { limit = { NOT = { has_variable = ywc_kor_ports_pending_event } } set_variable = { name = ywc_kor_ports_pending_event value = 1022 } }
 }
+# KOR 1007 procurement: an inquiry is free; only the actual signed contract
+# carries the captured total T, three monthly inspection/invoice opportunities
+# and matched debits/credits against the saved exact creditor.
+ywc_kor_procurement_send_shu = {
+	if = {
+		limit = { ywc_kor_procurement_can_offer_shu = yes }
+		c:SHU = { save_scope_as = ywc_kor_procurement_partner }
+		ywc_kor_procurement_send_captured_inquiry = yes
+	}
+}
+
+ywc_kor_procurement_send_jhg = {
+	if = {
+		limit = { ywc_kor_procurement_can_offer_jhg = yes }
+		c:JHG = { save_scope_as = ywc_kor_procurement_partner }
+		ywc_kor_procurement_send_captured_inquiry = yes
+	}
+}
+
+ywc_kor_procurement_send_captured_inquiry = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_procurement_partner
+			OR = {
+				AND = { scope:ywc_kor_procurement_partner ?= c:SHU ywc_kor_procurement_can_offer_shu = yes }
+				AND = { scope:ywc_kor_procurement_partner ?= c:JHG ywc_kor_procurement_can_offer_jhg = yes }
+			}
+		}
+		if = { limit = { NOT = { has_variable = ywc_kor_procurement_generation } } set_variable = { name = ywc_kor_procurement_generation value = 0 } }
+		change_variable = { name = ywc_kor_procurement_generation add = 1 }
+		ywc_kor_procurement_cancel_unsigned = yes
+		set_variable = { name = ywc_kor_procurement_partner value = scope:ywc_kor_procurement_partner }
+		set_variable = { name = ywc_kor_procurement_state value = 1 }
+		set_variable = { name = ywc_kor_procurement_request_timer value = 1 months = 3 }
+		set_variable = { name = ywc_kor_procurement_total value = var:ywc_kor_weekly_cost }
+		remove_variable = ywc_kor_procurement_notice_open_serial
+		remove_variable = ywc_kor_procurement_notice_event
+		save_scope_as = ywc_kor_procurement_requester
+		save_scope_value_as = { name = ywc_kor_procurement_request_generation value = var:ywc_kor_procurement_generation }
+		save_scope_value_as = { name = ywc_kor_procurement_request_total value = var:ywc_kor_procurement_total }
+		scope:ywc_kor_procurement_partner = { trigger_event = { id = ywc_kor.1033 } }
+	}
+}
+
+ywc_kor_procurement_authorize_quote = {
+	if = {
+		limit = { ywc_kor_procurement_authorizable = yes }
+		set_variable = { name = ywc_kor_procurement_answer_requester value = scope:ywc_kor_procurement_requester }
+		set_variable = { name = ywc_kor_procurement_answer_generation value = scope:ywc_kor_procurement_request_generation }
+		set_variable = { name = ywc_kor_procurement_answer value = 1 }
+		set_variable = { name = ywc_kor_procurement_answer_total value = scope:ywc_kor_procurement_request_total }
+		scope:ywc_kor_procurement_requester = {
+			set_variable = { name = ywc_kor_procurement_quote_generation value = scope:ywc_kor_procurement_request_generation }
+			set_variable = { name = ywc_kor_procurement_quote_total value = scope:ywc_kor_procurement_request_total }
+			set_variable = { name = ywc_kor_procurement_state value = 2 }
+			set_variable = { name = ywc_kor_procurement_notice_reason value = 1 }
+			ywc_kor_procurement_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_procurement_refuse_quote = {
+	if = {
+		limit = { ywc_kor_procurement_authorizable = yes }
+		set_variable = { name = ywc_kor_procurement_answer_requester value = scope:ywc_kor_procurement_requester }
+		set_variable = { name = ywc_kor_procurement_answer_generation value = scope:ywc_kor_procurement_request_generation }
+		set_variable = { name = ywc_kor_procurement_answer value = 2 }
+		set_variable = { name = ywc_kor_procurement_answer_total value = scope:ywc_kor_procurement_request_total }
+		scope:ywc_kor_procurement_requester = {
+			remove_variable = ywc_kor_procurement_quote_generation
+			remove_variable = ywc_kor_procurement_quote_total
+			remove_variable = ywc_kor_procurement_request_timer
+			set_variable = { name = ywc_kor_procurement_state value = 3 }
+			set_variable = { name = ywc_kor_procurement_notice_reason value = 2 }
+			ywc_kor_procurement_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_procurement_publish_notice = {
+	if = {
+		limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } }
+		if = { limit = { NOT = { has_variable = ywc_kor_procurement_notice_serial } } set_variable = { name = ywc_kor_procurement_notice_serial value = 0 } }
+		change_variable = { name = ywc_kor_procurement_notice_serial add = 1 }
+		set_variable = { name = ywc_kor_procurement_notice_event value = 1034 }
+		set_variable = { name = ywc_kor_procurement_notice_generation value = var:ywc_kor_procurement_generation }
+		set_variable = { name = ywc_kor_procurement_notice_request_state value = var:ywc_kor_procurement_state }
+		remove_variable = ywc_kor_procurement_notice_partner
+		if = {
+			limit = { exists = var:ywc_kor_procurement_partner var:ywc_kor_procurement_partner = { is_country_alive = yes } }
+			set_variable = { name = ywc_kor_procurement_notice_partner value = var:ywc_kor_procurement_partner }
+		}
+	}
+}
+
+ywc_kor_procurement_cancel_unsigned = {
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+		}
+		remove_variable = ywc_kor_procurement_request_timer
+		remove_variable = ywc_kor_procurement_quote_generation
+		remove_variable = ywc_kor_procurement_quote_total
+		remove_variable = ywc_kor_procurement_partner
+		set_variable = { name = ywc_kor_procurement_state value = 7 }
+	}
+}
+
+ywc_kor_procurement_invalidate_pending = {
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+			NOT = { has_variable = ywc_kor_procurement_request_timer }
+		}
+		ywc_kor_procurement_cancel_unsigned = yes
+		set_variable = { name = ywc_kor_procurement_state value = 4 }
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 3 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+			NOT = { ywc_kor_procurement_unsigned_intact = yes }
+		}
+		ywc_kor_procurement_cancel_unsigned = yes
+		set_variable = { name = ywc_kor_procurement_state value = 5 }
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 4 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+}
+
+ywc_kor_procurement_refresh_status = {
+	ywc_kor_procurement_invalidate_pending = yes
+	if = {
+		limit = {
+			var:ywc_kor_procurement_state ?= 6
+			OR = {
+				NOT = { ywc_kor_procurement_service_eligible = yes }
+				NOT = { ywc_kor_procurement_route_intact = yes }
+				NOT = { ywc_kor_procurement_flow_current = yes }
+				var:ywc_kor_procurement_creditor_invalid_generation ?= var:ywc_kor_procurement_contract_generation
+			}
+			NOT = { var:ywc_kor_procurement_notice_reason ?= 5 }
+		}
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 5 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+	if = {
+		limit = {
+			var:ywc_kor_procurement_state ?= 6
+			var:ywc_kor_procurement_notice_reason ?= 5
+			ywc_kor_procurement_service_eligible = yes
+			ywc_kor_procurement_route_intact = yes
+			ywc_kor_procurement_flow_current = yes
+			has_variable = ywc_kor_procurement_window_active
+			NOT = { var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation }
+		}
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 6 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+}
+
+# Signature captures the exact current route objects and the immutable terms.
+ywc_kor_procurement_prepare_signing = {
+	save_scope_as = ywc_kor_procurement_requester
+	if = { limit = { exists = var:ywc_kor_procurement_partner } var:ywc_kor_procurement_partner = { save_scope_as = ywc_kor_procurement_partner } }
+	save_scope_value_as = { name = ywc_kor_procurement_request_generation value = var:ywc_kor_procurement_generation }
+	save_scope_value_as = { name = ywc_kor_procurement_request_total value = var:ywc_kor_procurement_quote_total }
+}
+
+ywc_kor_procurement_sign_contract = {
+	if = {
+		limit = { ywc_kor_procurement_signable = yes }
+		ywc_kor_procurement_prepare_signing = yes
+		every_scope_state = {
+			limit = { ywc_kor_procurement_dest_candidate_here = yes }
+			save_scope_as = ywc_kor_procurement_dest_state
+		}
+		scope:ywc_kor_procurement_partner = {
+			every_scope_state = {
+				limit = { ywc_kor_procurement_source_candidate_here = yes }
+				save_scope_as = ywc_kor_procurement_source_state
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:ywc_kor_procurement_dest_state
+				exists = scope:ywc_kor_procurement_source_state
+				scope:ywc_kor_procurement_source_state = {
+					owner ?= scope:ywc_kor_procurement_partner
+					state_goods_production = { target = sg:small_arms value > 0 }
+					state_exports = { target = scope:ywc_kor_procurement_dest_state goods = g:small_arms value >= 5 }
+					NOT = { market ?= scope:ywc_kor_procurement_dest_state.market }
+				}
+				scope:ywc_kor_procurement_dest_state = {
+					owner ?= c:KOR
+					state_imports = { target = scope:ywc_kor_procurement_source_state goods = g:small_arms value >= 5 }
+				}
+			}
+			set_variable = { name = ywc_kor_procurement_contract_partner value = scope:ywc_kor_procurement_partner }
+			set_variable = { name = ywc_kor_procurement_contract_generation value = scope:ywc_kor_procurement_request_generation }
+			set_variable = { name = ywc_kor_procurement_contract_total value = scope:ywc_kor_procurement_request_total }
+			set_variable = { name = ywc_kor_procurement_source_state value = scope:ywc_kor_procurement_source_state }
+			set_variable = { name = ywc_kor_procurement_dest_state value = scope:ywc_kor_procurement_dest_state }
+			set_variable = { name = ywc_kor_procurement_source_market value = scope:ywc_kor_procurement_source_state.market }
+			set_variable = { name = ywc_kor_procurement_dest_market value = scope:ywc_kor_procurement_dest_state.market }
+			set_variable = { name = ywc_kor_procurement_paid_count value = 0 }
+			set_variable = { name = ywc_kor_procurement_paid_total value = 0 }
+			set_variable = { name = ywc_kor_procurement_earned_count value = 0 }
+			set_variable = { name = ywc_kor_procurement_earned_total value = 0 }
+			remove_variable = ywc_kor_procurement_request_timer
+			remove_variable = ywc_kor_procurement_quote_generation
+			remove_variable = ywc_kor_procurement_quote_total
+			remove_variable = ywc_kor_procurement_window_start_month
+			remove_variable = ywc_kor_procurement_window_active
+			remove_variable = ywc_kor_procurement_window_ended_generation
+			remove_variable = ywc_kor_procurement_outcome_generation
+			remove_variable = ywc_kor_procurement_creditor_invalid_generation
+			remove_variable = ywc_kor_procurement_last_processed_calendar_month
+			remove_variable = ywc_kor_procurement_end_scheduled_generation
+			set_variable = { name = ywc_kor_procurement_window_start_month value = ywc_kor_current_calendar_month }
+			set_variable = { name = ywc_kor_procurement_window_active value = 1 }
+			set_variable = { name = ywc_kor_procurement_state value = 6 }
+			set_variable = { name = ywc_kor_procurement_notice_reason value = 7 }
+			if = {
+				limit = { NOT = { var:ywc_kor_procurement_end_scheduled_generation ?= var:ywc_kor_procurement_contract_generation } }
+				save_scope_as = ywc_kor_procurement_end_owner
+				save_scope_value_as = { name = ywc_kor_procurement_end_generation value = var:ywc_kor_procurement_contract_generation }
+				set_variable = { name = ywc_kor_procurement_end_scheduled_generation value = var:ywc_kor_procurement_contract_generation }
+				trigger_event = { id = ywc_kor.1035 months = 3 }
+			}
+			ywc_kor_procurement_publish_notice = yes
+		}
+	}
+}
+
+# This helper has one owner: the KOR country-monthly on_action. Its calendar
+# token is independent of the old 27-day domestic payment lock and of the
+# instructor monthly token.
+ywc_kor_procurement_monthly = {
+	if = {
+		limit = { has_variable = ywc_kor_procurement_contract_generation }
+		save_scope_as = ywc_kor_procurement_requester
+		if = { limit = { exists = var:ywc_kor_procurement_contract_partner } var:ywc_kor_procurement_contract_partner = { save_scope_as = ywc_kor_procurement_provider } }
+		if = { limit = { exists = var:ywc_kor_procurement_source_state } save_scope_value_as = { name = ywc_kor_procurement_source_state value = var:ywc_kor_procurement_source_state } }
+		if = { limit = { exists = var:ywc_kor_procurement_dest_state } save_scope_value_as = { name = ywc_kor_procurement_dest_state value = var:ywc_kor_procurement_dest_state } }
+		if = { limit = { exists = var:ywc_kor_procurement_source_market } save_scope_value_as = { name = ywc_kor_procurement_source_market value = var:ywc_kor_procurement_source_market } }
+		if = { limit = { exists = var:ywc_kor_procurement_dest_market } save_scope_value_as = { name = ywc_kor_procurement_dest_market value = var:ywc_kor_procurement_dest_market } }
+		set_variable = { name = ywc_kor_procurement_current_month value = ywc_kor_current_calendar_month }
+		if = {
+			limit = { NOT = { var:ywc_kor_procurement_last_processed_calendar_month ?= var:ywc_kor_procurement_current_month } }
+			set_variable = { name = ywc_kor_procurement_last_processed_calendar_month value = var:ywc_kor_procurement_current_month }
+			if = {
+				limit = {
+					has_variable = ywc_kor_procurement_window_active
+					NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled }
+					var:ywc_kor_procurement_current_month < { value = var:ywc_kor_procurement_window_start_month add = 3 }
+					ywc_kor_procurement_inspection_ready = yes
+				}
+				set_variable = { name = ywc_kor_procurement_earned_installment value = var:ywc_kor_procurement_contract_total }
+				change_variable = { name = ywc_kor_procurement_earned_installment divide = 3 }
+				if = {
+					limit = { var:ywc_kor_procurement_earned_count >= 2 }
+					set_variable = { name = ywc_kor_procurement_earned_installment value = var:ywc_kor_procurement_contract_total }
+					change_variable = { name = ywc_kor_procurement_earned_installment add = { value = var:ywc_kor_procurement_earned_total multiply = -1 } }
+				}
+				if = {
+					limit = { var:ywc_kor_procurement_earned_installment > 0 }
+					change_variable = { name = ywc_kor_procurement_earned_count add = 1 }
+					change_variable = { name = ywc_kor_procurement_earned_total add = var:ywc_kor_procurement_earned_installment }
+				}
+			}
+			if = {
+				limit = {
+					NOT = { exists = var:ywc_kor_procurement_contract_partner }
+				}
+				set_variable = { name = ywc_kor_procurement_creditor_invalid_generation value = var:ywc_kor_procurement_contract_generation }
+			}
+			if = {
+				limit = { exists = var:ywc_kor_procurement_contract_partner var:ywc_kor_procurement_contract_partner = { is_country_alive = no } }
+				set_variable = { name = ywc_kor_procurement_creditor_invalid_generation value = var:ywc_kor_procurement_contract_generation }
+			}
+			ywc_kor_procurement_settle_installment = yes
+			if = {
+				limit = {
+					has_variable = ywc_kor_procurement_window_start_month
+					NOT = { var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation }
+					OR = {
+						NOT = { has_variable = ywc_kor_procurement_window_active }
+						var:ywc_kor_procurement_current_month >= { value = var:ywc_kor_procurement_window_start_month add = 3 }
+					}
+				}
+				remove_variable = ywc_kor_procurement_window_active
+				set_variable = { name = ywc_kor_procurement_window_ended_generation value = var:ywc_kor_procurement_contract_generation }
+			}
+			if = {
+				limit = {
+					var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation
+					NOT = { var:ywc_kor_procurement_outcome_generation ?= var:ywc_kor_procurement_contract_generation }
+				}
+				ywc_kor_procurement_evaluate_outcome = yes
+			}
+			ywc_kor_procurement_refresh_status = yes
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+		}
+		ywc_kor_procurement_invalidate_pending = yes
+	}
+}
+
+ywc_kor_procurement_settle_installment = {
+	if = {
+		limit = { ywc_kor_procurement_contract_collectible = yes }
+		set_variable = { name = ywc_kor_procurement_transfer_amount value = var:ywc_kor_procurement_earned_total }
+		change_variable = { name = ywc_kor_procurement_transfer_amount add = { value = var:ywc_kor_procurement_paid_total multiply = -1 } }
+		set_variable = { name = ywc_kor_procurement_installment_basis value = var:ywc_kor_procurement_contract_total }
+		change_variable = { name = ywc_kor_procurement_installment_basis divide = 3 }
+		if = {
+			limit = { var:ywc_kor_procurement_transfer_amount > var:ywc_kor_procurement_installment_basis }
+			set_variable = { name = ywc_kor_procurement_transfer_amount value = var:ywc_kor_procurement_installment_basis }
+		}
+		if = {
+			limit = {
+				var:ywc_kor_procurement_transfer_amount > 0
+				ywc_kor_v03_finance_safe = yes
+				gold_reserves >= var:ywc_kor_procurement_transfer_amount
+			}
+			add_treasury = { value = var:ywc_kor_procurement_transfer_amount multiply = -1 }
+			var:ywc_kor_procurement_contract_partner = {
+				add_treasury = { value = scope:ywc_kor_procurement_requester.var:ywc_kor_procurement_transfer_amount }
+			}
+			change_variable = { name = ywc_kor_procurement_paid_count add = 1 }
+			change_variable = { name = ywc_kor_procurement_paid_total add = var:ywc_kor_procurement_transfer_amount }
+		}
+	}
+}
+
+ywc_kor_procurement_evaluate_outcome = {
+	if = {
+		limit = {
+			has_variable = ywc_kor_procurement_contract_generation
+			NOT = { var:ywc_kor_procurement_outcome_generation ?= var:ywc_kor_procurement_contract_generation }
+		}
+		set_variable = { name = ywc_kor_procurement_outcome_generation value = var:ywc_kor_procurement_contract_generation }
+		if = {
+			limit = {
+				var:ywc_kor_procurement_paid_count >= 2
+				ywc_kor_v03_route_execution_ready = yes
+			}
+			set_variable = { name = ywc_kor_procurement_success value = 1 }
+		}
+		else_if = {
+			limit = { var:ywc_kor_procurement_paid_count >= 1 }
+			set_variable = { name = ywc_kor_procurement_partial value = 1 }
+			set_variable = { name = ywc_kor_scope_narrowed value = 1 }
+		}
+		else = {
+			set_variable = { name = ywc_kor_procurement_suspended value = 1 }
+		}
+		if = {
+			limit = { NOT = { has_variable = ywc_kor_pending_event } }
+			set_variable = { name = ywc_kor_pending_event value = 1008 }
+		}
+	}
+}
+
+# Hidden endpoint: removes only this generation's own term marker. It never
+# touches debt, paid counts, queues, outcomes or instructor state.
+ywc_kor_procurement_end_window = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_procurement_end_owner
+			scope:ywc_kor_procurement_end_owner ?= this
+			has_variable = ywc_kor_procurement_contract_generation
+			var:ywc_kor_procurement_contract_generation ?= scope:ywc_kor_procurement_end_generation
+			NOT = { var:ywc_kor_procurement_window_ended_generation ?= scope:ywc_kor_procurement_end_generation }
+		}
+		remove_variable = ywc_kor_procurement_window_active
+		set_variable = { name = ywc_kor_procurement_window_ended_generation value = scope:ywc_kor_procurement_end_generation }
+	}
+}
+
+ywc_kor_procurement_consume_notice = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		remove_variable = ywc_kor_procurement_notice_open_serial
+	}
+}
+
+ywc_kor_procurement_choose_decline = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		if = { limit = { NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1008 } }
+	}
+}
+
+ywc_kor_procurement_choose_wait = {
+	if = {
+		limit = {
+			ywc_kor_procurement_notice_choice_matches = yes
+			OR = { var:ywc_kor_procurement_state ?= 1 var:ywc_kor_procurement_state ?= 2 }
+		}
+		ywc_kor_procurement_consume_notice = yes
+	}
+}
+
+ywc_kor_procurement_choose_status = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		ywc_kor_procurement_consume_notice = yes
+	}
+}
+
+ywc_kor_procurement_choose_domestic = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		if = { limit = { NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1008 } }
+	}
+}
+
+ywc_kor_procurement_choose_retry_shu = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes ywc_kor_procurement_can_offer_shu = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		ywc_kor_procurement_send_shu = yes
+	}
+}
+
+ywc_kor_procurement_choose_retry_jhg = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes ywc_kor_procurement_can_offer_jhg = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		ywc_kor_procurement_send_jhg = yes
+	}
+}

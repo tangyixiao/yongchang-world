@@ -113,7 +113,7 @@ class ActualImmediateProvenanceContract(unittest.TestCase):
         state = world.countries["KOR"]
         state["ywc_v03_kor_v03_kor_military_accounts_last_event"] = 10
         before = copy.deepcopy(state)
-        _public_helper(world, "KOR", "ywc_v03_kor_inline_callback_13")
+        _public_helper(world, "KOR", "ywc_v03_kor_inline_callback_15")
         self.assertEqual(state, before, "KOR historical-receipt public callback changed country state")
         self.assertEqual(state.get("ywc_kor_school_pending_event"), 1010)
         self.assertIn("ywc_v03_kor_inline_reservation", state)
@@ -125,7 +125,7 @@ class ActualImmediateProvenanceContract(unittest.TestCase):
         state = world.countries["KOR"]
         state.pop("ywc_v03_kor_v03_kor_military_accounts_last_event", None)
         before = copy.deepcopy(state)
-        _public_helper(world, "KOR", "ywc_v03_kor_inline_callback_13")
+        _public_helper(world, "KOR", "ywc_v03_kor_inline_callback_15")
         self.assertEqual(state, before, "KOR absent-receipt public callback changed country state")
         self.assertEqual(state.get("ywc_kor_school_pending_event"), 1010)
         self.assertIn("ywc_v03_kor_inline_reservation", state)
@@ -184,7 +184,7 @@ class ActualImmediateProvenanceContract(unittest.TestCase):
                       "ywc_v03_dmg_inline_candidate_epoch_1"))
         world, event = kor.KorFairDeliveryContract()._reserve_school_event()
         cases.append(("KOR", world, "ywc_kor.1010", "ywc_v03_kor_inline_reservation_epoch",
-                      "ywc_v03_kor_inline_candidate_epoch_13"))
+                      "ywc_v03_kor_inline_candidate_epoch_15"))
         world, journal, event_id, candidate = nqg._reserve_first_source_popup()
         cases.append(("NQG", world, event_id, "ywc_v03_nqg_inline_reservation_epoch",
                       "ywc_v03_nqg_inline_candidate_epoch_4"))
@@ -213,8 +213,8 @@ class ActualImmediateProvenanceContract(unittest.TestCase):
             ("DMG", _dmg_reserved, "ywc_v03_dmg_inline_reservation_epoch", "ywc_v03_dmg_inline_candidate_epoch_1",
              "ywc_v03_dmg_inline_c1_pending_event_present", "ywc_v03_dmg_inline_c1_pending_event_value", "ywc_dmg_pending_event", 1000,
              "ywc_v03_dmg_inline_served_1"),
-            ("KOR", lambda: (lambda w,e: (w,None,"ywc_kor.1010"))(*kor.KorFairDeliveryContract()._reserve_school_event()), "ywc_v03_kor_inline_reservation_epoch", "ywc_v03_kor_inline_candidate_epoch_13",
-             "ywc_v03_kor_inline_c13_school_pending_event_present", "ywc_v03_kor_inline_c13_school_pending_event_value", "ywc_kor_school_pending_event", 1010,
+            ("KOR", lambda: (lambda w,e: (w,None,"ywc_kor.1010"))(*kor.KorFairDeliveryContract()._reserve_school_event()), "ywc_v03_kor_inline_reservation_epoch", "ywc_v03_kor_inline_candidate_epoch_15",
+             "ywc_v03_kor_inline_c15_school_pending_event_present", "ywc_v03_kor_inline_c15_school_pending_event_value", "ywc_kor_school_pending_event", 1010,
              "ywc_v03_kor_inline_served_2"),
             ("NQG", lambda: (lambda w,j,e,c: (w,None,e))(*nqg._reserve_first_source_popup()), "ywc_v03_nqg_inline_reservation_epoch", "ywc_v03_nqg_inline_candidate_epoch_4",
              "ywc_v03_nqg_inline_c4_winter_pending_present", "ywc_v03_nqg_inline_c4_winter_pending_value", "ywc_nqg_winter_pending", 1000,

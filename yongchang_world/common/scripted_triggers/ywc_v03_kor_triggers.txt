@@ -533,3 +533,247 @@ ywc_kor_instructor_service_eligible = {
 		}
 	}
 }
+# KOR 1007 procurement: live eligibility uses actual objects before any event
+# chain exists; quote/sign/flow predicates always require the exact captured
+# participants and generation, and the flow predicates read real state trade.
+ywc_kor_procurement_requester_ready = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	has_variable = ywc_kor_weekly_cost
+}
+
+ywc_kor_procurement_clear_to_inquire = {
+	NOT = { var:ywc_kor_procurement_state ?= 1 }
+	NOT = { var:ywc_kor_procurement_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_kor_procurement_contract_generation }
+		AND = {
+			has_variable = ywc_kor_procurement_paid_total
+			var:ywc_kor_procurement_earned_total ?= var:ywc_kor_procurement_paid_total
+			var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation
+		}
+	}
+}
+
+ywc_kor_procurement_can_offer_shu = {
+	c:KOR ?= this
+	ywc_kor_procurement_requester_ready = yes
+	ywc_kor_procurement_clear_to_inquire = yes
+	exists = c:SHU
+	c:SHU = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		NOT = { market ?= c:KOR.market }
+		any_scope_state = {
+			owner = c:SHU
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+		OR = {
+			any_scope_state = { owner = c:SHU has_port_state = yes }
+			market = { is_adjacent_to_market = c:KOR.market }
+		}
+	}
+}
+
+ywc_kor_procurement_can_offer_jhg = {
+	c:KOR ?= this
+	ywc_kor_procurement_requester_ready = yes
+	ywc_kor_procurement_clear_to_inquire = yes
+	exists = c:JHG
+	c:JHG = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		NOT = { market ?= c:KOR.market }
+		any_scope_state = {
+			owner = c:JHG
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+		OR = {
+			any_scope_state = { owner = c:JHG has_port_state = yes }
+			market = { is_adjacent_to_market = c:KOR.market }
+		}
+	}
+}
+
+# Foreign response context: saved requester and selected recipient are immutable.
+ywc_kor_procurement_quote_matches = {
+	exists = scope:ywc_kor_procurement_requester
+	exists = scope:ywc_kor_procurement_partner
+	scope:ywc_kor_procurement_partner ?= this
+	scope:ywc_kor_procurement_requester ?= c:KOR
+	scope:ywc_kor_procurement_requester = {
+		var:ywc_kor_procurement_partner ?= root
+		var:ywc_kor_procurement_generation ?= scope:ywc_kor_procurement_request_generation
+		var:ywc_kor_procurement_state ?= 1
+		has_variable = ywc_kor_procurement_request_timer
+		var:ywc_kor_procurement_total ?= scope:ywc_kor_procurement_request_total
+	}
+}
+
+ywc_kor_procurement_authorizable = {
+	ywc_kor_procurement_quote_matches = yes
+	is_country_alive = yes
+	relations:scope:ywc_kor_procurement_requester >= 0
+	any_scope_state = {
+		owner = scope:ywc_kor_procurement_partner
+		any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+	}
+}
+
+# A live route is a real bilateral state flow: a provider-owned producing state
+# exporting small arms to a KOR-owned state, over two distinct market objects.
+ywc_kor_procurement_route_live = {
+	any_scope_state = {
+		owner = c:KOR
+		owner.var:ywc_kor_procurement_partner = {
+			any_scope_state = {
+				owner = prev
+				state_goods_production = { target = sg:small_arms value > 0 }
+				state_exports = { target = prev.prev goods = g:small_arms value >= 5 }
+				NOT = { market ?= prev.prev.market }
+				prev.prev = {
+					state_imports = { target = prev goods = g:small_arms value >= 5 }
+				}
+			}
+		}
+	}
+}
+
+ywc_kor_procurement_dest_candidate_here = {
+	owner = c:KOR
+	scope:ywc_kor_procurement_partner = {
+		any_scope_state = {
+			owner = scope:ywc_kor_procurement_partner
+			state_goods_production = { target = sg:small_arms value > 0 }
+			state_exports = { target = prev.prev goods = g:small_arms value >= 5 }
+			NOT = { market ?= prev.prev.market }
+		}
+	}
+}
+
+ywc_kor_procurement_source_candidate_here = {
+	owner = scope:ywc_kor_procurement_partner
+	state_goods_production = { target = sg:small_arms value > 0 }
+	state_exports = { target = scope:ywc_kor_procurement_dest_state goods = g:small_arms value >= 5 }
+	NOT = { market ?= scope:ywc_kor_procurement_dest_state.market }
+}
+
+ywc_kor_procurement_signable = {
+	ywc_kor_procurement_notice_choice_matches = yes
+	exists = var:ywc_kor_procurement_partner
+	var:ywc_kor_procurement_partner = { is_country_alive = yes }
+	var:ywc_kor_procurement_quote_generation ?= var:ywc_kor_procurement_generation
+	ywc_kor_procurement_route_live = yes
+	ywc_kor_v03_finance_safe = yes
+	gold_reserves >= { value = var:ywc_kor_procurement_quote_total divide = 3 }
+	NOT = { has_variable = ywc_kor_procurement_contract_generation }
+}
+
+# The signed route stays bound to the exact captured objects; owners, markets
+# and production are re-read live on every inspection. Callers establish the
+# source/destination/provider/market scopes first (monthly owner or signing).
+ywc_kor_procurement_route_intact = {
+	exists = scope:ywc_kor_procurement_source_state
+	exists = scope:ywc_kor_procurement_dest_state
+	scope:ywc_kor_procurement_source_state = {
+		owner ?= scope:ywc_kor_procurement_provider
+		state_goods_production = { target = sg:small_arms value > 0 }
+		market ?= scope:ywc_kor_procurement_source_market
+	}
+	scope:ywc_kor_procurement_dest_state = {
+		owner ?= c:KOR
+		market ?= scope:ywc_kor_procurement_dest_market
+	}
+	NOT = { scope:ywc_kor_procurement_source_market ?= scope:ywc_kor_procurement_dest_market }
+}
+
+ywc_kor_procurement_flow_current = {
+	var:ywc_kor_procurement_dest_state = {
+		state_imports = { target = owner.var:ywc_kor_procurement_source_state goods = g:small_arms value >= 5 }
+	}
+}
+
+ywc_kor_procurement_inspection_ready = {
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_procurement_route_intact = yes
+	ywc_kor_procurement_flow_current = yes
+}
+
+ywc_kor_procurement_unsigned_intact = {
+	exists = var:ywc_kor_procurement_partner
+	var:ywc_kor_procurement_partner = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		NOT = { market ?= c:KOR.market }
+		any_scope_state = {
+			owner = scope:ywc_kor_procurement_partner
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+	c:KOR = { is_subject = no }
+}
+
+ywc_kor_procurement_notice_live = {
+	var:ywc_kor_procurement_notice_event ?= 1034
+	has_variable = ywc_kor_procurement_notice_serial
+	has_variable = ywc_kor_procurement_notice_generation
+	has_variable = ywc_kor_procurement_notice_request_state
+	has_variable = ywc_kor_procurement_notice_reason
+	var:ywc_kor_procurement_notice_generation ?= var:ywc_kor_procurement_generation
+	var:ywc_kor_procurement_notice_request_state ?= var:ywc_kor_procurement_state
+}
+
+ywc_kor_procurement_notice_choice_matches = {
+	exists = scope:ywc_kor_procurement_notice_owner
+	scope:ywc_kor_procurement_notice_owner ?= this
+	has_variable = ywc_kor_procurement_notice_open_serial
+	has_variable = ywc_kor_procurement_notice_serial
+	has_variable = ywc_kor_procurement_notice_generation
+	has_variable = ywc_kor_procurement_notice_request_state
+	has_variable = ywc_kor_procurement_notice_reason
+	var:ywc_kor_procurement_notice_generation ?= var:ywc_kor_procurement_generation
+	var:ywc_kor_procurement_notice_request_state ?= var:ywc_kor_procurement_state
+	scope:ywc_kor_procurement_notice_serial = var:ywc_kor_procurement_notice_serial
+	scope:ywc_kor_procurement_notice_serial = var:ywc_kor_procurement_notice_open_serial
+	scope:ywc_kor_procurement_notice_generation = var:ywc_kor_procurement_notice_generation
+	scope:ywc_kor_procurement_notice_request_state = var:ywc_kor_procurement_notice_request_state
+	scope:ywc_kor_procurement_notice_reason = var:ywc_kor_procurement_notice_reason
+	OR = { scope:ywc_kor_procurement_notice_partner_available = 0 scope:ywc_kor_procurement_notice_partner_available = 1 }
+	OR = {
+		AND = { scope:ywc_kor_procurement_notice_partner_available = 0 NOT = { exists = var:ywc_kor_procurement_notice_partner } }
+		AND = {
+			scope:ywc_kor_procurement_notice_partner_available = 1
+			OR = {
+				AND = { exists = scope:ywc_kor_procurement_notice_partner scope:ywc_kor_procurement_notice_partner ?= var:ywc_kor_procurement_notice_partner }
+				AND = { NOT = { exists = scope:ywc_kor_procurement_notice_partner } NOT = { exists = var:ywc_kor_procurement_notice_partner } }
+			}
+		}
+	}
+}
+
+ywc_kor_procurement_contract_collectible = {
+	has_variable = ywc_kor_procurement_contract_generation
+	has_variable = ywc_kor_procurement_earned_total
+	var:ywc_kor_procurement_earned_total > var:ywc_kor_procurement_paid_total
+	NOT = { var:ywc_kor_procurement_creditor_invalid_generation ?= var:ywc_kor_procurement_contract_generation }
+	exists = var:ywc_kor_procurement_contract_partner
+	var:ywc_kor_procurement_contract_partner = { is_country_alive = yes }
+}
+
+ywc_kor_procurement_service_eligible = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	exists = var:ywc_kor_procurement_contract_partner
+	var:ywc_kor_procurement_contract_partner = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = prev
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
