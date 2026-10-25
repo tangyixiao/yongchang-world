@@ -240,8 +240,9 @@ class MglQualificationContractMatrix(unittest.TestCase):
                     self.assertEqual(state.get(f"ywc_mgl_{prefix}_route_paid"), 1)
                     self.assertEqual(state.get(f"ywc_mgl_{prefix}_route"), route)
                     self.assertNotIn(f"ywc_mgl_{prefix}_terms_committed", state)
+                    qualification_suffix = {1: "full", 2: "one", 3: "local"}[route]
                     self.assertFalse(world.condition(
-                        (f"ywc_mgl_{prefix}_execution_ready", "=", "yes"), TAG))
+                        (f"ywc_mgl_{prefix}_{qualification_suffix}_ready", "=", "yes"), TAG))
 
                     # Make the genuine route-specific transition after its real fee:
                     # debt 2 SoL 8->10; grain route 1 entry price .30->execution .10,
