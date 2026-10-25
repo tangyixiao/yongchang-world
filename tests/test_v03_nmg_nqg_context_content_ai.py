@@ -12,7 +12,7 @@ import test_v03_nmg_foundation_lifecycle as lifecycle
 
 NQG = json.loads((ROOT / "data/content/v03/countries/nqg.json").read_text(encoding="utf-8"))
 MOD = ROOT / "yongchang_world"
-NMG_MECHANICS_SHA256 = "23cef160d63151ef5cc53dd7fd82a6f9cad0935f8c26104ce665aab9c1d5ff72"
+NMG_MECHANICS_SHA256 = "b98ded6918d2ac6e5d4a1c0efbdf743f0ca70aa1d4f5f6ed10a58c694c50bafa"
 NQG_MECHANICS_SHA256 = "bbd5a57c8483efb664977bd4a0de4d439ffe5de3b55d7aa92d352f97c5646c17"
 NMG_OPENING_POLICY = {
     "ywc_nmg.1000": {"mixed":"ywc_nmg_land_mixed_ready", "unified":"ywc_nmg_land_unified_ready", "old":"ywc_nmg_land_old_ready"},
