@@ -50,6 +50,35 @@ def write_fixture(root):
 
 
 class V03GeneratorTests(unittest.TestCase):
+    def test_hidden_event_renders_country_event_without_options_or_inline(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            write_fixture(root)
+            baseline = render_all(root)
+            value = catalog()
+            event = value["arcs"][0]["events"][0]
+            event["hidden"] = True
+            event["options"] = []
+            path = root / "data/content/v03/countries/shu.json"
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            rendered = render_all(root)
+            event_text = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
+            self.assertIn("ywc_shu.1000 = {", event_text)
+            self.assertIn("hidden = yes", event_text)
+            self.assertIn("type = country_event", event_text)
+            self.assertNotIn("option = {", event_text)
+            for relative, text in baseline.items():
+                if "journal.txt" in str(relative):
+                    self.assertEqual(rendered[relative], text)
+                if "localization" in str(relative):
+                    self.assertIn('ywc_shu.1000.t:0 "测试事件"', rendered[relative])
+                    self.assertIn('ywc_shu.1000.d:0 "测试说明"', rendered[relative])
+                    self.assertNotIn("ywc_shu.1000.continue", rendered[relative])
+            event.pop("hidden")
+            event["options"] = catalog()["arcs"][0]["events"][0]["options"]
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(render_all(root), baseline)
+
     def test_rejects_registry_namespace_limit_expansion(self):
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)

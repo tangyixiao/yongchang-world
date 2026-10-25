@@ -159,6 +159,7 @@ def _is_localization_bearing(path: Path) -> bool:
             "on_actions",
             "scripted_effects",
             "scripted_triggers",
+            "script_values",
         }
     )
 

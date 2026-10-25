@@ -342,6 +342,21 @@ class ScriptStructureTest(unittest.TestCase):
             )
             self.assertEqual(collect_declared_keys(root), set())
 
+    def test_script_value_names_are_internal_database_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "common/script_values").mkdir(parents=True)
+            (root / "common/script_values/example.txt").write_text(
+                "ywc_calendar_month = { value = year multiply = 12 add = month }\n",
+                encoding="utf-8",
+            )
+            (root / "common/scripted_effects").mkdir(parents=True)
+            (root / "common/scripted_effects/example.txt").write_text(
+                "ywc_use_month = { set_variable = { name = x value = ywc_calendar_month } }\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(collect_declared_keys(root), set())
+
     def test_character_template_ids_are_internal_database_keys(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

@@ -48,7 +48,8 @@ def check_complete_quotas(catalogs: dict[str, dict]) -> list[str]:
             if owner not in counts[layer]:
                 continue
             row = counts[layer][owner]
-            row[0] += len(arc.get("events", [])) if isinstance(arc.get("events"), list) else 0
+            row[0] += sum(isinstance(event, dict) and event.get("hidden") is not True
+                          for event in arc.get("events", [])) if isinstance(arc.get("events"), list) else 0
             row[1] += len(arc.get("journals", [])) if isinstance(arc.get("journals"), list) else 0
             if layer == "country":
                 era = arc.get("era")
