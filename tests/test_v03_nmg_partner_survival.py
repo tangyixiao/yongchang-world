@@ -41,7 +41,7 @@ class PartnerObservingWorld(NmgWorld):
         return super().execute(nodes, tag)
 
 
-def selected_popup(notice, arrears=False):
+def selected_popup(notice, arrears=False, event_id=None):
     """A deterministic effect boundary after delivery consumed the normal queue.
 
     Independent NMG is settling a paid old obligation in both controls. An
@@ -58,6 +58,10 @@ def selected_popup(notice, arrears=False):
         REVENUE + "quota_paid": 1, REVENUE + "quota": 1000,
         REVENUE + "blocked_defer": 1,
     })
+    if event_id == "ywc_nmg.1026":
+        # Walk-out is selected from the negotiation JE, before settlement.
+        countries["NMG"].pop(REVENUE + "stage3")
+        countries["NMG"][REVENUE + "stage2"] = 1
     if arrears:
         countries["NMG"][REVENUE + "arrears"] = 1
     if notice:
@@ -127,7 +131,7 @@ class NmgPartnerSurvivalTest(unittest.TestCase):
         else:
             marker, pending = {
                 "escalate": ("escalated", 1025),
-                "walk_out": ("blocked_defer", 1020),
+                "walk_out": ("blocked_defer", 1023),
                 "own_arrears": ("arrears_owned", 1025 if notice else 1029),
                 "dispute": ("disputed", 1025 if notice else 1029),
             }[key]
@@ -153,8 +157,8 @@ class NmgPartnerSurvivalTest(unittest.TestCase):
                 for notice in (False, True):
                     with self.subTest(option=f"{event_id}.{key}", representation=representation,
                                       context="notice" if notice else "normal"):
-                        present = selected_popup(notice)
-                        absent = selected_popup(notice)
+                        present = selected_popup(notice, event_id=event_id)
+                        absent = selected_popup(notice, event_id=event_id)
                         trigger, effect = selected_option(event_id, key, representation)
                         self.assertIn("MEX", absent.countries)
                         self.assertTrue(present.conditions(trigger, "NMG"))
@@ -178,7 +182,7 @@ class NmgPartnerSurvivalTest(unittest.TestCase):
                 for notice in (False, True):
                     with self.subTest(option=f"{event_id}.{key}", representation=representation,
                                       context="notice" if notice else "normal", arrears=arrears):
-                        world = selected_popup(notice, arrears)
+                        world = selected_popup(notice, arrears, event_id=event_id)
                         trigger, effect = selected_option(event_id, key, representation)
                         self.assertTrue(world.conditions(trigger, "NMG"))
                         world.execute(effect, "NMG")

@@ -30,7 +30,8 @@ REVENUE_SLUG = "v03_nmg_autonomy_revenue"
 
 LAND_EVENTS = [f"ywc_nmg.{number}" for number in range(1000, 1008)]
 OFFICE_EVENTS = [f"ywc_nmg.{number}" for number in range(1010, 1016)]
-REVENUE_EVENTS = [f"ywc_nmg.{number}" for number in range(1020, 1030)]
+REVENUE_EVENTS = [f"ywc_nmg.{number}" for number in range(1020, 1032)]
+FOREIGN_EVENTS = {"ywc_nmg.1030", "ywc_nmg.1031"}
 
 LAND_JES = ["ywc_je_v03_nmg_land_arbitration", "ywc_je_v03_nmg_land_settlement"]
 OFFICE_JES = ["ywc_je_v03_nmg_bilingual_office"]
@@ -230,6 +231,9 @@ class NmgFoundationContractTest(unittest.TestCase):
         self.assertEqual(ranges[("country_nmg", LAND_SLUG)], (1000, 1009))
         self.assertEqual(ranges[("country_nmg", OFFICE_SLUG)], (1010, 1019))
         self.assertEqual(ranges[("country_nmg", REVENUE_SLUG)], (1020, 1029))
+        revenue_row = next(row for row in self.registry["arc_ranges"]
+                           if row["catalog_key"] == "country_nmg" and row["slug"] == REVENUE_SLUG)
+        self.assertEqual(revenue_row["additional_ranges"], [{"start": 1030, "end": 1032}])
         self.assertEqual([row["id"] for row in self.land["events"]], LAND_EVENTS)
         self.assertEqual([row["id"] for row in self.office["events"]], OFFICE_EVENTS)
         self.assertEqual([row["id"] for row in self.revenue["events"]], REVENUE_EVENTS)
@@ -244,12 +248,12 @@ class NmgFoundationContractTest(unittest.TestCase):
         for arc, events, journals in (
             (self.land, 8, 2),
             (self.office, 6, 1),
-            (self.revenue, 10, 3),
+            (self.revenue, 12, 3),
         ):
             self.assertEqual(len(arc["events"]), events, arc["slug"])
             self.assertEqual(len(arc["journals"]), journals, arc["slug"])
         total = sum(len(arc["events"]) for arc in self.catalog["arcs"])
-        self.assertEqual(total, 24)
+        self.assertEqual(total, 26)
         self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 6)
 
     def test_foundation_arcs_keep_the_locked_card_shape(self):
@@ -263,6 +267,11 @@ class NmgFoundationContractTest(unittest.TestCase):
                 {"ywc_je_flavor_nmg_bargain_1", "ywc_campaign_nmg_c1_outcome"},
             )
             for event in arc["events"]:
+                if event["id"] == "ywc_nmg.1031":
+                    self.assertTrue(event.get("hidden"))
+                    self.assertEqual(event["options"], [])
+                    self.assertIn("ywc_nmg_mexshare_end_agreement", event["immediate"])
+                    continue
                 self.assertEqual(
                     set(event),
                     {"id", "title", "desc", "trigger", "immediate", "options",
@@ -312,7 +321,7 @@ class NmgFoundationContractTest(unittest.TestCase):
 
     def test_every_foundation_event_has_a_dispatch_branch(self):
         for arc in (self.land, self.office, self.revenue):
-            text = _arc_text(arc)
+            text = _arc_text(arc) + ("\n" + self.effects if arc is self.revenue else "")
             dispatched = set(
                 re.findall(r"trigger_event\s*=\s*\{\s*id\s*=\s*([A-Za-z0-9_.]+)", text)
             )
@@ -322,6 +331,12 @@ class NmgFoundationContractTest(unittest.TestCase):
     def test_every_foundation_event_is_gated_on_real_delivery_state(self):
         for arc in (self.land, self.office, self.revenue):
             for event in arc["events"]:
+                if event["id"] in FOREIGN_EVENTS:
+                    if event["id"] == "ywc_nmg.1030":
+                        self.assertIn("ywc_nmg_mexshare_offer_matches = yes", event["trigger"])
+                    else:
+                        self.assertIn("ywc_nmg_mexshare_contract_generation", event["trigger"])
+                    continue
                 self.assertIn("c:NMG ?= this", event["trigger"], event["id"])
                 self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"], event["id"])
                 self.assertIn(
@@ -461,7 +476,7 @@ class NmgFoundationContractTest(unittest.TestCase):
             encoding="utf-8-sig"
         )
         rendered = re.findall(r"(?m)^ywc_nmg\.(\d{4}) = \{", events_text)
-        self.assertEqual(len(rendered), 24)
+        self.assertEqual(len(rendered), 26)
         self.assertEqual(
             sorted("ywc_nmg." + number for number in rendered),
             sorted(LAND_EVENTS + OFFICE_EVENTS + REVENUE_EVENTS),

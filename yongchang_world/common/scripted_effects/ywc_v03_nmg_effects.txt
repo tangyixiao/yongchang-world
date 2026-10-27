@@ -266,7 +266,7 @@ if = {
 }
 else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
  if = { limit = { OR = { NOT = { ywc_nmg_revenue_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete }
- set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event }
+ if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event } }
 }
 }
 
@@ -281,12 +281,13 @@ if = {
 }
 else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
  if = { limit = { OR = { NOT = { ywc_nmg_revenue_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete }
- set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event }
+ if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event } }
 }
 }
 
 ywc_nmg_close_revenue_as_breach = {
 if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
+ ywc_nmg_mexshare_cancel_unsigned = yes
  if = { limit = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_arrears exists = c:MEX } change_relations = { country = c:MEX value = { add = -25 } } }
  set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 1 }
  set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
@@ -424,19 +425,57 @@ else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
 ywc_nmg_choose_revenue_fixed = {
 if = {
  limit = { var:ywc_nmg_revenue_route = 1 has_variable = ywc_nmg_revenue_quota_paid }
+ if = { limit = { OR = { var:ywc_nmg_mexshare_state ?= 1 var:ywc_nmg_mexshare_state ?= 2 } OR = { NOT = { has_variable = ywc_nmg_mexshare_request_timer } NOT = { ywc_nmg_mexshare_link_intact = yes } } } ywc_nmg_mexshare_cancel_unsigned = yes }
+ if = { limit = { ywc_nmg_mexshare_can_offer = yes } ywc_nmg_mexshare_send = yes }
  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
 }
 else_if = {
- limit = { var:ywc_nmg_revenue_route = 0 ywc_nmg_revenue_fixed_ready = yes }
+ limit = { var:ywc_nmg_revenue_route = 0 ywc_nmg_revenue_fixed_ready = yes ywc_nmg_mexshare_can_offer = yes }
  ywc_nmg_revenue_pay_fee_once = yes
  if = { limit = { has_variable = ywc_nmg_revenue_quota_paid }
   set_variable = { name = ywc_nmg_revenue_route value = 1 }
-  add_modifier = { name = ywc_nmg_revenue_fixed_share months = 120 }
+  ywc_nmg_mexshare_send = yes
   set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
  }
  else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
 }
 else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+}
+
+ywc_nmg_choose_revenue_domestic = {
+ if = {
+  limit = { var:ywc_nmg_revenue_route ?= 4 has_variable = ywc_nmg_revenue_quota_paid }
+  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ }
+ else_if = {
+  limit = { var:ywc_nmg_revenue_route ?= 0 ywc_nmg_revenue_fixed_ready = yes }
+  ywc_nmg_revenue_pay_fee_once = yes
+  if = { limit = { has_variable = ywc_nmg_revenue_quota_paid } set_variable = { name = ywc_nmg_revenue_route value = 4 } set_variable = { name = ywc_nmg_revenue_pending value = 1021 } }
+  else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+ }
+ else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+}
+
+# A local fallback preserves paid fees and signed obligations. It invalidates
+# only an unsigned inquiry and restarts any interrupted six-month review.
+ywc_nmg_revenue_switch_domestic = {
+ if = {
+  limit = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_fixed_ready = yes NOT = { var:ywc_nmg_revenue_route ?= 4 } }
+  ywc_nmg_mexshare_cancel_unsigned = yes
+  set_variable = { name = ywc_nmg_revenue_route value = 4 }
+  set_variable = { name = ywc_nmg_revenue_limited_selected value = 1 }
+  remove_variable = ywc_nmg_revenue_blocked_defer
+  remove_variable = ywc_nmg_revenue_watch_started
+  remove_variable = ywc_nmg_revenue_watch_timer
+  remove_variable = ywc_nmg_revenue_six_months_complete
+  if = { limit = { has_variable = ywc_nmg_revenue_stage3 } set_variable = { name = ywc_nmg_revenue_share value = 4 } }
+  if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } }
+   if = { limit = { has_variable = ywc_nmg_revenue_stage3 } set_variable = { name = ywc_nmg_revenue_pending value = 1027 } }
+   else_if = { limit = { has_variable = ywc_nmg_revenue_stage2 } set_variable = { name = ywc_nmg_revenue_pending value = 1023 } }
+   else_if = { limit = { OR = { has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_audit_public } } ywc_nmg_revenue_open_negotiation = yes }
+   else = { set_variable = { name = ywc_nmg_revenue_pending value = 1021 } }
+  }
+ }
 }
 
 ywc_nmg_choose_revenue_joint = {
@@ -548,7 +587,165 @@ ywc_nmg_office_select_limited_target = {
 
 ywc_nmg_revenue_select_limited_target = {
  if = { limit = { has_variable = ywc_nmg_revenue_quota_paid NOT = { var:ywc_nmg_revenue_route = 3 } NOT = { ywc_nmg_revenue_route_ready = yes } ywc_nmg_revenue_arrears_ready = yes }
+  ywc_nmg_mexshare_cancel_unsigned = yes
   set_variable = { name = ywc_nmg_revenue_route value = 3 } set_variable = { name = ywc_nmg_revenue_arrears_owned value = 1 } set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_limited_selected value = 1 }
   change_relations = { country = c:MEX value = { add = -5 } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }
- } else = { set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }
+ } else = { if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } } }
+}
+
+# Fixed-share proposal: MEX answers the captured amount, term and fiscal right.
+ywc_nmg_mexshare_bump_serial = {
+	if = { limit = { NOT = { has_variable = ywc_nmg_mexshare_serial } } set_variable = { name = ywc_nmg_mexshare_serial value = 0 } }
+	change_variable = { name = ywc_nmg_mexshare_serial add = 1 }
+}
+
+ywc_nmg_mexshare_send = {
+	if = {
+		limit = { ywc_nmg_mexshare_can_offer = yes }
+		if = { limit = { NOT = { has_variable = ywc_nmg_mexshare_generation } } set_variable = { name = ywc_nmg_mexshare_generation value = 0 } }
+		change_variable = { name = ywc_nmg_mexshare_generation add = 1 }
+		ywc_nmg_mexshare_bump_serial = yes
+		overlord = { save_scope_as = ywc_nmg_mexshare_request_partner }
+		set_variable = { name = ywc_nmg_mexshare_partner value = scope:ywc_nmg_mexshare_request_partner }
+		set_variable = { name = ywc_nmg_mexshare_state value = 1 }
+		set_variable = { name = ywc_nmg_mexshare_request_timer value = 1 months = 3 }
+		set_variable = { name = ywc_nmg_mexshare_quote_generation value = var:ywc_nmg_mexshare_generation }
+		set_variable = { name = ywc_nmg_mexshare_quote_serial value = var:ywc_nmg_mexshare_serial }
+		set_variable = { name = ywc_nmg_mexshare_quote_monthly value = var:ywc_nmg_revenue_quota }
+		change_variable = { name = ywc_nmg_mexshare_quote_monthly divide = 30 }
+		set_variable = { name = ywc_nmg_mexshare_quote_term value = 60 }
+		set_variable = { name = ywc_nmg_mexshare_quote_right value = 1 }
+		save_scope_as = ywc_nmg_mexshare_requester
+		save_scope_value_as = { name = ywc_nmg_partner_request_kind value = 1 }
+		save_scope_value_as = { name = ywc_nmg_mexshare_request_generation value = var:ywc_nmg_mexshare_quote_generation }
+		save_scope_value_as = { name = ywc_nmg_mexshare_request_serial value = var:ywc_nmg_mexshare_quote_serial }
+		save_scope_value_as = { name = ywc_nmg_mexshare_request_monthly value = var:ywc_nmg_mexshare_quote_monthly }
+		save_scope_value_as = { name = ywc_nmg_mexshare_request_term value = var:ywc_nmg_mexshare_quote_term }
+		save_scope_value_as = { name = ywc_nmg_mexshare_request_right value = var:ywc_nmg_mexshare_quote_right }
+		scope:ywc_nmg_mexshare_request_partner = { trigger_event = { id = ywc_nmg.1030 } }
+	}
+}
+
+ywc_nmg_mexshare_authorize_accept = {
+	if = {
+		limit = { ywc_nmg_mexshare_authorizable = yes }
+		set_variable = { name = ywc_nmg_mexshare_answer_requester value = scope:ywc_nmg_mexshare_requester }
+		set_variable = { name = ywc_nmg_mexshare_answer_generation value = scope:ywc_nmg_mexshare_request_generation }
+		set_variable = { name = ywc_nmg_mexshare_answer_serial value = scope:ywc_nmg_mexshare_request_serial }
+		set_variable = { name = ywc_nmg_mexshare_answer value = 1 }
+		set_variable = { name = ywc_nmg_mexshare_answer_monthly value = scope:ywc_nmg_mexshare_request_monthly }
+		set_variable = { name = ywc_nmg_mexshare_answer_term value = scope:ywc_nmg_mexshare_request_term }
+		set_variable = { name = ywc_nmg_mexshare_answer_right value = scope:ywc_nmg_mexshare_request_right }
+		scope:ywc_nmg_mexshare_requester = {
+			set_variable = { name = ywc_nmg_mexshare_accept_generation value = scope:ywc_nmg_mexshare_request_generation }
+			set_variable = { name = ywc_nmg_mexshare_accept_serial value = scope:ywc_nmg_mexshare_request_serial }
+			set_variable = { name = ywc_nmg_mexshare_accept_monthly value = scope:ywc_nmg_mexshare_request_monthly }
+			set_variable = { name = ywc_nmg_mexshare_accept_term value = scope:ywc_nmg_mexshare_request_term }
+			set_variable = { name = ywc_nmg_mexshare_accept_right value = scope:ywc_nmg_mexshare_request_right }
+			ywc_nmg_mexshare_bump_serial = yes
+			set_variable = { name = ywc_nmg_mexshare_state value = 2 }
+			ywc_nmg_mexshare_sign = yes
+		}
+	}
+}
+
+ywc_nmg_mexshare_refuse = {
+	if = {
+		limit = { ywc_nmg_mexshare_authorizable = yes }
+		set_variable = { name = ywc_nmg_mexshare_answer_requester value = scope:ywc_nmg_mexshare_requester }
+		set_variable = { name = ywc_nmg_mexshare_answer_generation value = scope:ywc_nmg_mexshare_request_generation }
+		set_variable = { name = ywc_nmg_mexshare_answer_serial value = scope:ywc_nmg_mexshare_request_serial }
+		set_variable = { name = ywc_nmg_mexshare_answer value = 2 }
+		scope:ywc_nmg_mexshare_requester = { remove_variable = ywc_nmg_mexshare_request_timer ywc_nmg_mexshare_bump_serial = yes set_variable = { name = ywc_nmg_mexshare_state value = 3 } }
+	}
+}
+
+ywc_nmg_mexshare_cancel_unsigned = {
+	if = {
+		limit = { OR = { var:ywc_nmg_mexshare_state ?= 1 var:ywc_nmg_mexshare_state ?= 2 } }
+		remove_variable = ywc_nmg_mexshare_request_timer
+		remove_variable = ywc_nmg_mexshare_accept_generation
+		remove_variable = ywc_nmg_mexshare_accept_serial
+		remove_variable = ywc_nmg_mexshare_accept_monthly
+		remove_variable = ywc_nmg_mexshare_accept_term
+		remove_variable = ywc_nmg_mexshare_accept_right
+		remove_variable = ywc_nmg_mexshare_partner
+		ywc_nmg_mexshare_bump_serial = yes
+		set_variable = { name = ywc_nmg_mexshare_state value = 7 }
+	}
+}
+
+ywc_nmg_mexshare_sign = {
+	if = {
+		limit = { ywc_nmg_mexshare_accepted_current = yes }
+		set_variable = { name = ywc_nmg_mexshare_contract_partner value = var:ywc_nmg_mexshare_partner }
+		set_variable = { name = ywc_nmg_mexshare_contract_generation value = var:ywc_nmg_mexshare_quote_generation }
+		set_variable = { name = ywc_nmg_mexshare_contract_offer_serial value = var:ywc_nmg_mexshare_quote_serial }
+		set_variable = { name = ywc_nmg_mexshare_contract_monthly value = var:ywc_nmg_mexshare_quote_monthly }
+		set_variable = { name = ywc_nmg_mexshare_contract_term value = var:ywc_nmg_mexshare_quote_term }
+		set_variable = { name = ywc_nmg_mexshare_contract_right value = var:ywc_nmg_mexshare_quote_right }
+		set_variable = { name = ywc_nmg_mexshare_paid_total value = 0 }
+		set_variable = { name = ywc_nmg_mexshare_earned_total value = 0 }
+		set_variable = { name = ywc_nmg_mexshare_earned_count value = 0 }
+		set_variable = { name = ywc_nmg_mexshare_start_month value = ywc_nmg_current_calendar_month }
+		set_variable = { name = ywc_nmg_mexshare_term_timer value = 1 months = 60 }
+		remove_variable = ywc_nmg_mexshare_request_timer
+		remove_variable = ywc_nmg_mexshare_ended_generation
+		remove_variable = ywc_nmg_mexshare_creditor_invalid_generation
+		remove_variable = ywc_nmg_mexshare_last_month
+		ywc_nmg_mexshare_bump_serial = yes
+		set_variable = { name = ywc_nmg_mexshare_state value = 6 }
+		save_scope_as = ywc_nmg_mexshare_end_owner
+		save_scope_value_as = { name = ywc_nmg_mexshare_end_generation value = var:ywc_nmg_mexshare_contract_generation }
+		trigger_event = { id = ywc_nmg.1031 months = 60 }
+	}
+}
+
+ywc_nmg_mexshare_monthly = {
+	if = {
+		limit = { has_variable = ywc_nmg_mexshare_contract_generation }
+		save_scope_as = ywc_nmg_mexshare_payment_owner
+		set_variable = { name = ywc_nmg_mexshare_current_month value = ywc_nmg_current_calendar_month }
+		if = {
+			limit = { NOT = { var:ywc_nmg_mexshare_last_month ?= var:ywc_nmg_mexshare_current_month } }
+			set_variable = { name = ywc_nmg_mexshare_last_month value = var:ywc_nmg_mexshare_current_month }
+			if = {
+				limit = { OR = { NOT = { exists = var:ywc_nmg_mexshare_contract_partner } var:ywc_nmg_mexshare_contract_partner = { is_country_alive = no } } }
+				set_variable = { name = ywc_nmg_mexshare_creditor_invalid_generation value = var:ywc_nmg_mexshare_contract_generation }
+			}
+			if = {
+				limit = { NOT = { var:ywc_nmg_mexshare_ended_generation ?= var:ywc_nmg_mexshare_contract_generation } NOT = { var:ywc_nmg_mexshare_creditor_invalid_generation ?= var:ywc_nmg_mexshare_contract_generation } var:ywc_nmg_mexshare_earned_count < 60 var:ywc_nmg_mexshare_current_month <= { value = var:ywc_nmg_mexshare_start_month add = 60 } }
+				change_variable = { name = ywc_nmg_mexshare_earned_total add = var:ywc_nmg_mexshare_contract_monthly }
+				change_variable = { name = ywc_nmg_mexshare_earned_count add = 1 }
+			}
+			if = {
+				limit = { var:ywc_nmg_mexshare_earned_total > var:ywc_nmg_mexshare_paid_total NOT = { var:ywc_nmg_mexshare_creditor_invalid_generation ?= var:ywc_nmg_mexshare_contract_generation } exists = var:ywc_nmg_mexshare_contract_partner var:ywc_nmg_mexshare_contract_partner = { is_country_alive = yes } ywc_nmg_v03_finance_safe = yes }
+				# Pay all due amounts if affordable; otherwise pay one instalment
+				# when possible so a temporary default can actually be cured.
+				set_variable = { name = ywc_nmg_mexshare_payment_due value = var:ywc_nmg_mexshare_earned_total }
+				change_variable = { name = ywc_nmg_mexshare_payment_due add = { value = var:ywc_nmg_mexshare_paid_total multiply = -1 } }
+				if = { limit = { gold_reserves < var:ywc_nmg_mexshare_payment_due } set_variable = { name = ywc_nmg_mexshare_payment_due value = var:ywc_nmg_mexshare_contract_monthly } }
+				if = {
+					limit = { gold_reserves >= var:ywc_nmg_mexshare_payment_due }
+					add_treasury = { value = var:ywc_nmg_mexshare_payment_due multiply = -1 }
+					var:ywc_nmg_mexshare_contract_partner = { add_treasury = { value = scope:ywc_nmg_mexshare_payment_owner.var:ywc_nmg_mexshare_payment_due } }
+					change_variable = { name = ywc_nmg_mexshare_paid_total add = var:ywc_nmg_mexshare_payment_due }
+				}
+			}
+			if = { limit = { NOT = { has_variable = ywc_nmg_mexshare_term_timer } NOT = { var:ywc_nmg_mexshare_ended_generation ?= var:ywc_nmg_mexshare_contract_generation } } ywc_nmg_mexshare_bump_serial = yes set_variable = { name = ywc_nmg_mexshare_ended_generation value = var:ywc_nmg_mexshare_contract_generation } }
+		}
+		if = { limit = { ywc_nmg_mexshare_agreement_current = yes ywc_nmg_v03_finance_safe = yes } add_modifier = { name = ywc_nmg_local_port_budget_right months = 1 } }
+		else = { remove_modifier = ywc_nmg_local_port_budget_right }
+	}
+	if = { limit = { OR = { var:ywc_nmg_mexshare_state ?= 1 var:ywc_nmg_mexshare_state ?= 2 } OR = { NOT = { has_variable = ywc_nmg_mexshare_request_timer } NOT = { ywc_nmg_mexshare_link_intact = yes } } } ywc_nmg_mexshare_cancel_unsigned = yes }
+}
+
+ywc_nmg_mexshare_end_agreement = {
+	if = {
+		limit = { exists = scope:ywc_nmg_mexshare_end_owner scope:ywc_nmg_mexshare_end_owner ?= this has_variable = ywc_nmg_mexshare_contract_generation var:ywc_nmg_mexshare_contract_generation ?= scope:ywc_nmg_mexshare_end_generation NOT = { var:ywc_nmg_mexshare_ended_generation ?= scope:ywc_nmg_mexshare_end_generation } }
+		ywc_nmg_mexshare_monthly = yes
+		if = { limit = { NOT = { var:ywc_nmg_mexshare_ended_generation ?= scope:ywc_nmg_mexshare_end_generation } } ywc_nmg_mexshare_bump_serial = yes set_variable = { name = ywc_nmg_mexshare_ended_generation value = scope:ywc_nmg_mexshare_end_generation } }
+		remove_variable = ywc_nmg_mexshare_term_timer
+		remove_modifier = ywc_nmg_local_port_budget_right
+	}
 }
