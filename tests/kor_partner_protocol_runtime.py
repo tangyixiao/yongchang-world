@@ -90,8 +90,8 @@ def _add_months(start, months):
 
 
 class PartnerWorld(Strict):
-    def __init__(self, countries, events="", start_date=date(1836, 1, 1)):
-        super().__init__("kor", load_inline=True)
+    def __init__(self, countries, events="", start_date=date(1836, 1, 1), tag="kor"):
+        super().__init__(tag, load_inline=True)
         self.countries = countries
         self.treasury = {tag: 0 for tag in countries}
         self.months_until_expiry = {tag: {} for tag in countries}

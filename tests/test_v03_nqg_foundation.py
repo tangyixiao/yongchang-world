@@ -14,10 +14,15 @@ TRIGGERS_PATH = ROOT / "yongchang_world" / "common" / "scripted_triggers" / "ywc
 JOURNAL_PATH = ROOT / "yongchang_world" / "common" / "journal_entries" / "ywc_v03_country_nqg_journal.txt"
 
 ARCS = {
-    "v03_nqg_winter_court": (1000, 1009, 10, 3, "winter"),
+    "v03_nqg_winter_court": (1000, 1032, 13, 3, "winter"),
     "v03_nqg_hunting_rights": (1010, 1015, 6, 1, "hunting"),
     "v03_nqg_northern_port": (1020, 1027, 8, 2, "port"),
 }
+# The winter arc's disjoint 1030-1039 range holds the real aid response (1030),
+# the local aid ledger (1031) and the hidden repayment endpoint (1032). They are
+# not sequential arc steps, so the progress/terminal rules apply only to 1000-1009.
+EXTRA_EVENT_IDS = {"ywc_nqg.1030", "ywc_nqg.1031", "ywc_nqg.1032"}
+SCRIPT_DISPATCHED_IDS = {"ywc_nqg.1030", "ywc_nqg.1031", "ywc_nqg.1032"}
 
 
 class NqgTerminalWorld(PulseWorld):
@@ -110,7 +115,7 @@ class NqgCatalogShapeTest(unittest.TestCase):
             events += len(arc["events"])
             journals += len(arc["journals"])
         self.assertEqual(seen, set(ARCS))
-        self.assertEqual(events, 24)
+        self.assertEqual(events, 27)
         self.assertEqual(journals, 6)
 
     def test_event_ids_use_the_nqg_namespace(self):
@@ -136,8 +141,10 @@ class NqgCatalogShapeTest(unittest.TestCase):
 
     def test_every_event_offers_a_free_exit(self):
         for arc in _catalog()["arcs"]:
-            terminal = max(_number(e["id"]) for e in arc["events"])
+            terminal = max(_number(e["id"]) for e in arc["events"] if e["id"] not in EXTRA_EVENT_IDS)
             for event in arc["events"]:
+                if event["id"] in EXTRA_EVENT_IDS:
+                    continue
                 keys = [o["key"] for o in event["options"]]
                 self.assertEqual(len(keys), len(set(keys)), f"{event['id']} duplicate keys")
                 self.assertIn("withdraw", keys, event["id"])
@@ -153,6 +160,8 @@ class NqgCatalogShapeTest(unittest.TestCase):
     def test_major_events_never_double_fire(self):
         for arc in _catalog()["arcs"]:
             for event in arc["events"]:
+                if event["id"] in SCRIPT_DISPATCHED_IDS:
+                    continue
                 self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"])
                 self.assertIn("ywc_v03_mark_major_delivered = yes", event["immediate"])
                 self.assertIn("c:NQG ?= this", event["trigger"])
@@ -165,8 +174,10 @@ class NqgProgressTest(unittest.TestCase):
         for arc in _catalog()["arcs"]:
             short = ARCS[arc["slug"]][4]
             pending = f"ywc_nqg_{short}_pending"
-            numbers = [_number(e["id"]) for e in arc["events"]]
+            numbers = [_number(e["id"]) for e in arc["events"] if e["id"] not in EXTRA_EVENT_IDS]
             for event in arc["events"]:
+                if event["id"] in EXTRA_EVENT_IDS:
+                    continue
                 n = _number(event["id"])
                 if n == numbers[-1]:
                     continue
@@ -203,9 +214,22 @@ class NqgScriptResolutionTest(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_every_event_is_dispatched_from_a_journal(self):
+        effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")
         for arc in _catalog()["arcs"]:
             script = "\n".join(j["script"] for j in arc["journals"])
             for event in arc["events"]:
+                if event["id"] == "ywc_nqg.1030":
+                    self.assertIn("trigger_event = { id = ywc_nqg.1030 }", effects,
+                                  "foreign aid response must be sent by the inquiry helper")
+                    continue
+                if event["id"] == "ywc_nqg.1032":
+                    self.assertIn("trigger_event = { id = ywc_nqg.1032 months = 3 }", effects,
+                                  "hidden aid endpoint must be scheduled by the signature helper")
+                    continue
+                if event["id"] == "ywc_nqg.1031":
+                    self.assertIn("trigger_event = { id = ywc_nqg.1031 }", effects,
+                                  "aid ledger must be dispatched by the reply/status helper")
+                    continue
                 self.assertIn(f"trigger_event = {{ id = {event['id']} }}", script,
                               f"{event['id']} unreachable")
 
@@ -305,20 +329,30 @@ class NqgHonestyTest(unittest.TestCase):
                     for term in terms:
                         self.assertIn(term, note, f"{opening['id']} {option['key']} {lang}")
 
-    def test_winter_grain_choice_is_only_an_unanswered_request(self):
+    def test_winter_grain_choice_sends_a_real_inquiry_and_requires_a_reply(self):
         catalog = _catalog()
         winter = _arc(catalog, "v03_nqg_winter_court")
         opening = winter["events"][0]
         request = next(o for o in opening["options"] if o["key"] == "grain_loan")
-        for phrase in ("no grain", "or money", "no debt", "cannot settle"):
+        # The inquiry is free and moves nothing by itself.
+        self.assertIn("ywc_nqg_aid_send_inquiry = yes", request["effect"])
+        for phrase in ("no grain", "debt"):
+            self.assertIn(phrase, request["cost_note"]["en"].lower())
+        for phrase in ("actual grain flow", "never consent"):
             self.assertIn(phrase, request["consequence_note"]["en"].lower())
         triggers = TRIGGERS_PATH.read_text(encoding="utf-8-sig")
         winter_execution = _helper_body(triggers, "ywc_nqg_winter_route_execution_ready")
+        # Route 3 succeeds only through the captured contract, never the old pact marker.
         self.assertNotIn("ywc_nqg_winter_loan_ready", winter_execution)
+        self.assertIn("ywc_nqg_aid_contract_active", winter_execution)
         effects = EFFECTS_PATH.read_text(encoding="utf-8-sig")
         self.assertNotIn("add_goods", effects)
         self.assertNotIn("change_goods", effects)
         self.assertNotIn("add_treasury", _helper_body(effects, "ywc_nqg_winter_e1005_take_loan_terms"))
+        terms = next(o for o in winter["events"][5]["options"] if o["key"] == "take_loan_terms")
+        self.assertIn("ywc_nqg_aid_signable_terms = yes", terms["trigger"])
+        self.assertNotIn("ywc_nqg_winter_loan_ready", terms["trigger"])
+        self.assertIn("ywc_nqg_aid_sign_terms = yes", terms["effect"])
         for locale in ("english", "simp_chinese"):
             path = ROOT / "yongchang_world" / "localization" / locale / f"ywc_v03_country_nqg_l_{'english' if locale == 'english' else 'simp_chinese'}.yml"
             text = path.read_text(encoding="utf-8-sig")

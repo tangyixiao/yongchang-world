@@ -111,19 +111,19 @@
             {
               "key": "grain_loan",
               "label": {
-                "en": "Request Grain Aid from an Ally (No Offer Yet)",
-                "zh": "向盟友申请粮援（尚未获批）"
+                "zh": "向盟友申请粮援（发出询请）",
+                "en": "Request Grain Aid from an Ally (Inquiry Sent)"
               },
-              "effect": "{ ywc_nqg_winter_e1000_grain_loan = yes if = { limit = { has_variable = ywc_nqg_winter_fee_paid has_variable = ywc_nqg_winter_route } set_variable = { name = ywc_nqg_winter_pending value = 1001 } set_variable = { name = ywc_nqg_winter_stage value = 1001 } } else = { set_variable = { name = ywc_nqg_winter_pending value = 1000 } }  if = { limit = { has_variable = ywc_nqg_winter_deferred_event has_variable = ywc_nqg_winter_stage var:ywc_nqg_winter_stage > var:ywc_nqg_winter_deferred_event } ywc_nqg_winter_clear_deferred_obligation = yes } }",
+              "effect": "{ ywc_nqg_winter_e1000_grain_loan = yes ywc_nqg_aid_send_inquiry = yes if = { limit = { has_variable = ywc_nqg_winter_fee_paid has_variable = ywc_nqg_winter_route } set_variable = { name = ywc_nqg_winter_pending value = 1001 } set_variable = { name = ywc_nqg_winter_stage value = 1001 } } else = { set_variable = { name = ywc_nqg_winter_pending value = 1000 } }  if = { limit = { has_variable = ywc_nqg_winter_deferred_event has_variable = ywc_nqg_winter_stage var:ywc_nqg_winter_stage > var:ywc_nqg_winter_deferred_event } ywc_nqg_winter_clear_deferred_obligation = yes } }",
               "trigger": "{ ywc_nqg_winter_loan_ready = yes ywc_nqg_winter_can_pay = yes }",
               "ai_chance": "{ base = 25 }",
               "cost_note": {
-                "en": "If current finances allow, this deducts a one-time filing fee fixed at admission as annual gross income ÷ 52 (minimum 100, maximum 1,000,000,000). No second filing fee is charged; any later treasury deduction is stated with that choice.",
-                "zh": "当前财务条件允许时，本项扣除一次立案费：按入场时记录的年总收入÷52计算，最低100、最高1,000,000,000。不会重复收立案费；后续若有国库扣款，会在对应选项单独说明。"
+                "zh": "若当前财务条件允许，本项扣除一次立案费：按入场时记录的年总收入÷52计算，最低100、最高1,000,000,000。询请本身免费，不会转移粮食、现金或形成债务。",
+                "en": "If current finances allow, this deducts a one-time filing fee fixed at admission as annual gross income ÷ 52 (minimum 100, maximum 1,000,000,000). The inquiry itself is free: no grain, cash or debt moves until a real reply."
               },
               "consequence_note": {
-                "en": "This records an inquiry only. No grain or money moves and no debt is created without a separate, real partner response; the current script has no such response, so this cannot settle as a borrowed-grain success.",
-                "zh": "这里只登记申请；没有盟友另行真实答复，就不会转移粮食或现金，也不会形成债务。当前脚本没有盟友答复流程，因此不能把申请当作已借到粮食并据此成功结案。"
+                "zh": "只有一个符合条件且能实际出粮的伙伴收到询请。对方另行答复后，北清须按真实粮食流向与捕获条款决定是否接受；仅凭本地登记不能当作已借到粮食。",
+                "en": "Exactly one eligible partner with real grain capacity receives the inquiry. After that partner answers separately, Northern Qing must decide on the captured terms against an actual grain flow; a local marker alone is never consent."
               }
             },
             {
@@ -587,8 +587,8 @@
             "zh": "账上没有回函"
           },
           "desc": {
-            "en": "A pact and reserve report can show that an ally may be eligible to help, but this record contains no partner reply, grain or cash transfer, or new debt. The court can continue its domestic measures or leave the inquiry pending.",
-            "zh": "盟约与储备只能说明对方可能具备条件；此记录里没有盟友答复、粮食或现金转移，也没有新增债务。宫廷可以继续国内安排，或把申请保留待核。"
+            "zh": "账上可能已有回函，也可能仍然没有。盟约与储备只说明对方可能具备条件；只有实际受邀国家按捕获条款作出的答复才能签约。宫廷可以接受、继续等待，或改走国内安排。",
+            "en": "A reply may or may not be on the books. A pact and reserves show eligibility only; only the actual invited country answering on the captured terms can be signed. The court may accept, keep waiting, or take the domestic route."
           },
           "trigger": "{ c:NQG ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -596,19 +596,19 @@
             {
               "key": "take_loan_terms",
               "label": {
-                "en": "Keep the Request Open; Await a Real Reply",
-                "zh": "保留申请，等待真实答复"
+                "zh": "按已捕获条款接受粮援",
+                "en": "Accept the Captured Aid Terms"
               },
-              "effect": "{ ywc_nqg_winter_e1005_take_loan_terms = yes set_variable = { name = ywc_nqg_winter_pending value = 1006 } set_variable = { name = ywc_nqg_winter_stage value = 1006 }  if = { limit = { has_variable = ywc_nqg_winter_deferred_event has_variable = ywc_nqg_winter_stage var:ywc_nqg_winter_stage > var:ywc_nqg_winter_deferred_event } ywc_nqg_winter_clear_deferred_obligation = yes } }",
-              "trigger": "{ var:ywc_nqg_winter_route = 3 ywc_nqg_winter_loan_ready = yes }",
+              "effect": "{ ywc_nqg_winter_e1005_take_loan_terms = yes ywc_nqg_aid_sign_terms = yes if = { limit = { has_variable = ywc_nqg_aid_contract_generation } set_variable = { name = ywc_nqg_winter_pending value = 1006 } set_variable = { name = ywc_nqg_winter_stage value = 1006 } if = { limit = { has_variable = ywc_nqg_winter_deferred_event has_variable = ywc_nqg_winter_stage var:ywc_nqg_winter_stage > var:ywc_nqg_winter_deferred_event } ywc_nqg_winter_clear_deferred_obligation = yes } } }",
+              "trigger": "{ var:ywc_nqg_winter_route = 3 ywc_nqg_aid_signable_terms = yes }",
               "ai_chance": "{ base = 40 }",
               "cost_note": {
-                "en": "No additional fee. This records a pending request only; no grain, cash, or debt is created.",
-                "zh": "不追加费用。本项只记录待答复申请，不会转移粮食、现金或形成债务。"
+                "zh": "签约不收款；此后三次月度点验各按捕获总额三分之一实付，末期取余数。",
+                "en": "Signature collects nothing; each of three monthly inspections pays one third of the captured total, with the exact remainder at the end."
               },
               "consequence_note": {
-                "en": "The current pact, cordial relations, and reserve level show eligibility only; they are not consent or a transfer.",
-                "zh": "现有盟约、友好关系和储备只用于核验申请资格，不代表盟友同意或已经转移物资。"
+                "zh": "只认签约时封存的出粮州与市场对象；对方回函、代际和总额必须与当前询请一致，且粮食流向已经真实存在。",
+                "en": "Only the grain district and markets captured at signature count; the reply, generation and total must match the current inquiry, and the grain flow must already exist."
               }
             },
             {
@@ -1115,6 +1115,306 @@
           "writes": [
             "ywc_v03_nqg_v03_nqg_winter_court_outcome",
             "ywc_v03_active_arc_count"
+          ]
+        },
+        {
+          "id": "ywc_nqg.1030",
+          "title": {
+            "zh": "粮援的回函",
+            "en": "The Grain Aid Answer"
+          },
+          "desc": {
+            "zh": "受邀朝廷收到北清按当期仓底拟定的粮援询请：偿还总额按申请时的年收入折算，分三次月付，粮食须真实运入北清。只有实际受邀国家可以接受或拒绝；陈旧回函不改变任何条款。",
+            "en": "The invited court receives Northern Qing’s aid inquiry: the repayment total is fixed from the income recorded at admission, paid in three monthly installments, and grain must actually move to Northern Qing. Only the actual recipient may accept or refuse; a stale answer changes no terms."
+          },
+          "trigger": "{ ywc_nqg_aid_offer_matches = yes }",
+          "immediate": "{ }",
+          "options": [
+            {
+              "key": "accept",
+              "label": {
+                "zh": "按捕获条款出粮",
+                "en": "Grant Grain on the Captured Terms"
+              },
+              "effect": "{ ywc_nqg_aid_authorize_accept = yes }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "出粮方在本项不收款；接受后由北清按捕获总额分三次月付。",
+                "en": "The provider collects nothing here; after acceptance Northern Qing pays the captured total in three monthly installments."
+              },
+              "consequence_note": {
+                "zh": "答复固定本次代际与总额；北清仍须先有真实粮食流向才能签约。",
+                "en": "The answer fixes this generation and total; Northern Qing must still show an actual grain flow before signing."
+              },
+              "trigger": "{ ywc_nqg_aid_authorizable = yes }"
+            },
+            {
+              "key": "refuse",
+              "label": {
+                "zh": "拒绝粮援",
+                "en": "Refuse the Grain Request"
+              },
+              "effect": "{ ywc_nqg_aid_refuse = yes }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "双方国库都不扣款。",
+                "en": "Neither treasury is charged."
+              },
+              "consequence_note": {
+                "zh": "北清收到拒绝，可改走国内限额供养路线；已付立案费不退。",
+                "en": "Northern Qing receives the refusal and may take the domestic stipend-cap route; the filing fee already paid is not refunded."
+              },
+              "trigger": "{ ywc_nqg_aid_authorizable = yes }"
+            },
+            {
+              "key": "stale_dismiss",
+              "label": {
+                "zh": "搁置失效询请",
+                "en": "Dismiss a Stale Inquiry"
+              },
+              "effect": "{ }",
+              "ai_chance": "{ base = 1 }",
+              "cost_note": {
+                "zh": "没有付款。",
+                "en": "No payment."
+              },
+              "consequence_note": {
+                "zh": "失效询请不能改写后续的粮援条款。",
+                "en": "A stale inquiry cannot rewrite a later aid offer."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "让出粮方按真实仓底与关系自主答复，固定对象、代际和总额。",
+            "en": "Let the provider answer from its own granary and relations while fixing participants, generation and total."
+          },
+          "reads": [
+            "saved requester",
+            "saved partner",
+            "request generation",
+            "live grain capacity"
+          ],
+          "writes": [
+            "provider answer",
+            "Northern Qing aid notice"
+          ]
+        },
+        {
+          "id": "ywc_nqg.1031",
+          "title": {
+            "zh": "粮援的账目",
+            "en": "The Grain Aid Ledger"
+          },
+          "desc": {
+            "zh": "粮援的状态由北清自行处理：询请、已接受的条款、拒绝、过期、对方失效，或已生效合同的三次月付与欠款。签约定量必须有真实粮食流向；已开付的欠款不因改走国内路线而消失。",
+            "en": "Northern Qing handles the aid’s status locally: inquiry, accepted terms, refusal, expiry, a lost partner, or an active contract’s three installments and arrears. Signing requires an actual grain flow; earned debt survives a domestic alternative."
+          },
+          "trigger": "{ c:NQG ?= this ywc_nqg_winter_aid_notice_live = yes }",
+          "immediate": "{ save_scope_as = ywc_nqg_winter_aid_notice_owner set_variable = { name = ywc_nqg_winter_aid_notice_open_serial value = var:ywc_nqg_winter_aid_notice_serial } save_scope_value_as = { name = ywc_nqg_winter_aid_notice_serial value = var:ywc_nqg_winter_aid_notice_serial } save_scope_value_as = { name = ywc_nqg_winter_aid_notice_generation value = var:ywc_nqg_winter_aid_notice_generation } save_scope_value_as = { name = ywc_nqg_winter_aid_notice_request_state value = var:ywc_nqg_winter_aid_notice_request_state } save_scope_value_as = { name = ywc_nqg_winter_aid_notice_reason value = var:ywc_nqg_winter_aid_notice_reason } save_scope_value_as = { name = ywc_nqg_winter_aid_notice_partner_available value = 0 } if = { limit = { exists = var:ywc_nqg_winter_aid_notice_partner var:ywc_nqg_winter_aid_notice_partner = { is_country_alive = yes } } save_scope_value_as = { name = ywc_nqg_winter_aid_notice_partner_available value = 1 } var:ywc_nqg_winter_aid_notice_partner = { save_scope_as = ywc_nqg_winter_aid_notice_partner } } }",
+          "options": [
+            {
+              "key": "sign_terms",
+              "label": {
+                "zh": "按固定条款接受粮援",
+                "en": "Accept the Fixed Aid Terms"
+              },
+              "effect": "{ ywc_nqg_aid_choose_sign = yes }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "签约不收款；此后三次月度点验各按捕获总额三分之一实付。",
+                "en": "Signature collects nothing; each of three monthly inspections pays one third of the captured total."
+              },
+              "consequence_note": {
+                "zh": "只认签约时封存的出粮州与市场对象；货源变化须重新询请。",
+                "en": "Only the grain district and markets captured at signature count; a changed source needs a new inquiry."
+              },
+              "trigger": "{ ywc_nqg_aid_signable = yes }"
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "辞谢粮援",
+                "en": "Decline the Aid"
+              },
+              "effect": "{ ywc_nqg_aid_choose_decline = yes }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "此项不收费。",
+                "en": "This choice charges nothing."
+              },
+              "consequence_note": {
+                "zh": "未签询请作废；已开付的欠款仍然存在。",
+                "en": "Unsigned work ends; earned arrears remain."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes }"
+            },
+            {
+              "key": "wait_terms",
+              "label": {
+                "zh": "保留询请继续等待",
+                "en": "Keep the Inquiry and Wait"
+              },
+              "effect": "{ ywc_nqg_aid_choose_wait = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "等待免费。",
+                "en": "Waiting is free."
+              },
+              "consequence_note": {
+                "zh": "三个月询请期不因重看刷新；到期自动作废。",
+                "en": "The three-month inquiry lifetime is not refreshed by redisplay; it lapses on schedule."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes }"
+            },
+            {
+              "key": "review_status",
+              "label": {
+                "zh": "记下本次状态",
+                "en": "Acknowledge This Status"
+              },
+              "effect": "{ ywc_nqg_aid_choose_status = yes }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "此项不收费。",
+                "en": "This choice charges nothing."
+              },
+              "consequence_note": {
+                "zh": "保留现有欠款和月付窗口。",
+                "en": "Existing arrears and the monthly window remain."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes }"
+            },
+            {
+              "key": "domestic_route",
+              "label": {
+                "zh": "改走国内限额供养",
+                "en": "Take the Domestic Stipend Cap"
+              },
+              "effect": "{ ywc_nqg_aid_choose_domestic = yes }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "此项不收费；国内路线费用按原事件执行。",
+                "en": "This choice charges nothing; the domestic route keeps its existing costs."
+              },
+              "consequence_note": {
+                "zh": "未签外部询请作废；已签合同的欠款继续有效。",
+                "en": "Unsigned foreign work ends; signed contract debt remains payable."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes }"
+            },
+            {
+              "key": "retry_shu",
+              "label": {
+                "zh": "重新询请蜀方",
+                "en": "Retry with SHU"
+              },
+              "effect": "{ ywc_nqg_aid_choose_retry_shu = yes }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "新询请不扣款；旧约须结清且窗口结束。",
+                "en": "A new inquiry charges nothing; the previous balance must be settled and its window ended."
+              },
+              "consequence_note": {
+                "zh": "新询请采用新代际；旧回函与旧条款不得再签约。",
+                "en": "The retry has a new generation; old answers and terms cannot sign it."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes ywc_nqg_aid_can_offer_shu = yes }"
+            },
+            {
+              "key": "retry_rus",
+              "label": {
+                "zh": "重新询请俄罗斯",
+                "en": "Retry with Russia"
+              },
+              "effect": "{ ywc_nqg_aid_choose_retry_rus = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "新询请不扣款；旧约须结清且窗口结束。",
+                "en": "A new inquiry charges nothing; the previous balance must be settled and its window ended."
+              },
+              "consequence_note": {
+                "zh": "新询请采用新代际；旧回函与旧条款不得再签约。",
+                "en": "The retry has a new generation; old answers and terms cannot sign it."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes ywc_nqg_aid_can_offer_rus = yes }"
+            },
+            {
+              "key": "retry_jap",
+              "label": {
+                "zh": "重新询请日本",
+                "en": "Retry with Japan"
+              },
+              "effect": "{ ywc_nqg_aid_choose_retry_jap = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "新询请不扣款；旧约须结清且窗口结束。",
+                "en": "A new inquiry charges nothing; the previous balance must be settled and its window ended."
+              },
+              "consequence_note": {
+                "zh": "新询请采用新代际；旧回函与旧条款不得再签约。",
+                "en": "The retry has a new generation; old answers and terms cannot sign it."
+              },
+              "trigger": "{ ywc_nqg_winter_aid_notice_choice_matches = yes ywc_nqg_aid_can_offer_jap = yes }"
+            },
+            {
+              "key": "stale_dismiss",
+              "label": {
+                "zh": "搁置失效通知",
+                "en": "Dismiss a Stale Notice"
+              },
+              "effect": "{ }",
+              "ai_chance": "{ base = 1 }",
+              "cost_note": {
+                "zh": "没有付款。",
+                "en": "No payment."
+              },
+              "consequence_note": {
+                "zh": "失效通知不影响当前条款、债务或事件队列。",
+                "en": "The stale notice leaves the current terms, debt and queues intact."
+              },
+              "trigger": "{ always = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "为回函、拒答、过期、失效与恢复提供本地粮援路线。",
+            "en": "Give replies, refusals, expiry, loss and recovery a local aid path."
+          },
+          "reads": [
+            "notice serial",
+            "notice generation",
+            "current request state",
+            "actual grain flow"
+          ],
+          "writes": [
+            "notice open serial",
+            "aid contract or domestic route"
+          ]
+        },
+        {
+          "id": "ywc_nqg.1032",
+          "hidden": true,
+          "title": {
+            "zh": "粮援偿还期届满",
+            "en": "The Aid Repayment Window Ends"
+          },
+          "desc": {
+            "zh": "固定的三次月付窗口届满，只清除该代的窗口标记；已计欠款与已付记录不受影响。",
+            "en": "The fixed three-month repayment window ends and only its own term marker is cleared; earned debt and paid records are untouched."
+          },
+          "trigger": "{ c:NQG ?= this exists = scope:ywc_nqg_aid_end_owner scope:ywc_nqg_aid_end_owner ?= this has_variable = ywc_nqg_aid_contract_generation var:ywc_nqg_aid_contract_generation ?= scope:ywc_nqg_aid_end_generation }",
+          "immediate": "{ if = { limit = { exists = scope:ywc_nqg_aid_end_owner scope:ywc_nqg_aid_end_owner ?= this has_variable = ywc_nqg_aid_contract_generation var:ywc_nqg_aid_contract_generation ?= scope:ywc_nqg_aid_end_generation } ywc_nqg_aid_end_window = yes } }",
+          "options": [],
+          "purpose": {
+            "zh": "独立截止准确代际的偿还窗口，不动债务、队列与冬廷主事件。",
+            "en": "End the matching repayment generation independently without touching debt, queues or the winter arc."
+          },
+          "reads": [
+            "saved owner",
+            "signed generation"
+          ],
+          "writes": [
+            "window ended generation"
           ]
         }
       ],
