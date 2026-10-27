@@ -20,7 +20,7 @@ ywc_nqg_hunting_full_ready = { NOT = { has_variable = ywc_nqg_hunting_limited_ta
 ywc_nqg_hunting_compromise_ready = { has_variable = ywc_nqg_hunting_limited_target has_variable = ywc_nqg_hunting_fee_paid ywc_nqg_hunting_narrow_ready = yes has_variable = ywc_nqg_hunting_six_months_complete }
 ywc_nqg_port_can_pay = { ywc_nqg_finance_safe = yes gold_reserves >= var:ywc_nqg_port_fee }
 ywc_nqg_port_multi_ready = { any_scope_state = { owner = root any_scope_building = { is_building_type = building_port occupancy >= 0.6 } } OR = { has_law_or_variant = law_type:law_protectionism has_law_or_variant = law_type:law_free_trade has_law_or_variant = law_type:law_mercantilism } }
-ywc_nqg_port_lease_ready = { any_scope_state = { owner = root any_scope_building = { is_building_type = building_port occupancy >= 0.5 } } any_country = { has_diplomatic_pact = { who = ROOT type = trade_agreement } } }
+ywc_nqg_port_lease_ready = { any_scope_state = { owner = root any_scope_building = { is_building_type = building_port occupancy >= 0.5 } } ywc_nqg_port_treaty_lease_active = yes }
 ywc_nqg_port_duty_ready = { any_scope_state = { owner = root any_scope_building = { is_building_type = building_port } } has_law_or_variant = law_type:law_isolationism government_legitimacy >= 20 }
 ywc_nqg_port_route_execution_ready = { ywc_nqg_finance_safe = yes OR = { AND = { var:ywc_nqg_port_route = 1 ywc_nqg_port_multi_ready = yes } AND = { var:ywc_nqg_port_route = 2 ywc_nqg_port_lease_ready = yes } AND = { var:ywc_nqg_port_route = 3 ywc_nqg_port_duty_ready = yes } } }
 ywc_nqg_port_full_ready = { NOT = { has_variable = ywc_nqg_port_limited_target } has_variable = ywc_nqg_port_fee_paid has_variable = ywc_nqg_port_implementation_started ywc_nqg_port_route_execution_ready = yes has_variable = ywc_nqg_port_route_lock has_variable = ywc_nqg_port_six_months_complete }
@@ -325,5 +325,178 @@ ywc_nqg_winter_aid_notice_choice_matches = {
 				AND = { NOT = { exists = scope:ywc_nqg_winter_aid_notice_partner } NOT = { exists = var:ywc_nqg_winter_aid_notice_partner } }
 			}
 		}
+	}
+}
+
+# NQG northern port treaty: the exclusive lease, escort terms and renewal each
+# require one actual eligible counterpart's captured answer. Eligibility reads
+# real port/maritime capacity; signed obligations never silently retarget.
+ywc_nqg_port_treaty_requester_ready = {
+	c:NQG ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_nqg_finance_safe = yes
+	has_variable = ywc_nqg_port_fee
+}
+
+ywc_nqg_port_treaty_clear_to_inquire = {
+	NOT = { var:ywc_nqg_port_treaty_state ?= 1 }
+	NOT = { var:ywc_nqg_port_treaty_state ?= 2 }
+}
+
+ywc_nqg_port_treaty_can_offer_rus = {
+	c:NQG ?= this
+	ywc_nqg_port_treaty_requester_ready = yes
+	ywc_nqg_port_treaty_clear_to_inquire = yes
+	exists = c:RUS
+	c:RUS = {
+		is_country_alive = yes
+		relations:c:NQG >= 0
+		any_scope_state = { owner = c:RUS has_port_state = yes }
+		OR = {
+			any_scope_state = {
+				owner = c:RUS
+				any_scope_building = {
+					is_building_type = building_port
+					occupancy >= 0.5
+					building_has_goods_shortage = no
+				}
+			}
+			market = { is_adjacent_to_market = c:NQG.market }
+		}
+	}
+}
+
+ywc_nqg_port_treaty_can_offer_jap = {
+	c:NQG ?= this
+	ywc_nqg_port_treaty_requester_ready = yes
+	ywc_nqg_port_treaty_clear_to_inquire = yes
+	exists = c:JAP
+	c:JAP = {
+		is_country_alive = yes
+		relations:c:NQG >= 0
+		any_scope_state = { owner = c:JAP has_port_state = yes }
+		OR = {
+			any_scope_state = {
+				owner = c:JAP
+				any_scope_building = {
+					is_building_type = building_port
+					occupancy >= 0.5
+					building_has_goods_shortage = no
+				}
+			}
+			market = { is_adjacent_to_market = c:NQG.market }
+		}
+	}
+}
+
+ywc_nqg_port_treaty_can_offer_jhg = {
+	c:NQG ?= this
+	ywc_nqg_port_treaty_requester_ready = yes
+	ywc_nqg_port_treaty_clear_to_inquire = yes
+	exists = c:JHG
+	c:JHG = {
+		is_country_alive = yes
+		relations:c:NQG >= 0
+		any_scope_state = { owner = c:JHG has_port_state = yes }
+		OR = {
+			any_scope_state = {
+				owner = c:JHG
+				any_scope_building = {
+					is_building_type = building_port
+					occupancy >= 0.5
+					building_has_goods_shortage = no
+				}
+			}
+			market = { is_adjacent_to_market = c:NQG.market }
+		}
+	}
+}
+
+ywc_nqg_port_treaty_offer_matches = {
+	exists = scope:ywc_nqg_port_treaty_requester
+	exists = scope:ywc_nqg_port_treaty_request_partner
+	scope:ywc_nqg_port_treaty_request_partner ?= this
+	scope:ywc_nqg_port_treaty_requester ?= c:NQG
+	scope:ywc_nqg_port_treaty_requester = {
+		var:ywc_nqg_port_treaty_partner ?= root
+		var:ywc_nqg_port_treaty_generation ?= scope:ywc_nqg_port_treaty_request_generation
+		var:ywc_nqg_port_treaty_state ?= 1
+		has_variable = ywc_nqg_port_treaty_request_timer
+		var:ywc_nqg_port_treaty_kind ?= scope:ywc_nqg_port_treaty_request_kind
+	}
+}
+
+ywc_nqg_port_treaty_authorizable = {
+	ywc_nqg_port_treaty_offer_matches = yes
+	is_country_alive = yes
+	relations:scope:ywc_nqg_port_treaty_requester >= 0
+	any_scope_state = { owner = scope:ywc_nqg_port_treaty_request_partner has_port_state = yes }
+}
+
+ywc_nqg_port_treaty_accepted_current = {
+	has_variable = ywc_nqg_port_treaty_quote_generation
+	var:ywc_nqg_port_treaty_quote_generation ?= var:ywc_nqg_port_treaty_generation
+	var:ywc_nqg_port_treaty_state ?= 2
+	has_variable = ywc_nqg_port_treaty_accept
+	var:ywc_nqg_port_treaty_accept ?= 1
+	var:ywc_nqg_port_treaty_accept_generation ?= var:ywc_nqg_port_treaty_quote_generation
+	var:ywc_nqg_port_treaty_accept_kind ?= var:ywc_nqg_port_treaty_quote_kind
+	exists = var:ywc_nqg_port_treaty_partner
+	var:ywc_nqg_port_treaty_partner = { is_country_alive = yes }
+}
+
+# A signed lease is live only while the exact captured port state, market and
+# partner remain; a changed object suspends rather than retargets.
+ywc_nqg_port_treaty_lease_active = {
+	has_variable = ywc_nqg_port_treaty_contract_generation
+	has_variable = ywc_nqg_port_treaty_contract_berth
+	exists = var:ywc_nqg_port_treaty_contract_partner
+	var:ywc_nqg_port_treaty_contract_partner = { is_country_alive = yes }
+	exists = var:ywc_nqg_port_treaty_dest_state
+	var:ywc_nqg_port_treaty_dest_state = {
+		owner ?= c:NQG
+		market ?= owner.var:ywc_nqg_port_treaty_dest_market
+	}
+	NOT = { var:ywc_nqg_port_treaty_lease_ended_generation ?= var:ywc_nqg_port_treaty_contract_generation }
+	NOT = { var:ywc_nqg_port_treaty_lease_suspended_generation ?= var:ywc_nqg_port_treaty_contract_generation }
+	has_variable = ywc_nqg_port_treaty_current_month
+	var:ywc_nqg_port_treaty_current_month < var:ywc_nqg_port_treaty_contract_end_month
+}
+
+ywc_nqg_port_treaty_escort_inquirable = {
+	c:NQG ?= this
+	ywc_nqg_port_treaty_lease_active = yes
+	ywc_nqg_port_treaty_clear_to_inquire = yes
+	exists = var:ywc_nqg_port_treaty_contract_partner
+	var:ywc_nqg_port_treaty_contract_partner = {
+		is_country_alive = yes
+		relations:c:NQG >= 0
+	}
+}
+
+ywc_nqg_port_treaty_renewal_inquirable = {
+	ywc_nqg_port_treaty_escort_inquirable = yes
+	NOT = { var:ywc_nqg_port_treaty_lease_suspended_generation ?= var:ywc_nqg_port_treaty_contract_generation }
+}
+
+ywc_nqg_port_treaty_escort_ready = {
+	has_variable = ywc_nqg_port_treaty_escort_ready
+	var:ywc_nqg_port_treaty_escort_ready ?= 1
+}
+
+ywc_nqg_port_treaty_partner_intact = {
+	exists = var:ywc_nqg_port_treaty_partner
+	var:ywc_nqg_port_treaty_partner = {
+		is_country_alive = yes
+		relations:c:NQG >= 0
+	}
+}
+
+ywc_nqg_port_treaty_can_offer_any = {
+	OR = {
+		ywc_nqg_port_treaty_can_offer_rus = yes
+		ywc_nqg_port_treaty_can_offer_jap = yes
+		ywc_nqg_port_treaty_can_offer_jhg = yes
 	}
 }

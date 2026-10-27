@@ -16,13 +16,13 @@ JOURNAL_PATH = ROOT / "yongchang_world" / "common" / "journal_entries" / "ywc_v0
 ARCS = {
     "v03_nqg_winter_court": (1000, 1032, 13, 3, "winter"),
     "v03_nqg_hunting_rights": (1010, 1015, 6, 1, "hunting"),
-    "v03_nqg_northern_port": (1020, 1027, 8, 2, "port"),
+    "v03_nqg_northern_port": (1020, 1029, 10, 2, "port"),
 }
 # The winter arc's disjoint 1030-1039 range holds the real aid response (1030),
 # the local aid ledger (1031) and the hidden repayment endpoint (1032). They are
 # not sequential arc steps, so the progress/terminal rules apply only to 1000-1009.
-EXTRA_EVENT_IDS = {"ywc_nqg.1030", "ywc_nqg.1031", "ywc_nqg.1032"}
-SCRIPT_DISPATCHED_IDS = {"ywc_nqg.1030", "ywc_nqg.1031", "ywc_nqg.1032"}
+EXTRA_EVENT_IDS = {"ywc_nqg.1030", "ywc_nqg.1031", "ywc_nqg.1032", "ywc_nqg.1028", "ywc_nqg.1029"}
+SCRIPT_DISPATCHED_IDS = {"ywc_nqg.1030", "ywc_nqg.1031", "ywc_nqg.1032", "ywc_nqg.1028", "ywc_nqg.1029"}
 
 
 class NqgTerminalWorld(PulseWorld):
@@ -115,7 +115,7 @@ class NqgCatalogShapeTest(unittest.TestCase):
             events += len(arc["events"])
             journals += len(arc["journals"])
         self.assertEqual(seen, set(ARCS))
-        self.assertEqual(events, 27)
+        self.assertEqual(events, 29)
         self.assertEqual(journals, 6)
 
     def test_event_ids_use_the_nqg_namespace(self):
@@ -229,6 +229,14 @@ class NqgScriptResolutionTest(unittest.TestCase):
                 if event["id"] == "ywc_nqg.1031":
                     self.assertIn("trigger_event = { id = ywc_nqg.1031 }", effects,
                                   "aid ledger must be dispatched by the reply/status helper")
+                    continue
+                if event["id"] == "ywc_nqg.1028":
+                    self.assertIn("trigger_event = { id = ywc_nqg.1028 }", effects,
+                                  "port treaty answer must be sent by the inquiry helper")
+                    continue
+                if event["id"] == "ywc_nqg.1029":
+                    self.assertIn("trigger_event = { id = ywc_nqg.1029 months = 120 }", effects,
+                                  "hidden lease endpoint must be scheduled by the signature helper")
                     continue
                 self.assertIn(f"trigger_event = {{ id = {event['id']} }}", script,
                               f"{event['id']} unreachable")
@@ -780,7 +788,8 @@ class NqgNoticeLaneTest(unittest.TestCase):
         wait_hunting("ywc_nqg.1015"); w.choose("ywc_nqg.1015","settle_full")
         self.assertEqual(w.countries["NQG"]["ywc_v03_nqg_v03_nqg_hunting_rights_outcome"],3)
 
-        # The port lease path checks a real foreign trade pact plus owned port capacity.
+        # The old trade-pact heuristic is gone: a pact alone never satisfies the
+        # lease route, and the exclusive option needs a real eligible partner.
         pf={"ywc_v03_initialized":1,"ywc_v03_release_version":3,"ywc_v03_active_arc_count":0,
             "ywc_v03_visible_task_count":0,"yearly_gross_income":52000,"gold_reserves":20000,
             "bureaucracy":100,"net_fixed_income":1,"government_legitimacy":30,
@@ -788,18 +797,8 @@ class NqgNoticeLaneTest(unittest.TestCase):
             "buildings":[{"type":"building_port","occupancy":0.8,"goods_shortage":False}]}]}
         w=NqgWorldFactsRuntime({"NQG":pf,"ALLY":{"diplomatic_pacts":["trade_agreement"],"relations":50}})
         arc=_arc(catalog,"v03_nqg_northern_port"); first=arc["journals"][0]; w.enter(first)
-        def wait_port(event_id):
-            for _ in range(8):
-                w.advance_months(1)
-                if event_id in w.pulse(w.current_driver(arc)): return
-            raise AssertionError("authored event not delivered: "+event_id)
-        wait_port("ywc_nqg.1020"); w.choose("ywc_nqg.1020","exclusive_lease")
-        for event,choice in [(1021,"by_call"),(1022,"levy_users"),(1023,"renegotiate"),(1024,"recognise_duties")]:
-            event_id=f"ywc_nqg.{event}"; wait_port(event_id); w.choose(event_id,choice)
-        for event,choice in [(1025,"keep_watch"),(1026,"renew")]:
-            event_id=f"ywc_nqg.{event}"; wait_port(f"ywc_nqg.{event}"); w.choose(f"ywc_nqg.{event}",choice)
-        wait_port("ywc_nqg.1027"); w.choose("ywc_nqg.1027","settle_full")
-        self.assertEqual(w.countries["NQG"]["ywc_v03_nqg_v03_nqg_northern_port_outcome"],3)
+        self.assertFalse(_script_condition(w,"{ ywc_nqg_port_lease_ready = yes }","NQG"))
+        self.assertFalse(_script_condition(w,"{ var:ywc_nqg_port_route = 2 ywc_nqg_port_route_execution_ready = yes }","NQG"))
 
     def test_stale_full_popup_rejects_and_reopens_after_fresh_whole_target_watch(self):
         catalog=_catalog(); arc=_arc(catalog,"v03_nqg_hunting_rights"); first=arc["journals"][0]

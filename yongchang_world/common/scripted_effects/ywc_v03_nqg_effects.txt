@@ -743,3 +743,305 @@ ywc_nqg_aid_choose_retry_jap = {
 		ywc_nqg_aid_send_jap = yes
 	}
 }
+
+# NQG northern port treaty: one inquiry per decision, one captured answer, and
+# no silent retarget after signature. A lease is live only over the exact port
+# state and market captured at signature.
+ywc_nqg_port_treaty_send_lease = {
+	if = {
+		limit = { ywc_nqg_port_treaty_can_offer_rus = yes }
+		c:RUS = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		ywc_nqg_port_treaty_send_lease_captured = yes
+	}
+	else_if = {
+		limit = { ywc_nqg_port_treaty_can_offer_jap = yes }
+		c:JAP = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		ywc_nqg_port_treaty_send_lease_captured = yes
+	}
+	else_if = {
+		limit = { ywc_nqg_port_treaty_can_offer_jhg = yes }
+		c:JHG = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		ywc_nqg_port_treaty_send_lease_captured = yes
+	}
+}
+
+ywc_nqg_port_treaty_send_lease_captured = {
+	set_variable = { name = ywc_nqg_port_treaty_kind value = 1 }
+	set_variable = { name = ywc_nqg_port_treaty_berth value = 0.5 }
+	set_variable = { name = ywc_nqg_port_treaty_duty value = 1 }
+	set_variable = { name = ywc_nqg_port_treaty_term value = 120 }
+	set_variable = { name = ywc_nqg_port_treaty_cost value = 0 }
+	ywc_nqg_port_treaty_send_captured_inquiry = yes
+}
+
+ywc_nqg_port_treaty_send_escort_renegotiate = {
+	if = {
+		limit = { ywc_nqg_port_treaty_escort_inquirable = yes }
+		var:ywc_nqg_port_treaty_contract_partner = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		set_variable = { name = ywc_nqg_port_treaty_kind value = 2 }
+		set_variable = { name = ywc_nqg_port_treaty_berth value = var:ywc_nqg_port_treaty_contract_berth }
+		set_variable = { name = ywc_nqg_port_treaty_duty value = var:ywc_nqg_port_treaty_contract_duty }
+		set_variable = { name = ywc_nqg_port_treaty_term value = 0 }
+		set_variable = { name = ywc_nqg_port_treaty_cost value = var:ywc_nqg_port_fee }
+		change_variable = { name = ywc_nqg_port_treaty_cost divide = 2 }
+		ywc_nqg_port_treaty_send_captured_inquiry = yes
+	}
+}
+
+ywc_nqg_port_treaty_send_escort_hold = {
+	if = {
+		limit = { ywc_nqg_port_treaty_escort_inquirable = yes }
+		var:ywc_nqg_port_treaty_contract_partner = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		set_variable = { name = ywc_nqg_port_treaty_kind value = 2 }
+		set_variable = { name = ywc_nqg_port_treaty_berth value = var:ywc_nqg_port_treaty_contract_berth }
+		set_variable = { name = ywc_nqg_port_treaty_duty value = var:ywc_nqg_port_treaty_contract_duty }
+		set_variable = { name = ywc_nqg_port_treaty_term value = 0 }
+		set_variable = { name = ywc_nqg_port_treaty_cost value = 0 }
+		if = { limit = { has_variable = ywc_nqg_port_treaty_escort_cost } set_variable = { name = ywc_nqg_port_treaty_cost value = var:ywc_nqg_port_treaty_escort_cost } }
+		ywc_nqg_port_treaty_send_captured_inquiry = yes
+	}
+}
+
+ywc_nqg_port_treaty_send_renew = {
+	if = {
+		limit = { ywc_nqg_port_treaty_renewal_inquirable = yes }
+		var:ywc_nqg_port_treaty_contract_partner = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		set_variable = { name = ywc_nqg_port_treaty_kind value = 3 }
+		set_variable = { name = ywc_nqg_port_treaty_berth value = var:ywc_nqg_port_treaty_contract_berth }
+		set_variable = { name = ywc_nqg_port_treaty_duty value = var:ywc_nqg_port_treaty_contract_duty }
+		set_variable = { name = ywc_nqg_port_treaty_term value = 120 }
+		set_variable = { name = ywc_nqg_port_treaty_cost value = 0 }
+		ywc_nqg_port_treaty_send_captured_inquiry = yes
+	}
+}
+
+ywc_nqg_port_treaty_send_amend = {
+	if = {
+		limit = { ywc_nqg_port_treaty_renewal_inquirable = yes }
+		var:ywc_nqg_port_treaty_contract_partner = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+		set_variable = { name = ywc_nqg_port_treaty_kind value = 3 }
+		set_variable = { name = ywc_nqg_port_treaty_berth value = 0.6 }
+		set_variable = { name = ywc_nqg_port_treaty_duty value = 1 }
+		set_variable = { name = ywc_nqg_port_treaty_term value = 60 }
+		set_variable = { name = ywc_nqg_port_treaty_cost value = 0 }
+		ywc_nqg_port_treaty_send_captured_inquiry = yes
+	}
+}
+
+ywc_nqg_port_treaty_send_captured_inquiry = {
+	if = {
+		limit = {
+			exists = scope:ywc_nqg_port_treaty_request_partner
+			OR = {
+				AND = { scope:ywc_nqg_port_treaty_request_partner ?= c:RUS ywc_nqg_port_treaty_can_offer_rus = yes }
+				AND = { scope:ywc_nqg_port_treaty_request_partner ?= c:JAP ywc_nqg_port_treaty_can_offer_jap = yes }
+				AND = { scope:ywc_nqg_port_treaty_request_partner ?= c:JHG ywc_nqg_port_treaty_can_offer_jhg = yes }
+				AND = { scope:ywc_nqg_port_treaty_request_partner ?= var:ywc_nqg_port_treaty_contract_partner ywc_nqg_port_treaty_lease_active = yes }
+			}
+		}
+		if = { limit = { NOT = { has_variable = ywc_nqg_port_treaty_generation } } set_variable = { name = ywc_nqg_port_treaty_generation value = 0 } }
+		change_variable = { name = ywc_nqg_port_treaty_generation add = 1 }
+		ywc_nqg_port_treaty_cancel_unsigned = yes
+		set_variable = { name = ywc_nqg_port_treaty_partner value = scope:ywc_nqg_port_treaty_request_partner }
+		set_variable = { name = ywc_nqg_port_treaty_state value = 1 }
+		set_variable = { name = ywc_nqg_port_treaty_request_timer value = 1 months = 3 }
+		set_variable = { name = ywc_nqg_port_treaty_quote_generation value = var:ywc_nqg_port_treaty_generation }
+		set_variable = { name = ywc_nqg_port_treaty_quote_kind value = var:ywc_nqg_port_treaty_kind }
+		set_variable = { name = ywc_nqg_port_treaty_quote_berth value = var:ywc_nqg_port_treaty_berth }
+		set_variable = { name = ywc_nqg_port_treaty_quote_duty value = var:ywc_nqg_port_treaty_duty }
+		set_variable = { name = ywc_nqg_port_treaty_quote_term value = var:ywc_nqg_port_treaty_term }
+		set_variable = { name = ywc_nqg_port_treaty_quote_cost value = var:ywc_nqg_port_treaty_cost }
+		save_scope_as = ywc_nqg_port_treaty_requester
+		save_scope_value_as = { name = ywc_nqg_port_treaty_request_generation value = var:ywc_nqg_port_treaty_generation }
+		save_scope_value_as = { name = ywc_nqg_port_treaty_request_kind value = var:ywc_nqg_port_treaty_kind }
+		save_scope_value_as = { name = ywc_nqg_port_treaty_request_term value = var:ywc_nqg_port_treaty_term }
+		save_scope_value_as = { name = ywc_nqg_port_treaty_request_cost value = var:ywc_nqg_port_treaty_cost }
+		scope:ywc_nqg_port_treaty_request_partner = { trigger_event = { id = ywc_nqg.1028 } }
+	}
+}
+
+ywc_nqg_port_treaty_authorize_accept = {
+	if = {
+		limit = { ywc_nqg_port_treaty_authorizable = yes }
+		set_variable = { name = ywc_nqg_port_treaty_answer_requester value = scope:ywc_nqg_port_treaty_requester }
+		set_variable = { name = ywc_nqg_port_treaty_answer_generation value = scope:ywc_nqg_port_treaty_request_generation }
+		set_variable = { name = ywc_nqg_port_treaty_answer_kind value = scope:ywc_nqg_port_treaty_request_kind }
+		set_variable = { name = ywc_nqg_port_treaty_answer_term value = scope:ywc_nqg_port_treaty_request_term }
+		set_variable = { name = ywc_nqg_port_treaty_answer_cost value = scope:ywc_nqg_port_treaty_request_cost }
+		set_variable = { name = ywc_nqg_port_treaty_answer value = 1 }
+		scope:ywc_nqg_port_treaty_requester = {
+			set_variable = { name = ywc_nqg_port_treaty_accept value = 1 }
+			set_variable = { name = ywc_nqg_port_treaty_accept_generation value = scope:ywc_nqg_port_treaty_request_generation }
+			set_variable = { name = ywc_nqg_port_treaty_accept_kind value = scope:ywc_nqg_port_treaty_request_kind }
+			set_variable = { name = ywc_nqg_port_treaty_state value = 2 }
+			ywc_nqg_port_treaty_sign_contract = yes
+		}
+	}
+}
+
+ywc_nqg_port_treaty_refuse = {
+	if = {
+		limit = { ywc_nqg_port_treaty_authorizable = yes }
+		set_variable = { name = ywc_nqg_port_treaty_answer_requester value = scope:ywc_nqg_port_treaty_requester }
+		set_variable = { name = ywc_nqg_port_treaty_answer_generation value = scope:ywc_nqg_port_treaty_request_generation }
+		set_variable = { name = ywc_nqg_port_treaty_answer value = 2 }
+		scope:ywc_nqg_port_treaty_requester = {
+			remove_variable = ywc_nqg_port_treaty_request_timer
+			set_variable = { name = ywc_nqg_port_treaty_state value = 3 }
+		}
+	}
+}
+
+ywc_nqg_port_treaty_cancel_unsigned = {
+	if = {
+		limit = {
+			OR = {
+				var:ywc_nqg_port_treaty_state ?= 1
+				var:ywc_nqg_port_treaty_state ?= 2
+			}
+		}
+		remove_variable = ywc_nqg_port_treaty_request_timer
+		remove_variable = ywc_nqg_port_treaty_accept
+		remove_variable = ywc_nqg_port_treaty_accept_generation
+		remove_variable = ywc_nqg_port_treaty_accept_kind
+		remove_variable = ywc_nqg_port_treaty_partner
+		set_variable = { name = ywc_nqg_port_treaty_state value = 7 }
+	}
+}
+
+ywc_nqg_port_treaty_invalidate_pending = {
+	if = {
+		limit = {
+			OR = {
+				var:ywc_nqg_port_treaty_state ?= 1
+				var:ywc_nqg_port_treaty_state ?= 2
+			}
+			NOT = { has_variable = ywc_nqg_port_treaty_request_timer }
+		}
+		ywc_nqg_port_treaty_cancel_unsigned = yes
+		set_variable = { name = ywc_nqg_port_treaty_state value = 4 }
+	}
+	if = {
+		limit = {
+			OR = {
+				var:ywc_nqg_port_treaty_state ?= 1
+				var:ywc_nqg_port_treaty_state ?= 2
+			}
+			NOT = { ywc_nqg_port_treaty_partner_intact = yes }
+		}
+		ywc_nqg_port_treaty_cancel_unsigned = yes
+		set_variable = { name = ywc_nqg_port_treaty_state value = 5 }
+	}
+}
+
+ywc_nqg_port_treaty_sign_contract = {
+	if = {
+		limit = { ywc_nqg_port_treaty_accepted_current = yes }
+		if = {
+			limit = { var:ywc_nqg_port_treaty_quote_kind = 2 }
+			set_variable = { name = ywc_nqg_port_treaty_escort_ready value = 1 }
+			set_variable = { name = ywc_nqg_port_treaty_escort_cost value = var:ywc_nqg_port_treaty_quote_cost }
+			remove_variable = ywc_nqg_port_treaty_request_timer
+			set_variable = { name = ywc_nqg_port_treaty_state value = 6 }
+		}
+		else = {
+			save_scope_as = ywc_nqg_port_treaty_requester
+			var:ywc_nqg_port_treaty_partner = { save_scope_as = ywc_nqg_port_treaty_request_partner }
+			every_scope_state = {
+				limit = {
+					owner = c:NQG
+					has_port_state = yes
+				}
+				save_scope_as = ywc_nqg_port_treaty_dest_state
+			}
+			if = {
+				limit = {
+					exists = scope:ywc_nqg_port_treaty_dest_state
+					OR = {
+						AND = { var:ywc_nqg_port_treaty_quote_kind = 1 }
+						AND = {
+							var:ywc_nqg_port_treaty_quote_kind = 3
+							has_variable = ywc_nqg_port_treaty_contract_partner
+							var:ywc_nqg_port_treaty_contract_partner ?= var:ywc_nqg_port_treaty_partner
+							has_variable = ywc_nqg_port_treaty_dest_state
+							scope:ywc_nqg_port_treaty_dest_state ?= var:ywc_nqg_port_treaty_dest_state
+						}
+					}
+				}
+				set_variable = { name = ywc_nqg_port_treaty_contract_partner value = var:ywc_nqg_port_treaty_partner }
+				set_variable = { name = ywc_nqg_port_treaty_contract_generation value = var:ywc_nqg_port_treaty_quote_generation }
+				set_variable = { name = ywc_nqg_port_treaty_contract_berth value = var:ywc_nqg_port_treaty_quote_berth }
+				set_variable = { name = ywc_nqg_port_treaty_contract_duty value = var:ywc_nqg_port_treaty_quote_duty }
+				set_variable = { name = ywc_nqg_port_treaty_contract_term value = var:ywc_nqg_port_treaty_quote_term }
+				set_variable = { name = ywc_nqg_port_treaty_current_month value = ywc_nqg_current_calendar_month }
+				set_variable = { name = ywc_nqg_port_treaty_contract_end_month value = var:ywc_nqg_port_treaty_current_month }
+				change_variable = { name = ywc_nqg_port_treaty_contract_end_month add = var:ywc_nqg_port_treaty_quote_term }
+				set_variable = { name = ywc_nqg_port_treaty_dest_state value = scope:ywc_nqg_port_treaty_dest_state }
+				set_variable = { name = ywc_nqg_port_treaty_dest_market value = scope:ywc_nqg_port_treaty_dest_state.market }
+				remove_variable = ywc_nqg_port_treaty_lease_ended_generation
+				remove_variable = ywc_nqg_port_treaty_lease_suspended_generation
+				remove_variable = ywc_nqg_port_treaty_request_timer
+				set_variable = { name = ywc_nqg_port_treaty_state value = 6 }
+				if = {
+					limit = { NOT = { var:ywc_nqg_port_treaty_end_scheduled_generation ?= var:ywc_nqg_port_treaty_contract_generation } }
+					save_scope_as = ywc_nqg_port_treaty_end_owner
+					save_scope_value_as = { name = ywc_nqg_port_treaty_end_generation value = var:ywc_nqg_port_treaty_contract_generation }
+					set_variable = { name = ywc_nqg_port_treaty_end_scheduled_generation value = var:ywc_nqg_port_treaty_contract_generation }
+					trigger_event = { id = ywc_nqg.1029 months = 120 }
+				}
+			}
+		}
+	}
+}
+
+# One owner: the NQG country-monthly on_action. Suspension is latched per
+# generation; recovery only clears it when the exact captured objects return.
+ywc_nqg_port_treaty_monthly = {
+	if = {
+		limit = { has_variable = ywc_nqg_port_treaty_contract_generation }
+		set_variable = { name = ywc_nqg_port_treaty_current_month value = ywc_nqg_current_calendar_month }
+		if = {
+			limit = {
+				OR = {
+					NOT = { exists = var:ywc_nqg_port_treaty_contract_partner }
+					var:ywc_nqg_port_treaty_contract_partner = { is_country_alive = no }
+					NOT = { exists = var:ywc_nqg_port_treaty_dest_state }
+					var:ywc_nqg_port_treaty_dest_state = { NOT = { owner ?= c:NQG } }
+					NOT = { c:NQG.market ?= var:ywc_nqg_port_treaty_dest_market }
+				}
+			}
+			if = {
+				limit = { NOT = { var:ywc_nqg_port_treaty_lease_suspended_generation ?= var:ywc_nqg_port_treaty_contract_generation } }
+				set_variable = { name = ywc_nqg_port_treaty_lease_suspended_generation value = var:ywc_nqg_port_treaty_contract_generation }
+			}
+		}
+		else_if = {
+			limit = {
+				var:ywc_nqg_port_treaty_lease_suspended_generation ?= var:ywc_nqg_port_treaty_contract_generation
+			}
+			remove_variable = ywc_nqg_port_treaty_lease_suspended_generation
+		}
+		if = {
+			limit = {
+				has_variable = ywc_nqg_port_treaty_contract_end_month
+				var:ywc_nqg_port_treaty_current_month >= var:ywc_nqg_port_treaty_contract_end_month
+				NOT = { var:ywc_nqg_port_treaty_lease_ended_generation ?= var:ywc_nqg_port_treaty_contract_generation }
+			}
+			set_variable = { name = ywc_nqg_port_treaty_lease_ended_generation value = var:ywc_nqg_port_treaty_contract_generation }
+		}
+	}
+	ywc_nqg_port_treaty_invalidate_pending = yes
+}
+
+ywc_nqg_port_treaty_end_lease = {
+	if = {
+		limit = {
+			exists = scope:ywc_nqg_port_treaty_end_owner
+			scope:ywc_nqg_port_treaty_end_owner ?= this
+			has_variable = ywc_nqg_port_treaty_contract_generation
+			var:ywc_nqg_port_treaty_contract_generation ?= scope:ywc_nqg_port_treaty_end_generation
+			NOT = { var:ywc_nqg_port_treaty_lease_ended_generation ?= scope:ywc_nqg_port_treaty_end_generation }
+		}
+		set_variable = { name = ywc_nqg_port_treaty_lease_ended_generation value = scope:ywc_nqg_port_treaty_end_generation }
+	}
+}
