@@ -1502,7 +1502,8 @@ def _validate_nqg_inline_catalog(catalog: dict[str, Any]) -> None:
             branch_source = journal_source[source["start"]:source["end"]]
             branch_node = parse_block("{ " + branch_source + " }")[0]
             direct_triggers = direct_values(children(branch_node), "trigger_event")
-            if len(direct_triggers) != 1 or source["event"] != late_events[arc["slug"]] and any(candidate["kind"] != "normal_queued_event" for candidate in expected_candidates):
+            aid_notice = arc["slug"] == "v03_nqg_winter_court" and source["event"] == "ywc_nqg.1031"
+            if len(direct_triggers) != 1 or source["event"] != late_events[arc["slug"]] and not aid_notice and any(candidate["kind"] != "normal_queued_event" for candidate in expected_candidates):
                 raise ValueError(f"{arc['slug']}/{jid}: late delivery classes must target their native late event")
             setters: dict[str, list[Node]] = {}
             for node in children(branch_node):
@@ -1517,16 +1518,19 @@ def _validate_nqg_inline_catalog(catalog: dict[str, Any]) -> None:
             expected_intents: set[str] = set()
             for candidate in proof["candidates"]:
                 allowed = {"queue", "kind", "mode"} | ({"value"} if candidate.get("mode") == "exact" else set())
-                if not isinstance(candidate, dict) or set(candidate) != allowed or candidate.get("kind") not in {"normal_queued_event", "notice12", "notice36", "remedy_final"}:
+                if not isinstance(candidate, dict) or set(candidate) != allowed or candidate.get("kind") not in {"normal_queued_event", "notice12", "notice36", "remedy_final", "notice"}:
                     raise ValueError(f"{arc['slug']}/{jid}: malformed candidate class")
                 if any(type(candidate.get(field)) is not str for field in ("queue", "kind", "mode")):
                     raise ValueError(f"{arc['slug']}/{jid}: candidate fields must be strings")
                 if "value" in candidate and type(candidate["value"]) is not int:
                     raise ValueError(f"{arc['slug']}/{jid}: exact queue value must be an integer")
-                expected_suffix = {"normal_queued_event": "pending", "notice12": "notice12_pending", "notice36": "notice36_pending", "remedy_final": "remedy_final_pending"}[candidate["kind"]]
+                expected_suffix = {"normal_queued_event": "pending", "notice12": "notice12_pending", "notice36": "notice36_pending", "remedy_final": "remedy_final_pending", "notice": "aid_notice_event"}[candidate["kind"]]
                 if candidate["queue"] != f"ywc_nqg_{base}_{expected_suffix}":
                     raise ValueError(f"{arc['slug']}/{jid}: candidate queue is not owned by its arc and class")
-                if candidate["kind"] == "normal_queued_event":
+                if candidate["kind"] == "notice":
+                    if not aid_notice or candidate != {"queue": "ywc_nqg_winter_aid_notice_event", "kind": "notice", "mode": "exact", "value": 1031}:
+                        raise ValueError(f"{arc['slug']}/{jid}: invalid NQG aid notice candidate")
+                elif candidate["kind"] == "normal_queued_event":
                     event_number = source["event"].rsplit(".", 1)[-1]
                     if candidate["mode"] != "exact" or type(candidate.get("value")) is not int or not event_number.isdigit() or candidate["value"] != int(event_number):
                         raise ValueError(f"{arc['slug']}/{jid}: normal queue must carry its exact native event id")
@@ -1717,6 +1721,48 @@ def _kor_procurement_checks(candidate_id: int, *, delivered: bool) -> list[str]:
     return checks
 
 
+def _nqg_aid_fields(candidate_id: int) -> dict[str, str]:
+    stem = f"ywc_v03_nqg_inline_c{candidate_id}_aid_"
+    return {name: stem + name for name in ("serial", "generation", "request_state", "reason",
+                                           "partner_available", "partner", "body_completed",
+                                           "body_completed_epoch", "body_completed_serial")}
+
+
+def _nqg_aid_checks(candidate_id: int, *, delivered: bool) -> list[str]:
+    """NQG aid notice with independent frozen queue and partner identity."""
+    f = _nqg_aid_fields(candidate_id)
+    checks = ["ywc_nqg_winter_aid_notice_live = yes",
+              "has_variable = ywc_nqg_aid_generation",
+              "has_variable = ywc_nqg_aid_state"]
+    live = {"serial": "ywc_nqg_winter_aid_notice_serial",
+            "generation": "ywc_nqg_winter_aid_notice_generation",
+            "request_state": "ywc_nqg_winter_aid_notice_request_state",
+            "reason": "ywc_nqg_winter_aid_notice_reason"}
+    for suffix, name in live.items():
+        checks += [f"has_variable = {f[suffix]}", f"var:{f[suffix]} = var:{name}"]
+    checks += [f"has_variable = {f['partner_available']}",
+               f"OR = {{ var:{f['partner_available']} = 0 var:{f['partner_available']} = 1 }}",
+               "var:ywc_nqg_winter_aid_notice_generation = var:ywc_nqg_aid_generation",
+               "var:ywc_nqg_winter_aid_notice_request_state = var:ywc_nqg_aid_state",
+               f"OR = {{ AND = {{ var:{f['partner_available']} = 0 NOT = {{ exists = var:ywc_nqg_winter_aid_notice_partner }} }} "
+               f"AND = {{ var:{f['partner_available']} = 1 exists = var:{f['partner']} "
+               f"var:{f['partner']} ?= var:ywc_nqg_winter_aid_notice_partner "
+               f"var:{f['partner']} = {{ is_country_alive = yes }} }} }}"]
+    if delivered:
+        captured = "ywc_nqg_winter_aid_notice_"
+        checks += [f"exists = scope:{captured}owner", f"scope:{captured}owner ?= this",
+                   f"scope:{captured}candidate ?= {candidate_id}",
+                   "has_variable = ywc_v03_nqg_inline_reservation_epoch",
+                   "var:ywc_v03_nqg_inline_reservation_epoch > 0",
+                   f"scope:{captured}epoch ?= var:ywc_v03_nqg_inline_reservation_epoch"]
+        for suffix in ("serial", "generation", "request_state", "reason", "partner_available"):
+            checks.append(f"scope:{captured}{suffix} ?= var:{f[suffix]}")
+        checks += [f"OR = {{ AND = {{ var:{f['partner_available']} = 0 NOT = {{ exists = scope:{captured}partner }} }} "
+                   f"AND = {{ var:{f['partner_available']} = 1 exists = scope:{captured}partner "
+                   f"scope:{captured}partner ?= var:{f['partner']} }} }}"]
+    return checks
+
+
 def _branch_node(pulse: str, branch: dict[str, Any]) -> tuple[Node, Node, Node]:
     top = parse_block(pulse)
     monthly = direct_values(top, "on_monthly_pulse")
@@ -1747,6 +1793,8 @@ def _nqg_state_variables(arc_slug: str, arc_candidates: list[dict[str, Any]]) ->
         raise ValueError(f"unknown NQG arc: {arc_slug}")
     base = f"ywc_nqg_{arc}"
     names = {c["queue"]["queue"] for c in arc_candidates}
+    if any(c.get("nqg_aid_notice") for c in arc_candidates):
+        names.add("ywc_nqg_winter_pending")
     names.update({f"{base}_notice12_intent", f"{base}_notice36_intent",
                   f"{base}_notice12_open", f"{base}_notice36_open",
                   f"{base}_blocked_12_delivered", f"{base}_blocked_36_delivered"})
@@ -1871,12 +1919,15 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 event = next(e for e in arc["events"] if e["id"] == proof["event"])
                 kor_instructor_notice = is_kor and event["id"] == "ywc_kor.1031"
                 kor_procurement_notice = is_kor and event["id"] == "ywc_kor.1034"
+                nqg_aid_notice = is_nqg and event["id"] == "ywc_nqg.1031"
                 if is_kor and event["id"] in {"ywc_kor.1030", "ywc_kor.1032", "ywc_kor.1033", "ywc_kor.1035"}:
                     raise ValueError("foreign/hidden KOR events cannot be inline candidates")
                 if kor_instructor_notice and queue != {"queue": "ywc_kor_instructor_notice_event", "kind": "notice", "mode": "exact", "value": 1031}:
                     raise ValueError("KOR instructor notice candidate has wrong queue shape")
                 if kor_procurement_notice and queue != {"queue": "ywc_kor_procurement_notice_event", "kind": "notice", "mode": "exact", "value": 1034}:
                     raise ValueError("KOR procurement notice candidate has wrong queue shape")
+                if nqg_aid_notice and queue != {"queue": "ywc_nqg_winter_aid_notice_event", "kind": "notice", "mode": "exact", "value": 1031}:
+                    raise ValueError("NQG aid notice candidate has wrong queue shape")
                 native_short = queue["queue"].split("_")[2] if is_nmg else None
                 if is_mgl:
                     receipt_variable, receipt_value, receipt_match = None, None, True
@@ -1933,10 +1984,10 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 if is_mgl and queue["kind"] == "notice":
                     native_notice_marker = queue["queue"].split("_blocked_", 1)[0] + "_blocked_notice_last_delivered"
                     native_notice_marker_value = 1 if queue["queue"].endswith("_blocked_12_notice_event") else 2
-                rank_map = ({"normal": 0, "notice": 1} if (is_kor or is_lan or is_nmg) else {"normal": 1, "notice": 0} if is_shu else {"normal": 0, "notice36": 1, "notice12": 2} if not is_nqg else {"normal_queued_event": 0, "notice36": 1, "notice12": 2, "remedy_final": 3})
+                rank_map = ({"normal": 0, "notice": 1} if (is_kor or is_lan or is_nmg) else {"normal": 1, "notice": 0} if is_shu else {"normal": 0, "notice36": 1, "notice12": 2} if not is_nqg else {"normal_queued_event": 0, "notice36": 1, "notice12": 2, "remedy_final": 3, "notice": 4})
                 if is_mgl:
                     rank_map = {"normal": 0, "notice": 1}
-                candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "native_return": native_return, "native_context": native_context, "native_notice": native_notice, "native_due": native_due, "native_delivered": native_delivered, "native_notice_marker": native_notice_marker, "native_notice_marker_value": native_notice_marker_value, "kor_instructor_notice": kor_instructor_notice, "kor_procurement_notice": kor_procurement_notice, "rank": rank_map[queue["kind"]]})
+                candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "native_return": native_return, "native_context": native_context, "native_notice": native_notice, "native_due": native_due, "native_delivered": native_delivered, "native_notice_marker": native_notice_marker, "native_notice_marker_value": native_notice_marker_value, "kor_instructor_notice": kor_instructor_notice, "kor_procurement_notice": kor_procurement_notice, "nqg_aid_notice": nqg_aid_notice, "rank": rank_map[queue["kind"]]})
     cid = lambda c: f"{prefix}_candidate_{c['id']}"
     turn = lambda c: f"{prefix}_turn_{c['id']}"
     dispatch = lambda c: f"{prefix}_dispatch_{c['id']}"
@@ -2110,6 +2161,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             dispatch_checks.extend(_kor_instructor_checks(c["id"], delivered=True))
         if c.get("kor_procurement_notice"):
             dispatch_checks.extend(_kor_procurement_checks(c["id"], delivered=True))
+        if c.get("nqg_aid_notice"):
+            dispatch_checks.extend(_nqg_aid_checks(c["id"], delivered=True))
         triggers.append(f"{dispatch(c)} = {{ AND = {{ {' '.join(dispatch_checks)} }} }}")
     # Per-JE live witness and source lifecycle are handled by the journal renderer.
     any_candidates = " OR = { " + " ".join(f"{cid(c)} = yes" for c in candidates) + " }"
@@ -2150,6 +2203,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 names += list(_kor_instructor_fields(ident).values())
             if c.get("kor_procurement_notice"):
                 names += list(_kor_procurement_fields(ident).values())
+            if c.get("nqg_aid_notice"):
+                names += list(_nqg_aid_fields(ident).values())
             ephemeral_by_candidate[ident] = names
             kor_ephemeral.extend(names)
     kor_cleanup = " ".join(f"remove_variable = {name}" for name in kor_ephemeral)
@@ -2287,6 +2342,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                         f"var:ywc_kor_procurement_notice_partner = {{ is_country_alive = yes }} }} "
                         f"set_variable = {{ name = {f['partner']} value = var:ywc_kor_procurement_notice_partner }} "
                         f"set_variable = {{ name = {f['partner_available']} value = 1 }} }}"]
+        if c.get("nqg_aid_notice"):
+            f = _nqg_aid_fields(ident)
+            capture += [f"    set_variable = {{ name = {f[suffix]} value = var:ywc_nqg_winter_aid_notice_{suffix} }}"
+                        for suffix in ("serial", "generation", "request_state", "reason")]
+            capture += [f"    remove_variable = {f['partner']}",
+                        f"    set_variable = {{ name = {f['partner_available']} value = 0 }}",
+                        f"    if = {{ limit = {{ exists = var:ywc_nqg_winter_aid_notice_partner "
+                        f"var:ywc_nqg_winter_aid_notice_partner = {{ is_country_alive = yes }} }} "
+                        f"set_variable = {{ name = {f['partner']} value = var:ywc_nqg_winter_aid_notice_partner }} "
+                        f"set_variable = {{ name = {f['partner_available']} value = 1 }} }}"]
         if is_lan:
             stem=qvar.split("_")[2]
             tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
@@ -2393,6 +2458,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                        f"var:{f['body_completed_serial']} = scope:ywc_kor_procurement_notice_serial",
                        "has_variable = ywc_kor_procurement_notice_open_serial",
                        "var:ywc_kor_procurement_notice_open_serial = scope:ywc_kor_procurement_notice_serial"]
+        if c.get("nqg_aid_notice"):
+            f = _nqg_aid_fields(ident)
+            checks.extend(_nqg_aid_checks(ident, delivered=True))
+            checks += [f"has_variable = {f['body_completed']}", f"var:{f['body_completed']} = 1",
+                       f"has_variable = {f['body_completed_epoch']}",
+                       f"var:{f['body_completed_epoch']} = var:{epoch}",
+                       f"has_variable = {f['body_completed_serial']}",
+                       f"var:{f['body_completed_serial']} = scope:ywc_nqg_winter_aid_notice_serial",
+                       "has_variable = ywc_nqg_winter_aid_notice_open_serial",
+                       "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
         if is_lan:
             stem=qvar.split("_")[2]
             tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
@@ -2439,6 +2514,14 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                                    f"var:{f['body_completed_epoch']} = var:{epoch}",
                                    f"var:{f['body_completed_serial']} = scope:ywc_kor_procurement_notice_serial",
                                    "var:ywc_kor_procurement_notice_open_serial = scope:ywc_kor_procurement_notice_serial"]
+            if c.get("nqg_aid_notice"):
+                f = _nqg_aid_fields(ident)
+                callback_guard.extend(_nqg_aid_checks(ident, delivered=True))
+                callback_guard += [f"has_variable = {f['body_completed']}",
+                                   f"var:{f['body_completed']} = 1",
+                                   f"var:{f['body_completed_epoch']} = var:{epoch}",
+                                   f"var:{f['body_completed_serial']} = scope:ywc_nqg_winter_aid_notice_serial",
+                                   "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
             if goal and not (is_shu or is_lan): callback_guard.append(f"NOT = {{ {goal} }}")
             if fail and not (is_shu or is_lan): callback_guard.append(f"NOT = {{ {fail} }}")
             callback_guard.append(f"NOT = {{ var:{served[c['arc']['slug']]} = var:{roundv} }}")
@@ -2500,7 +2583,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             node,limit,trigger=_branch_node(script,branch)
             turns=" OR = { "+" ".join(f"{turn(c)} = yes" for c in group)+" }"
             reserve_calls=" ".join(f"if = {{ limit = {{ {turn(c)} = yes }} {prefix}_reserve_{c['id']} = yes }}" for c in group)
-            if is_kor:
+            if is_kor or (is_nqg and any(c.get("nqg_aid_notice") for c in group)):
                 if any(c.get("kor_instructor_notice") for c in group):
                     if len(group) != 1 or not group[0].get("kor_instructor_notice"):
                         raise ValueError("KOR instructor notice sender must own one exact candidate")
@@ -2535,6 +2618,24 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                                 f"save_scope_value_as = {{ name = ywc_kor_procurement_notice_epoch value = var:{epoch} }}",
                                 f"if = {{ limit = {{ var:{f['partner_available']} = 1 exists = var:{f['partner']} }} "
                                 f"var:{f['partner']} = {{ save_scope_as = ywc_kor_procurement_notice_partner }} }}"]
+                    wrapped = (f"if = {{ limit = {{ {turns} }} {reserve_calls} "
+                               f"if = {{ limit = {{ {' '.join(gate)} }} {' '.join(exports)} {render_node(trigger, script)} }} }}")
+                elif any(c.get("nqg_aid_notice") for c in group):
+                    if len(group) != 1 or not group[0].get("nqg_aid_notice"):
+                        raise ValueError("NQG aid notice sender must own one exact candidate")
+                    c = group[0]
+                    f = _nqg_aid_fields(c["id"])
+                    gate = [f"var:{reservation} = {c['id']}", f"has_variable = {epoch}",
+                            f"var:{epoch} > 0", f"has_variable = {prefix}_candidate_epoch_{c['id']}",
+                            f"var:{prefix}_candidate_epoch_{c['id']} = var:{epoch}"]
+                    gate.extend(_nqg_aid_checks(c["id"], delivered=False))
+                    exports = ["save_scope_as = ywc_nqg_winter_aid_notice_owner"]
+                    for suffix in ("serial", "generation", "request_state", "reason", "partner_available"):
+                        exports.append(f"save_scope_value_as = {{ name = ywc_nqg_winter_aid_notice_{suffix} value = var:{f[suffix]} }}")
+                    exports += [f"save_scope_value_as = {{ name = ywc_nqg_winter_aid_notice_candidate value = var:{reservation} }}",
+                                f"save_scope_value_as = {{ name = ywc_nqg_winter_aid_notice_epoch value = var:{epoch} }}",
+                                f"if = {{ limit = {{ var:{f['partner_available']} = 1 exists = var:{f['partner']} }} "
+                                f"var:{f['partner']} = {{ save_scope_as = ywc_nqg_winter_aid_notice_partner }} }}"]
                     wrapped = (f"if = {{ limit = {{ {turns} }} {reserve_calls} "
                                f"if = {{ limit = {{ {' '.join(gate)} }} {' '.join(exports)} {render_node(trigger, script)} }} }}")
                 else:
@@ -2626,6 +2727,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     checks.extend(_kor_procurement_checks(ident, delivered=True))
                     checks += ["has_variable = ywc_kor_procurement_notice_open_serial",
                                "var:ywc_kor_procurement_notice_open_serial = scope:ywc_kor_procurement_notice_serial"]
+                if c.get("nqg_aid_notice"):
+                    f = _nqg_aid_fields(ident)
+                    checks.extend(_nqg_aid_checks(ident, delivered=True))
+                    checks += ["has_variable = ywc_nqg_winter_aid_notice_open_serial",
+                               "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
                 if is_lan:
                     stem=qvar.split("_")[2]; queue=c["queue"]
                     tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
@@ -2688,6 +2794,30 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                                              f"var:{f['body_completed']} = 1",
                                              f"var:{f['body_completed_epoch']} = var:{epoch}",
                                              f"var:{f['body_completed_serial']} = scope:ywc_kor_procurement_notice_serial"]
+                    proofs.append(f"{completion} if = {{ limit = {{ {' '.join(proof_checks)} }} "
+                                  f"set_variable = {{ name = {proof} value = 1 }} "
+                                  f"set_variable = {{ name = {cidvar} value = {ident} }} "
+                                  f"set_variable = {{ name = {epvar} value = var:{epoch} }} "
+                                  f"set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}")
+                elif c.get("nqg_aid_notice"):
+                    f = _nqg_aid_fields(ident)
+                    completion_checks = [f"var:{reservation} = {ident}",
+                                         f"has_variable = {epoch}",
+                                         f"has_variable = {prefix}_candidate_epoch_{ident}",
+                                         f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}",
+                                         f"scope:ywc_nqg_winter_aid_notice_candidate ?= {ident}",
+                                         f"scope:ywc_nqg_winter_aid_notice_epoch ?= var:{epoch}",
+                                         "ywc_nqg_winter_aid_notice_live = yes",
+                                         "scope:ywc_nqg_winter_aid_notice_serial ?= var:ywc_nqg_winter_aid_notice_serial",
+                                         "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
+                    completion = (f"if = {{ limit = {{ {' '.join(completion_checks)} }} "
+                                  f"set_variable = {{ name = {f['body_completed']} value = 1 }} "
+                                  f"set_variable = {{ name = {f['body_completed_epoch']} value = var:{epoch} }} "
+                                  f"set_variable = {{ name = {f['body_completed_serial']} value = scope:ywc_nqg_winter_aid_notice_serial }} }}")
+                    proof_checks = checks + [f"has_variable = {f['body_completed']}",
+                                             f"var:{f['body_completed']} = 1",
+                                             f"var:{f['body_completed_epoch']} = var:{epoch}",
+                                             f"var:{f['body_completed_serial']} = scope:ywc_nqg_winter_aid_notice_serial"]
                     proofs.append(f"{completion} if = {{ limit = {{ {' '.join(proof_checks)} }} "
                                   f"set_variable = {{ name = {proof} value = 1 }} "
                                   f"set_variable = {{ name = {cidvar} value = {ident} }} "
