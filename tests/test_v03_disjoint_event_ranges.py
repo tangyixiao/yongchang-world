@@ -76,7 +76,8 @@ class V03DisjointEventRangeTests(unittest.TestCase):
         foundation = copy.deepcopy(registry["arc_ranges"][:30])
         expected = {("country_kor", "v03_kor_military_accounts"): ("ywc_kor", 1039),
                     ("country_nqg", "v03_nqg_winter_court"): ("ywc_nqg", 1039),
-                    ("country_jhg", "v03_jhg_convoy_capacity"): ("ywc_jhg", 1032)}
+                    ("country_jhg", "v03_jhg_convoy_capacity"): ("ywc_jhg", 1032),
+                    ("country_nmg", "v03_nmg_autonomy_revenue"): ("ywc_nmg", 1033)}
         actual = {(row["catalog_key"], row["slug"]): row for row in registry["arc_ranges"] if "additional_ranges" in row}
         self.assertEqual(set(actual), set(expected))
         for row in foundation:

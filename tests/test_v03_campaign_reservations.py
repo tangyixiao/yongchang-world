@@ -96,7 +96,7 @@ class V03CampaignReservationTests(unittest.TestCase):
             ("country_kor", "v03_kor_military_accounts"): [{"start": 1030, "end": 1039}],
             ("country_nqg", "v03_nqg_winter_court"): [{"start": 1030, "end": 1039}],
             ("country_jhg", "v03_jhg_convoy_capacity"): [{"start": 1030, "end": 1032}],
-            ("country_nmg", "v03_nmg_autonomy_revenue"): [{"start": 1030, "end": 1032}],
+            ("country_nmg", "v03_nmg_autonomy_revenue"): [{"start": 1030, "end": 1033}],
         }
         seen_extensions = set()
         for row in foundation:
@@ -145,9 +145,10 @@ class V03CampaignReservationTests(unittest.TestCase):
         foundation_arcs = [arc for c in authored.values() for arc in c["arcs"]
                            if arc.get("era") == "foundation"]
         self.assertEqual(len(foundation_arcs), 30)
-        self.assertEqual(sum(len(arc["events"]) for arc in foundation_arcs), 260)
+        # These are physical and visible definitions, not audited narrative quota.
+        self.assertEqual(sum(len(arc["events"]) for arc in foundation_arcs), 261)
         self.assertEqual(sum(sum(not event.get("hidden", False) for event in arc["events"])
-                             for arc in foundation_arcs), 253)
+                             for arc in foundation_arcs), 254)
         self.assertEqual(sum(len(arc["journals"]) for arc in foundation_arcs), 60)
         self.assertEqual(validate_catalogs_at(ROOT, authored), [])
 
