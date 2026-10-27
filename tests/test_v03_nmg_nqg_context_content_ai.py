@@ -1,5 +1,6 @@
 """Production opening admission, payment eligibility, AI fallback, and content accuracy."""
 import json
+import copy
 import hashlib
 import sys
 import unittest
@@ -113,7 +114,16 @@ class NmgOpeningAiTest(unittest.TestCase):
 
 
     def test_nmg_opening_ai_gates_match_locked_semantic_baseline(self):
-        self.assertEqual(_event_projection(lifecycle.CATALOG,nmg=True),NMG_MECHANICS_SHA256)
+        # Keep the prior event contract pinned while testing the new, optional
+        # 1033 market response separately in test_v03_nmg_market_autonomy.
+        prior = copy.deepcopy(lifecycle.CATALOG)
+        removed = 0
+        for arc in prior["arcs"]:
+            kept = [event for event in arc["events"] if event["id"] != "ywc_nmg.1033"]
+            removed += len(arc["events"]) - len(kept)
+            arc["events"] = kept
+        self.assertEqual(removed, 1)
+        self.assertEqual(_event_projection(prior,nmg=True),NMG_MECHANICS_SHA256)
         for eid,choices in NMG_OPENING_POLICY.items():
             receipt,affordable=NMG_FEE_GATES[eid]
             for key,ready in choices.items():

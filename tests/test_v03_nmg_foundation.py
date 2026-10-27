@@ -30,8 +30,8 @@ REVENUE_SLUG = "v03_nmg_autonomy_revenue"
 
 LAND_EVENTS = [f"ywc_nmg.{number}" for number in range(1000, 1008)]
 OFFICE_EVENTS = [f"ywc_nmg.{number}" for number in range(1010, 1016)]
-REVENUE_EVENTS = [f"ywc_nmg.{number}" for number in range(1020, 1033)]
-PROTOCOL_EVENTS = {"ywc_nmg.1030", "ywc_nmg.1031", "ywc_nmg.1032"}
+REVENUE_EVENTS = [f"ywc_nmg.{number}" for number in range(1020, 1034)]
+PROTOCOL_EVENTS = {"ywc_nmg.1030", "ywc_nmg.1031", "ywc_nmg.1032", "ywc_nmg.1033"}
 
 LAND_JES = ["ywc_je_v03_nmg_land_arbitration", "ywc_je_v03_nmg_land_settlement"]
 OFFICE_JES = ["ywc_je_v03_nmg_bilingual_office"]
@@ -234,7 +234,7 @@ class NmgFoundationContractTest(unittest.TestCase):
         self.assertEqual(ranges[("country_nmg", REVENUE_SLUG)], (1020, 1029))
         revenue_row = next(row for row in self.registry["arc_ranges"]
                            if row["catalog_key"] == "country_nmg" and row["slug"] == REVENUE_SLUG)
-        self.assertEqual(revenue_row["additional_ranges"], [{"start": 1030, "end": 1032}])
+        self.assertEqual(revenue_row["additional_ranges"], [{"start": 1030, "end": 1033}])
         self.assertEqual([row["id"] for row in self.land["events"]], LAND_EVENTS)
         self.assertEqual([row["id"] for row in self.office["events"]], OFFICE_EVENTS)
         self.assertEqual([row["id"] for row in self.revenue["events"]], REVENUE_EVENTS)
@@ -249,12 +249,14 @@ class NmgFoundationContractTest(unittest.TestCase):
         for arc, events, journals in (
             (self.land, 8, 2),
             (self.office, 6, 1),
-            (self.revenue, 13, 3),
+            (self.revenue, 14, 3),
         ):
             self.assertEqual(len(arc["events"]), events, arc["slug"])
             self.assertEqual(len(arc["journals"]), journals, arc["slug"])
         total = sum(len(arc["events"]) for arc in self.catalog["arcs"])
-        self.assertEqual(total, 27)
+        self.assertEqual(total, 28)
+        # The four added protocol events do not replace the ten narrative cards.
+        self.assertEqual(len([e for e in self.revenue["events"] if e["id"] not in PROTOCOL_EVENTS]), 10)
         self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 6)
 
     def test_foundation_arcs_keep_the_locked_card_shape(self):
@@ -339,8 +341,10 @@ class NmgFoundationContractTest(unittest.TestCase):
                     elif event["id"] == "ywc_nmg.1031":
                         self.assertIn("ywc_nmg_mexshare_contract_generation", event["trigger"])
                         self.assertIn("ywc_nmg_jointproject_contract_generation", event["trigger"])
-                    else:
+                    elif event["id"] == "ywc_nmg.1032":
                         self.assertIn("ywc_nmg_partner_renewal_menu_current = yes", event["trigger"])
+                    else:
+                        self.assertIn("ywc_nmg_market_offer_matches = yes", event["trigger"])
                     continue
                 self.assertIn("c:NMG ?= this", event["trigger"], event["id"])
                 self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"], event["id"])
@@ -481,7 +485,7 @@ class NmgFoundationContractTest(unittest.TestCase):
             encoding="utf-8-sig"
         )
         rendered = re.findall(r"(?m)^ywc_nmg\.(\d{4}) = \{", events_text)
-        self.assertEqual(len(rendered), 27)
+        self.assertEqual(len(rendered), 28)
         self.assertEqual(
             sorted("ywc_nmg." + number for number in rendered),
             sorted(LAND_EVENTS + OFFICE_EVENTS + REVENUE_EVENTS),
