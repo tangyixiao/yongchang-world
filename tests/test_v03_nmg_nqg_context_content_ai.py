@@ -12,12 +12,14 @@ import test_v03_nmg_foundation_lifecycle as lifecycle
 
 NQG = json.loads((ROOT / "data/content/v03/countries/nqg.json").read_text(encoding="utf-8"))
 MOD = ROOT / "yongchang_world"
-NMG_MECHANICS_SHA256 = "b98ded6918d2ac6e5d4a1c0efbdf743f0ca70aa1d4f5f6ed10a58c694c50bafa"
-NQG_MECHANICS_SHA256 = "bbd5a57c8483efb664977bd4a0de4d439ffe5de3b55d7aa92d352f97c5646c17"
+# Updated for the explicit NMG fixed-share protocol/domestic route and for
+# the already-reviewed NQG partner-response mechanics in the parent branch.
+NMG_MECHANICS_SHA256 = "d2c36f7aed7dfffc4a98c9d8c341fe5ac9e9deb7d4a645db6069c31c8313031d"
+NQG_MECHANICS_SHA256 = "7ad1c65d9d4cd94bd24bb12b2f4fdff23b0d38c0eb3587e062df64ce760cc99e"
 NMG_OPENING_POLICY = {
     "ywc_nmg.1000": {"mixed":"ywc_nmg_land_mixed_ready", "unified":"ywc_nmg_land_unified_ready", "old":"ywc_nmg_land_old_ready"},
     "ywc_nmg.1010": {"bilingual":"ywc_nmg_office_bilingual_ready", "local":"ywc_nmg_office_local_ready", "single":"ywc_nmg_office_single_ready"},
-    "ywc_nmg.1020": {"fixed":"ywc_nmg_revenue_fixed_ready", "joint":"ywc_nmg_revenue_joint_ready", "arrears":"ywc_nmg_revenue_arrears_ready"},
+    "ywc_nmg.1020": {"fixed":"ywc_nmg_mexshare_can_offer", "joint":"ywc_nmg_revenue_joint_ready", "arrears":"ywc_nmg_revenue_arrears_ready", "domestic":"ywc_nmg_revenue_fixed_ready"},
 }
 NMG_FEE_GATES = {
     "ywc_nmg.1000": ("ywc_nmg_land_fee_paid", "ywc_nmg_land_affordable"),
@@ -45,7 +47,7 @@ def _event_projection(doc, nmg=False):
 class NmgOpeningAiTest(unittest.TestCase):
     cases = ((0, "ywc_nmg.1000", "ywc_je_v03_nmg_land_arbitration", "land_fee_paid", "land_affordable", "mixed"),
              (1, "ywc_nmg.1010", "ywc_je_v03_nmg_bilingual_office", "office_fee_paid", "office_affordable", "bilingual"),
-             (2, "ywc_nmg.1020", "ywc_je_v03_nmg_revenue_opening", "revenue_quota_paid", "revenue_quota_affordable", "fixed"))
+             (2, "ywc_nmg.1020", "ywc_je_v03_nmg_revenue_opening", "revenue_quota_paid", "revenue_quota_affordable", "domestic"))
 
     def setUp(self):
         self.lifecycle = lifecycle.NmgLifecycleTest("test_world_fact_fixture_rejects_missing_state_shortage_and_unknown_primitives")
@@ -114,7 +116,15 @@ class NmgOpeningAiTest(unittest.TestCase):
             for key,ready in choices.items():
                 option=next(o for a in lifecycle.CATALOG["arcs"] for e in a["events"] if e["id"]==eid for o in e["options"] if o["key"]==key)
                 old=f"{ready} = yes"
-                self.assertEqual(option["trigger"],f"{{ AND = {{ {old} OR = {{ has_variable = {receipt} {affordable} = yes }} }} }}",(eid,key))
+                if eid == "ywc_nmg.1020" and key in ("fixed", "domestic"):
+                    self.assertIn(old, option["trigger"], (eid,key))
+                    self.assertIn(f"has_variable = {receipt}", option["trigger"], (eid,key))
+                    self.assertIn(f"{affordable} = yes", option["trigger"], (eid,key))
+                    route = 1 if key == "fixed" else 4
+                    self.assertIn(f"var:ywc_nmg_revenue_route ?= {route}", option["trigger"])
+                    self.assertIn("var:ywc_nmg_revenue_route ?= 0", option["trigger"])
+                else:
+                    self.assertEqual(option["trigger"],f"{{ AND = {{ {old} OR = {{ has_variable = {receipt} {affordable} = yes }} }} }}",(eid,key))
             wait=next(o for a in lifecycle.CATALOG["arcs"] for e in a["events"] if e["id"]==eid for o in e["options"] if o["key"]=="wait_for_funds")
             self.assertEqual(wait["ai_chance"],"{ base = 10 }")
 
@@ -122,7 +132,7 @@ class NmgOpeningAiTest(unittest.TestCase):
         cases=(
             ("ywc_je_v03_nmg_land_arbitration","mixed","rule_register","ywc_nmg.1002","finish_survey"),
             ("ywc_je_v03_nmg_bilingual_office","bilingual","hire_thin","ywc_nmg.1011","hire_full"),
-            ("ywc_je_v03_nmg_revenue_opening","fixed","audit_strict","ywc_nmg.1025","carry_heavy"),
+            ("ywc_je_v03_nmg_revenue_opening","domestic","audit_strict","ywc_nmg.1025","carry_heavy"),
         )
         for je,paid_key,free_key,fee_event,fee_key in cases:
             with self.subTest(je=je):
@@ -132,7 +142,7 @@ class NmgOpeningAiTest(unittest.TestCase):
                 self.assertTrue(world.conditions(lifecycle.field(lifecycle.event_option(opening,paid_key),"trigger"),"NMG"))
                 self.lifecycle.choose(world,opening,paid_key)
                 v=world.countries["NMG"];v["gold_reserves"]=0
-                self.assertTrue(v.get("ywc_nmg_"+({"mixed":"land_fee_paid","bilingual":"office_fee_paid","fixed":"revenue_quota_paid"}[paid_key])))
+                self.assertTrue(v.get("ywc_nmg_"+({"mixed":"land_fee_paid","bilingual":"office_fee_paid","domestic":"revenue_quota_paid"}[paid_key])))
                 self.assertTrue(world.conditions(lifecycle.field(lifecycle.event_option(opening,paid_key),"trigger"),"NMG"),"paid receipt branch must keep the original option eligible at zero cash")
 
                 arc=next(a for a in lifecycle.CATALOG["arcs"] if a["journals"][0]["id"]==je)
@@ -160,9 +170,9 @@ class NmgOpeningAiTest(unittest.TestCase):
                     choose_next(free_key)
                 # Continue the no-fee revenue phase to its later separately billed option.
                 if je=="ywc_je_v03_nmg_revenue_opening":
-                    choose_next("close_account")
-                    choose_next("press_quota")
-                    choose_next("use_temperature")
+                    choose_next("close_account_domestic")
+                    choose_next("local_plan")
+                    choose_next("local_record")
                 if world.active_journal is None:
                     self.lifecycle.activate(world,order[len(world.completed_journals)])
                 actual=self.lifecycle.pulse_until_event(world,world.active_journal)
@@ -176,7 +186,9 @@ class NmgOpeningAiTest(unittest.TestCase):
                     self.assertEqual(actual,fee_event)
                     fee_option=fee_key
                 if fee_option:
-                    self.assertFalse(world.conditions(lifecycle.field(lifecycle.event_option(actual,fee_option),"trigger"),"NMG"),"a genuinely new fee remains gated by current captured-fee affordability")
+                    self.assertFalse(world.conditions(lifecycle.field(lifecycle.event_option(actual,fee_option),"trigger"),"NMG"),"a new fee or a different route must remain unavailable")
+                    if je=="ywc_je_v03_nmg_revenue_opening":
+                        self.assertTrue(world.conditions(lifecycle.field(lifecycle.event_option(actual,"retain_local_budget"),"trigger"),"NMG"))
 
     def test_later_revenue_copy_matches_recorded_domestic_effects(self):
         nmg=lifecycle.CATALOG
@@ -258,7 +270,7 @@ class NqgContentAccuracyTest(unittest.TestCase):
     def option(self,eid,key): return next(o for o in self.event(eid)["options"] if o["key"]==key)
 
     def test_selected_contract_copy_is_truthful_and_bilingual_in_generated_files(self):
-        cases=(("ywc_nqg.1020","exclusive_lease","no cash transfer","没有现银汇入"),
+        cases=(("ywc_nqg.1020","exclusive_lease","without automatically changing capacity or tariffs","不自动修改运力或关税"),
                ("ywc_nqg.1015","settle_full","co-management","共同管理"),
                ("ywc_nqg.1027","settle_full","exclusive lease","独占租约"))
         for eid,key,en,zh in cases:
@@ -266,8 +278,8 @@ class NqgContentAccuracyTest(unittest.TestCase):
             self.assertIn(en,note["en"].casefold())
             self.assertIn(zh,note["zh"])
         lease=self.option("ywc_nqg.1020","exclusive_lease")["consequence_note"]
-        self.assertIn("Northern Qing pays the filing fee",lease["en"])
-        self.assertIn("北清国库支付",lease["zh"])
+        self.assertIn("Only Russia receives the inquiry",lease["en"])
+        self.assertIn("只向俄罗斯发出询请",lease["zh"])
         self.assertNotIn("Xinming",lease["en"])
         self.assertNotIn("新明国库",lease["zh"])
         for lang,file in (("en","ywc_v03_country_nqg_l_english.yml"),("zh","ywc_v03_country_nqg_l_simp_chinese.yml")):
@@ -275,7 +287,7 @@ class NqgContentAccuracyTest(unittest.TestCase):
             for eid,key,_,_ in cases:
                 value=self.option(eid,key)["consequence_note"][lang]
                 self.assertIn(f'{eid}.{key}.consequence_tooltip:0 "{value}"',rendered)
-        # NQG narrative edits leave the entire event/option mechanics projection at its locked baseline.
+        # NQG remains at the partner-response mechanics baseline from the parent branch.
         self.assertEqual(_event_projection(NQG),NQG_MECHANICS_SHA256)
 
 if __name__ == "__main__": unittest.main()

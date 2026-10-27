@@ -41,6 +41,8 @@ class _ActualNmgWorld(base.NmgWorld):
 
     def validate_condition(self, node, seen=frozenset()):
         key, comparison, value = node
+        if key in self.FOREIGN_PROTOCOL_BOUNDARIES:
+            return super().validate_condition(node, seen)
         if key in {"AND", "OR", "NOT", "NOR"}:
             if comparison != "=" or not isinstance(value, list):
                 raise AssertionError(("invalid_boolean_condition", node))
@@ -75,6 +77,8 @@ class _ActualNmgWorld(base.NmgWorld):
     def condition(self, node, tag):
         self.validate_condition(node)
         key, comparison, value = node
+        if key in self.FOREIGN_PROTOCOL_BOUNDARIES:
+            return value == "no"
         if key == "has_journal_entry":
             if (comparison != "=" or not isinstance(value, str) or not value.startswith("ywc_je_")
                     or not value.removeprefix("ywc_je_").replace("_", "").isalnum()):
