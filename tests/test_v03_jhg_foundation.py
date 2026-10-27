@@ -18,7 +18,7 @@ SHARED_TRIGGERS_PATH = MOD / "common" / "scripted_triggers" / "ywc_v03_triggers.
 
 SLUGS = ["v03_jhg_court_assembly", "v03_jhg_convoy_capacity", "v03_jhg_tribute_autonomy"]
 COURT, CONVOY, TRIBUTE = SLUGS
-EVENT_IDS = [1000 + n for n in range(8)] + [1010 + n for n in range(10)] + [1020 + n for n in range(6)]
+EVENT_IDS = [1000 + n for n in range(8)] + [1010 + n for n in range(10)] + [1020 + n for n in range(8)] + [1030, 1031]
 JE_IDS = [
     "ywc_je_v03_jhg_court_assembly",
     "ywc_je_v03_jhg_court_settlement",
@@ -79,7 +79,8 @@ REQUIRED_TRIGGERS = [
     "ywc_jhg_court_limited_route_execution_ready",
     "ywc_jhg_convoy_navy_ready",
     "ywc_jhg_convoy_port_ready",
-    "ywc_jhg_convoy_partner_ready",
+    "ywc_jhg_escort_can_offer_lan",
+    "ywc_jhg_escort_can_offer_dmg",
     "ywc_jhg_convoy_route_execution_ready",
     "ywc_jhg_convoy_full_sea_lane_covered",
     "ywc_jhg_convoy_can_pay",
@@ -87,7 +88,6 @@ REQUIRED_TRIGGERS = [
     "ywc_jhg_convoy_current_target_ready",
     "ywc_jhg_convoy_limited_route_execution_ready",
     "ywc_jhg_tribute_relationship_open",
-    "ywc_jhg_tribute_partner_ready",
     "ywc_jhg_tribute_route_execution_ready",
     "ywc_jhg_tribute_can_pay",
     "ywc_jhg_tribute_can_advance",
@@ -368,6 +368,7 @@ class JhgFoundationTest(unittest.TestCase):
                     "government_legitimacy": 60, "engine_powerful_industrialists": True,
                     "engine_is_subject": True,
                     "ywc_jhg_tribute_relationship_open": 1,
+                    "ywc_jhg_tribute_settlement_stage": 1,
                     prefix + "_six_months_complete": 1,
                 }})
                 world.run(closer, tag)
@@ -387,9 +388,12 @@ class JhgFoundationTest(unittest.TestCase):
         self.assertEqual(9, len(ranges))
         for item in catalog()["arcs"]:
             reserved = [r for r in foundation_ranges if r["slug"] == item["slug"]][0]
+            spans = [(reserved["start"], reserved["end"])] + [
+                (row["start"], row["end"]) for row in reserved.get("additional_ranges", [])]
             numbers = sorted(int(e["id"].split(".")[1]) for e in item["events"])
-            self.assertGreaterEqual(numbers[0], reserved["start"], item["slug"])
-            self.assertLessEqual(numbers[-1], reserved["end"], item["slug"])
+            for number in numbers:
+                self.assertTrue(any(low <= number <= high for low, high in spans),
+                                f"{item['slug']} {number} outside reserved ranges")
         found = sorted(int(e["id"].split(".")[1]) for i in catalog()["arcs"] for e in i["events"])
         self.assertEqual(found, sorted(EVENT_IDS))
 
@@ -397,7 +401,7 @@ class JhgFoundationTest(unittest.TestCase):
         self.assertEqual({"key", "layer", "runtime_tags", "arcs"}, set(catalog()))
         expected = {"slug", "era", "participants", "depends_on", "journals", "events",
                     "outcomes", "legacy_links", "inline_delivery_adapter"}
-        counts = {COURT: (8, 2), CONVOY: (10, 3), TRIBUTE: (6, 1)}
+        counts = {COURT: (8, 2), CONVOY: (12, 3), TRIBUTE: (8, 1)}
         for item in catalog()["arcs"]:
             self.assertEqual(expected, set(item), item["slug"])
             self.assertEqual("foundation", item["era"])
@@ -413,6 +417,9 @@ class JhgFoundationTest(unittest.TestCase):
                     re.search(r"(?<![a-z0-9_])(?:complete|fail)\s*=", journal["script"]),
                     journal["id"])
             for event in item["events"]:
+                if event["id"] in {"ywc_jhg.1026", "ywc_jhg.1027", "ywc_jhg.1030", "ywc_jhg.1031"}:
+                    # Script-dispatched foreign answer and hidden partnership endpoint.
+                    continue
                 self.assertEqual({"id", "title", "desc", "trigger", "immediate", "options",
                                   "purpose", "reads", "writes"}, set(event), event["id"])
                 self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"])
@@ -463,8 +470,15 @@ class JhgFoundationTest(unittest.TestCase):
             for event in arc(slug)["events"]:
                 number = event["id"].split(".")[1]
                 prefix = PREFIX[slug]
-                self.assertIn("var:%s_pending_event = %s" % (prefix, number), text)
+                if event["id"] in {"ywc_jhg.1026", "ywc_jhg.1027", "ywc_jhg.1030", "ywc_jhg.1031"}:
+                    # Foreign answers are immediate; the hidden endpoint is
+                    # deliberately dispatched at the end of its 120-month term.
+                    delay = r"\s+months\s*=\s*120" if event["id"] in {"ywc_jhg.1027", "ywc_jhg.1031"} else ""
+                    self.assertRegex(EFFECTS_PATH.read_text(encoding="utf-8-sig"),
+                                     r"trigger_event\s*=\s*\{\s*id\s*=\s*ywc_jhg\." + number + delay + r"\s*\}")
+                    continue
                 self.assertIn("trigger_event = { id = ywc_jhg.%s }" % number, text)
+                self.assertIn("var:%s_pending_event = %s" % (prefix, number), text)
                 self.assertIn("remove_variable = %s_pending_event" % prefix, text)
 
     def test_route_choices_record_route_one_two_three(self):
@@ -589,6 +603,7 @@ class JhgFoundationTest(unittest.TestCase):
                     "ywc_jhg_" + name + "_six_months_complete": 1,
                     public_key: 3,
                     "ywc_jhg_tribute_relationship_open": 1,
+                    "ywc_jhg_tribute_settlement_stage": 1,
                     "ywc_jhg_court_bureaucracy_ready": 1,
                     "bureaucracy":50,"net_fixed_income":1000,
                     "government_legitimacy":60,"engine_powerful_industrialists":True,
@@ -618,6 +633,10 @@ class JhgFoundationTest(unittest.TestCase):
                 with self.subTest(arc=prefix, old_result=old_result):
                     state = {public: old_result, own: 2}
                     world = JhgTerminalWorld(effects, {"JHG": state})
+                    # This test drives route progression; the real inquiry is
+                    # covered by test_v03_jhg_escort_response.py.
+                    world.effects["ywc_jhg_escort_send"] = []
+                    world.effects["ywc_jhg_escort_send_captured"] = []
                     world.run("ywc_jhg_" + bridge_suffix, "JHG")
                     world.run("ywc_jhg_" + bridge_suffix, "JHG")
                     self.assertEqual(old_result, state[public])
@@ -761,12 +780,16 @@ class JhgFoundationTest(unittest.TestCase):
             COURT: [(1, "audit_contract", "settle_full"),
                     (2, "prince_guarantee", "settle_partial"),
                     (3, "merchant_pool", "withdraw")],
+            # The single-country harness covers both domestic routes. Actual
+            # LAN/DMG consent and route 2 are exercised by the multi-country
+            # source journey in test_v03_jhg_escort_story.py.
             CONVOY: [(1, "main_lane", "settle_full"),
-                     (2, "shared_escort", "settle_partial"),
-                     (3, "insurance", "withdraw")],
+                     (3, "insurance", "settle_partial"),
+                     (1, "main_lane", "withdraw")],
+            # SHU's real answer is covered in the multi-country share story.
             TRIBUTE: [(1, "fixed_share", "settle_full"),
-                      (2, "project_share", "settle_partial"),
-                      (3, "ambiguity", "withdraw")],
+                      (3, "ambiguity", "settle_partial"),
+                      (1, "fixed_share", "withdraw")],
         }
         terminal_id = {COURT: 1007, CONVOY: 1018, TRIBUTE: 1025}
         terminal_closer = {COURT: "ywc_jhg_court_close_as_established",
@@ -804,6 +827,10 @@ class JhgFoundationTest(unittest.TestCase):
                         "ywc_je_flavor_jhg_convoy_1_resolved": 1,
                     }
                     world = JhgTerminalWorld(effects, {"JHG": state})
+                    # This test drives route progression; the real inquiry is
+                    # covered by test_v03_jhg_escort_response.py.
+                    world.effects["ywc_jhg_escort_send"] = []
+                    world.effects["ywc_jhg_escort_send_captured"] = []
                     entry = item["journals"][0]
                     entry_nodes = parse("wrapper = " + entry["script"])[0][2]
                     possible = next(value for name, _, value in entry_nodes if name == "possible")
@@ -823,8 +850,6 @@ class JhgFoundationTest(unittest.TestCase):
                     terminal_closed = False
                     stale_mature_rejected = False
                     retry_popup_seen = False
-                    recovered_from_partner_loss = False
-                    settlement_partner_loss_checked = False
                     pulse_limit = 60 if route == 1 and terminal_choice == "settle_full" else 30
                     for _ in range(pulse_limit):
                         rejected_this_popup = False
@@ -846,28 +871,9 @@ class JhgFoundationTest(unittest.TestCase):
                         selected_journal = active_journals[0]
                         self.assertFalse(_script_condition(world, selected_journal["goal"], "JHG"))
                         self.assertFalse(_script_condition(world, selected_journal["exit_conditions"], "JHG"))
-                        if (slug == CONVOY and route == 2 and
-                                selected_journal["id"] == "ywc_je_v03_jhg_convoy_settlement" and
-                                not settlement_partner_loss_checked):
-                            state["engine_partners"] = []
-                            world.run_live_journal_pulse(item)
-                            world.reconcile_journals(item)
-                            self.assertFalse(world.is_finished("JHG", selected_journal["id"]),
-                                             "a recoverable partner loss must not terminate the settlement owner")
-                            self.assertTrue(world.journal_is_active("JHG", selected_journal["id"]))
-                            self.assertFalse(_script_condition(world, selected_journal["goal"], "JHG"))
-                            self.assertFalse(_script_condition(world, selected_journal["exit_conditions"], "JHG"))
-                            state["engine_partners"] = [{"diplomatic_pacts": ["alliance"],
-                                                         "relations_to_root": 70, "army_size": 12,
-                                                         "gold_reserves": 10000}]
-                            settlement_partner_loss_checked = True
                         dispatched = len(world.events)
                         world.run_live_journal_pulse(item)
                         world.reconcile_journals(item)
-                        if recovered_from_partner_loss:
-                            self.assertNotIn(prefix + "_blocked_months", state)
-                            self.assertNotIn(prefix + "_six_months_complete", state)
-                            recovered_from_partner_loss = False
                         if len(world.events) == dispatched:
                             world.advance_months(1)
                             continue
@@ -917,7 +923,7 @@ class JhgFoundationTest(unittest.TestCase):
                             self.assertTrue(world.conditions(option_trigger, "JHG"),
                                             f"production option {event_id}/{option['key']} must be legal")
                         old_route = state.get(prefix + "_route", 0)
-                        if (number == terminal_id[slug] and route == 1 and
+                        if (number == terminal_id[slug] and option["key"] == "settle_full" and route == 1 and
                                 terminal_choice == "settle_full" and not stale_mature_rejected):
                             # An actual qualified full popup becomes stale after opening,
                             # while its six-month maturity is still present.
@@ -948,17 +954,6 @@ class JhgFoundationTest(unittest.TestCase):
                         if new_route != old_route:
                             actual_route_trace.append((event_id, option["key"], old_route, new_route))
                         route_was_selected = route_was_selected or state.get(prefix + "_route", 0) == route
-                        if slug == CONVOY and route == 2 and option["key"] == route_option_key:
-                            state["engine_partners"] = []
-                            for _ in range(2):
-                                world.advance_months(1)
-                                world.run_live_journal_pulse(item)
-                            self.assertGreaterEqual(state[prefix + "_blocked_months"], 2)
-                            self.assertNotIn(prefix + "_six_months_complete", state)
-                            state["engine_partners"] = [{"diplomatic_pacts": ["alliance"],
-                                                         "relations_to_root": 70, "army_size": 12,
-                                                         "gold_reserves": 10000}]
-                            recovered_from_partner_loss = True
                         if (number == terminal_id[slug] and option["key"] == terminal_choice
                                 and not rejected_this_popup):
                             terminal_closed = True
@@ -973,8 +968,6 @@ class JhgFoundationTest(unittest.TestCase):
                                      "later event must not silently replace the selected target")
                     self.assertIn(opening_number, seen)
                     self.assertIn(terminal_id[slug], seen)
-                    if slug == CONVOY and route == 2:
-                        self.assertFalse(recovered_from_partner_loss)
                     self.assertEqual(1, state[prefix + "_filing_fee_paid"])
                     if terminal_choice in ("settle_full", "settle_partial"):
                         self.assertIn(prefix + "_six_months_complete", state)
@@ -1145,6 +1138,33 @@ class JhgFoundationTest(unittest.TestCase):
                 self.assertEqual(ordinary_pending,state[prefix+"_pending_event"],
                                  "real ordinary queue remains intact across notice delivery")
 
+                if slug == TRIBUTE:
+                    # The notice cannot skip the ordinary 1021-1024 story.
+                    # Resume its actual queue before starting the new watch.
+                    choices={1021:"fixed_share",1022:"continue_domestic",1023:"ambiguity",1024:"hold_course"}
+                    traversed=[]
+                    for _ in range(30):
+                        world.advance_months(1)
+                        before=len(world.events)
+                        world.run_live_journal_pulse(item)
+                        if len(world.events)==before:
+                            continue
+                        event_id=world.events[-1][1]
+                        number=int(event_id.split(".")[-1])
+                        event=next(e for e in item["events"] if e["id"]==event_id)
+                        if number==1025:
+                            choice="acknowledge_12_notice" if prefix+"_notice_delivery_12" in state else "defer"
+                        else:
+                            choice=choices[number]
+                            traversed.append(number)
+                        option=option_by_key(event,choice)
+                        self.assertTrue(world.conditions(parse("wrapper = "+option["trigger"])[0][2],"JHG"))
+                        world.execute(parse("wrapper = "+option["effect"])[0][2],"JHG")
+                        if number==1024:
+                            break
+                    self.assertEqual(traversed,list(range(int(ordinary_pending),1025)))
+                    self.assertIn("ywc_jhg_tribute_settlement_stage",state)
+
                 # The target is now qualified; earn a fresh 180-day watch on the actual JE clock.
                 world.run_live_journal_pulse(item)  # starts the new observation timer
                 timer=prefix+"_observation_timer"
@@ -1238,6 +1258,9 @@ class JhgFoundationTest(unittest.TestCase):
                         self.assertNotIn(prefix+"_compromise",state)
                         self.assertIn(prefix+"_limited_target_selected",state)
                         self.assertNotIn(prefix+"_limited_six_months_complete",state)
+                        if slug==TRIBUTE:
+                            stage=next(e for e in arc(slug)["events"] if e["id"]=="ywc_jhg.1024")
+                            world.execute(parse("wrapper = "+option_by_key(stage,"hold_course")["effect"])[0][2],"JHG")
                         for _ in range(7):
                             world.advance_months(1)
                             world._execute_pulse_body_for_unit(journal)
@@ -1381,6 +1404,7 @@ class JhgBlockageLifecycleRegression(unittest.TestCase):
                 state={"ywc_jhg_v03_jhg_"+slot+"_started":1,"ywc_v03_active_arc_count":1,
                        "ywc_v03_visible_task_count":1,prefix+"_route":route,
                        prefix+"_six_months_complete":1,"net_fixed_income":1000,
+                       "ywc_jhg_tribute_settlement_stage":1,
                        "government_legitimacy":70,"bureaucracy":60,"engine_powerful_industrialists":True,
                        "ywc_jhg_tribute_relationship_open":1,**readiness}
                 world=JhgTerminalWorld(effects,{"JHG":state})

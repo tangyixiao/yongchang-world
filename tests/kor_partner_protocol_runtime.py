@@ -306,7 +306,7 @@ class PartnerWorld(Strict):
 
     @staticmethod
     def _scope_token(token):
-        return (isinstance(token, str) and (token.lower() in ("this", "root", "prev", "prev.prev", "market")
+        return (isinstance(token, str) and (token.lower() in ("this", "root", "prev", "prev.prev", "market", "overlord")
                 or token.startswith(("c:", "scope:", "var:"))
                 or ".var:" in token))
 
@@ -368,6 +368,15 @@ class PartnerWorld(Strict):
                 result = self._stack[-depth]
             else:
                 result = _MISSING
+        elif rest.lower() == "overlord":
+            holder = self.countries[self._current.tag]
+            target = holder.get("overlord") if holder.get("is_subject", False) else None
+            if isinstance(target, CountryRef):
+                result = target if self._present(target) else _MISSING
+            elif isinstance(target, str) and target in self.countries:
+                result = self.country_ref(target)
+            else:
+                result = _MISSING
         elif rest.lower() == "owner":
             top = self._stack[-1] if self._stack else None
             if isinstance(top, StateRef):
@@ -401,7 +410,7 @@ class PartnerWorld(Strict):
         elif re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", rest):
             result = float(rest)
             self._numeric(result)
-        elif rest in ("yearly_gross_income", "gdp", "scaled_debt", "gold_reserves", "net_fixed_income", "bureaucracy", "army_size", "legitimacy", "authority"):
+        elif rest in ("yearly_gross_income", "gdp", "scaled_debt", "gold_reserves", "net_fixed_income", "bureaucracy", "army_size", "navy_size", "legitimacy", "authority"):
             result = self.countries[self._current.tag].get(rest, _MISSING)
             if rest == "gold_reserves" and result is not _MISSING:
                 result += self.treasury[self._current.tag]
@@ -569,7 +578,12 @@ class PartnerWorld(Strict):
         if key == "exists":
             if op != "=":
                 raise UnsupportedSubset(f"unsupported exists comparison: {node}")
-            return self._present(self._value(value, optional=True))
+            resolved = self._value(value, optional=True)
+            # Inline delivery saves numeric event-chain values as scopes, not
+            # country objects. Zero is still a present value.
+            if isinstance(value, str) and value.startswith("scope:") and type(resolved) in (int, float, bool):
+                return True
+            return self._present(resolved)
         if key == "is_country_alive":
             return self.compare(bool(self._alive(self._current)), op, self._value(value))
         if self._scope_token(key):
@@ -613,7 +627,7 @@ class PartnerWorld(Strict):
             if target.tag not in relations:
                 raise UnsupportedSubset(f"undefined relation fact: {tag} -> {target.tag}")
             return self.compare(relations[target.tag], op, self._value(value))
-        if key in ("gold_reserves", "net_fixed_income", "yearly_gross_income", "scaled_debt", "bureaucracy", "army_size", "legitimacy", "authority"):
+        if key in ("gold_reserves", "net_fixed_income", "yearly_gross_income", "scaled_debt", "bureaucracy", "army_size", "navy_size", "legitimacy", "authority"):
             return self.compare(self._value(key), op, self._value(value))
         return super().condition(node, tag)
 

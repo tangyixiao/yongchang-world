@@ -91,7 +91,7 @@ class Strict(TibWorldFacts):
   if k in ['country_has_voting_franchise','is_subject']:return bool(s.get(k,False))==(v=='yes')
   if k.startswith(('ROOT.modifier:','modifier:')):
    return self.compare(s.get(k.removeprefix('ROOT.'),0),op,(v=='yes') if v in ('yes','no') else float(v))
-  if k in ['army_size','legitimacy','authority']:return self.compare(s.get(k,0),op,float(v))
+  if k in ['army_size','navy_size','legitimacy','authority']:return self.compare(s.get(k,0),op,float(v))
   if k=='gold_reserves':
    if op not in self._comparison_ops:raise AssertionError(('malformed_gold_operator',node))
    if isinstance(v,list):

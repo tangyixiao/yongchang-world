@@ -39,7 +39,7 @@ _NORMAL_ROUTE2={
         ('ywc_jhg.1018','settle_full')],
     'v03_jhg_tribute_autonomy':[
         ('ywc_jhg.1020','fixed_share'),('ywc_jhg.1021','fixed_share'),
-        ('ywc_jhg.1022','project_share'),('ywc_jhg.1023','ambiguity'),
+        ('ywc_jhg.1022','continue_domestic'),('ywc_jhg.1023','ambiguity'),
         ('ywc_jhg.1024','hold_course'),('ywc_jhg.1025','settle_full')],
 }
 
@@ -62,15 +62,17 @@ def _assert_route2_contract(testcase,r):
     testcase.assertEqual(set(r['roots']),{arc['journals'][0]['id'] for arc in arcs})
     testcase.assertFalse(r['active']); testcase.assertEqual(set(r['finished']),expected_journals)
     testcase.assertEqual(set(r['finished'].values()),{'complete'})
-    testcase.assertEqual(r['payments'],{arc['slug']:1000 for arc in arcs})
-    testcase.assertEqual(r['final_gold'],17000); testcase.assertEqual(r['raw_base_gold'],20000)
+    testcase.assertEqual(r['payments'],{'v03_jhg_court_assembly':1000,
+        'v03_jhg_convoy_capacity':1500,'v03_jhg_tribute_autonomy':1000})
+    testcase.assertEqual(r['final_gold'],16500); testcase.assertEqual(r['raw_base_gold'],20000)
+    testcase.assertEqual(r['partner_answers'],[('LAN','accept',500)])
     testcase.assertEqual(r['terminal_caps'],(0,0))
     testcase.assertEqual(set(r['fee_rows']),{arc['slug'] for arc in arcs})
     for slug,rows in r['fee_rows'].items():
         testcase.assertEqual(len(rows),1,(slug,rows))
-        testcase.assertEqual(rows[0]['treasury_delta'],-1000,(slug,rows))
-    testcase.assertTrue(r['world'].conditions([('gold_reserves','>=','17000')],TAG))
-    testcase.assertFalse(r['world'].conditions([('gold_reserves','>','17000')],TAG))
+        testcase.assertEqual(rows[0]['treasury_delta'],-1500 if slug=='v03_jhg_convoy_capacity' else -1000,(slug,rows))
+    testcase.assertTrue(r['world'].conditions([('gold_reserves','>=','16500')],TAG))
+    testcase.assertFalse(r['world'].conditions([('gold_reserves','>','16500')],TAG))
     starts=[row['month'] for row in r['cooldown_trace'] if row.get('days_remaining')==90]
     expired=[row['month'] for row in r['cooldown_trace'] if row.get('expired_naturally')]
     testcase.assertTrue(starts); testcase.assertEqual(len(starts),len(expired))
@@ -122,6 +124,9 @@ def run_native_route(route=2, max_months=180, world=None, evidence=None):
     else:
         if evidence is None: raise AssertionError('provided generated world requires actual factory evidence')
         legacy=evidence['legacy_events']; roots=evidence['roots']
+    world.attach_escort_partner_world()
+    partner=world.escort_partner_world
+    answered=set(); partner_answers=[]
     arcs=catalog()['arcs']; slugs=[a['slug'] for a in arcs]
     expected_roots={a['journals'][0]['id'] for a in arcs}
     active=set(getattr(world,'active_journals',expected_roots))
@@ -139,6 +144,10 @@ def run_native_route(route=2, max_months=180, world=None, evidence=None):
     for month in range(1,max_months+1):
         had_cooldown='ywc_v03_major_event_cooldown' in world.days_until_expiry[TAG]
         world.advance_months(1)
+        partner.advance_months(1)
+        partner.treasury[TAG]=world.treasury[TAG]
+        partner.run_country_monthly(TAG)
+        world.treasury[TAG]=partner.treasury[TAG]
         if had_cooldown and 'ywc_v03_major_event_cooldown' not in world.days_until_expiry[TAG]: cooldown_trace.append({'month':month,'expired_naturally':True})
         for jid in list(active):
             je=world.journal_defs[jid]
@@ -178,6 +187,8 @@ def run_native_route(route=2, max_months=180, world=None, evidence=None):
                 if number==opening[slug]:
                     key=route2_open[slug]
                     if route==1 and slug=='v03_jhg_convoy_capacity': key='main_lane'
+                elif number==1012 and slug=='v03_jhg_convoy_capacity' and route==1:
+                    key='main_lane'
                 elif number==endpoint[slug]:
                     stem={'v03_jhg_court_assembly':'ywc_jhg_court','v03_jhg_convoy_capacity':'ywc_jhg_convoy','v03_jhg_tribute_autonomy':'ywc_jhg_tribute'}[slug]
                     if state.get(stem+'_limited_six_months_complete'): key='settle_partial'
@@ -196,6 +207,17 @@ def run_native_route(route=2, max_months=180, world=None, evidence=None):
                 dispatch['notice_state']=_notice_state(state,slug) if number==endpoint[slug] else None
                 before_treasury=world.treasury[TAG]
                 world.execute(_strip_option(choices[key]),TAG)
+                for offer in list(partner.jobs):
+                    if offer.event_id!='ywc_jhg.1030' or offer.serial in answered:
+                        continue
+                    answered.add(offer.serial)
+                    if not partner.display_job(offer): raise AssertionError(('foreign inquiry not displayable',offer))
+                    if not partner.job_options(offer).get('accept'): raise AssertionError(('foreign acceptance not legal',offer))
+                    before_partner=partner.treasury[offer.recipient.tag]
+                    partner.choose_job(offer,'accept')
+                    paid=partner.treasury[offer.recipient.tag]-before_partner
+                    partner_answers.append((offer.recipient.tag,'accept',paid))
+                    world.treasury[TAG]=partner.treasury[TAG]
                 delta=world.treasury[TAG]-before_treasury
                 if delta:
                     payments[slug]=payments.get(slug,0)-delta
@@ -221,7 +243,8 @@ def run_native_route(route=2, max_months=180, world=None, evidence=None):
         'partner_watch_possible':world.conditions(_field(world.journal_defs['ywc_je_v03_jhg_convoy_partner_watch'],'possible',[]),TAG),
         'arc_event_month_spans':spans,'fee_rows':fee_rows,'body_runs':body_runs,'dispatches':observed_dispatches,
         'dispatch_context_start':dispatch_context_start,
-        'terminal_caps':(state.get('ywc_v03_active_arc_count'),state.get('ywc_v03_visible_task_count'))}
+        'terminal_caps':(state.get('ywc_v03_active_arc_count'),state.get('ywc_v03_visible_task_count')),
+        'partner_answers':partner_answers}
 
 class JhgNativeStory(unittest.TestCase):
     def test_authored_fee_option_is_idempotent_and_cash_gate_uses_accumulated_treasury(self):
