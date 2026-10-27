@@ -647,11 +647,11 @@ class JhgInlineStaticContract(unittest.TestCase):
                         for _,_,jid in rows}
             self.assertTrue(all(kinds=={True,False} for kinds in by_journal.values()),(event_id,by_journal))
             self.assertEqual(sum(len(kinds) for kinds in by_journal.values()),len(rows))
-    def test_all_24_event_layout_positives_are_canonical_and_leave_bound_journals_untouched(self):
+    def test_all_28_event_layout_positives_are_canonical_and_leave_bound_journals_untouched(self):
         candidate=_v2_catalog_from_formal_jhg_source()
         journal_sources={j['id']:j['script'] for arc in candidate['arcs'] for j in arc['journals']}
         events=[e for arc in candidate['arcs'] for e in arc['events']]
-        self.assertEqual(len(events),24)
+        self.assertEqual(len(events),28)
         for event in events:
             for field in ('trigger','immediate'):
                 original=event[field]
@@ -709,10 +709,11 @@ class JhgInlineStaticContract(unittest.TestCase):
                                  [_rows(n) for n in _direct(actual_events[event['id']],'option')],event['id'])
                 self.assertEqual(_rows(_direct(native,'immediate')[0]),_rows(parse_block(event['immediate'])))
                 self.assertEqual(_rows(_direct(native,'trigger')[0]),_rows(parse_block(event['trigger'])))
-                self.assertEqual(_rows(_direct(native,'immediate')[0]),[('ywc_v03_mark_major_delivered','=','yes')])
+                if event['id'] not in {'ywc_jhg.1026', 'ywc_jhg.1027', 'ywc_jhg.1030', 'ywc_jhg.1031'}:
+                    self.assertEqual(_rows(_direct(native,'immediate')[0]),[('ywc_v03_mark_major_delivered','=','yes')])
         self.assertEqual(len(native_journals),6)
         self.assertEqual({e['id'] for a in cat['arcs'] for e in a['events']},
-                         {f'ywc_jhg.{n}' for n in [*range(1000,1008),*range(1010,1020),*range(1020,1026)]})
+                         {f'ywc_jhg.{n}' for n in [*range(1000,1008),*range(1010,1020),*range(1020,1028),1030,1031]})
         if adapter is None:
             self.assertEqual({k:(_rows(v) if isinstance(v,tuple) else v) for k,v in actual_journals.items()},{k:(_rows(v) if isinstance(v,tuple) else v) for k,v in native_journals.items()})
             self.assertEqual({k:(_rows(v) if isinstance(v,tuple) else v) for k,v in actual_events.items()},{k:(_rows(v) if isinstance(v,tuple) else v) for k,v in native_events.items()})
@@ -823,7 +824,8 @@ class JhgInlineStaticContract(unittest.TestCase):
         from tools import build_v03_content
         cat=_v2_catalog_from_formal_jhg_source()
         self.assertEqual(len(adapter['event_hooks']),24)
-        self.assertEqual(set(adapter['event_hooks']),{e['id'] for a in cat['arcs'] for e in a['events']})
+        unhooked={'ywc_jhg.1026', 'ywc_jhg.1027', 'ywc_jhg.1030', 'ywc_jhg.1031'}
+        self.assertEqual(set(adapter['event_hooks']),{e['id'] for a in cat['arcs'] for e in a['events']} - unhooked)
         self.assertEqual(len(adapter['live_witnesses']),6)
         effects=_builder_defs(adapter['effects'])
         candidate_rows=[]
@@ -854,6 +856,10 @@ class JhgInlineStaticContract(unittest.TestCase):
         for arc in cat['arcs']:
             for event in arc['events']:
                 body=generated_events[event['id']]
+                if event['id'] in unhooked:
+                    self.assertEqual(_rows(body), _rows(source_events[event['id']]),
+                                     (event['id'], 'foreign or hidden event stays native and unhooked'))
+                    continue
                 immediate=_direct(body,'immediate'); self.assertEqual(len(immediate),1)
                 native=parse_block(event['immediate'])
                 self.assertEqual(len(_nodes(immediate[0])),1)

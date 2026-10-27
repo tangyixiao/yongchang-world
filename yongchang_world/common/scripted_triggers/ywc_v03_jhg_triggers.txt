@@ -19,15 +19,15 @@ ywc_jhg_court_limited_route_execution_ready = {
 ywc_jhg_convoy_limited_route_execution_ready = {
 	OR = {
 		AND = { var:ywc_jhg_convoy_route = 1 navy_size >= 3 any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_port occupancy >= 0.6 building_has_goods_shortage = no } } }
-		AND = { var:ywc_jhg_convoy_route = 2 navy_size >= 3 any_country = { has_diplomatic_pact = { who = ROOT type = alliance } relations:root >= relations_threshold:cordial army_size >= 3 } }
+		AND = { var:ywc_jhg_convoy_route = 2 navy_size >= 3 ywc_jhg_escort_watch_ready = yes }
 		AND = { var:ywc_jhg_convoy_route = 3 bureaucracy >= 10 }
 	}
 }
 ywc_jhg_tribute_limited_route_execution_ready = {
 	OR = {
 		AND = { var:ywc_jhg_tribute_route = 1 ywc_jhg_tribute_relationship_open = yes bureaucracy >= 10 }
-		AND = { var:ywc_jhg_tribute_route = 2 ywc_jhg_tribute_relationship_open = yes any_country = { has_diplomatic_pact = { who = ROOT type = alliance } relations:root >= relations_threshold:cordial gold_reserves >= 5000 } }
-		AND = { var:ywc_jhg_tribute_route = 3 ywc_jhg_tribute_relationship_open = yes government_legitimacy >= 20 }
+		AND = { var:ywc_jhg_tribute_route = 2 ywc_jhg_share_contract_active = yes }
+		AND = { var:ywc_jhg_tribute_route = 3 OR = { is_subject = no ywc_jhg_tribute_relationship_open = yes } government_legitimacy >= 20 }
 	}
 }
 # --- v03_jhg_court_assembly ------------------------------------------------
@@ -120,14 +120,6 @@ ywc_jhg_convoy_port_ready = {
 	}
 }
 
-ywc_jhg_convoy_partner_ready = {
-	any_country = {
-		has_diplomatic_pact = { who = ROOT type = alliance }
-		relations:root >= relations_threshold:cordial
-		army_size >= 5
-	}
-}
-
 ywc_jhg_convoy_route_one_ready = {
 	AND = {
 		var:ywc_jhg_convoy_route = 1
@@ -140,7 +132,7 @@ ywc_jhg_convoy_route_two_ready = {
 	AND = {
 		var:ywc_jhg_convoy_route = 2
 		ywc_jhg_convoy_navy_ready = yes
-		ywc_jhg_convoy_partner_ready = yes
+		ywc_jhg_escort_watch_ready = yes
 	}
 }
 
@@ -208,15 +200,14 @@ ywc_jhg_tribute_route_one_ready = {
 ywc_jhg_tribute_route_two_ready = {
 	AND = {
 		var:ywc_jhg_tribute_route = 2
-		ywc_jhg_tribute_relationship_open = yes
-		ywc_jhg_tribute_partner_ready = yes
+		ywc_jhg_share_contract_active = yes
 	}
 }
 
 ywc_jhg_tribute_route_three_ready = {
 	AND = {
 		var:ywc_jhg_tribute_route = 3
-		ywc_jhg_tribute_relationship_open = yes
+		OR = { is_subject = no ywc_jhg_tribute_relationship_open = yes }
 		government_legitimacy >= 30
 	}
 }
@@ -256,4 +247,265 @@ ywc_jhg_convoy_can_advance = {
 }
 ywc_jhg_tribute_can_advance = {
 	AND = { ywc_jhg_finance_safe = yes OR = { has_variable = ywc_jhg_tribute_filing_fee_paid ywc_jhg_tribute_can_pay = yes } }
+}
+
+# JHG shared escort: route 2 is a captured partnership, not any ally with an
+# army. Eligibility reads LAN/DMG's actual naval or staffed-port capacity.
+ywc_jhg_escort_requester_ready = {
+	c:JHG ?= this
+	is_country_alive = yes
+	ywc_jhg_finance_safe = yes
+	has_variable = ywc_jhg_convoy_filing_fee
+	OR = { is_subject = no AND = { is_subject = yes exists = overlord } }
+}
+
+ywc_jhg_escort_clear_to_inquire = {
+	NOT = { var:ywc_jhg_escort_state ?= 1 }
+	NOT = { var:ywc_jhg_escort_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_jhg_escort_contract_generation }
+		var:ywc_jhg_escort_ended_generation ?= var:ywc_jhg_escort_contract_generation
+	}
+}
+
+ywc_jhg_escort_can_offer_lan = {
+	c:JHG ?= this
+	ywc_jhg_escort_requester_ready = yes
+	ywc_jhg_escort_clear_to_inquire = yes
+	exists = c:LAN
+	c:LAN = {
+		is_country_alive = yes
+		relations:c:JHG >= 0
+		OR = {
+			navy_size >= 5
+			any_scope_state = { owner = c:LAN any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } }
+		}
+	}
+}
+
+ywc_jhg_escort_can_offer_dmg = {
+	c:JHG ?= this
+	ywc_jhg_escort_requester_ready = yes
+	ywc_jhg_escort_clear_to_inquire = yes
+	exists = c:DMG
+	c:DMG = {
+		is_country_alive = yes
+		relations:c:JHG >= 0
+		OR = {
+			navy_size >= 5
+			any_scope_state = { owner = c:DMG any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } }
+		}
+	}
+}
+
+ywc_jhg_escort_subject_unchanged = {
+	OR = {
+		AND = { var:ywc_jhg_escort_subject_snapshot ?= 0 is_subject = no }
+		AND = {
+			var:ywc_jhg_escort_subject_snapshot ?= 1
+			is_subject = yes
+			exists = overlord
+			exists = var:ywc_jhg_escort_subject_overlord
+			var:ywc_jhg_escort_subject_overlord ?= overlord
+		}
+	}
+}
+
+ywc_jhg_escort_offer_matches = {
+	exists = scope:ywc_jhg_escort_requester
+	exists = scope:ywc_jhg_escort_request_partner
+	scope:ywc_jhg_escort_request_partner ?= this
+	scope:ywc_jhg_escort_requester ?= c:JHG
+	scope:ywc_jhg_escort_requester = {
+		is_country_alive = yes
+		var:ywc_jhg_escort_partner ?= root
+		ywc_jhg_escort_subject_unchanged = yes
+		var:ywc_jhg_escort_generation ?= scope:ywc_jhg_escort_request_generation
+		var:ywc_jhg_escort_serial ?= scope:ywc_jhg_escort_request_serial
+		var:ywc_jhg_escort_quote_serial ?= scope:ywc_jhg_escort_request_serial
+		var:ywc_jhg_escort_quote_cost ?= scope:ywc_jhg_escort_request_cost
+		var:ywc_jhg_escort_quote_term ?= scope:ywc_jhg_escort_request_term
+		var:ywc_jhg_escort_quote_lanes ?= scope:ywc_jhg_escort_request_lanes
+		var:ywc_jhg_escort_state ?= 1
+		has_variable = ywc_jhg_escort_request_timer
+	}
+}
+
+ywc_jhg_escort_authorizable = {
+	ywc_jhg_escort_offer_matches = yes
+	is_country_alive = yes
+	relations:scope:ywc_jhg_escort_requester >= 0
+	OR = {
+		navy_size >= 5
+		any_scope_state = { owner = root any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_jhg_escort_accepted_current = {
+	is_country_alive = yes
+	has_variable = ywc_jhg_escort_quote_generation
+	var:ywc_jhg_escort_quote_generation ?= var:ywc_jhg_escort_generation
+	var:ywc_jhg_escort_state ?= 2
+	has_variable = ywc_jhg_escort_accept
+	var:ywc_jhg_escort_accept ?= 1
+	var:ywc_jhg_escort_accept_generation ?= var:ywc_jhg_escort_quote_generation
+	var:ywc_jhg_escort_accept_serial ?= var:ywc_jhg_escort_quote_serial
+	var:ywc_jhg_escort_accept_cost ?= var:ywc_jhg_escort_quote_cost
+	var:ywc_jhg_escort_accept_term ?= var:ywc_jhg_escort_quote_term
+	var:ywc_jhg_escort_accept_lanes ?= var:ywc_jhg_escort_quote_lanes
+	has_variable = ywc_jhg_escort_request_timer
+	ywc_jhg_escort_subject_unchanged = yes
+	ywc_jhg_escort_partner_intact = yes
+}
+
+ywc_jhg_escort_contract_active = {
+	has_variable = ywc_jhg_escort_contract_generation
+	ywc_jhg_escort_contract_partner_intact = yes
+	NOT = { var:ywc_jhg_escort_ended_generation ?= var:ywc_jhg_escort_contract_generation }
+	NOT = { var:ywc_jhg_escort_suspended_generation ?= var:ywc_jhg_escort_contract_generation }
+	has_variable = ywc_jhg_escort_term_timer
+}
+
+# A completed domestic watch is retained when only the contracted partner
+# becomes unavailable. Settlement still needs a fresh 180-day partner watch.
+ywc_jhg_escort_watch_ready = {
+	ywc_jhg_escort_contract_active = yes
+	NOT = { has_variable = ywc_jhg_escort_revalidation_timer }
+}
+
+ywc_jhg_convoy_preserve_completed_watch = {
+	var:ywc_jhg_convoy_route = 2
+	has_variable = ywc_jhg_escort_contract_generation
+	ywc_jhg_finance_safe = yes
+	OR = {
+		AND = { NOT = { has_variable = ywc_jhg_convoy_limited_target_selected } ywc_jhg_convoy_navy_ready = yes }
+		AND = { has_variable = ywc_jhg_convoy_limited_target_selected navy_size >= 3 }
+	}
+	NOT = { ywc_jhg_escort_watch_ready = yes }
+}
+
+# Project-sharing is offered only to JHG's actual SHU overlord. The signed
+# record is separate from the existing domestic tribute workflow and queue.
+ywc_jhg_share_link_intact = {
+	c:JHG ?= this
+	is_country_alive = yes
+	is_subject = yes
+	exists = overlord
+	exists = c:SHU
+	overlord ?= c:SHU
+	c:SHU = { is_country_alive = yes relations:c:JHG >= 0 }
+}
+
+ywc_jhg_share_can_offer = {
+	ywc_jhg_share_link_intact = yes
+	ywc_jhg_finance_safe = yes
+	has_variable = ywc_jhg_tribute_filing_fee
+	NOT = { var:ywc_jhg_share_state ?= 1 }
+	NOT = { var:ywc_jhg_share_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_jhg_share_contract_generation }
+		var:ywc_jhg_share_ended_generation ?= var:ywc_jhg_share_contract_generation
+	}
+}
+
+ywc_jhg_share_offer_matches = {
+	exists = scope:ywc_jhg_share_requester
+	exists = scope:ywc_jhg_share_request_partner
+	scope:ywc_jhg_share_request_partner ?= this
+	scope:ywc_jhg_share_requester ?= c:JHG
+	scope:ywc_jhg_share_requester = {
+		ywc_jhg_share_link_intact = yes
+		var:ywc_jhg_share_partner ?= root
+		var:ywc_jhg_share_generation ?= scope:ywc_jhg_share_request_generation
+		var:ywc_jhg_share_serial ?= scope:ywc_jhg_share_request_serial
+		var:ywc_jhg_share_quote_serial ?= scope:ywc_jhg_share_request_serial
+		var:ywc_jhg_share_quote_jhg_cost ?= scope:ywc_jhg_share_request_jhg_cost
+		var:ywc_jhg_share_quote_shu_cost ?= scope:ywc_jhg_share_request_shu_cost
+		var:ywc_jhg_share_quote_term ?= scope:ywc_jhg_share_request_term
+		var:ywc_jhg_share_state ?= 1
+		has_variable = ywc_jhg_share_request_timer
+	}
+}
+
+ywc_jhg_share_authorizable = {
+	ywc_jhg_share_offer_matches = yes
+	c:SHU ?= this
+	is_country_alive = yes
+	relations:scope:ywc_jhg_share_requester >= 0
+}
+
+ywc_jhg_share_pending_partner_intact = {
+	exists = var:ywc_jhg_share_partner
+	var:ywc_jhg_share_partner ?= c:SHU
+	ywc_jhg_share_link_intact = yes
+}
+
+ywc_jhg_share_accepted_current = {
+	ywc_jhg_share_pending_partner_intact = yes
+	var:ywc_jhg_share_state ?= 2
+	var:ywc_jhg_share_quote_generation ?= var:ywc_jhg_share_generation
+	var:ywc_jhg_share_accept_generation ?= var:ywc_jhg_share_quote_generation
+	var:ywc_jhg_share_accept_serial ?= var:ywc_jhg_share_quote_serial
+	var:ywc_jhg_share_accept_jhg_cost ?= var:ywc_jhg_share_quote_jhg_cost
+	var:ywc_jhg_share_accept_shu_cost ?= var:ywc_jhg_share_quote_shu_cost
+	var:ywc_jhg_share_accept_term ?= var:ywc_jhg_share_quote_term
+	has_variable = ywc_jhg_share_request_timer
+}
+
+ywc_jhg_share_contract_partner_intact = {
+	exists = var:ywc_jhg_share_contract_partner
+	var:ywc_jhg_share_contract_partner ?= c:SHU
+	ywc_jhg_share_link_intact = yes
+}
+
+ywc_jhg_share_contract_active = {
+	has_variable = ywc_jhg_share_contract_generation
+	ywc_jhg_share_contract_partner_intact = yes
+	NOT = { var:ywc_jhg_share_ended_generation ?= var:ywc_jhg_share_contract_generation }
+	NOT = { var:ywc_jhg_share_suspended_generation ?= var:ywc_jhg_share_contract_generation }
+	has_variable = ywc_jhg_share_term_timer
+}
+
+ywc_jhg_escort_partner_intact = {
+	exists = var:ywc_jhg_escort_partner
+	OR = {
+		AND = {
+			var:ywc_jhg_escort_partner ?= c:LAN
+			c:LAN = {
+				is_country_alive = yes
+				relations:c:JHG >= 0
+				OR = { navy_size >= 5 any_scope_state = { owner = c:LAN any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } } }
+			}
+		}
+		AND = {
+			var:ywc_jhg_escort_partner ?= c:DMG
+			c:DMG = {
+				is_country_alive = yes
+				relations:c:JHG >= 0
+				OR = { navy_size >= 5 any_scope_state = { owner = c:DMG any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } } }
+			}
+		}
+	}
+}
+
+ywc_jhg_escort_contract_partner_intact = {
+	exists = var:ywc_jhg_escort_contract_partner
+	OR = {
+		AND = {
+			var:ywc_jhg_escort_contract_partner ?= c:LAN
+			c:LAN = {
+				is_country_alive = yes
+				relations:c:JHG >= 0
+				OR = { navy_size >= 5 any_scope_state = { owner = c:LAN any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } } }
+			}
+		}
+		AND = {
+			var:ywc_jhg_escort_contract_partner ?= c:DMG
+			c:DMG = {
+				is_country_alive = yes
+				relations:c:JHG >= 0
+				OR = { navy_size >= 5 any_scope_state = { owner = c:DMG any_scope_building = { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } } }
+			}
+		}
+	}
 }
