@@ -177,12 +177,13 @@ ywc_shu_mark_duplicate_service_case = {
 
 ywc_shu_accept_merchant_advance = {
 	if = {
-		limit = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } }
+		limit = { ywc_shu_merchant_offer_ready = yes }
 		ywc_shu_capture_cost_base = yes
 		set_variable = { name = ywc_shu_merchant_principal value = var:ywc_shu_fiscal_cost }
 		add_treasury = { value = var:ywc_shu_merchant_principal }
 		set_variable = { name = ywc_shu_merchant_advance value = 1 }
 		set_variable = { name = ywc_shu_merchant_advance_unpaid value = 1 }
+		set_variable = { name = ywc_shu_merchant_repayment_due value = 1 months = 12 }
 		set_variable = { name = ywc_shu_merchant_repayment_months value = 0 }
 		set_variable = { name = ywc_shu_merchant_consultation value = 1 }
 	}
@@ -197,6 +198,7 @@ ywc_shu_collect_merchant_repayment = {
 		limit = {
 			has_variable = ywc_shu_merchant_advance_unpaid
 			var:ywc_shu_merchant_repayment_months >= 12
+			NOT = { has_variable = ywc_shu_merchant_repayment_due }
 			gold_reserves >= { value = var:ywc_shu_merchant_principal }
 		}
 		add_treasury = { value = var:ywc_shu_merchant_principal multiply = -1 }
@@ -207,7 +209,7 @@ ywc_shu_collect_merchant_repayment = {
 	}
 	else = {
 		if = {
-			limit = { has_variable = ywc_shu_merchant_advance_unpaid var:ywc_shu_merchant_repayment_months >= 12 }
+			limit = { has_variable = ywc_shu_merchant_advance_unpaid var:ywc_shu_merchant_repayment_months >= 12 NOT = { has_variable = ywc_shu_merchant_repayment_due } }
 			add_modifier = { modifier = ywc_shu_local_credit_arrears months = 12 }
 		}
 	}
@@ -223,7 +225,7 @@ ywc_shu_record_second_audit = {
 			ywc_shu_v03_real_execution_ready = yes
 			OR = {
 				AND = { var:ywc_shu_audit_mode = 1 has_variable = ywc_shu_audit_installment_paid var:ywc_shu_appeal_owner = 1 }
-				AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right var:ywc_shu_appeal_owner = 2 OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } has_variable = ywc_shu_merchant_advance_refused } }
+				AND = { var:ywc_shu_audit_mode = 2 has_variable = ywc_shu_local_audit_right var:ywc_shu_appeal_owner = 2 AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } } }
 				var:ywc_shu_audit_mode = 3
 			}
 		}
@@ -261,7 +263,7 @@ ywc_shu_choose_central_settlement = {
 
 ywc_shu_choose_provincial_settlement = {
 	if = {
-		limit = { NOT = { has_variable = ywc_shu_settlement_mode } }
+		limit = { NOT = { has_variable = ywc_shu_settlement_mode } NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } }
 		set_variable = { name = ywc_shu_settlement_mode value = 2 }
 		set_variable = { name = ywc_shu_local_audit_right value = 1 }
 	}
@@ -314,7 +316,7 @@ ywc_shu_close_as_provincial = {
 			OR = { var:ywc_shu_pilot_outcome = 2 has_variable = ywc_shu_local_audit_right }
 			has_variable = ywc_shu_local_audit_right
 			var:ywc_shu_military_payer = 2
-			OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } has_variable = ywc_shu_merchant_advance_refused }
+			AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } }
 		}
 		set_variable = { name = ywc_shu_fiscal_outcome_provincial_share value = 1 }
 		set_variable = { name = ywc_shu_register_resolved value = 1 }
@@ -405,7 +407,7 @@ ywc_shu_resume_after_pilot_reselection = {
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 3 } set_variable = { name = ywc_shu_pending_event value = 1003 } }
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 4 } set_variable = { name = ywc_shu_pending_event value = 1004 } }
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 5 } set_variable = { name = ywc_shu_pending_event value = 1005 } }
- else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 6 } set_variable = { name = ywc_shu_pending_event value = 1006 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 6 } if = { limit = { OR = { has_variable = ywc_shu_merchant_advance has_variable = ywc_shu_merchant_advance_unpaid has_variable = ywc_shu_merchant_advance_repaid has_variable = ywc_shu_merchant_advance_refused has_variable = ywc_shu_merchant_advance_narrowed } } set_variable = { name = ywc_shu_pending_event value = 1006 } } else = { set_variable = { name = ywc_shu_pending_event value = 1005 } } }
 }
 
 ywc_v03_claim_arc_shu_v03_shu_service_compact = {
