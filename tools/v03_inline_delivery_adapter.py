@@ -662,7 +662,7 @@ def _kor_direct_adds(arc: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 _SHU_SOURCE_HASHES = {
-    "ywc_je_v03_shu_register_pilot": "4173e6d5cca60115061ab47293111f0198f1396e181a79ca15cebd10d4ca491b",
+    "ywc_je_v03_shu_register_pilot": "a691a16d675784040f0ed35fc127f551271fb74c68e3b9f5b44a4fa2ba9dfa7f",
     "ywc_je_v03_shu_fiscal_settlement": "c6366c199ed2e11fabaa894bcd20141ab28d43fa8c4e973d42038dcddf581b45",
     "ywc_je_v03_shu_service_contract": "b5b8acdee5f291e52e7ad35a94611fcab5104263c56f85ff4f5835c223fd174f",
     "ywc_je_v03_shu_service_appointments": "d1ed212dcb4d7001b56976ee6c46de347e84675c9f553cb2cb36ed77b03f1723",
