@@ -17,7 +17,7 @@ EXPECTED_ARCS = {
     "v03_jhg_tribute_autonomy",
 }
 EFFECTS_AST_SHA256 = "136b24e521dfa78709ee29589d3f3d0f5eb8bbb516c445841db3bc64978445ef"
-TRIGGERS_AST_SHA256 = "98a9b8ebf26cd48c2d3a393efffe954aa330b06b823a6bee83c3f93a956cf0f9"
+TRIGGERS_AST_SHA256 = "dd38d0ed9ccd1c553459e2318dad057a27198371294e65d1bca2493c20e4dbc6"
 
 
 def _int_tree(value: Any, where: str = "metadata") -> None:

@@ -88,7 +88,6 @@ REQUIRED_TRIGGERS = [
     "ywc_jhg_convoy_current_target_ready",
     "ywc_jhg_convoy_limited_route_execution_ready",
     "ywc_jhg_tribute_relationship_open",
-    "ywc_jhg_tribute_partner_ready",
     "ywc_jhg_tribute_route_execution_ready",
     "ywc_jhg_tribute_can_pay",
     "ywc_jhg_tribute_can_advance",
