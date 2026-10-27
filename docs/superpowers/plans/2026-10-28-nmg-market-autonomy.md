@@ -2,7 +2,7 @@
 
 **Goal:** Allow a paying New Ming to ask its actual Mexican overlord for a concrete, revocable market right without rewriting existing remittance contracts.
 
-**Architecture:** A repeatable bounded vanilla decision sends a captured request to a new recipient-side response. Acceptance creates a uniquely named pact whose maintenance reads the existing fixed-contract generation, payment ledger, actual direct subject and finance state; no script removes or rewrites unrelated pacts. Existing ledger and country queue remain authoritative.
+**Architecture:** A repeatable bounded vanilla decision sends a captured request to a new recipient-side response. Acceptance creates a uniquely named pact whose maintenance reads the existing fixed-contract generation, payment ledger and actual direct subject; no script removes or rewrites unrelated pacts. Existing ledger and country queue remain authoritative.
 
 **Spec:** `docs/superpowers/specs/2026-10-28-nmg-market-autonomy-design.md`.
 
