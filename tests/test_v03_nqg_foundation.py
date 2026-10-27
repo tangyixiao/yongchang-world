@@ -227,8 +227,10 @@ class NqgScriptResolutionTest(unittest.TestCase):
                                   "hidden aid endpoint must be scheduled by the signature helper")
                     continue
                 if event["id"] == "ywc_nqg.1031":
-                    self.assertIn("trigger_event = { id = ywc_nqg.1031 }", effects,
-                                  "aid ledger must be dispatched by the reply/status helper")
+                    self.assertIn("trigger_event = { id = ywc_nqg.1031 }", script,
+                                  "aid ledger must be dispatched by a real journal sender")
+                    self.assertIn("ywc_nqg_winter_aid_notice_event", effects,
+                                  "reply/status helper must publish the independent notice queue")
                     continue
                 if event["id"] == "ywc_nqg.1028":
                     self.assertIn("trigger_event = { id = ywc_nqg.1028 }", effects,
@@ -320,7 +322,7 @@ class NqgHonestyTest(unittest.TestCase):
         for token in ("market_access", "government_legitimacy", "gold_reserves",
                       "is_building_type = building_government_administration",
                       "is_building_type = building_port", "has_law_or_variant",
-                      "has_diplomatic_pact", "relations:root >= 20"):
+                      "relations:c:NQG >= 0", "is_adjacent_to_market"):
             self.assertIn(token, joined, token)
         self.assertNotIn("relations_threshold:", joined)
 
@@ -343,7 +345,11 @@ class NqgHonestyTest(unittest.TestCase):
         opening = winter["events"][0]
         request = next(o for o in opening["options"] if o["key"] == "grain_loan")
         # The inquiry is free and moves nothing by itself.
-        self.assertIn("ywc_nqg_aid_send_inquiry = yes", request["effect"])
+        self.assertIn("ywc_nqg_aid_send_shu = yes", request["effect"])
+        for key, tag in (("grain_loan", "shu"), ("grain_loan_rus", "rus"), ("grain_loan_jap", "jap")):
+            option = next(o for o in opening["options"] if o["key"] == key)
+            self.assertIn("ywc_nqg_aid_can_offer_" + tag + " = yes", option["trigger"])
+            self.assertIn("ywc_nqg_aid_send_" + tag + " = yes", option["effect"])
         for phrase in ("no grain", "debt"):
             self.assertIn(phrase, request["cost_note"]["en"].lower())
         for phrase in ("actual grain flow", "never consent"):
@@ -481,7 +487,19 @@ class NqgLifecycleRepairTest(unittest.TestCase):
             event = next(e for a in catalog["arcs"] if a["slug"] == slug for e in a["events"] if _number(e["id"]) == event_id)
             option = next(o for o in event["options"] if o["key"] == option_key)
             vars = {f"ywc_nqg_{short}_fee": 1000, "gold_reserves": 0}
-            world = PulseWorld(effects, {"NQG": vars})
+            if short == "winter":
+                vars.update({"bureaucracy": 100, "net_fixed_income": 1, "government_legitimacy": 80,
+                             "states": [{"owner": "NQG", "buildings": [
+                                 {"type": "building_government_administration", "occupancy": 0.9, "goods_shortage": False}]}]})
+                world = NqgWorldFactsRuntime({"NQG": vars})
+            elif short == "port":
+                vars.update({"bureaucracy": 100, "net_fixed_income": 1,
+                             "laws": ["law_mercantilism"],
+                             "states": [{"owner": "NQG", "buildings": [
+                                 {"type": "building_port", "occupancy": 0.8, "goods_shortage": False}]}]})
+                world = NqgWorldFactsRuntime({"NQG": vars})
+            else:
+                world = PulseWorld(effects, {"NQG": vars})
             world.execute(parse("effect = " + option["effect"])[0][2], "NQG")
             c = world.countries["NQG"]
             self.assertNotIn(f"ywc_nqg_{short}_fee_paid", c)
@@ -746,9 +764,9 @@ class NqgNoticeLaneTest(unittest.TestCase):
         self.assertTrue(_script_condition(w,arc["journals"][-1]["goal"],"NQG"))
         self.assertFalse(_script_condition(w,arc["journals"][-1]["exit_conditions"],"NQG"))
         w,arc,first,await_event=world_for("v03_nqg_northern_port")
-        for event,choice in [(1020,"open_berths"),(1021,"by_tonnage"),(1022,"from_customs"),(1023,"renegotiate"),(1024,"recognise_duties")]:
+        for event,choice in [(1020,"open_berths"),(1021,"by_tonnage"),(1022,"from_customs"),(1023,"continue_domestic"),(1024,"recognise_duties")]:
             event_id=f"ywc_nqg.{event}"; await_event(event_id); w.choose(event_id,choice)
-        for event,choice in [(1025,"keep_watch"),(1026,"renew")]:
+        for event,choice in [(1025,"keep_watch"),(1026,"continue_domestic")]:
             event_id=f"ywc_nqg.{event}"; await_event(event_id); w.choose(event_id,choice)
         self.assertIn(arc["journals"][0]["id"], w.completed_journals["NQG"])
         self.assertIn(arc["journals"][1]["id"], w.active_journals["NQG"])
@@ -1016,7 +1034,7 @@ class NqgReviewFixTest(unittest.TestCase):
             c["gold_reserves"]=20000; world.execute(parse("effect = "+option["effect"])[0][2],"NQG")
             self.assertIn(marker,c); self.assertEqual(c["ywc_nqg_port_stage"],1023)
             self.assertEqual(c["gold_reserves"],19000); self.assertEqual(world.treasury["NQG"],-2000)
-        self._await(world,port,"ywc_nqg.1023"); world.choose("ywc_nqg.1023","renegotiate")
+        self._await(world,port,"ywc_nqg.1023"); world.choose("ywc_nqg.1023","continue_domestic")
         self._await(world,port,"ywc_nqg.1024"); world.choose("ywc_nqg.1024","recognise_duties")
         self._await(world,port,"ywc_nqg.1025")
         option=next(o for o in next(e for e in port["events"] if e["id"]=="ywc_nqg.1025")["options"] if o["key"]=="keep_watch")
@@ -1158,14 +1176,19 @@ class NqgReviewFixTest(unittest.TestCase):
                 self.assertNotIn(prefix+"_blocked_timer_started",c)
 
     def test_partner_reserves_relations_and_player_treasury_are_scoped_facts(self):
+        import sys
+        sys.path.insert(0, str(ROOT / "tests"))
+        from test_v03_nqg_aid_response import NqgAidWorld, base_countries
+        countries=base_countries()
+        partner_world=NqgAidWorld(countries)
+        eligible=partner_world.trigger_defs["ywc_nqg_aid_can_offer_shu"]
+        countries["SHU"]["relations"]["NQG"]=-1
+        self.assertFalse(partner_world.conditions(eligible,"NQG"))
+        countries["SHU"]["relations"]["NQG"]=0
+        self.assertTrue(partner_world.conditions(eligible,"NQG"))
+        countries["SHU"]["states"][0]["production"]={"grain":0}
+        self.assertFalse(partner_world.conditions(eligible,"NQG"))
         world=self._world()
-        world.countries["ALLY"]={"diplomatic_pacts":["alliance"],"relations_to_root":19,"gold_reserves":0}
-        trigger=parse("condition = { ywc_nqg_winter_loan_ready = yes }")[0][2]
-        self.assertFalse(world.conditions(trigger,"NQG"))
-        world.countries["ALLY"]["gold_reserves"]=12000
-        self.assertFalse(world.conditions(trigger,"NQG"))
-        world.countries["ALLY"]["relations_to_root"]=20
-        self.assertTrue(world.conditions(trigger,"NQG"))
         with self.assertRaises(AssertionError):
             world.conditions(parse("condition = { relations:root >= relations_threshold:cordial }")[0][2],"NQG")
         self.assertEqual(world.countries["NQG"]["gold_reserves"],20000)

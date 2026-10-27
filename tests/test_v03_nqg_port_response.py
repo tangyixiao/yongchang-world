@@ -142,7 +142,7 @@ class NqgPortTreatyTest(unittest.TestCase):
         world, countries = port_world()
         signed_lease(world)
         nqg = countries["NQG"]
-        offer = run_option(world, "ywc_nqg.1023", "hold_terms")
+        offer = run_option(world, "ywc_nqg.1023", "renegotiate")
         self.assertTrue(world.display_job(offer))
         world.choose_job(offer, "refuse")
         self.assertNotIn("ywc_nqg_port_treaty_escort_ready", nqg)

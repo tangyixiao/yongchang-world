@@ -105,6 +105,7 @@ class PartnerWorld(Strict):
         self._saved = {}
         self._stack = []
         self.market_scope = None
+        self._explicit_state_ref = None
         self.jobs = []
         self._displayed = {}
         self._delivery_owns_months = False
@@ -256,14 +257,15 @@ class PartnerWorld(Strict):
 
     @contextmanager
     def _state_context(self, ref):
-        previous = self.state_scope, self.building_scope, self.pop_scope, self._stack
+        previous = self.state_scope, self.building_scope, self.pop_scope, self._stack, self._explicit_state_ref
         self.state_scope = self._state_dict(ref.sid)
         self.building_scope = self.pop_scope = None
         self._stack = self._stack + [ref]
+        self._explicit_state_ref = ref
         try:
             yield
         finally:
-            self.state_scope, self.building_scope, self.pop_scope, self._stack = previous
+            self.state_scope, self.building_scope, self.pop_scope, self._stack, self._explicit_state_ref = previous
 
     @contextmanager
     def _market_context(self, ref):
@@ -304,7 +306,7 @@ class PartnerWorld(Strict):
 
     @staticmethod
     def _scope_token(token):
-        return (isinstance(token, str) and (token.lower() in ("this", "root", "prev", "prev.prev")
+        return (isinstance(token, str) and (token.lower() in ("this", "root", "prev", "prev.prev", "market")
                 or token.startswith(("c:", "scope:", "var:"))
                 or ".var:" in token))
 
@@ -335,8 +337,13 @@ class PartnerWorld(Strict):
             typed_state = isinstance(self._stack[-1] if self._stack else None, StateRef)
             if token.lower() in ("prev", "this", "prev.prev") and not typed_state:
                 raise UnsupportedSubset("unsupported PREV/this read inside an untyped non-country iterator")
-            if token.lower().startswith(("prev.var:", "this.var:")) or token.startswith("var:"):
-                raise UnsupportedSubset("unsupported PREV/this/local variable read inside non-country iterator")
+            if token.lower().startswith("prev.var:"):
+                if (not typed_state or self._explicit_state_ref != self._stack[-1]
+                        or self.building_scope is not None or self.pop_scope is not None
+                        or len(self._stack) < 2 or not isinstance(self._stack[-2], CountryRef)):
+                    raise UnsupportedSubset("unsupported PREV variable read without an explicitly scoped country and state")
+            elif token.lower().startswith("this.var:") or token.startswith("var:"):
+                raise UnsupportedSubset("unsupported this/local variable read inside non-country iterator")
         suffixes = []
         rest = token
         if ".var:" not in token:

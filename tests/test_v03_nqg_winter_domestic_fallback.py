@@ -22,8 +22,42 @@ CONSEQUENCE = {
 }
 
 
+class NqgDomesticPartnerWorld(NqgWorldFactsRuntime):
+    """Keep the native JE driver and execute real foreign inquiry primitives."""
+    def __init__(self, countries):
+        super().__init__(countries)
+        import sys
+        sys.path.insert(0, str(ROOT / "tests"))
+        from test_v03_nqg_aid_response import NqgAidWorld, base_countries
+        partners = base_countries()
+        state = self.countries["NQG"]
+        for key, value in partners["NQG"].items():
+            if not key.startswith("ywc_") and key not in state:
+                state[key] = copy.deepcopy(value)
+        partners["NQG"] = state
+        self.aid_world = NqgAidWorld(partners)
+
+    def condition(self, node, tag):
+        key, op, value = node
+        if key in {"ywc_nqg_aid_can_offer_shu", "ywc_nqg_aid_can_offer_rus",
+                   "ywc_nqg_aid_can_offer_jap"} and op == "=" and value in ("yes", "no"):
+            self.aid_world.treasury[tag] = self.treasury[tag]
+            result = self.aid_world.conditions(self.aid_world.trigger_defs[key], tag)
+            return result == (value == "yes")
+        return super().condition(node, tag)
+
+    def run(self, name, tag):
+        if name in {"ywc_nqg_aid_send_shu", "ywc_nqg_aid_send_rus", "ywc_nqg_aid_send_jap",
+                    "ywc_nqg_aid_cancel_unsigned", "ywc_nqg_aid_switch_to_loan_route"}:
+            self.aid_world.treasury[tag] = self.treasury[tag]
+            result = self.aid_world.run(name, tag)
+            self.treasury[tag] = self.aid_world.treasury[tag]
+            return result
+        return super().run(name, tag)
+
+
 def _world():
-    return NqgWorldFactsRuntime({
+    return NqgDomesticPartnerWorld({
         "NQG": {
             "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
             "ywc_v03_active_arc_count": 0, "ywc_v03_visible_task_count": 0,
@@ -100,8 +134,10 @@ class NqgWinterDomesticFallbackTest(unittest.TestCase):
         arc = _arc(_catalog(), "v03_nqg_winter_court")
         world.enter(arc["journals"][0])
         self.assertEqual(world.pulse(world.current_driver(arc)), ["ywc_nqg.1000"])
-        self.assertTrue(_script_condition(world, "{ ywc_nqg_winter_loan_ready = yes }", "NQG"))
+        self.assertTrue(world.conditions([("ywc_nqg_aid_can_offer_shu", "=", "yes")], "NQG"))
         world.choose("ywc_nqg.1000", "grain_loan")
+        offer = next(job for job in world.aid_world.jobs if job.event_id == "ywc_nqg.1030")
+        self.assertEqual(offer.recipient.tag, "SHU")
         state = world.countries["NQG"]
         self.assertEqual(state[PREFIX + "route"], 3)
         self.assertEqual(state[PREFIX + "fee"], 1000)
@@ -126,13 +162,14 @@ class NqgWinterDomesticFallbackTest(unittest.TestCase):
         })
         self.assertEqual(world.treasury["ALLY"], 0)
         del world.countries["ALLY"]
+        world.aid_world.remove_country("SHU")
         # Retire the removed country's interpreter bookkeeping alongside its
         # world facts; the production interpreter itself remains unchanged.
         for countries in (world.treasury, world.months_until_expiry, world.days_until_expiry,
                           world.active_journals, world.terminal_journals,
                           world.completed_journals, world.failed_journals):
             countries.pop("ALLY")
-        self.assertFalse(_script_condition(world, "{ ywc_nqg_winter_loan_ready = yes }", "NQG"))
+        self.assertFalse(world.aid_world._present(offer.recipient))
         self._await(world, arc, "ywc_nqg.1005")
         return world, arc
 
@@ -257,6 +294,14 @@ class NqgWinterDomesticFallbackTest(unittest.TestCase):
                     expected = copy.deepcopy(before)
                     expected["NQG"].update({PREFIX + "st1005_refuse_loan_terms": 1,
                                             PREFIX + "pending": 1006, PREFIX + "stage": 1006})
+                    if expected["NQG"].get("ywc_nqg_aid_state") in (1, 2):
+                        for key in ("ywc_nqg_aid_request_timer", "ywc_nqg_aid_quote_generation",
+                                    "ywc_nqg_aid_quote_total", "ywc_nqg_aid_partner", "ywc_nqg_aid_accept",
+                                    "ywc_nqg_aid_accept_generation", "ywc_nqg_aid_accept_serial",
+                                    "ywc_nqg_aid_accept_total"):
+                            expected["NQG"].pop(key, None)
+                        expected["NQG"]["ywc_nqg_aid_state"] = 7
+                        expected["NQG"]["ywc_nqg_aid_serial"] += 1
                     if route == 3:
                         expected["NQG"][PREFIX + "route"] = 1
                         expected["NQG"].pop(PREFIX + "stance_grain_loan")

@@ -74,10 +74,12 @@ def pulse_winter(world):
     if WINTER not in world.active["NQG"]:
         world.active["NQG"].append(WINTER)
     nqg["ywc_v03_nqg_inline_live_winter_court_1"] = 1
+    before = len(world.jobs)
     with world._chain(world.country_ref("NQG")):
         world.execute(field(field(world.journal_defs[WINTER], "on_monthly_pulse"), "effect"), "NQG")
-    notices = [job for job in world.jobs if job.event_id == "ywc_nqg.1031"]
-    return notices[-1]
+    notices = [job for job in world.jobs[before:] if job.event_id == "ywc_nqg.1031"]
+    assert len(notices) == 1, ("actual aid notice not dispatched", [job.event_id for job in world.jobs[before:]])
+    return notices[0]
 
 
 def accepted_world(partner="SHU", fee=300):
@@ -89,9 +91,7 @@ def accepted_world(partner="SHU", fee=300):
     assert offer.recipient.tag == partner
     assert world.display_job(offer), "the invited partner must see the real inquiry"
     world.choose_job(offer, "accept")
-    notices = [job for job in world.jobs if job.event_id == "ywc_nqg.1031"]
-    assert notices, "the accepted reply must dispatch the aid ledger"
-    return world, countries, notices[-1]
+    return world, countries, pulse_winter(world)
 
 
 class NqgAidReplyTest(unittest.TestCase):
@@ -148,6 +148,13 @@ class NqgAidReplyTest(unittest.TestCase):
             with self.subTest(defect=defect):
                 countries = base_countries()
                 world = NqgAidWorld(countries)
+                install_route(countries, "SHU")
+                offer = send_inquiry(world)
+                self.assertEqual(offer.event_id, "ywc_nqg.1030")
+                self.assertTrue(world.display_job(offer))
+                world.choose_job(offer, "accept")
+                # Damage the actual flow only after an eligible partner's
+                # captured acceptance, so this tests signature attribution.
                 if defect == "wrong_good":
                     install_route(countries, "SHU", good="small_arms")
                 elif defect == "third_country":
@@ -161,15 +168,7 @@ class NqgAidReplyTest(unittest.TestCase):
                 elif defect == "no_production":
                     install_route(countries, "SHU")
                     countries["SHU"]["states"][0]["production"] = {"grain": 0.0}
-                offer = send_inquiry(world)
-                if offer.event_id != "ywc_nqg.1030":
-                    self.assertNotIn("ywc_nqg_aid_partner", countries["NQG"])
-                    continue
-                assert world.display_job(offer)
-                world.choose_job(offer, "accept")
-                notices = [job for job in world.jobs if job.event_id == "ywc_nqg.1031"]
-                self.assertTrue(notices, defect)
-                notice = notices[-1]
+                notice = pulse_winter(world)
                 self.assertTrue(world.display_job(notice))
                 options = world.job_options(notice)
                 self.assertFalse(options.get("sign_terms"), defect)
@@ -200,7 +199,7 @@ class NqgAidFallbackTest(unittest.TestCase):
         nqg = countries["NQG"]
         self.assertEqual(nqg["ywc_nqg_aid_state"], 3)
         self.assertEqual(nqg["ywc_nqg_winter_aid_notice_reason"], 2)
-        notice = [job for job in world.jobs if job.event_id == "ywc_nqg.1031"][-1]
+        notice = pulse_winter(world)
         self.assertTrue(world.display_job(notice))
         world.choose_job(notice, "domestic_route")
         self.assertEqual(nqg["ywc_nqg_winter_route"], 1)
@@ -219,10 +218,9 @@ class NqgAidFallbackTest(unittest.TestCase):
         self.assertEqual(nqg["ywc_nqg_aid_state"], 4)
         self.assertEqual(nqg["ywc_nqg_winter_aid_notice_reason"], 3)
         self.assertNotIn("ywc_nqg_aid_partner", nqg)
-        notices = [job for job in world.jobs if job.event_id == "ywc_nqg.1031"]
-        self.assertTrue(notices)
-        self.assertTrue(world.display_job(notices[-1]))
-        world.choose_job(notices[-1], "domestic_route")
+        notice = pulse_winter(world)
+        self.assertTrue(world.display_job(notice))
+        world.choose_job(notice, "domestic_route")
         self.assertEqual(nqg["ywc_nqg_winter_route"], 1)
 
 
@@ -237,6 +235,7 @@ class NqgAidContractTest(unittest.TestCase):
         self.assertEqual(nqg["ywc_nqg_aid_paid_count"], 3)
         self.assertEqual(nqg["ywc_nqg_aid_paid_total"], 900)
         world.advance_months(1)
+        world.run_due_hidden()
         world.run_country_monthly("NQG")
         self.assertEqual(nqg["ywc_nqg_aid_paid_count"], 3)
         self.assertEqual(nqg["ywc_nqg_aid_window_ended_generation"], 1)
@@ -283,7 +282,7 @@ class NqgAidContractTest(unittest.TestCase):
         offer = send_inquiry(world)
         self.assertTrue(world.display_job(offer))
         world.choose_job(offer, "refuse")
-        notice = [job for job in world.jobs if job.event_id == "ywc_nqg.1031"][-1]
+        notice = pulse_winter(world)
         self.assertTrue(world.display_job(notice))
         world.choose_job(notice, "retry_rus")
         nqg = countries["NQG"]
