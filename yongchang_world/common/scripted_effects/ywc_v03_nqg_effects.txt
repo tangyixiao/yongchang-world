@@ -1188,6 +1188,7 @@ ywc_nqg_port_treaty_sign_contract = {
 				remove_variable = ywc_nqg_port_treaty_request_timer
 				ywc_nqg_port_treaty_bump_serial = yes
 				set_variable = { name = ywc_nqg_port_treaty_state value = 6 }
+				ywc_nqg_port_treaty_refresh_concessions = yes
 				if = {
 					limit = { NOT = { var:ywc_nqg_port_treaty_end_scheduled_generation ?= var:ywc_nqg_port_treaty_contract_generation } }
 					save_scope_as = ywc_nqg_port_treaty_end_owner
@@ -1240,6 +1241,26 @@ ywc_nqg_port_treaty_monthly = {
 	}
 	ywc_nqg_port_treaty_invalidate_pending = yes
 	if = { limit = { var:ywc_nqg_port_treaty_state ?= 2 } ywc_nqg_port_treaty_sign_contract = yes }
+	ywc_nqg_port_treaty_refresh_concessions = yes
+}
+
+# These are state-wide trade-center modifiers, not bilateral berth allocation.
+ywc_nqg_port_treaty_refresh_concessions = {
+	if = {
+		limit = { exists = var:ywc_nqg_port_treaty_dest_state }
+		var:ywc_nqg_port_treaty_dest_state = {
+			remove_modifier = ywc_nqg_port_concession_50
+			remove_modifier = ywc_nqg_port_concession_60
+		}
+		if = {
+			limit = { ywc_nqg_port_treaty_lease_active = yes var:ywc_nqg_port_treaty_contract_duty ?= 1 var:ywc_nqg_port_treaty_contract_berth ?= 0.5 }
+			var:ywc_nqg_port_treaty_dest_state = { add_modifier = { name = ywc_nqg_port_concession_50 months = 1 } }
+		}
+		else_if = {
+			limit = { ywc_nqg_port_treaty_lease_active = yes var:ywc_nqg_port_treaty_contract_duty ?= 1 var:ywc_nqg_port_treaty_contract_berth ?= 0.6 }
+			var:ywc_nqg_port_treaty_dest_state = { add_modifier = { name = ywc_nqg_port_concession_60 months = 1 } }
+		}
+	}
 }
 
 ywc_nqg_port_treaty_end_lease = {
@@ -1254,5 +1275,6 @@ ywc_nqg_port_treaty_end_lease = {
 		ywc_nqg_port_treaty_bump_serial = yes
 		set_variable = { name = ywc_nqg_port_treaty_lease_ended_generation value = scope:ywc_nqg_port_treaty_end_generation }
 		remove_variable = ywc_nqg_port_treaty_term_timer
+		ywc_nqg_port_treaty_refresh_concessions = yes
 	}
 }

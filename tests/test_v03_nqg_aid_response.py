@@ -47,11 +47,11 @@ class NqgAidWorld(PartnerWorld):
             from datetime import date
             start_date = date(1836, 1, 1)
         super().__init__(countries, events=events, start_date=start_date, tag="nqg")
-        for rel in ("yongchang_world/common/script_values/ywc_v03_nqg_values.txt",
-                    "yongchang_world/common/static_modifiers/ywc_v03_nqg_modifiers.txt"):
+        for rel, destination in (("yongchang_world/common/script_values/ywc_v03_nqg_values.txt", self.named_values),
+                                 ("yongchang_world/common/static_modifiers/ywc_v03_nqg_modifiers.txt", self.modifier_defs)):
             path = ROOT / rel
-            self.named_values.update({key: body for key, _, body in parse(path.read_text(encoding="utf-8-sig"))}
-                                     if path.exists() else {})
+            destination.update({key: body for key, _, body in parse(path.read_text(encoding="utf-8-sig"))}
+                               if path.exists() else {})
         self.merge_on_actions(parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_nqg_accounts.txt")
                                     .read_text(encoding="utf-8-sig")))
 

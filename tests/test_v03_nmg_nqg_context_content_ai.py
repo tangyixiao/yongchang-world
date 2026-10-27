@@ -274,7 +274,7 @@ class NqgContentAccuracyTest(unittest.TestCase):
     def option(self,eid,key): return next(o for o in self.event(eid)["options"] if o["key"]==key)
 
     def test_selected_contract_copy_is_truthful_and_bilingual_in_generated_files(self):
-        cases=(("ywc_nqg.1020","exclusive_lease","without automatically changing capacity or tariffs","不自动修改运力或关税"),
+        cases=(("ywc_nqg.1020","exclusive_lease","captured port state gains +20% trade capacity","港州的贸易容量 +20%"),
                ("ywc_nqg.1015","settle_full","co-management","共同管理"),
                ("ywc_nqg.1027","settle_full","exclusive lease","独占租约"))
         for eid,key,en,zh in cases:
@@ -284,6 +284,8 @@ class NqgContentAccuracyTest(unittest.TestCase):
         lease=self.option("ywc_nqg.1020","exclusive_lease")["consequence_note"]
         self.assertIn("Only Russia receives the inquiry",lease["en"])
         self.assertIn("只向俄罗斯发出询请",lease["zh"])
+        self.assertIn("all its trade centers",lease["en"])
+        self.assertIn("并不强制分配名义泊位比例",lease["zh"])
         self.assertNotIn("Xinming",lease["en"])
         self.assertNotIn("新明国库",lease["zh"])
         for lang,file in (("en","ywc_v03_country_nqg_l_english.yml"),("zh","ywc_v03_country_nqg_l_simp_chinese.yml")):
