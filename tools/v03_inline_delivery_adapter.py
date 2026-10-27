@@ -665,7 +665,7 @@ _SHU_SOURCE_HASHES = {
     "ywc_je_v03_shu_register_pilot": "2e684bfe730ad4750dca58cdc0c2c7a9d09e5cd08352a6eb654adbeefcba4eb1",
     "ywc_je_v03_shu_fiscal_settlement": "c6366c199ed2e11fabaa894bcd20141ab28d43fa8c4e973d42038dcddf581b45",
     "ywc_je_v03_shu_service_contract": "b5b8acdee5f291e52e7ad35a94611fcab5104263c56f85ff4f5835c223fd174f",
-    "ywc_je_v03_shu_service_appointments": "d1ed212dcb4d7001b56976ee6c46de347e84675c9f553cb2cb36ed77b03f1723",
+    "ywc_je_v03_shu_service_appointments": "bd5a2562cdf059f0267f81c2766ba9eac7e1e119d72876d5f644571242779b16",
     "ywc_je_v03_shu_service_successor": "8063472bcaecbc2db0b782e270dcb8e2a1c6b89671e6e0204725d7791cce4b4d",
     "ywc_je_v03_shu_port_customs": "6fbce69e2ff4e47651c7cfa81147bfae8117416ffddc46c55aa1ad96e7de31df",
 }
@@ -684,9 +684,9 @@ _SHU_IMMEDIATE_HASHES = {
     "ywc_shu.1010": "0ea9a790b85c09cf3b52dc071717ba4f2ca4c36834b30174c82ff7fa76352182",
     "ywc_shu.1011": "aeb853e8c7e6ef7390fce8e25c41f69537342916bae063d332c1ba1d40ba092d",
     "ywc_shu.1012": "65bc3271ababc6004de7c04c3b844c25ce342a173774065bf6c07dd1279b01e1",
-    "ywc_shu.1013": "548eda6d6d21708bc715608be3758543bb276a4b848489477fefa3202221512e",
-    "ywc_shu.1014": "cc7f11836e5f12a0feb0ec8b868b5dc90f7d28049d23eb0702e860c246e3a725",
-    "ywc_shu.1015": "d42d9665b9438508390fa348a02053258f04d1bd0f54f1b825720e6c906bd37c",
+    "ywc_shu.1013": "c202584dbc887930514e2c90ab1c21be470671796a5b8f40fced00d96643bfb7",
+    "ywc_shu.1014": "2e0173d4ff4c437ceed89607a847baa0fdeab4c9c02b840997548442b1da74a8",
+    "ywc_shu.1015": "eb1fa9b661263ff4ba26c00b4c25fc4dc1a20bb1ac0a0d4cb50c3296188e3d83",
     "ywc_shu.1016": "9bceac36b907d9751e68448427b1a50bc187618a8eba029fcc50163ea41ecee1",
     "ywc_shu.1017": "caff16ec7fc375553a49fe71f02d81f79bf5488558885667d3a95591f7550817",
     "ywc_shu.1018": "9362934ea8a50f8e448126c372b49e101747ceccb0b6bd769be194f328c30069",
@@ -701,7 +701,7 @@ _SHU_IMMEDIATE_HASHES = {
 
 _SHU_DIRECT_ADD_BASELINE = [
     {"event": "ywc_shu.1015", "option": "accept_appointments", "journal": "ywc_je_v03_shu_service_successor", "site_ordinal": 0,
-     "effect_sha256": "36914974bb91912723ad649c2b88ff6dd820cba6af6ebe01732bbf92a5150e23",
+     "effect_sha256": "5b0b1e26a30b02f1c6a262da25a41bc0098a62ed591bac14c59f85bfe7af1ae0",
      "site_sha256": "354248736cc530bba146536e6626c3e92e0a7dc1f20fc82816e6b41631746203"},
 ]
 
