@@ -14,7 +14,7 @@
 - 名义泊位条款 0.6、税则代码 1：州贸易容量 +30%，州进口关税上限 -10 个百分点。
 - 未知条款不产生任一新修正；两种修正互斥，不改变原报价或真实答复。
 
-本机原版 02_event_modifiers.txt 的 economic_concessions 使用 state_trade_capacity_mult 和 state_tariff_import_add；modifiers_l_english.yml 说明后者是州内进口贸易中心的最大关税，并非逐国关税率。原版 on_state_owner_change 的 root 为州；可在该回调移除本项目的两个修正。以上是静态词汇证据，不是本 mod 通过引擎解析或游戏验收的证据。
+本机原版 `common/static_modifiers/02_event_modifiers.txt` 的 `economic_concessions` 包含 `state_trade_capacity_mult` 和 `state_tariff_import_add`；`common/modifier_type_definitions/modifier_types.md` 说明 `state_` 修正流向州，`00_modifier_types.txt` 定义了这两种类型。原版 `portuguese_colonialism_modifiers.txt` 与对应事件展示了在州作用域添加贸易容量修正；`localization/english/modifiers_l_english.yml` 将进口税修正解释为进口贸易中心的最高关税，并非逐国关税率。原版 `common/on_actions/ip4_on_actions.txt` 也展示了在州所有权变化的 state root 子 action 中移除修正。以上是静态词汇与用法证据，不是本 mod 通过引擎解析或游戏验收的证据。
 
 ## 生命周期与验收
 

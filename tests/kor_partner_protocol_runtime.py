@@ -115,6 +115,9 @@ class PartnerWorld(Strict):
         self.date = start_date
         self._epoch = self.date
         self.modifier_expires = {}
+        # State modifiers are tracked by the real state object, independently
+        # of its current owner; this models identity and expiry, not economics.
+        self.state_modifiers = {}
         from pathlib import Path
         source = Path("yongchang_world/common/script_values/ywc_v03_kor_values.txt")
         self.named_values = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))} if source.exists() else {}
@@ -728,6 +731,11 @@ class PartnerWorld(Strict):
             key, op, body = nodes[index]
             index += 1
             top = self._stack[-1] if self._stack else None
+            if isinstance(top, StateRef) and key in ("add_modifier", "remove_modifier"):
+                if op != "=":
+                    raise UnsupportedSubset(f"unsupported state modifier operator: {(key, op, body)}")
+                self._state_modifier(top, key, body)
+                continue
             if (isinstance(top, (StateRef, MarketRef))
                     and key not in ("save_scope_as", "custom_tooltip", "every_scope_state", "if", "else_if", "else")
                     and not (self._scope_token(key) and isinstance(body, list))):
@@ -848,11 +856,45 @@ class PartnerWorld(Strict):
                 retained.append(record)
         self.modifiers = retained
 
+    def _state_modifier(self, state, key, body):
+        if key == "remove_modifier":
+            if not isinstance(body, str):
+                raise UnsupportedSubset("state modifier removal requires a name")
+            self.state_modifiers.pop((state, body), None)
+            return
+        fields = self._fields(body, {"name", "modifier", "days", "months"})
+        identity = fields.get("modifier", fields.get("name"))
+        if not isinstance(identity, str) or identity not in self.modifier_defs:
+            raise UnsupportedSubset("state modifier must have a formal definition")
+        if "days" in fields and "months" in fields:
+            raise UnsupportedSubset("mixed state modifier durations")
+        expiry = None
+        if "days" in fields or "months" in fields:
+            unit = "days" if "days" in fields else "months"
+            duration = self._numeric(self._value(fields[unit]))
+            if duration <= 0 or int(duration) != duration:
+                raise UnsupportedSubset("invalid state modifier duration")
+            expiry = (self.date + timedelta(days=int(duration))) if unit == "days" else _add_months(self.date, int(duration))
+        self.state_modifiers[(state, identity)] = {"fields": fields, "expires": expiry}
+
+    def run_state_owner_change(self, state):
+        """Run the installed state callback subset; it uses only state modifier effects."""
+        if not isinstance(state, StateRef) or not self._state_present(state.sid):
+            raise UnsupportedSubset("state owner change requires a live state object")
+        owner = self._state_owner_tag(state)
+        with self._chain(state):
+            with self._state_context(state):
+                # The documented callback root is the changed state itself.
+                self._stack = [state]
+                self._run_on_action("on_state_owner_change", owner, set())
+
     def _advance_to(self, target):
         if target < self.date:
             raise UnsupportedSubset("calendar cannot move backwards")
         self.date = target
         self.day = (target - self._epoch).days
+        self.state_modifiers = {key: value for key, value in self.state_modifiers.items()
+                                if value["expires"] is None or target < value["expires"]}
         for tag in self.countries:
             for mapping in (self.days_until_expiry[tag], self.months_until_expiry[tag]):
                 for name, expiry in list(mapping.items()):

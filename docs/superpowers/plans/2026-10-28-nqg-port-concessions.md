@@ -25,16 +25,16 @@ Offline source checks only; do not launch game, Steam or launcher. Preserve user
 
 **Interfaces:** consume ywc_nqg_port_treaty_lease_active, ywc_nqg_port_treaty_dest_state, captured berth/duty and generation. Produce ywc_nqg_port_treaty_refresh_concessions and two exclusive state modifiers.
 
-- [ ] Write failing tests for the five review cases and both 0.5/0.6 amounts; run them to record RED.
-- [ ] Add typed state-modifier test support without pretending to simulate the economy.
-- [ ] Define the two modifiers and refresh/remove them at signing, monthly review, exact end, and state-owner change.
-- [ ] Run the focused test file and existing NQG port response/regression tests; repair actual failures.
+- [x] Write failing tests for the five review cases and both 0.5/0.6 amounts; run them to record RED.
+- [x] Add typed state-modifier test support without pretending to simulate the economy.
+- [x] Define the two modifiers and refresh/remove them at signing, monthly review, exact end, and state-owner change.
+- [x] Run the focused test file and existing NQG port response/regression tests; repair actual failures.
 
 ### Task 2: Truthful copy, independent review and frozen checks
 
 **Files:** modify data/content/v03/countries/nqg.json and generated NQG event/localization files; update the prior NQG partner-response note; add a concise development note if needed.
 
-- [ ] Describe the actual state-wide capacity and import tariff-cap effects, scope, and monthly delay in both languages; regenerate NQG output.
-- [ ] Run independent source review and repair reproducible findings.
-- [ ] Freeze exact tracked inputs, run NQG response/queue and cross-project tests, NQG/global generators, v0.3 and installed-source static validators and git diff --check; compare the frozen hashes.
-- [ ] Stage only task files, inspect and scan staged content, commit, push a scoped draft PR stacked on the NMG joint-project branch; do not merge or release.
+- [x] Describe the actual state-wide capacity and import tariff-cap effects, scope, and monthly delay in both languages; regenerate NQG output.
+- [x] Run independent source review and repair reproducible findings.
+- [x] Freeze exact tracked inputs, run NQG response/queue and cross-project tests, NQG/global generators, v0.3 and installed-source static validators and git diff --check; compare the frozen hashes.
+- Stage only task files, inspect and scan staged content, and push a scoped draft PR stacked on the on-action compatibility branch; do not merge or release.
