@@ -26,6 +26,17 @@ def pulse_effect_nodes(journal):
     return effect
 
 
+def shu_monthly_effect():
+    """Follow the actual additive hook to its owned repayment effect."""
+    source = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig"))
+    hook = next(body for key, _, body in source if key == "on_monthly_pulse_country")
+    children = [name for key, _, body in hook if key == "on_actions" for name, _, _ in body]
+    if children.count("ywc_v03_shu_accounts_monthly") != 1:
+        raise AssertionError("the SHU repayment callback must be appended exactly once")
+    child = next(body for key, _, body in source if key == "ywc_v03_shu_accounts_monthly")
+    return next(body for key, _, body in child if key == "effect")
+
+
 def parse_country_effect(script):
     # This review exercises country-card behavior; the cooldown write is owned by shared lifecycle code.
     script = script.replace("ywc_v03_mark_major_delivered = yes", "set_variable = { name = test_major_delivered value = 1 }")
@@ -231,9 +242,7 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertEqual(state.get("ywc_shu_fiscal_outcome_central_audit"), 1)
 
     def test_merchant_repayment_runs_from_country_monthly_on_action_after_exit(self):
-        action = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig"))
-        callback = next(body for key, _, body in action if key == "on_monthly_pulse_country")
-        effect = next(body for key, _, body in callback if key == "effect")
+        effect = shu_monthly_effect()
         world = PulseWorld(self.effects, {"SHU": {"yearly_gross_income": 52_000, "gold_reserves": 2_000,
                               "ywc_shu_register_resolved": 1}})
         world.run("ywc_shu_accept_merchant_advance")
@@ -249,9 +258,7 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertAlmostEqual(world.treasury["SHU"], 0)
 
     def test_unpaid_merchant_advance_survives_exit_until_funds_allow_collection(self):
-        action = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig"))
-        callback = next(body for key, _, body in action if key == "on_monthly_pulse_country")
-        effect = next(body for key, _, body in callback if key == "effect")
+        effect = shu_monthly_effect()
         world = PulseWorld(self.effects, {"SHU": {"gold_reserves": 0, "ywc_shu_arc_abandoned": 1,
                               "ywc_shu_merchant_advance_unpaid": 1, "ywc_shu_merchant_principal": 250,
                               "ywc_shu_merchant_repayment_months": 11}})
