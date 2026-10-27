@@ -156,16 +156,44 @@ ywc_shu_choose_old_exemption = {
 }
 
 ywc_shu_pay_military_advance_once = {
-	if = {
-		limit = {
-			net_fixed_income >= 0
-			NOT = { has_variable = ywc_shu_military_advance_paid }
-		}
-		ywc_shu_capture_cost_base = yes
-		add_treasury = { value = var:ywc_shu_fiscal_cost multiply = -0.25 }
-		set_variable = { name = ywc_shu_military_advance_paid value = 1 }
-		set_variable = { name = ywc_shu_military_payer value = 1 }
-	}
+ if = {
+  limit = { ywc_shu_military_first_payment_ready = yes }
+  set_variable = { name = ywc_shu_military_installment value = var:ywc_shu_fiscal_cost }
+  change_variable = { name = ywc_shu_military_installment multiply = 0.25 }
+  add_treasury = { value = var:ywc_shu_military_installment multiply = -1 }
+  set_variable = { name = ywc_shu_military_advance_paid value = 1 }
+  set_variable = { name = ywc_shu_military_payer value = 1 }
+  set_variable = { name = ywc_shu_military_contract_active value = 1 }
+  set_variable = { name = ywc_shu_military_installments_due value = 1 }
+  set_variable = { name = ywc_shu_military_installments_paid value = 1 }
+  set_variable = { name = ywc_shu_military_next_installment value = 1 months = 1 }
+  set_variable = { name = ywc_shu_military_term_due value = 1 months = 12 }
+ }
+}
+
+# The country callback owns this ledger even after the fiscal arc exits.
+ywc_shu_track_military_contract = {
+ if = {
+  limit = { has_variable = ywc_shu_military_contract_active ywc_shu_military_contract_valid = yes NOT = { has_variable = ywc_shu_military_next_installment } }
+  if = { limit = { var:ywc_shu_military_installments_due < 12 } change_variable = { name = ywc_shu_military_installments_due add = 1 } }
+  set_variable = { name = ywc_shu_military_next_installment value = 1 months = 1 }
+  if = {
+   limit = {
+    var:ywc_shu_military_installments_paid < var:ywc_shu_military_installments_due
+    NOT = { in_default = yes }
+    NOT = { has_modifier = declared_bankruptcy }
+    gold_reserves >= var:ywc_shu_military_installment
+   }
+   add_treasury = { value = var:ywc_shu_military_installment multiply = -1 }
+   change_variable = { name = ywc_shu_military_installments_paid add = 1 }
+  }
+ }
+ if = {
+  limit = { has_variable = ywc_shu_military_contract_active ywc_shu_military_contract_valid = yes var:ywc_shu_military_installments_due >= 12 var:ywc_shu_military_installments_paid >= 12 NOT = { has_variable = ywc_shu_military_term_due } }
+  remove_variable = ywc_shu_military_contract_active
+  remove_variable = ywc_shu_military_next_installment
+  set_variable = { name = ywc_shu_military_contract_fulfilled value = 1 }
+ }
 }
 
 ywc_shu_mark_duplicate_service_case = {
@@ -315,7 +343,7 @@ ywc_shu_close_as_provincial = {
 			var:ywc_shu_settlement_mode = 2
 			OR = { var:ywc_shu_pilot_outcome = 2 has_variable = ywc_shu_local_audit_right }
 			has_variable = ywc_shu_local_audit_right
-			var:ywc_shu_military_payer = 2
+			OR = { var:ywc_shu_military_payer = 1 var:ywc_shu_military_payer = 2 var:ywc_shu_military_payer = 3 }
 			AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } }
 		}
 		set_variable = { name = ywc_shu_fiscal_outcome_provincial_share value = 1 }
@@ -405,7 +433,7 @@ ywc_shu_resume_after_pilot_reselection = {
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 1 } set_variable = { name = ywc_shu_pending_event value = 1001 } }
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 2 } set_variable = { name = ywc_shu_pending_event value = 1002 } }
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 3 } set_variable = { name = ywc_shu_pending_event value = 1003 } }
- else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 4 } set_variable = { name = ywc_shu_pending_event value = 1004 } }
+ else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 4 } if = { limit = { OR = { has_variable = ywc_shu_military_payer has_variable = ywc_shu_military_advance_paid } } set_variable = { name = ywc_shu_pending_event value = 1004 } } else = { set_variable = { name = ywc_shu_pending_event value = 1003 } } }
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 5 } set_variable = { name = ywc_shu_pending_event value = 1005 } }
  else_if = { limit = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 6 } if = { limit = { OR = { has_variable = ywc_shu_merchant_advance has_variable = ywc_shu_merchant_advance_unpaid has_variable = ywc_shu_merchant_advance_repaid has_variable = ywc_shu_merchant_advance_refused has_variable = ywc_shu_merchant_advance_narrowed } } set_variable = { name = ywc_shu_pending_event value = 1006 } } else = { set_variable = { name = ywc_shu_pending_event value = 1005 } } }
 }

@@ -308,6 +308,18 @@ class ShuMerchantObligationTests(unittest.TestCase):
         replay_effect(world, audit, "wait_for_audit")
         self.assertEqual(state.get("ywc_shu_pending_event"), 1007)
 
+    def test_lost_pilot_blocks_a_new_advance_before_the_recovery_pulse(self):
+        world, _, event = reached_offer()
+        state = world.countries["SHU"]
+        other = copy.deepcopy(state["states"][0]); other["region"] = "s:STATE_CHONGQING"
+        state["states"].append(other); state["states"][0]["owned"] = False
+        self.assertFalse(next(row["legal"] for row in world.options(event) if row["option"] == "accept_port_advance"))
+        before = world.treasury["SHU"]
+        replay_effect(world, event, "accept_port_advance")
+        self.assertEqual(world.treasury["SHU"], before)
+        self.assertNotIn("ywc_shu_merchant_advance_unpaid", state)
+        self.assertTrue(any(row["legal"] and row["weight"] > 0 for row in world.options(event)))
+
     def test_unanswered_offer_resumes_after_pilot_loss_without_skipping_choice(self):
         world, arc, old_offer = reached_offer()
         state = world.countries["SHU"]
@@ -391,7 +403,7 @@ class ShuMerchantCalendarTests(unittest.TestCase):
         from pathlib import Path
         from clausewitz_harness import parse
         from kor_partner_protocol_runtime import PartnerWorld
-        state = facts(); state.update({"ywc_v03_shu_v03_shu_fiscal_register_last_event": 6})
+        state = facts(); state.update({"ywc_v03_shu_v03_shu_fiscal_register_last_event": 6, "ywc_shu_v03_pilot_state": 1})
         world = PartnerWorld({"SHU": state}, tag="shu", start_date=date(1836, 1, 15))
         world.active["SHU"].append("ywc_je_v03_shu_register_pilot")
         actions = Path("yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig")

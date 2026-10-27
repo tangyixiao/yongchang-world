@@ -250,7 +250,8 @@ class ShuContentCardTest(unittest.TestCase):
         world = Strict("shu")
         world.countries["SHU"] = facts()
         world.countries["SHU"].update({"yearly_gross_income": 52_000, "gold_reserves": 2_000,
-                                      "ywc_v03_shu_v03_shu_fiscal_register_last_event": 6})
+                                      "ywc_v03_shu_v03_shu_fiscal_register_last_event": 6,
+                                      "ywc_shu_v03_pilot_state": 1})
         world.active["SHU"].append("ywc_je_v03_shu_register_pilot")
         world.run("ywc_shu_accept_merchant_advance")
         world.active["SHU"].clear()
