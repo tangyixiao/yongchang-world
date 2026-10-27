@@ -460,7 +460,9 @@ class KorMilitaryAccountsTest(unittest.TestCase):
 
     def test_signed_contracts_remain_bounded_debt_after_arc_release(self):
         action = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_kor_accounts.txt").read_text(encoding="utf-8-sig"))
-        callback = next(body for key, _, body in action if key == "on_monthly_pulse_country")
+        hook = next(body for key, _, body in action if key == "on_monthly_pulse_country")
+        self.assertIn("ywc_v03_kor_accounts_monthly", [name for key, _, body in hook if key == "on_actions" for name, _, _ in body])
+        callback = next(body for key, _, body in action if key == "ywc_v03_kor_accounts_monthly")
         effect = next(body for key, _, body in callback if key == "effect")
         world = KorEffectWorld(self.effects + "\n" + self.shared_effects, {"KOR": {
             "ywc_v03_initialized": 1,

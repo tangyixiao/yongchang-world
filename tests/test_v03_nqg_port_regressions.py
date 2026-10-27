@@ -89,7 +89,7 @@ class NqgPortRegressions(unittest.TestCase):
         offer = run_option(world, "ywc_nqg.1020", "exclusive_lease")
         self.assertTrue(world.display_job(offer))
         countries["NQG"]["is_subject"] = True
-        world.execute(field(world.on_actions["on_become_subject"], "effect"), "NQG")
+        world.run_on_action("on_become_subject", "NQG")
         countries["NQG"]["is_subject"] = False
         world.choose_job(offer, "accept")
         self.assertNotIn("ywc_nqg_port_treaty_contract_generation", countries["NQG"])
@@ -97,7 +97,7 @@ class NqgPortRegressions(unittest.TestCase):
     def test_becoming_subject_preserves_a_signed_lease_ledger(self):
         world, countries = port_world(); signed_lease(world)
         countries["NQG"]["is_subject"] = True
-        world.execute(field(world.on_actions["on_become_subject"], "effect"), "NQG")
+        world.run_on_action("on_become_subject", "NQG")
         self.assertEqual(countries["NQG"]["ywc_nqg_port_treaty_contract_generation"], 1)
         self.assertEqual(countries["NQG"]["ywc_nqg_port_treaty_contract_partner"], world.country_ref("RUS"))
 
