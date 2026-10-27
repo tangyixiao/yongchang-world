@@ -12,14 +12,17 @@ import test_v03_nmg_foundation_lifecycle as lifecycle
 
 NQG = json.loads((ROOT / "data/content/v03/countries/nqg.json").read_text(encoding="utf-8"))
 MOD = ROOT / "yongchang_world"
-# Updated for the explicit NMG fixed-share protocol/domestic route and for
+# Updated for the explicit NMG partner protocols/domestic route and for
 # the already-reviewed NQG partner-response mechanics in the parent branch.
-NMG_MECHANICS_SHA256 = "d2c36f7aed7dfffc4a98c9d8c341fe5ac9e9deb7d4a645db6069c31c8313031d"
+NMG_MECHANICS_SHA256 = "8adf09642ce589939df1657cfd5bc828ae9059764cba554d3367f0a55058be96"
 NQG_MECHANICS_SHA256 = "7ad1c65d9d4cd94bd24bb12b2f4fdff23b0d38c0eb3587e062df64ce760cc99e"
 NMG_OPENING_POLICY = {
     "ywc_nmg.1000": {"mixed":"ywc_nmg_land_mixed_ready", "unified":"ywc_nmg_land_unified_ready", "old":"ywc_nmg_land_old_ready"},
     "ywc_nmg.1010": {"bilingual":"ywc_nmg_office_bilingual_ready", "local":"ywc_nmg_office_local_ready", "single":"ywc_nmg_office_single_ready"},
-    "ywc_nmg.1020": {"fixed":"ywc_nmg_mexshare_can_offer", "joint":"ywc_nmg_revenue_joint_ready", "arrears":"ywc_nmg_revenue_arrears_ready", "domestic":"ywc_nmg_revenue_fixed_ready"},
+    "ywc_nmg.1020": {"fixed":"ywc_nmg_mexshare_can_offer", "joint":"ywc_nmg_jointproject_mex_eligible",
+                     "joint_heavy":"ywc_nmg_jointproject_mex_eligible", "joint_jhg":"ywc_nmg_jointproject_jhg_eligible",
+                     "joint_jhg_heavy":"ywc_nmg_jointproject_jhg_eligible", "arrears":"ywc_nmg_revenue_arrears_ready",
+                     "domestic":"ywc_nmg_revenue_fixed_ready"},
 }
 NMG_FEE_GATES = {
     "ywc_nmg.1000": ("ywc_nmg_land_fee_paid", "ywc_nmg_land_affordable"),
@@ -116,11 +119,11 @@ class NmgOpeningAiTest(unittest.TestCase):
             for key,ready in choices.items():
                 option=next(o for a in lifecycle.CATALOG["arcs"] for e in a["events"] if e["id"]==eid for o in e["options"] if o["key"]==key)
                 old=f"{ready} = yes"
-                if eid == "ywc_nmg.1020" and key in ("fixed", "domestic"):
+                if eid == "ywc_nmg.1020" and key in ("fixed", "domestic", "joint", "joint_heavy", "joint_jhg", "joint_jhg_heavy"):
                     self.assertIn(old, option["trigger"], (eid,key))
                     self.assertIn(f"has_variable = {receipt}", option["trigger"], (eid,key))
                     self.assertIn(f"{affordable} = yes", option["trigger"], (eid,key))
-                    route = 1 if key == "fixed" else 4
+                    route = 1 if key == "fixed" else 4 if key == "domestic" else 2
                     self.assertIn(f"var:ywc_nmg_revenue_route ?= {route}", option["trigger"])
                     self.assertIn("var:ywc_nmg_revenue_route ?= 0", option["trigger"])
                 else:
@@ -209,8 +212,9 @@ class NmgOpeningAiTest(unittest.TestCase):
         folded=narrative.casefold()
         for phrase in forbidden:
             self.assertNotIn(phrase,folded)
-        self.assertIn("adds 1 bureaucracy for ten years",events["ywc_nmg.1020"]["options"][1]["consequence_note"]["en"])
-        self.assertIn("no payment",next(o for o in events["ywc_nmg.1025"]["options"] if o["key"]=="share_even")["cost_note"]["en"].casefold())
+        joint=next(o for o in events["ywc_nmg.1020"]["options"] if o["key"]=="joint")
+        self.assertIn("+1 bureaucracy only when both sides are current",joint["consequence_note"]["en"])
+        self.assertIn("both project participants continue paying",next(o for o in events["ywc_nmg.1025"]["options"] if o["key"]=="share_even")["cost_note"]["en"].casefold())
         for lang,file in (("en","ywc_v03_country_nmg_l_english.yml"),("zh","ywc_v03_country_nmg_l_simp_chinese.yml")):
             rendered=(MOD/"localization"/("english" if lang=="en" else "simp_chinese")/file).read_text(encoding="utf-8-sig")
             for eid in (f"ywc_nmg.{n}" for n in range(1020,1030)):

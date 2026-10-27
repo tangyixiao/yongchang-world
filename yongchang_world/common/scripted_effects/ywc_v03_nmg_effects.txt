@@ -1,4 +1,4 @@
-﻿# NMG foundation scripted effects. All fees derive from real treasury capacity.
+# NMG foundation scripted effects. All fees derive from real treasury capacity.
 
 ywc_nmg_release_slot = {
 	change_variable = { name = ywc_v03_active_arc_count add = -1 }
@@ -262,6 +262,7 @@ if = {
  set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
  set_variable = { name = ywc_nmg_revenue_closed value = 1 }
  set_variable = { name = ywc_nmg_revenue_established value = 1 }
+ ywc_nmg_partner_bump_renewal_serial = yes
  ywc_nmg_release_slot = yes
 }
 else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
@@ -277,6 +278,7 @@ if = {
  set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
  set_variable = { name = ywc_nmg_revenue_closed value = 1 }
  set_variable = { name = ywc_nmg_revenue_compromise value = 1 }
+ ywc_nmg_partner_bump_renewal_serial = yes
  ywc_nmg_release_slot = yes
 }
 else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
@@ -288,11 +290,13 @@ else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_starte
 ywc_nmg_close_revenue_as_breach = {
 if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
  ywc_nmg_mexshare_cancel_unsigned = yes
+ ywc_nmg_jointproject_cancel_unsigned = yes
  if = { limit = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_arrears exists = c:MEX } change_relations = { country = c:MEX value = { add = -25 } } }
  set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 1 }
  set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
  set_variable = { name = ywc_nmg_revenue_closed value = 1 }
  set_variable = { name = ywc_nmg_revenue_withdrawn value = 1 }
+ ywc_nmg_partner_bump_renewal_serial = yes
  ywc_nmg_release_slot = yes
 }
 }
@@ -462,6 +466,7 @@ ywc_nmg_revenue_switch_domestic = {
  if = {
   limit = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_fixed_ready = yes NOT = { var:ywc_nmg_revenue_route ?= 4 } }
   ywc_nmg_mexshare_cancel_unsigned = yes
+  ywc_nmg_jointproject_cancel_unsigned = yes
   set_variable = { name = ywc_nmg_revenue_route value = 4 }
   set_variable = { name = ywc_nmg_revenue_limited_selected value = 1 }
   remove_variable = ywc_nmg_revenue_blocked_defer
@@ -478,22 +483,36 @@ ywc_nmg_revenue_switch_domestic = {
  }
 }
 
-ywc_nmg_choose_revenue_joint = {
-if = {
- limit = { var:ywc_nmg_revenue_route = 2 has_variable = ywc_nmg_revenue_quota_paid }
- set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ywc_nmg_jointproject_choose_mex = {
+ if = { limit = { ywc_nmg_jointproject_mex_eligible = yes } c:MEX = { save_scope_as = ywc_nmg_jointproject_selected_partner } save_scope_value_as = { name = ywc_nmg_jointproject_selected_share value = 1 } ywc_nmg_jointproject_choose = yes }
 }
-else_if = {
- limit = { var:ywc_nmg_revenue_route = 0 ywc_nmg_revenue_joint_ready = yes ywc_nmg_revenue_real_subject = yes }
- ywc_nmg_revenue_pay_fee_once = yes
- if = { limit = { has_variable = ywc_nmg_revenue_quota_paid }
-  set_variable = { name = ywc_nmg_revenue_route value = 2 }
-  add_modifier = { name = ywc_nmg_revenue_joint_project months = 120 }
-  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ywc_nmg_jointproject_choose_mex_heavy = {
+ if = { limit = { ywc_nmg_jointproject_mex_eligible = yes } c:MEX = { save_scope_as = ywc_nmg_jointproject_selected_partner } save_scope_value_as = { name = ywc_nmg_jointproject_selected_share value = 2 } ywc_nmg_jointproject_choose = yes }
+}
+ywc_nmg_jointproject_choose_jhg = {
+ if = { limit = { ywc_nmg_jointproject_jhg_eligible = yes } c:JHG = { save_scope_as = ywc_nmg_jointproject_selected_partner } save_scope_value_as = { name = ywc_nmg_jointproject_selected_share value = 1 } ywc_nmg_jointproject_choose = yes }
+}
+ywc_nmg_jointproject_choose_jhg_heavy = {
+ if = { limit = { ywc_nmg_jointproject_jhg_eligible = yes } c:JHG = { save_scope_as = ywc_nmg_jointproject_selected_partner } save_scope_value_as = { name = ywc_nmg_jointproject_selected_share value = 2 } ywc_nmg_jointproject_choose = yes }
+}
+
+ywc_nmg_jointproject_choose = {
+ if = {
+  limit = { OR = { var:ywc_nmg_revenue_route ?= 0 var:ywc_nmg_revenue_route ?= 2 } exists = scope:ywc_nmg_jointproject_selected_partner OR = { AND = { scope:ywc_nmg_jointproject_selected_partner ?= c:MEX ywc_nmg_jointproject_mex_eligible = yes } AND = { scope:ywc_nmg_jointproject_selected_partner ?= c:JHG ywc_nmg_jointproject_jhg_eligible = yes } } }
+  if = { limit = { has_variable = ywc_nmg_jointproject_contract_generation var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation } } ywc_nmg_jointproject_end_current = yes }
+  ywc_nmg_revenue_pay_fee_once = yes
+  if = { limit = { has_variable = ywc_nmg_revenue_quota_paid }
+   set_variable = { name = ywc_nmg_revenue_route value = 2 }
+   ywc_nmg_jointproject_send = yes
+   if = { limit = { var:ywc_nmg_jointproject_state ?= 1 has_variable = ywc_nmg_jointproject_request_timer }
+    if = { limit = { has_variable = ywc_nmg_revenue_stage3 } if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } } set_variable = { name = ywc_nmg_revenue_pending value = 1027 } } }
+    else_if = { limit = { has_variable = ywc_nmg_revenue_stage2 } if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } } set_variable = { name = ywc_nmg_revenue_pending value = 1023 } } }
+    else = { set_variable = { name = ywc_nmg_revenue_pending value = 1021 } }
+   }
+   else = { ywc_nmg_partner_requeue_current_stage = yes }
+  }
+  else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
  }
- else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
-}
-else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
 }
 
 ywc_nmg_choose_revenue_arrears = {
@@ -588,6 +607,7 @@ ywc_nmg_office_select_limited_target = {
 ywc_nmg_revenue_select_limited_target = {
  if = { limit = { has_variable = ywc_nmg_revenue_quota_paid NOT = { var:ywc_nmg_revenue_route = 3 } NOT = { ywc_nmg_revenue_route_ready = yes } ywc_nmg_revenue_arrears_ready = yes }
   ywc_nmg_mexshare_cancel_unsigned = yes
+  ywc_nmg_jointproject_cancel_unsigned = yes
   set_variable = { name = ywc_nmg_revenue_route value = 3 } set_variable = { name = ywc_nmg_revenue_arrears_owned value = 1 } set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_limited_selected value = 1 }
   change_relations = { country = c:MEX value = { add = -5 } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }
  } else = { if = { limit = { NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } } }
@@ -611,8 +631,7 @@ ywc_nmg_mexshare_send = {
 		set_variable = { name = ywc_nmg_mexshare_request_timer value = 1 months = 3 }
 		set_variable = { name = ywc_nmg_mexshare_quote_generation value = var:ywc_nmg_mexshare_generation }
 		set_variable = { name = ywc_nmg_mexshare_quote_serial value = var:ywc_nmg_mexshare_serial }
-		set_variable = { name = ywc_nmg_mexshare_quote_monthly value = var:ywc_nmg_revenue_quota }
-		change_variable = { name = ywc_nmg_mexshare_quote_monthly divide = 30 }
+		set_variable = { name = ywc_nmg_mexshare_quote_monthly value = { value = var:ywc_nmg_revenue_quota divide = 30 floor = yes } }
 		set_variable = { name = ywc_nmg_mexshare_quote_term value = 60 }
 		set_variable = { name = ywc_nmg_mexshare_quote_right value = 1 }
 		save_scope_as = ywc_nmg_mexshare_requester
@@ -748,4 +767,287 @@ ywc_nmg_mexshare_end_agreement = {
 		remove_variable = ywc_nmg_mexshare_term_timer
 		remove_modifier = ywc_nmg_local_port_budget_right
 	}
+}
+
+
+# Joint project: the named actual partner answers the captured expense split.
+ywc_nmg_jointproject_bump_serial = {
+ if = { limit = { NOT = { has_variable = ywc_nmg_jointproject_serial } } set_variable = { name = ywc_nmg_jointproject_serial value = 0 } }
+ change_variable = { name = ywc_nmg_jointproject_serial add = 1 }
+}
+
+ywc_nmg_jointproject_send = {
+ if = {
+  limit = { exists = scope:ywc_nmg_jointproject_selected_partner ywc_nmg_jointproject_slot_available = yes }
+  if = { limit = { NOT = { has_variable = ywc_nmg_jointproject_generation } } set_variable = { name = ywc_nmg_jointproject_generation value = 0 } }
+  change_variable = { name = ywc_nmg_jointproject_generation add = 1 }
+  ywc_nmg_jointproject_bump_serial = yes
+  set_variable = { name = ywc_nmg_jointproject_partner value = scope:ywc_nmg_jointproject_selected_partner }
+  set_variable = { name = ywc_nmg_jointproject_state value = 1 }
+  set_variable = { name = ywc_nmg_jointproject_request_timer value = 1 months = 3 }
+  set_variable = { name = ywc_nmg_jointproject_quote_generation value = var:ywc_nmg_jointproject_generation }
+  set_variable = { name = ywc_nmg_jointproject_quote_serial value = var:ywc_nmg_jointproject_serial }
+  set_variable = { name = ywc_nmg_jointproject_quote_partner value = { value = var:ywc_nmg_revenue_quota divide = 60 floor = yes } }
+  set_variable = { name = ywc_nmg_jointproject_quote_own value = var:ywc_nmg_jointproject_quote_partner }
+  if = { limit = { scope:ywc_nmg_jointproject_selected_share ?= 2 } change_variable = { name = ywc_nmg_jointproject_quote_own multiply = 2 } }
+  set_variable = { name = ywc_nmg_jointproject_quote_term value = 60 }
+  set_variable = { name = ywc_nmg_jointproject_quote_scope value = 1 }
+  save_scope_as = ywc_nmg_jointproject_requester
+  scope:ywc_nmg_jointproject_selected_partner = { save_scope_as = ywc_nmg_jointproject_request_partner }
+  save_scope_value_as = { name = ywc_nmg_jointproject_request_generation value = var:ywc_nmg_jointproject_quote_generation }
+  save_scope_value_as = { name = ywc_nmg_jointproject_request_serial value = var:ywc_nmg_jointproject_quote_serial }
+  save_scope_value_as = { name = ywc_nmg_jointproject_request_own value = var:ywc_nmg_jointproject_quote_own }
+  save_scope_value_as = { name = ywc_nmg_jointproject_request_partner_amount value = var:ywc_nmg_jointproject_quote_partner }
+  save_scope_value_as = { name = ywc_nmg_jointproject_request_term value = var:ywc_nmg_jointproject_quote_term }
+  save_scope_value_as = { name = ywc_nmg_jointproject_request_scope value = var:ywc_nmg_jointproject_quote_scope }
+  scope:ywc_nmg_jointproject_request_partner = { trigger_event = { id = ywc_nmg.1030 } }
+ }
+}
+
+ywc_nmg_jointproject_authorize_accept = {
+ if = {
+  limit = { ywc_nmg_jointproject_authorizable = yes }
+  set_variable = { name = ywc_nmg_jointproject_answer_requester value = scope:ywc_nmg_jointproject_requester }
+  set_variable = { name = ywc_nmg_jointproject_answer_generation value = scope:ywc_nmg_jointproject_request_generation }
+  set_variable = { name = ywc_nmg_jointproject_answer_serial value = scope:ywc_nmg_jointproject_request_serial }
+  set_variable = { name = ywc_nmg_jointproject_answer value = 1 }
+  set_variable = { name = ywc_nmg_jointproject_answer_own value = scope:ywc_nmg_jointproject_request_own }
+  set_variable = { name = ywc_nmg_jointproject_answer_partner value = scope:ywc_nmg_jointproject_request_partner_amount }
+  set_variable = { name = ywc_nmg_jointproject_answer_term value = scope:ywc_nmg_jointproject_request_term }
+  set_variable = { name = ywc_nmg_jointproject_answer_scope value = scope:ywc_nmg_jointproject_request_scope }
+  scope:ywc_nmg_jointproject_requester = {
+   set_variable = { name = ywc_nmg_jointproject_accept_generation value = scope:ywc_nmg_jointproject_request_generation }
+   set_variable = { name = ywc_nmg_jointproject_accept_serial value = scope:ywc_nmg_jointproject_request_serial }
+   set_variable = { name = ywc_nmg_jointproject_accept_own value = scope:ywc_nmg_jointproject_request_own }
+   set_variable = { name = ywc_nmg_jointproject_accept_partner value = scope:ywc_nmg_jointproject_request_partner_amount }
+   set_variable = { name = ywc_nmg_jointproject_accept_term value = scope:ywc_nmg_jointproject_request_term }
+   set_variable = { name = ywc_nmg_jointproject_accept_scope value = scope:ywc_nmg_jointproject_request_scope }
+   ywc_nmg_jointproject_bump_serial = yes
+   set_variable = { name = ywc_nmg_jointproject_state value = 2 }
+   ywc_nmg_jointproject_sign = yes
+  }
+ }
+}
+
+ywc_nmg_jointproject_refuse = {
+ if = {
+  limit = { ywc_nmg_jointproject_authorizable = yes }
+  set_variable = { name = ywc_nmg_jointproject_answer_requester value = scope:ywc_nmg_jointproject_requester }
+  set_variable = { name = ywc_nmg_jointproject_answer_generation value = scope:ywc_nmg_jointproject_request_generation }
+  set_variable = { name = ywc_nmg_jointproject_answer_serial value = scope:ywc_nmg_jointproject_request_serial }
+  set_variable = { name = ywc_nmg_jointproject_answer value = 2 }
+  scope:ywc_nmg_jointproject_requester = { remove_variable = ywc_nmg_jointproject_request_timer ywc_nmg_jointproject_bump_serial = yes set_variable = { name = ywc_nmg_jointproject_state value = 3 } }
+ }
+}
+
+ywc_nmg_jointproject_cancel_unsigned = {
+ if = {
+  limit = { OR = { var:ywc_nmg_jointproject_state ?= 1 var:ywc_nmg_jointproject_state ?= 2 } }
+  remove_variable = ywc_nmg_jointproject_request_timer
+  remove_variable = ywc_nmg_jointproject_accept_generation
+  remove_variable = ywc_nmg_jointproject_accept_serial
+  remove_variable = ywc_nmg_jointproject_accept_own
+  remove_variable = ywc_nmg_jointproject_accept_partner
+  remove_variable = ywc_nmg_jointproject_accept_term
+  remove_variable = ywc_nmg_jointproject_accept_scope
+  remove_variable = ywc_nmg_jointproject_partner
+  ywc_nmg_jointproject_bump_serial = yes
+  set_variable = { name = ywc_nmg_jointproject_state value = 7 }
+ }
+}
+
+ywc_nmg_jointproject_resume = {
+ if = {
+  limit = { var:ywc_nmg_revenue_route ?= 2 has_variable = ywc_nmg_revenue_quota_paid }
+  if = { limit = { OR = { var:ywc_nmg_jointproject_state ?= 1 var:ywc_nmg_jointproject_state ?= 2 } OR = { NOT = { has_variable = ywc_nmg_jointproject_request_timer } NOT = { ywc_nmg_jointproject_target_current = yes } } } ywc_nmg_jointproject_cancel_unsigned = yes }
+  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ }
+}
+
+ywc_nmg_jointproject_sign = {
+ if = {
+  limit = { ywc_nmg_jointproject_accepted_current = yes }
+  set_variable = { name = ywc_nmg_jointproject_contract_partner value = var:ywc_nmg_jointproject_partner }
+  set_variable = { name = ywc_nmg_jointproject_contract_generation value = var:ywc_nmg_jointproject_quote_generation }
+  set_variable = { name = ywc_nmg_jointproject_contract_offer_serial value = var:ywc_nmg_jointproject_quote_serial }
+  set_variable = { name = ywc_nmg_jointproject_contract_own_monthly value = var:ywc_nmg_jointproject_quote_own }
+  set_variable = { name = ywc_nmg_jointproject_contract_partner_monthly value = var:ywc_nmg_jointproject_quote_partner }
+  set_variable = { name = ywc_nmg_jointproject_contract_term value = var:ywc_nmg_jointproject_quote_term }
+  set_variable = { name = ywc_nmg_jointproject_contract_scope value = var:ywc_nmg_jointproject_quote_scope }
+  set_variable = { name = ywc_nmg_jointproject_own_earned_total value = 0 }
+  set_variable = { name = ywc_nmg_jointproject_own_paid_total value = 0 }
+  set_variable = { name = ywc_nmg_jointproject_own_earned_count value = 0 }
+  set_variable = { name = ywc_nmg_jointproject_partner_earned_total value = 0 }
+  set_variable = { name = ywc_nmg_jointproject_partner_paid_total value = 0 }
+  set_variable = { name = ywc_nmg_jointproject_start_month value = ywc_nmg_current_calendar_month }
+  set_variable = { name = ywc_nmg_jointproject_term_timer value = 1 months = 60 }
+  remove_variable = ywc_nmg_jointproject_request_timer
+  remove_variable = ywc_nmg_jointproject_ended_generation
+  remove_variable = ywc_nmg_jointproject_partner_invalid_generation
+  remove_variable = ywc_nmg_jointproject_own_last_month
+  var:ywc_nmg_jointproject_contract_partner = {
+   set_variable = { name = ywc_nmg_jointproject_provider_owner value = scope:ywc_nmg_jointproject_requester }
+   set_variable = { name = ywc_nmg_jointproject_provider_generation value = scope:ywc_nmg_jointproject_request_generation }
+   set_variable = { name = ywc_nmg_jointproject_provider_monthly value = scope:ywc_nmg_jointproject_request_partner_amount }
+   set_variable = { name = ywc_nmg_jointproject_provider_start_month value = ywc_nmg_current_calendar_month }
+   set_variable = { name = ywc_nmg_jointproject_provider_earned_total value = 0 }
+   set_variable = { name = ywc_nmg_jointproject_provider_paid_total value = 0 }
+   set_variable = { name = ywc_nmg_jointproject_provider_earned_count value = 0 }
+   remove_variable = ywc_nmg_jointproject_provider_last_month
+   remove_variable = ywc_nmg_jointproject_provider_ended_generation
+   remove_variable = ywc_nmg_jointproject_provider_invalid_generation
+  }
+  ywc_nmg_jointproject_bump_serial = yes
+  set_variable = { name = ywc_nmg_jointproject_state value = 6 }
+  save_scope_as = ywc_nmg_jointproject_end_owner
+  save_scope_value_as = { name = ywc_nmg_jointproject_end_generation value = var:ywc_nmg_jointproject_contract_generation }
+  trigger_event = { id = ywc_nmg.1031 months = 60 }
+ }
+}
+
+
+# Each country pays its own project expenditure. No treasury transfer or
+# physical construction is implied by these administrative project accounts.
+ywc_nmg_jointproject_refresh_modifier = {
+ if = { limit = { ywc_nmg_jointproject_agreement_current = yes ywc_nmg_v03_finance_safe = yes } add_modifier = { name = ywc_nmg_revenue_joint_project months = 1 } }
+ else = { remove_modifier = ywc_nmg_revenue_joint_project }
+}
+
+ywc_nmg_jointproject_monthly = {
+ if = {
+  limit = { has_variable = ywc_nmg_jointproject_contract_generation }
+  set_variable = { name = ywc_nmg_jointproject_current_month value = ywc_nmg_current_calendar_month }
+  if = {
+   limit = { NOT = { var:ywc_nmg_jointproject_own_last_month ?= var:ywc_nmg_jointproject_current_month } }
+   set_variable = { name = ywc_nmg_jointproject_own_last_month value = var:ywc_nmg_jointproject_current_month }
+   if = {
+    limit = { OR = { NOT = { exists = var:ywc_nmg_jointproject_contract_partner } var:ywc_nmg_jointproject_contract_partner = { is_country_alive = no } NOT = { var:ywc_nmg_jointproject_contract_partner = { var:ywc_nmg_jointproject_provider_owner ?= c:NMG var:ywc_nmg_jointproject_provider_generation ?= prev.var:ywc_nmg_jointproject_contract_generation NOT = { var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation } } } } }
+    set_variable = { name = ywc_nmg_jointproject_partner_invalid_generation value = var:ywc_nmg_jointproject_contract_generation }
+   }
+   if = {
+    limit = { NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation } NOT = { var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation } var:ywc_nmg_jointproject_own_earned_count < 60 var:ywc_nmg_jointproject_current_month <= { value = var:ywc_nmg_jointproject_start_month add = 60 } }
+    change_variable = { name = ywc_nmg_jointproject_own_earned_total add = var:ywc_nmg_jointproject_contract_own_monthly }
+    change_variable = { name = ywc_nmg_jointproject_own_earned_count add = 1 }
+   }
+   if = {
+    limit = { var:ywc_nmg_jointproject_own_earned_total > var:ywc_nmg_jointproject_own_paid_total NOT = { var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation } ywc_nmg_v03_finance_safe = yes }
+    set_variable = { name = ywc_nmg_jointproject_own_payment_due value = var:ywc_nmg_jointproject_own_earned_total }
+    change_variable = { name = ywc_nmg_jointproject_own_payment_due add = { value = var:ywc_nmg_jointproject_own_paid_total multiply = -1 } }
+    if = { limit = { gold_reserves < var:ywc_nmg_jointproject_own_payment_due } set_variable = { name = ywc_nmg_jointproject_own_payment_due value = var:ywc_nmg_jointproject_contract_own_monthly } }
+    if = { limit = { gold_reserves >= var:ywc_nmg_jointproject_own_payment_due } add_treasury = { value = var:ywc_nmg_jointproject_own_payment_due multiply = -1 } change_variable = { name = ywc_nmg_jointproject_own_paid_total add = var:ywc_nmg_jointproject_own_payment_due } }
+   }
+   if = { limit = { NOT = { has_variable = ywc_nmg_jointproject_term_timer } NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation } } ywc_nmg_jointproject_end_current = yes }
+  }
+  ywc_nmg_jointproject_refresh_modifier = yes
+ }
+ if = { limit = { OR = { var:ywc_nmg_jointproject_state ?= 1 var:ywc_nmg_jointproject_state ?= 2 } OR = { NOT = { has_variable = ywc_nmg_jointproject_request_timer } NOT = { ywc_nmg_jointproject_target_current = yes } } } ywc_nmg_jointproject_cancel_unsigned = yes }
+}
+
+ywc_nmg_jointproject_provider_monthly = {
+ if = {
+  limit = { has_variable = ywc_nmg_jointproject_provider_generation }
+  save_scope_as = ywc_nmg_jointproject_provider_processing
+  set_variable = { name = ywc_nmg_jointproject_provider_current_month value = ywc_nmg_current_calendar_month }
+  if = {
+   limit = { NOT = { var:ywc_nmg_jointproject_provider_last_month ?= var:ywc_nmg_jointproject_provider_current_month } }
+   set_variable = { name = ywc_nmg_jointproject_provider_last_month value = var:ywc_nmg_jointproject_provider_current_month }
+   if = {
+    limit = { OR = { NOT = { exists = var:ywc_nmg_jointproject_provider_owner } var:ywc_nmg_jointproject_provider_owner = { is_country_alive = no } NOT = { var:ywc_nmg_jointproject_provider_owner = { var:ywc_nmg_jointproject_contract_partner ?= scope:ywc_nmg_jointproject_provider_processing var:ywc_nmg_jointproject_contract_generation ?= prev.var:ywc_nmg_jointproject_provider_generation } } } }
+    set_variable = { name = ywc_nmg_jointproject_provider_invalid_generation value = var:ywc_nmg_jointproject_provider_generation }
+   }
+   if = {
+    limit = { NOT = { var:ywc_nmg_jointproject_provider_ended_generation ?= var:ywc_nmg_jointproject_provider_generation } NOT = { var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation } var:ywc_nmg_jointproject_provider_owner = { NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation } } var:ywc_nmg_jointproject_provider_earned_count < 60 var:ywc_nmg_jointproject_provider_current_month <= { value = var:ywc_nmg_jointproject_provider_start_month add = 60 } }
+    change_variable = { name = ywc_nmg_jointproject_provider_earned_total add = var:ywc_nmg_jointproject_provider_monthly }
+    change_variable = { name = ywc_nmg_jointproject_provider_earned_count add = 1 }
+   }
+   if = {
+    limit = { var:ywc_nmg_jointproject_provider_earned_total > var:ywc_nmg_jointproject_provider_paid_total NOT = { var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation } ywc_nmg_v03_finance_safe = yes }
+    set_variable = { name = ywc_nmg_jointproject_provider_payment_due value = var:ywc_nmg_jointproject_provider_earned_total }
+    change_variable = { name = ywc_nmg_jointproject_provider_payment_due add = { value = var:ywc_nmg_jointproject_provider_paid_total multiply = -1 } }
+    if = { limit = { gold_reserves < var:ywc_nmg_jointproject_provider_payment_due } set_variable = { name = ywc_nmg_jointproject_provider_payment_due value = var:ywc_nmg_jointproject_provider_monthly } }
+    if = { limit = { gold_reserves >= var:ywc_nmg_jointproject_provider_payment_due } add_treasury = { value = var:ywc_nmg_jointproject_provider_payment_due multiply = -1 } change_variable = { name = ywc_nmg_jointproject_provider_paid_total add = var:ywc_nmg_jointproject_provider_payment_due } }
+   }
+   if = {
+    limit = { NOT = { var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation } exists = var:ywc_nmg_jointproject_provider_owner }
+    var:ywc_nmg_jointproject_provider_owner = {
+     set_variable = { name = ywc_nmg_jointproject_partner_earned_total value = prev.var:ywc_nmg_jointproject_provider_earned_total }
+     set_variable = { name = ywc_nmg_jointproject_partner_paid_total value = prev.var:ywc_nmg_jointproject_provider_paid_total }
+     ywc_nmg_jointproject_refresh_modifier = yes
+    }
+   }
+  }
+ }
+}
+
+ywc_nmg_jointproject_end_current = {
+ if = {
+  limit = { has_variable = ywc_nmg_jointproject_contract_generation NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation } }
+  if = {
+   limit = { exists = var:ywc_nmg_jointproject_contract_partner var:ywc_nmg_jointproject_contract_partner = { is_country_alive = yes var:ywc_nmg_jointproject_provider_generation ?= prev.var:ywc_nmg_jointproject_contract_generation var:ywc_nmg_jointproject_provider_owner ?= c:NMG } }
+   var:ywc_nmg_jointproject_contract_partner = {
+    if = { limit = { prev.var:ywc_nmg_jointproject_partner_invalid_generation ?= prev.var:ywc_nmg_jointproject_contract_generation } set_variable = { name = ywc_nmg_jointproject_provider_invalid_generation value = var:ywc_nmg_jointproject_provider_generation } }
+    else = { ywc_nmg_jointproject_provider_monthly = yes }
+    set_variable = { name = ywc_nmg_jointproject_provider_ended_generation value = var:ywc_nmg_jointproject_provider_generation }
+   }
+  }
+  ywc_nmg_jointproject_bump_serial = yes
+  set_variable = { name = ywc_nmg_jointproject_ended_generation value = var:ywc_nmg_jointproject_contract_generation }
+  remove_variable = ywc_nmg_jointproject_term_timer
+  remove_modifier = ywc_nmg_revenue_joint_project
+ }
+}
+
+ywc_nmg_jointproject_end_agreement = {
+ if = {
+  limit = { exists = scope:ywc_nmg_jointproject_end_owner scope:ywc_nmg_jointproject_end_owner ?= this has_variable = ywc_nmg_jointproject_contract_generation var:ywc_nmg_jointproject_contract_generation ?= scope:ywc_nmg_jointproject_end_generation NOT = { var:ywc_nmg_jointproject_ended_generation ?= scope:ywc_nmg_jointproject_end_generation } }
+  ywc_nmg_jointproject_monthly = yes
+  ywc_nmg_jointproject_end_current = yes
+ }
+}
+
+
+# A player-initiated chained menu is tied to its exact requester and serial.
+# It keeps the current JE's ordinary queue and cannot reopen a completed JE.
+ywc_nmg_partner_bump_renewal_serial = {
+ if = { limit = { NOT = { has_variable = ywc_nmg_partner_renewal_serial } } set_variable = { name = ywc_nmg_partner_renewal_serial value = 0 } }
+ change_variable = { name = ywc_nmg_partner_renewal_serial add = 1 }
+}
+
+ywc_nmg_partner_requeue_current_stage = {
+ if = {
+  limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } NOT = { has_variable = ywc_nmg_revenue_pending } }
+  if = {
+   limit = { has_variable = ywc_nmg_revenue_stage3 }
+   if = { limit = { var:ywc_nmg_revenue_last_event ?= 1029 } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }
+   else = { set_variable = { name = ywc_nmg_revenue_pending value = 1027 } }
+  }
+  else_if = {
+   limit = { has_variable = ywc_nmg_revenue_stage2 }
+   if = { limit = { has_variable = ywc_nmg_revenue_last_event var:ywc_nmg_revenue_last_event >= 1023 var:ywc_nmg_revenue_last_event <= 1026 } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event } }
+   else = { set_variable = { name = ywc_nmg_revenue_pending value = 1023 } }
+  }
+  else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+ }
+}
+
+ywc_nmg_partner_open_renewal = {
+ ywc_nmg_partner_requeue_current_stage = yes
+ if = {
+  limit = { ywc_nmg_partner_renewal_available = yes }
+  ywc_nmg_partner_bump_renewal_serial = yes
+  save_scope_as = ywc_nmg_partner_renewal_owner
+  save_scope_value_as = { name = ywc_nmg_partner_renewal_serial value = var:ywc_nmg_partner_renewal_serial }
+  if = { limit = { has_variable = ywc_nmg_revenue_stage3 } save_scope_value_as = { name = ywc_nmg_partner_renewal_stage value = 3 } }
+  else_if = { limit = { has_variable = ywc_nmg_revenue_stage2 } save_scope_value_as = { name = ywc_nmg_partner_renewal_stage value = 2 } }
+  else = { save_scope_value_as = { name = ywc_nmg_partner_renewal_stage value = 1 } }
+  trigger_event = { id = ywc_nmg.1032 }
+ }
+}
+
+ywc_nmg_partner_renew_fixed = {
+ if = {
+  limit = { ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 1 ywc_nmg_mexshare_can_offer = yes }
+  ywc_nmg_mexshare_send = yes
+  ywc_nmg_partner_bump_renewal_serial = yes
+ }
 }

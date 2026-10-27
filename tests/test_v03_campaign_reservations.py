@@ -145,9 +145,9 @@ class V03CampaignReservationTests(unittest.TestCase):
         foundation_arcs = [arc for c in authored.values() for arc in c["arcs"]
                            if arc.get("era") == "foundation"]
         self.assertEqual(len(foundation_arcs), 30)
-        self.assertEqual(sum(len(arc["events"]) for arc in foundation_arcs), 259)
+        self.assertEqual(sum(len(arc["events"]) for arc in foundation_arcs), 260)
         self.assertEqual(sum(sum(not event.get("hidden", False) for event in arc["events"])
-                             for arc in foundation_arcs), 252)
+                             for arc in foundation_arcs), 253)
         self.assertEqual(sum(len(arc["journals"]) for arc in foundation_arcs), 60)
         self.assertEqual(validate_catalogs_at(ROOT, authored), [])
 
