@@ -143,7 +143,7 @@ class JhgShareResponseTests(unittest.TestCase):
     def test_independence_callback_invalidates_an_unsigned_offer_before_status_reverts(self):
         world, countries, offer = self.make_offer()
         countries["JHG"]["is_subject"] = False
-        world.execute(field(world.on_actions["on_become_independent"], "effect"), "JHG")
+        world.run_on_action("on_become_independent", "JHG")
         countries["JHG"]["is_subject"] = True
         world.choose_job(offer, "accept")
         self.assertNotIn("ywc_jhg_share_contract_generation", countries["JHG"])
@@ -153,7 +153,7 @@ class JhgShareResponseTests(unittest.TestCase):
         world, countries, offer = self.make_offer()
         world.choose_job(offer, "accept")
         countries["JHG"]["is_subject"] = False
-        world.execute(field(world.on_actions["on_become_independent"], "effect"), "JHG")
+        world.run_on_action("on_become_independent", "JHG")
         self.assertEqual(countries["JHG"]["ywc_jhg_share_contract_generation"], 1)
         self.assertEqual((world.treasury["JHG"], world.treasury["SHU"]), (-600, -600))
         self.assertFalse(world.conditions(world.trigger_defs["ywc_jhg_share_contract_active"], "JHG"))

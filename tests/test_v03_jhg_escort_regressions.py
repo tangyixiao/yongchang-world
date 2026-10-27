@@ -83,7 +83,7 @@ class JhgEscortRegressionTests(unittest.TestCase):
         offer = run_option(world, "ywc_jhg.1010", "shared_escort")
         self.assertTrue(world.display_job(offer))
         countries["JHG"].update({"is_subject": True, "overlord": "SHU"})
-        world.execute(field(world.on_actions["on_become_subject"], "effect"), "JHG")
+        world.run_on_action("on_become_subject", "JHG")
         countries["JHG"]["is_subject"] = False
         world.choose_job(offer, "accept")
         self.assertNotIn("ywc_jhg_escort_contract_generation", countries["JHG"])
