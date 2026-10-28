@@ -46,7 +46,7 @@ ywc_je_v03_shu_fiscal_settlement = {
 
      }
     }
-    complete = { has_variable = ywc_shu_register_resolved }
+    complete = { has_variable = ywc_shu_register_resolved NOT = { has_variable = ywc_shu_arc_abandoned } }
     fail = { has_variable = ywc_shu_arc_abandoned }
     on_complete = { remove_variable = ywc_v03_shu_inline_live_fiscal_settlement }
 }
@@ -142,4 +142,40 @@ OR = { var:ywc_shu_port_outcome = 1 var:ywc_shu_port_outcome = 2 var:ywc_shu_por
 OR = { has_variable = ywc_shu_port_withdrawn var:ywc_shu_port_outcome = 4 }
 }
     on_complete = { remove_variable = ywc_v03_shu_inline_live_port_customs }
+}
+
+ywc_je_v03_shu_provincial_charter = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_started } }
+    possible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_started } ywc_shu_v03_has_candidate_state = yes }
+    immediate = { ywc_v03_claim_arc_shu_v03_shu_provincial_contract = yes ywc_shu_open_provincial_ledger_once = yes set_variable = { name = ywc_v03_shu_inline_live_provincial_charter value = 1 } }
+    on_complete = { ywc_shu_prov_open_ledger_journal = yes remove_variable = ywc_v03_shu_inline_live_provincial_charter }
+    on_fail = { ywc_shu_prov_close_withdrawn = yes remove_variable = ywc_v03_shu_inline_live_provincial_charter }
+
+    on_monthly_pulse = { effect = { ywc_v03_shu_inline_prepare = yes
+    ywc_shu_prov_prepare_stage = yes
+    if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100    OR = { ywc_v03_shu_inline_turn_32 = yes } } if = { limit = { ywc_v03_shu_inline_turn_32 = yes } ywc_v03_shu_inline_reserve_32 = yes }   trigger_event = { id = ywc_shu.1100 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1101 var:ywc_shu_prov_pending_event = 1101    OR = { ywc_v03_shu_inline_turn_33 = yes } } if = { limit = { ywc_v03_shu_inline_turn_33 = yes } ywc_v03_shu_inline_reserve_33 = yes }   trigger_event = { id = ywc_shu.1101 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1102 var:ywc_shu_prov_pending_event = 1102    OR = { ywc_v03_shu_inline_turn_34 = yes } } if = { limit = { ywc_v03_shu_inline_turn_34 = yes } ywc_v03_shu_inline_reserve_34 = yes }   trigger_event = { id = ywc_shu.1102 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1103 var:ywc_shu_prov_pending_event = 1103    OR = { ywc_v03_shu_inline_turn_35 = yes } } if = { limit = { ywc_v03_shu_inline_turn_35 = yes } ywc_v03_shu_inline_reserve_35 = yes }   trigger_event = { id = ywc_shu.1103 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1104 var:ywc_shu_prov_pending_event = 1104    OR = { ywc_v03_shu_inline_turn_36 = yes } } if = { limit = { ywc_v03_shu_inline_turn_36 = yes } ywc_v03_shu_inline_reserve_36 = yes }   trigger_event = { id = ywc_shu.1104 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1105 var:ywc_shu_prov_pending_event = 1105    OR = { ywc_v03_shu_inline_turn_37 = yes } } if = { limit = { ywc_v03_shu_inline_turn_37 = yes } ywc_v03_shu_inline_reserve_37 = yes }   trigger_event = { id = ywc_shu.1105 } }
+    } }
+    complete = { has_variable = ywc_shu_prov_charter_ready NOT = { has_variable = ywc_shu_prov_withdrawn } }
+    fail = { has_variable = ywc_shu_prov_withdrawn }
+}
+
+ywc_je_v03_shu_provincial_ledger = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_prov_charter_ready NOT = { has_variable = ywc_shu_prov_ledger_started } NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled } }
+    possible = { c:SHU ?= this has_variable = ywc_shu_prov_charter_ready NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled } }
+    immediate = { if = { limit = { NOT = { has_variable = ywc_shu_prov_ledger_started } } set_variable = { name = ywc_shu_prov_ledger_started value = 1 } ywc_shu_prov_start_review = yes } set_variable = { name = ywc_v03_shu_inline_live_provincial_ledger value = 1 } }
+    on_fail = { ywc_shu_prov_close_withdrawn = yes remove_variable = ywc_v03_shu_inline_live_provincial_ledger }
+
+    on_monthly_pulse = { effect = { ywc_v03_shu_inline_prepare = yes
+    ywc_shu_prov_track_review = yes
+    if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1106 var:ywc_shu_prov_pending_event = 1106 OR = { has_variable = ywc_shu_prov_review_mature has_variable = ywc_shu_prov_review_interrupted }   OR = { ywc_v03_shu_inline_turn_38 = yes } } if = { limit = { ywc_v03_shu_inline_turn_38 = yes } ywc_v03_shu_inline_reserve_38 = yes }   trigger_event = { id = ywc_shu.1106 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1107 var:ywc_shu_prov_pending_event = 1107    OR = { ywc_v03_shu_inline_turn_39 = yes } } if = { limit = { ywc_v03_shu_inline_turn_39 = yes } ywc_v03_shu_inline_reserve_39 = yes }   trigger_event = { id = ywc_shu.1107 } }
+    } }
+    complete = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled NOT = { has_variable = ywc_shu_prov_withdrawn } }
+    fail = { has_variable = ywc_shu_prov_withdrawn }
+    on_complete = { remove_variable = ywc_v03_shu_inline_live_provincial_ledger }
 }

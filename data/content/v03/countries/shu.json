@@ -42,7 +42,7 @@
             "en": "Apply the first stage to military pay, provincial service or port-merchant advances. Principal is collected by a monthly fiscal callback after one year; insolvency keeps the arrears obligation active. The six-month review matures only through uninterrupted peace, no default or bankruptcy, no three-month worsening in scaled debt burden, a retained pilot state and a ready office."
           },
           "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized has_variable = ywc_shu_register_pilot_resolved NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_register_pilot_resolved ywc_shu_v03_unsettled = yes }\nimmediate = { set_variable = { name = ywc_shu_pending_event value = 1007 } }\non_fail = { ywc_shu_close_as_breach = yes }\non_monthly_pulse = {\n effect = {\n ywc_shu_track_debt_trend = yes\n if = { limit = { has_variable = ywc_shu_v03_pilot_state NOT = { ywc_shu_v03_has_pilot_state = yes } } set_variable = { name = ywc_shu_pilot_state_lost value = 1 } }\n  if = { limit = { has_variable = ywc_shu_wartime_deferral NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_settlement_execution_ready = yes ywc_shu_v03_has_pilot_state = yes NOT = { has_variable = ywc_shu_pending_event } } remove_variable = ywc_shu_wartime_deferral remove_variable = ywc_shu_review_interrupted remove_variable = ywc_shu_settlement_review remove_variable = ywc_shu_settlement_review_due ywc_shu_start_settlement_review = yes }\n if = { limit = { NOT = { has_variable = ywc_shu_settlement_review_due } has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_mature } NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_settlement_execution_ready = yes ywc_shu_v03_has_pilot_state = yes } set_variable = { name = ywc_shu_settlement_review_mature value = 1 } }\n if = { limit = { has_variable = ywc_shu_settlement_review OR = { is_at_war = yes NOT = { ywc_shu_v03_finance_safe = yes } NOT = { ywc_shu_v03_has_pilot_state = yes } NOT = { ywc_shu_v03_settlement_execution_ready = yes } } } remove_variable = ywc_shu_settlement_review_due remove_variable = ywc_shu_settlement_review remove_variable = ywc_shu_settlement_review_mature set_variable = { name = ywc_shu_review_interrupted value = 1 } if = { limit = { NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1008 } } }\n if = { limit = { has_variable = ywc_shu_settlement_review NOT = { has_variable = ywc_shu_settlement_review_due } has_variable = ywc_shu_settlement_review_mature NOT = { has_variable = ywc_shu_review_interrupted } NOT = { has_variable = ywc_shu_pending_event } } set_variable = { name = ywc_shu_pending_event value = 1008 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1007 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1007 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1008 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1008 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_pending_event = 1009 } remove_variable = ywc_shu_pending_event trigger_event = { id = ywc_shu.1009 } }\n\n }\n}\n}",
-          "goal": "{ has_variable = ywc_shu_register_resolved }",
+          "goal": "{ has_variable = ywc_shu_register_resolved NOT = { has_variable = ywc_shu_arc_abandoned } }",
           "exit_conditions": "{ has_variable = ywc_shu_arc_abandoned }"
         }
       ],
@@ -1326,7 +1326,7 @@
             "journal": "ywc_je_v03_shu_fiscal_settlement",
             "live_witness": "ywc_v03_shu_inline_live_fiscal_settlement",
             "source_script_sha256": "c6366c199ed2e11fabaa894bcd20141ab28d43fa8c4e973d42038dcddf581b45",
-            "goal_sha256": "77269c180ecd35d988d6d0ab4bafbe60a73bb1e9f4a7d4b50913869aee8af626",
+            "goal_sha256": "134b756199e570bebd1ac7c69eaf4b07a886593266da366cd2f2907c73790db4",
             "exit_sha256": "0926075c1d5f8e9264e604b7557cdbdbaf38cc885e20ea94722abe32203312c9"
           }
         ],
@@ -4711,6 +4711,1376 @@
                 "key": "remove_variable",
                 "op": "=",
                 "value": "ywc_shu_port_notice_pending_event"
+              }
+            ]
+          }
+        ],
+        "direct_adds": []
+      }
+    },
+    {
+      "slug": "v03_shu_provincial_contract",
+      "era": "middle",
+      "participants": [
+        "户部（要可核账收入）",
+        "巡抚与布政使（要可预测留用与免临时摊派）",
+        "缙绅（供役可议价）",
+        "商绅与学堂（公共建设预算的发言权）",
+        "民户（救济与申诉）"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_shu_provincial_charter",
+          "title": {
+            "zh": "省与朝廷的新分工",
+            "en": "A New Division Between Court and Province"
+          },
+          "desc": {
+            "zh": "中央承担了新责任，却与各省没有一份可执行的约定：这笔钱由谁出、拒付时谁负责。先在实际拥有的州定下省的试点，再过学堂账与预备责任两道关口，然后按既定路线接受六历月核账。要求只有真实州权、官署就业、现行税法与可支付现款；不要求基础税册全完成，也不因年份强制转型。",
+            "en": "The centre has taken new duties but no executable agreement exists with the provinces about who pays and who answers for refusal. First fix a provincial pilot in a state you actually own, then pass the school-account and standing-obligation gates, then face six calendar months of audit on the chosen route. Only real state ownership, office staffing, an existing tax law and payable cash are required; no foundation tax register must be complete and no year forces the transition."
+          },
+          "script": "{\n\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_started } }\npossible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_started } ywc_shu_v03_has_candidate_state = yes }\nimmediate = { ywc_v03_claim_arc_shu_v03_shu_provincial_contract = yes ywc_shu_open_provincial_ledger_once = yes }\non_complete = { ywc_shu_prov_open_ledger_journal = yes }\non_fail = { ywc_shu_prov_close_withdrawn = yes }\n\non_monthly_pulse = { effect = {\nywc_shu_prov_prepare_stage = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1100 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1101 var:ywc_shu_prov_pending_event = 1101  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1101 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1102 var:ywc_shu_prov_pending_event = 1102  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1102 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1103 var:ywc_shu_prov_pending_event = 1103  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1103 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1104 var:ywc_shu_prov_pending_event = 1104  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1104 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1105 var:ywc_shu_prov_pending_event = 1105  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1105 } }\n} }\n}",
+          "goal": "{ has_variable = ywc_shu_prov_charter_ready NOT = { has_variable = ywc_shu_prov_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_shu_prov_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_shu_provincial_ledger",
+          "title": {
+            "zh": "六个月里谁在付账",
+            "en": "Who Pays Across Six Months"
+          },
+          "desc": {
+            "zh": "本线独有的六历月真实核账。每个真实月度 pulse 由本线 helper 计一次；同一天重复回调由一天过期门防止双计；战争、失州、破产或条件丢失会把连续月数清零。满六次才算成熟，成熟后才按路线读真实证据收束。",
+            "en": "This line's own six-calendar-month real audit. Each real monthly pulse is counted once by this line's helper; a one-day expiry gate blocks double counting from two same-day calls; war, a lost state, bankruptcy or lost conditions reset the consecutive count. Only six matured counts close it, and only then does it read real evidence for the route."
+          },
+          "script": "{\n\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_prov_charter_ready NOT = { has_variable = ywc_shu_prov_ledger_started } NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_prov_charter_ready NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled } }\nimmediate = { if = { limit = { NOT = { has_variable = ywc_shu_prov_ledger_started } } set_variable = { name = ywc_shu_prov_ledger_started value = 1 } ywc_shu_prov_start_review = yes } }\non_fail = { ywc_shu_prov_close_withdrawn = yes }\n\non_monthly_pulse = { effect = {\nywc_shu_prov_track_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1106 var:ywc_shu_prov_pending_event = 1106 OR = { has_variable = ywc_shu_prov_review_mature has_variable = ywc_shu_prov_review_interrupted } } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1106 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1107 var:ywc_shu_prov_pending_event = 1107  } remove_variable = ywc_shu_prov_pending_event trigger_event = { id = ywc_shu.1107 } }\n} }\n}",
+          "goal": "{ has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled NOT = { has_variable = ywc_shu_prov_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_shu_prov_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_shu.1100",
+          "title": {
+            "zh": "省里的那份预算",
+            "en": "The Province's Own Budget"
+          },
+          "desc": {
+            "zh": "户部摊开旧账：中央要一条能核到州库的账，巡抚要一份明年不被临时摊派的预算。选定一个实际拥有的州做本线的省试点，或沿用仍在本国手中的既有试点。此时只定试点，不选治理路线。",
+            "en": "The Board lays out the old accounts: the centre wants a ledger it can verify at the state granary, the governor wants next year's budget free of ad-hoc levies. Fix the provincial pilot in a state you actually own, or reuse a prior pilot still in our hands. This step only fixes the pilot; it does not pick the governance route."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_charter\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n ywc_shu_v03_has_candidate_state = yes\n var:ywc_shu_prov_stage = 1100\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1100 }\nset_variable = { name = ywc_shu_prov_last_event value = 1100 }\n}",
+          "options": [
+            {
+              "key": "pilot_sichuan",
+              "label": {
+                "zh": "以四川为省的试点",
+                "en": "Use Sichuan as the provincial pilot"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN } }\nset_variable = { name = ywc_shu_prov_selected_state value = 1 }\nywc_shu_choose_prov_pilot_state = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不交费；只记录省的试点州。",
+                "en": "No charge; only records the provincial pilot state."
+              },
+              "consequence_note": {
+                "zh": "本线自己的 owned 试点，不改写基础税册试点；选定后进入 1101。",
+                "en": "This line's own owned pilot; it does not rewrite the foundation pilot, and advances to 1101."
+              }
+            },
+            {
+              "key": "pilot_chongqing",
+              "label": {
+                "zh": "以重庆为省的试点",
+                "en": "Use Chongqing as the provincial pilot"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING } }\nset_variable = { name = ywc_shu_prov_selected_state value = 2 }\nywc_shu_choose_prov_pilot_state = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不交费；只记录省的试点州。",
+                "en": "No charge; only records the provincial pilot state."
+              },
+              "consequence_note": {
+                "zh": "本线自己的 owned 试点；选定后进入 1101。",
+                "en": "This line's own owned pilot; advances to 1101."
+              }
+            },
+            {
+              "key": "pilot_yunnan",
+              "label": {
+                "zh": "以云南为省的试点",
+                "en": "Use Yunnan as the provincial pilot"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN } }\nset_variable = { name = ywc_shu_prov_selected_state value = 3 }\nywc_shu_choose_prov_pilot_state = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不交费；只记录省的试点州。",
+                "en": "No charge; only records the provincial pilot state."
+              },
+              "consequence_note": {
+                "zh": "本线自己的 owned 试点；选定后进入 1101。",
+                "en": "This line's own owned pilot; advances to 1101."
+              }
+            },
+            {
+              "key": "pilot_guizhou",
+              "label": {
+                "zh": "以贵州为省的试点",
+                "en": "Use Guizhou as the provincial pilot"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU } }\nset_variable = { name = ywc_shu_prov_selected_state value = 4 }\nywc_shu_choose_prov_pilot_state = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不交费；只记录省的试点州。",
+                "en": "No charge; only records the provincial pilot state."
+              },
+              "consequence_note": {
+                "zh": "本线自己的 owned 试点；选定后进入 1101。",
+                "en": "This line's own owned pilot; advances to 1101."
+              }
+            },
+            {
+              "key": "reuse_owned_pilot",
+              "label": {
+                "zh": "沿用仍在本国手中的既有试点",
+                "en": "Reuse the pilot state still in our hands"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } has_variable = ywc_shu_v03_pilot_state ywc_shu_v03_has_pilot_state = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes NOT = { has_variable = ywc_shu_v03_prov_pilot_state } has_variable = ywc_shu_v03_pilot_state ywc_shu_v03_has_pilot_state = yes }\nywc_shu_claim_prior_pilot_once = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不交费；把仍 owned 的前序试点捕获为本线自己的试点。",
+                "en": "No charge; captures the still-owned prior pilot as this line's own pilot."
+              },
+              "consequence_note": {
+                "zh": "这是经仍 owned 前序接续的入口；前序试点已失时不出现。",
+                "en": "This is the continuation from a still-owned prior pilot; absent if that pilot is lost."
+              }
+            },
+            {
+              "key": "no_provincial_pilot",
+              "label": {
+                "zh": "没有可用的省试点，暂不立省账",
+                "en": "No usable provincial pilot yet; defer"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes }\nset_variable = { name = ywc_shu_prov_waiting_state value = 1 }\n} }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不扣费；不推进阶段。",
+                "en": "No charge; does not advance the stage."
+              },
+              "consequence_note": {
+                "zh": "保留 stage 1100；取得合格州后由月度队列重新询问。",
+                "en": "Keeps stage 1100; the monthly queue re-offers once an eligible state exists."
+              }
+            },
+            {
+              "key": "withdraw_before_prov_pilot",
+              "label": {
+                "zh": "未立省账，撤回本线",
+                "en": "Withdraw before a provincial budget exists"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1100 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1100 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线，记为退出。",
+                "en": "Releases the arc and records an exit."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "在本线自己的实际拥有的州确立省试点，或经仍 owned 前序接续；不选路线。",
+            "en": "Fix this line's own owned provincial pilot, or continue from a still-owned prior pilot; no route is chosen."
+          },
+          "reads": [
+            "ywc_shu_prov_stage",
+            "ywc_shu_v03_pilot_state",
+            "owner",
+            "state_region"
+          ],
+          "writes": [
+            "ywc_shu_v03_prov_pilot_state",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1101",
+          "title": {
+            "zh": "学堂账上的那一笔",
+            "en": "The Line for the School"
+          },
+          "desc": {
+            "zh": "学堂与公共工程的钱该由谁列支？这是第一个读取真实条件并选择路线的节点。中央国库列支要现款，且不假装学校已经建成；地方列支只记一份待协商的留用意向；维持旧官署则承认没有新法和新学校也能有有限的官署工程。",
+            "en": "Who carries the line for schools and public works? This is the first node that reads real conditions and picks a route. Central funding needs cash and does not pretend a school exists; provincial funding records only an intent to negotiate retention; keeping the old office admits a limited office-works result without new law or school."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_charter\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n has_variable = ywc_shu_v03_prov_pilot_state\n var:ywc_shu_prov_stage = 1101\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1101 }\nset_variable = { name = ywc_shu_prov_last_event value = 1101 }\n\nif = { limit = { ywc_shu_v03_prov_school_present = yes } set_variable = { name = ywc_shu_prov_school_context value = 1 } }\n}",
+          "options": [
+            {
+              "key": "central_funding",
+              "label": {
+                "zh": "中央国库列支学校与官署工程",
+                "en": "Put school and office works on the central treasury"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1101 = yes ywc_shu_v03_prov_can_pay = yes NOT = { has_variable = ywc_shu_prov_central_paid } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1101 = yes ywc_shu_v03_prov_can_pay = yes NOT = { has_variable = ywc_shu_prov_central_paid } }\nywc_shu_pay_prov_central_once = yes\nif = { limit = { has_variable = ywc_shu_prov_central_paid }\nset_variable = { name = ywc_shu_prov_mode_intent value = 1 }\nset_variable = { name = ywc_shu_prov_stage value = 1102 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1102 }\n}\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "中央实际支付一周收入，最低100；同一仍归本国的前期中央财政试点成果可减半。执行时重核现金和来源。",
+                "en": "Pay one week of income, at least 100; a completed central fiscal result in the same still-owned pilot halves it. Cash and source are checked again when paid."
+              },
+              "consequence_note": {
+                "zh": "为现有学校或官署工程列账，不生成建筑或法律。之后仍要明确救济责任。",
+                "en": "Budget for existing schools or office works; no building or law is created. Relief responsibility must still be settled."
+              }
+            },
+            {
+              "key": "provincial_funding",
+              "label": {
+                "zh": "地方按留用额列支（先记协商意向）",
+                "en": "Provincial funding (record intent to negotiate first)"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1101 = yes  }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1101 = yes  }\nset_variable = { name = ywc_shu_prov_share_intent value = 1 }\nset_variable = { name = ywc_shu_prov_mode_intent value = 2 }\nset_variable = { name = ywc_shu_prov_stage value = 1102 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1102 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无国库扣款；不转移州税。",
+                "en": "No treasury deduction; no state tax transfer."
+              },
+              "consequence_note": {
+                "zh": "这里不授予 share_terms；留用权必须到 1104 真成文。",
+                "en": "This does not grant share_terms; retention rights must be written at 1104."
+              }
+            },
+            {
+              "key": "keep_old_office",
+              "label": {
+                "zh": "维持旧官署，只做有限工程",
+                "en": "Keep the old office and do only limited works"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1101 = yes  }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1101 = yes  }\nset_variable = { name = ywc_shu_prov_mode_intent value = 3 }\nset_variable = { name = ywc_shu_prov_stage value = 1102 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1102 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "无学校、无新法也可走；需 1105 的真实和平财政确认，最终为有限妥协。",
+                "en": "Works without school or new law; still needs 1105's real peace-and-solvency confirmation and closes as a bounded compromise."
+              }
+            },
+            {
+              "key": "wait_for_office",
+              "label": {
+                "zh": "暂缓，先补官署",
+                "en": "Defer until the office is staffed"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1101 = yes NOT = { ywc_shu_v03_prov_limited_ready = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1101 = yes NOT = { ywc_shu_v03_prov_limited_ready = yes } }\nset_variable = { name = ywc_shu_prov_waiting_office value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费；不记支出。",
+                "en": "No charge; no expenditure recorded."
+              },
+              "consequence_note": {
+                "zh": "保留 stage 1101；以真实官署 25% 就业为目标，不生成建筑。",
+                "en": "Keeps stage 1101; targets real 25% office staffing and creates no building."
+              }
+            },
+            {
+              "key": "withdraw_school_line",
+              "label": {
+                "zh": "撤回省账，退出本线",
+                "en": "Withdraw the provincial budget"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1101 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1101 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "释放本线；不赠学校或法律。",
+                "en": "Releases the arc; grants no school or law."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "用真实现款与官署条件选出三路线之一，且不虚构学校或提前授予地方权利。",
+            "en": "Pick one of three routes from real cash and office conditions without inventing schools or pre-granting provincial rights."
+          },
+          "reads": [
+            "ywc_shu_prov_fee_amount",
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_shu_fiscal_outcome_central_audit",
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome",
+            "ywc_shu_v03_pilot_state",
+            "ywc_shu_v03_prov_pilot_state"
+          ],
+          "writes": [
+            "ywc_shu_prov_mode_intent",
+            "ywc_shu_prov_central_paid",
+            "ywc_shu_prov_central_paid_amount",
+            "ywc_shu_prov_share_intent",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "treasury",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1102",
+          "title": {
+            "zh": "巡抚不肯再垫",
+            "en": "The Governor Will Not Advance Again"
+          },
+          "desc": {
+            "zh": "同一矛盾有两副面孔：本州动荡时，巡抚已拒绝再垫救灾与公共支出；平静时，问题变成“预备责任”该不该先立——各州须先为救灾、公共卫生和学校配比出预算，才谈得上留用。无论当下是哪一种，三条出路都在这里；进入本节点不要求发生动荡。",
+            "en": "The same conflict has two faces: in an unsettled state the governor has already refused to advance relief and public spending; in peace the question is whether a standing obligation should be set up first, since provinces must budget for relief, public health and schools before retention is discussed. Whichever face is present, all three ways out are here; unrest is not required to reach this node."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_charter\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n has_variable = ywc_shu_v03_prov_pilot_state\n var:ywc_shu_prov_stage = 1102\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1102 }\nset_variable = { name = ywc_shu_prov_last_event value = 1102 }\n\nif = { limit = { ywc_shu_v03_prov_unrest_present = yes } set_variable = { name = ywc_shu_prov_unrest_seen value = 1 } }\n}",
+          "options": [
+            {
+              "key": "pay_relief_once",
+              "label": {
+                "zh": "中央实付一次救济或预备金",
+                "en": "Pay one relief or standing advance from the centre"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1102 = yes ywc_shu_v03_prov_can_pay_relief = yes NOT = { has_variable = ywc_shu_prov_relief_paid } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1102 = yes ywc_shu_v03_prov_can_pay_relief = yes NOT = { has_variable = ywc_shu_prov_relief_paid } }\nywc_shu_pay_prov_relief_once = yes\nif = { limit = { has_variable = ywc_shu_prov_relief_paid }\nywc_shu_prov_enter_mode_review = yes\n}\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实扣一次本线自有的周收入估算；现款不足不扣不记不推进。",
+                "en": "Deducts once this line's own weekly-income estimate; short cash takes, records and advances nothing."
+              },
+              "consequence_note": {
+                "zh": "记录真实支付；支付本身不改变学校或法律。成功才进入 1103；不得直接跳 1106。",
+                "en": "Records a real payment; it changes no school or law. Only success advances to 1103 and never jumps to 1106."
+              }
+            },
+            {
+              "key": "provincial_self_raise",
+              "label": {
+                "zh": "地方自筹（记待协商责任）",
+                "en": "Provincial self-financing (record pending responsibility)"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1102 = yes  }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1102 = yes  }\nset_variable = { name = ywc_shu_prov_relief_local value = 1 }\nset_variable = { name = ywc_shu_prov_mode_intent value = 2 }\nset_variable = { name = ywc_shu_prov_stage value = 1104 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1104 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无国库扣款；不转移州税。",
+                "en": "No treasury deduction; no state tax transfer."
+              },
+              "consequence_note": {
+                "zh": "只记待协商的地方责任，不授成文权、不视为已付现金；进入 1104。",
+                "en": "Records only a pending provincial responsibility; grants no written right and counts no cash as paid. Advances to 1104."
+              }
+            },
+            {
+              "key": "push_old_quota",
+              "label": {
+                "zh": "压回旧额，留给旧额路线复核",
+                "en": "Push the old quota back to the legacy review"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1102 = yes  }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1102 = yes  }\nset_variable = { name = ywc_shu_prov_quota_pressed value = 1 }\nset_variable = { name = ywc_shu_prov_mode_intent value = 3 }\nset_variable = { name = ywc_shu_prov_stage value = 1105 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1105 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费；不新增救济。",
+                "en": "No charge and no new relief."
+              },
+              "consequence_note": {
+                "zh": "留下真实风险，旧额确认须在 1105 再核；进入 1105。",
+                "en": "Leaves real risk; old-quota confirmation must still pass 1105. Advances to 1105."
+              }
+            },
+            {
+              "key": "withdraw_relief_line",
+              "label": {
+                "zh": "撤回省账，退出本线",
+                "en": "Withdraw the provincial budget"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1102 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1102 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "释放本线。",
+                "en": "Releases the arc."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "同一矛盾在动荡与和平下都给出三条出路；只有中央分支真金实付。",
+            "en": "Offer all three ways out under both unrest and peace; only the central branch causes a real payment."
+          },
+          "reads": [
+            "ywc_shu_prov_mode_intent",
+            "ywc_shu_prov_fee_amount",
+            "gold_reserves",
+            "net_fixed_income",
+            "turmoil",
+            "radical_fraction"
+          ],
+          "writes": [
+            "ywc_shu_prov_relief_paid",
+            "ywc_shu_prov_relief_local",
+            "ywc_shu_prov_quota_pressed",
+            "ywc_shu_prov_unrest_seen",
+            "ywc_shu_prov_mode_intent",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "treasury",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1103",
+          "title": {
+            "zh": "中央的账房，地方的仓",
+            "en": "Central Counting House, Local Granary"
+          },
+          "desc": {
+            "zh": "中央派员接管路线要真能记账：本线试点州官署达八成且无短缺、现行税法、全国行政结余不为负。条件不足时可降为 25% 官署共议，或改旧协商；失败保留已付记录，不再收费。",
+            "en": "Central takeover only means something if it can really keep books: this line's pilot office at 80% and unshortaged, an existing tax law, a non-negative national bureaucracy balance. If short, downgrade to shared 25% staffing or fall back to old negotiation; failure keeps prior payments and charges nothing again."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_charter\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n var:ywc_shu_prov_stage = 1103\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1103 }\nset_variable = { name = ywc_shu_prov_last_event value = 1103 }\n}",
+          "options": [
+            {
+              "key": "establish_central",
+              "label": {
+                "zh": "达标，确立中央统筹",
+                "en": "Meet the standard and establish central coordination"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1103 = yes ywc_shu_v03_prov_admin_ready = yes bureaucracy >= 0 ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } has_variable = ywc_shu_prov_central_paid }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1103 = yes ywc_shu_v03_prov_admin_ready = yes bureaucracy >= 0 ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } has_variable = ywc_shu_prov_central_paid }\nset_variable = { name = ywc_shu_prov_mode value = 1 }\nset_variable = { name = ywc_shu_prov_charter_ready value = 1 }\nset_variable = { name = ywc_shu_prov_stage value = 1106 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1106 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不额外收费；真实官署、税法与结余是唯一依据。",
+                "en": "No extra charge; real office, tax law and balance are the only basis."
+              },
+              "consequence_note": {
+                "zh": "记录 mode=1 并进入 JE2 六月核账；不赠法律或建筑。",
+                "en": "Records mode=1 and enters JE2's six-month audit; grants no law or building."
+              }
+            },
+            {
+              "key": "downgrade_shared",
+              "label": {
+                "zh": "降为 25% 官署共议",
+                "en": "Downgrade to shared 25% staffing"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1103 = yes ywc_shu_v03_prov_limited_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1103 = yes ywc_shu_v03_prov_limited_ready = yes }\nset_variable = { name = ywc_shu_prov_mode_intent value = 2 }\nset_variable = { name = ywc_shu_prov_downgraded value = 1 }\nset_variable = { name = ywc_shu_prov_stage value = 1104 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1104 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣款；不补发已付。",
+                "en": "No deduction; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "改走地方共议并进入 1104；仍可能失败。",
+                "en": "Moves to provincial sharing and enters 1104; it may still fail."
+              }
+            },
+            {
+              "key": "downgrade_legacy",
+              "label": {
+                "zh": "承认拒付，改旧协商",
+                "en": "Acknowledge refusal and return to old negotiation"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1103 = yes ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1103 = yes ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } }\nset_variable = { name = ywc_shu_prov_mode_intent value = 3 }\nset_variable = { name = ywc_shu_prov_refusals value = 1 }\nset_variable = { name = ywc_shu_prov_stage value = 1105 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1105 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣款。",
+                "en": "No deduction."
+              },
+              "consequence_note": {
+                "zh": "保留拒付记录并进入 1105；不保证成功。",
+                "en": "Keeps the refusal record and enters 1105; success is not guaranteed."
+              }
+            },
+            {
+              "key": "wait_central",
+              "label": {
+                "zh": "暂缓，先补官署或结余",
+                "en": "Defer until office or balance is ready"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1103 = yes NOT = { ywc_shu_v03_prov_admin_ready = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1103 = yes NOT = { ywc_shu_v03_prov_admin_ready = yes } }\nset_variable = { name = ywc_shu_prov_waiting_capacity value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留 stage 1103；条件改善后由月度队列重发。",
+                "en": "Keeps stage 1103; the monthly queue re-offers once conditions improve."
+              }
+            },
+            {
+              "key": "withdraw_after_central_fail",
+              "label": {
+                "zh": "撤回本线",
+                "en": "Withdraw the arc"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1103 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1103 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不新增费用；已付不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线。",
+                "en": "Releases the arc."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "以本线自有 0.8 官署、税法与结余检验中央路线；不足时降档或改路而非假装成功。",
+            "en": "Test the central route against this line's own 80% office, tax law and balance; downgrade or switch if short instead of pretending success."
+          },
+          "reads": [
+            "ywc_shu_v03_prov_pilot_state",
+            "occupancy",
+            "building_has_goods_shortage",
+            "has_law_or_variant",
+            "bureaucracy",
+            "ywc_shu_prov_central_paid",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_prov_mode_intent",
+            "ywc_shu_prov_mode",
+            "ywc_shu_prov_charter_ready",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "ywc_shu_prov_downgraded",
+            "ywc_shu_prov_refusals",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1104",
+          "title": {
+            "zh": "共议桌上少了一把椅子",
+            "en": "One Chair Missing from the Table"
+          },
+          "desc": {
+            "zh": "地方共议要两样都真：一份仍有效的协商权，以及原试点州仍归本国。本线自己的省账可以产生这份权利；也可经仍 owned 的前序真权利接续。若只有旧记录而试点已失，只能算空椅子，须按 25% 官署重立并付一次真实会务费，或退回旧协商。",
+            "en": "Provincial sharing needs both to be real: a still-valid negotiation right and the original pilot still held. This line can write that right itself, or continue from a still-owned prior right. An old record with a lost pilot is an empty chair and must be re-established against 25% office staffing with a real meeting fee, or fall back to old negotiation."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_charter\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n var:ywc_shu_prov_stage = 1104\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1104 }\nset_variable = { name = ywc_shu_prov_last_event value = 1104 }\n}",
+          "options": [
+            {
+              "key": "write_share_terms",
+              "label": {
+                "zh": "落实可核对的地方分担条款",
+                "en": "Put accountable provincial terms in writing"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1104 = yes ywc_shu_v03_prov_terms_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1104 = yes ywc_shu_v03_prov_terms_ready = yes }\nywc_shu_prov_write_terms_once = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同一仍归本国的原试点若有真实联核权，免费接续；否则国库支付半周收入、最低50的会务费。没有地方税款转移。",
+                "en": "Continue a real audit right in the same still-owned original pilot free; otherwise the treasury pays half a week of income, at least 50, for the meeting. No provincial tax is transferred."
+              },
+              "consequence_note": {
+                "zh": "登记本线分担条款及其试点来源，再观察六个历月。条款不表示地方现金已经到账。",
+                "en": "Record this arc's terms and pilot provenance, then observe six calendar months. Written terms do not mean local cash has arrived."
+              }
+            },
+            {
+              "key": "meeting_without_terms",
+              "label": {
+                "zh": "开一次会，不落条款（受挫）",
+                "en": "Hold the meeting without terms (setback)"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1104 = yes NOT = { ywc_shu_v03_prior_local_right = yes } NOT = { ywc_shu_v03_prov_can_pay_meeting = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1104 = yes NOT = { ywc_shu_v03_prior_local_right = yes } NOT = { ywc_shu_v03_prov_can_pay_meeting = yes } }\nset_variable = { name = ywc_shu_prov_share_failed value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "记录受挫但不关闭；保留 stage 1104，须重立条件后才能成文。",
+                "en": "Records a setback without closing; keeps stage 1104 so terms still require the conditions."
+              }
+            },
+            {
+              "key": "fallback_legacy",
+              "label": {
+                "zh": "退回旧协商",
+                "en": "Fall back to old negotiation"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1104 = yes ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1104 = yes ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } }\nset_variable = { name = ywc_shu_prov_mode_intent value = 3 }\nset_variable = { name = ywc_shu_prov_stage value = 1105 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1105 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "进入 1105；不继承共议权利。",
+                "en": "Enters 1105; it does not inherit sharing rights."
+              }
+            },
+            {
+              "key": "wait_for_share_right",
+              "label": {
+                "zh": "暂缓，先补官署或现款",
+                "en": "Defer until office or meeting cash is ready"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1104 = yes NOT = { ywc_shu_v03_prior_local_right = yes } NOT = { ywc_shu_v03_prov_limited_ready = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1104 = yes NOT = { ywc_shu_v03_prior_local_right = yes } NOT = { ywc_shu_v03_prov_limited_ready = yes } }\nset_variable = { name = ywc_shu_prov_waiting_right value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留 stage 1104；由月度队列在条件满足后重发，前序未参与不会永久卡死。",
+                "en": "Keeps stage 1104; the monthly queue re-offers once conditions are met, and non-participation never locks the line."
+              }
+            },
+            {
+              "key": "withdraw_after_share_fail",
+              "label": {
+                "zh": "撤回本线",
+                "en": "Withdraw the arc"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1104 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1104 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不新增费用。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "释放本线。",
+                "en": "Releases the arc."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "双端检验仍有效权利与原 pilot；前序未参与不会被永久卡住，重立要付真实会务费。",
+            "en": "Check both a still-valid right and the retained pilot; non-participation never locks the line, and re-establishment costs a real meeting fee."
+          },
+          "reads": [
+            "ywc_shu_v03_prov_pilot_state",
+            "ywc_shu_v03_pilot_state",
+            "ywc_shu_first_audit",
+            "ywc_shu_local_audit_right",
+            "ywc_shu_settlement_mode",
+            "ywc_shu_prov_meeting_fee",
+            "gold_reserves",
+            "occupancy",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_prov_share_terms",
+            "ywc_shu_prov_terms_pilot",
+            "ywc_shu_prov_meeting_fee_paid",
+            "ywc_shu_prov_meeting_fee_waived",
+            "ywc_shu_prov_mode",
+            "ywc_shu_prov_charter_ready",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "treasury",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1105",
+          "title": {
+            "zh": "旧额还能不能再顶一年",
+            "en": "Can the Old Quota Hold One More Year"
+          },
+          "desc": {
+            "zh": "维持旧协商几乎是长期和平或尚未工业化时的默认选择：无新法、无新学校也能进入，条件只是真实财政安全且不在战争。但和平与旧额要真站得住：有本线未付地方责任或学校欠款时，只能如实记为受挫或重议，不能假装旧额自动清偿一切。",
+            "en": "Keeping the old negotiation is almost the default in long peace or before industrialisation: no new law or school needed, only genuine fiscal safety and no war. But peace and the old quota must actually hold: with this line's unpaid provincial undertaking or school debit, the honest result is a setback or renegotiation, not a pretence that the old quota clears everything."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_charter\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n var:ywc_shu_prov_stage = 1105\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1105 }\nset_variable = { name = ywc_shu_prov_last_event value = 1105 }\n}",
+          "options": [
+            {
+              "key": "confirm_old_quota",
+              "label": {
+                "zh": "和平财政站得住，确立有限旧额",
+                "en": "Peace and solvency hold; establish the bounded old quota"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1105 = yes ywc_shu_v03_prov_legacy_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1105 = yes ywc_shu_v03_prov_legacy_ready = yes }\nset_variable = { name = ywc_shu_prov_mode value = 3 }\nset_variable = { name = ywc_shu_prov_quota_confirmed value = 1 }\nset_variable = { name = ywc_shu_prov_charter_ready value = 1 }\nset_variable = { name = ywc_shu_prov_stage value = 1106 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1106 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无新费用；不赠法律或建筑。",
+                "en": "No new cost; grants no law or building."
+              },
+              "consequence_note": {
+                "zh": "以当前在岗官署、和平和财政安全确认有限旧额，再观察六月；不把此前地方责任记为已付现金，也不扩大中央覆盖。",
+                "en": "Confirm a limited old quota against actual office staffing, peace and solvency, then observe six months. Earlier local responsibilities are not recorded as paid cash, and central coverage is not expanded."
+              }
+            },
+            {
+              "key": "renegotiate_next_year",
+              "label": {
+                "zh": "重议下一年：暂缓不免费通过",
+                "en": "Renegotiate next year: defer without free passage"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1105 = yes NOT = { ywc_shu_v03_prov_limited_ready = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1105 = yes NOT = { ywc_shu_v03_prov_limited_ready = yes } }\nset_variable = { name = ywc_shu_prov_waiting_legacy value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留 stage 1105；条件改善后重发，暂缓不等于免费通过。",
+                "en": "Keeps stage 1105; re-offered once conditions improve, and deferral is not free passage."
+              }
+            },
+            {
+              "key": "withdraw_legacy_line",
+              "label": {
+                "zh": "撤回本线",
+                "en": "Withdraw the arc"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1105 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1105 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不新增费用。",
+                "en": "No new charge."
+              },
+              "consequence_note": {
+                "zh": "释放本线。",
+                "en": "Releases the arc."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "让旧额在无新法无新学校时也有有限结局，但以真实和平财政为限。",
+            "en": "Give the old quota a bounded result without new law or school, bounded by real peace and solvency."
+          },
+          "reads": [
+            "ywc_shu_prov_mode_intent",
+            "ywc_shu_v03_prov_pilot_state",
+            "occupancy",
+            "building_has_goods_shortage",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_prov_mode",
+            "ywc_shu_prov_quota_confirmed",
+            "ywc_shu_prov_charter_ready",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "ywc_shu_prov_waiting_legacy",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1106",
+          "title": {
+            "zh": "账本上的裂缝",
+            "en": "The Crack in the Ledger"
+          },
+          "desc": {
+            "zh": "六历月核账成熟或被打断时，账本会出现裂缝。成熟且条件仍在时可按所选路线进入结算；战争、违约、破产或失州只转为延期或退出，不得把未成熟的核账写成完成，也不重复收取启动费。延期必须等恢复后从零重数六个月。",
+            "en": "When the six-month audit matures or is interrupted, a crack appears. If mature and conditions still hold, the route proceeds to settlement; war, default, bankruptcy or a lost state only defer or exit, and an immature audit is never written as done nor charged again. Deferral must wait for recovery and recount six months from zero."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_ledger\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n var:ywc_shu_prov_stage = 1106\n OR = { has_variable = ywc_shu_prov_review_mature has_variable = ywc_shu_prov_review_interrupted }\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1106 }\nset_variable = { name = ywc_shu_prov_last_event value = 1106 }\n}",
+          "options": [
+            {
+              "key": "settle_on_time",
+              "label": {
+                "zh": "按期结算，进入收束",
+                "en": "Settle on time and move to the close"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1106 = yes OR = { ywc_shu_v03_prov_terminal_central_full = yes ywc_shu_v03_prov_terminal_compromise = yes } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1106 = yes OR = { ywc_shu_v03_prov_terminal_central_full = yes ywc_shu_v03_prov_terminal_compromise = yes } }\nif = { limit = { ywc_shu_v03_prov_terminal_central_full = yes } set_variable = { name = ywc_shu_prov_outcome_candidate value = 1 } } else = { set_variable = { name = ywc_shu_prov_outcome_candidate value = 2 } }\nset_variable = { name = ywc_shu_prov_stage value = 1107 }\nset_variable = { name = ywc_shu_prov_pending_event value = 1107 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不重复收费。",
+                "en": "No repeated charge."
+              },
+              "consequence_note": {
+                "zh": "只把 stage 推到 1107；真正结局与释放留到 1107 当下重核。",
+                "en": "Only moves the stage to 1107; the real outcome and release wait for 1107's live re-check."
+              }
+            },
+            {
+              "key": "defer_no_fee",
+              "label": {
+                "zh": "延期：恢复后从零重数六个月",
+                "en": "Defer: recount six months from zero after recovery"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1106 = yes OR = { has_variable = ywc_shu_prov_review_interrupted NOT = { ywc_shu_v03_finance_safe = yes } is_at_war = yes NOT = { ywc_shu_v03_has_prov_pilot = yes } NOT = { ywc_shu_v03_prov_mode_conditions_hold = yes } } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1106 = yes OR = { has_variable = ywc_shu_prov_review_interrupted NOT = { ywc_shu_v03_finance_safe = yes } is_at_war = yes NOT = { ywc_shu_v03_has_prov_pilot = yes } NOT = { ywc_shu_v03_prov_mode_conditions_hold = yes } } }\nywc_shu_prov_start_review = yes\nset_variable = { name = ywc_shu_prov_wartime_deferral value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无新扣款。",
+                "en": "No new deduction."
+              },
+              "consequence_note": {
+                "zh": "清零 streak 并保留 stage 1106；恢复后要再走满六个真实月，绝不免费通过。",
+                "en": "Resets the streak and keeps stage 1106; after recovery it must accrue six real months again and never passes for free."
+              }
+            },
+            {
+              "key": "withdraw_ledger",
+              "label": {
+                "zh": "主动退出，进信用修复",
+                "en": "Exit and enter credit repair"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1106 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1106 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不退已付款，不再新增。",
+                "en": "Keeps prior payments and adds nothing."
+              },
+              "consequence_note": {
+                "zh": "记退出并释放本线。",
+                "en": "Records exit and releases the arc."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "把成熟与延期分开；条件不足只能延期或退出，不以 180 天近似冒充六个月。",
+            "en": "Separate maturity from deferral; when conditions fail only defer or exit, never passing off 180 days as six months."
+          },
+          "reads": [
+            "ywc_shu_prov_review_mature",
+            "ywc_shu_prov_review_interrupted",
+            "ywc_shu_prov_review_streak",
+            "ywc_shu_prov_mode",
+            "ywc_shu_v03_prov_pilot_state",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_prov_outcome_candidate",
+            "ywc_shu_prov_stage",
+            "ywc_shu_prov_pending_event",
+            "ywc_shu_prov_review_running",
+            "ywc_shu_prov_review_streak",
+            "ywc_shu_prov_review_mature",
+            "ywc_shu_prov_review_interrupted",
+            "ywc_shu_prov_wartime_deferral",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_shu.1107",
+          "title": {
+            "zh": "下一任巡抚接不接这本账",
+            "en": "Will the Next Governor Take the Ledger"
+          },
+          "desc": {
+            "zh": "收尾只确认当下真实达到的那一档：确立、妥协、受挫可修复，或正式退出。这里不再扣费，不赠法律、学校或主权；之前记录的候选不等于当前完整资格，条件若已丢失，只能受挫、延期或退出。继任巡抚读同一变量接手。",
+            "en": "The close only confirms the tier actually reached now: established, compromise, setback with repairable goals, or a formal exit. Nothing is charged here and no law, school or sovereignty is granted; an earlier candidate is not current full eligibility, and if conditions have vanished only setback, deferral or exit is available. A successor governor reads the same variables."
+          },
+          "trigger": "{\n c:SHU ?= this\n ywc_v03_can_deliver_major = yes\n has_journal_entry = ywc_je_v03_shu_provincial_ledger\n NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }\n var:ywc_shu_prov_stage = 1107\n}",
+          "immediate": "{\n ywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1107 }\nset_variable = { name = ywc_shu_prov_last_event value = 1107 }\n}",
+          "options": [
+            {
+              "key": "close_established",
+              "label": {
+                "zh": "确认中央统筹的完整账约",
+                "en": "Confirm the full central compact"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1107 = yes ywc_shu_v03_prov_terminal_central_full = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1107 = yes ywc_shu_v03_prov_terminal_central_full = yes }\nywc_shu_prov_close_established = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "中央完整=1，地方/旧额/中央部分=2；按当下重核后释放本线一次。",
+                "en": "Full central = 1; provincial/legacy/partial central = 2; releases the arc once after a live re-check."
+              }
+            },
+            {
+              "key": "close_compromise",
+              "label": {
+                "zh": "确认有边界的共议或旧额",
+                "en": "Confirm bounded shared or legacy terms"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1107 = yes ywc_shu_v03_prov_terminal_compromise = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1107 = yes ywc_shu_v03_prov_terminal_compromise = yes }\nywc_shu_prov_close_compromise = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "记录有限妥协，不把旧额或共议冒认为中央全额责任；释放本线一次容量。",
+                "en": "Record a bounded compromise, without claiming full central responsibility; release this arc's capacity once."
+              }
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "确认受挫，保留可修复目标",
+                "en": "Confirm setback, keep repairable goals"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1107 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1107 = yes }\nywc_shu_prov_close_setback = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "写受挫并保留修复目标；不冒充成功。",
+                "en": "Writes a setback and keeps repairable goals; it does not feign success."
+              }
+            },
+            {
+              "key": "close_exit",
+              "label": {
+                "zh": "正式退出",
+                "en": "Formal exit"
+              },
+              "trigger": "{ ywc_shu_v03_prov_at_1107 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_prov_at_1107 = yes }\nywc_shu_prov_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不退已付款。",
+                "en": "Prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "写退出并释放本线；终结点永远有可执行选项。",
+                "en": "Writes exit and releases the arc; the close always has an executable option."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只按当下真实条件收束，不赠法律/学校/主权，并保证终结按钮永远有效。",
+            "en": "Close only on current real conditions, grant no law/school/sovereignty, and keep every close option executable."
+          },
+          "reads": [
+            "ywc_shu_prov_mode",
+            "ywc_shu_prov_review_mature",
+            "ywc_shu_prov_review_streak",
+            "ywc_shu_prov_central_paid",
+            "ywc_shu_prov_relief_paid",
+            "ywc_shu_prov_share_terms",
+            "ywc_shu_prov_terms_pilot",
+            "ywc_shu_prov_quota_confirmed",
+            "ywc_shu_v03_prov_pilot_state",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_prov_outcome",
+            "ywc_v03_shu_v03_shu_provincial_contract_outcome",
+            "ywc_v03_shu_v03_shu_provincial_contract_settled",
+            "ywc_v03_active_arc_count",
+            "ywc_v03_visible_task_count",
+            "ywc_shu_prov_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_v03_major_event_cooldown"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:完成两项实付、当前官署法制与六个月观察的中央统筹",
+        "compromise:经过六个月观察的地方分担或有限旧额，不冒认为完整中央责任",
+        "setback:按当前失格条件终结本次试点，费用不退，不冒称已自动修复",
+        "withdrawn:主动退出并释放本线容量，保留已付款记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_shu_fiscal_register：同一仍归本国的原试点及真实中央财政/地方联核来源，分别影响1101预算费用和1104会务费；未参与时按本线当前条件推进。",
+        "本线不改写前期pilot、军制、海关或旧债；成文条款记录本线试点和真实已付/已免会务费，不表示税款转移、法律或建筑已经授予。"
+      ],
+      "inline_delivery_adapter": {
+        "schema": "v03.foundation_inline_adapter.v3",
+        "live_phases": [
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "live_witness": "ywc_v03_shu_inline_live_provincial_charter",
+            "source_script_sha256": "31ada106f54d24b24fbf0f569759cfb7aa00ee1b7fc70bdb9e2ef0d74b6cc057",
+            "goal_sha256": "21f1746a113976724d62aca8f84c724ec993212ada50bd653ff30a8e368f84b9",
+            "exit_sha256": "26d7d2a5b0df4c82fc379129563fafeddf6bc8173aaa9b20286eb8b8419c3fa2"
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_ledger",
+            "live_witness": "ywc_v03_shu_inline_live_provincial_ledger",
+            "source_script_sha256": "7dea3b477395ef96ca9d92ad86034d83458e94412549799c1970850b31e33c98",
+            "goal_sha256": "3bb31a5767c459d9f7f4bbcb40a0731efd9dc73c0427524b86dc00ad946f4294",
+            "exit_sha256": "26d7d2a5b0df4c82fc379129563fafeddf6bc8173aaa9b20286eb8b8419c3fa2"
+          }
+        ],
+        "branches": [
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "branch_index": 0,
+            "statement_ordinal": 1,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_shu.1100",
+            "limit_sha256": "2b709c318459336f16d3f5372faddedb0094cd8f01a519dff0f7f8f7ef3620cd",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1100
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "f646471268eafc2721c0d488c24d330c350c93d9be846725f423f5c77e5a962e",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "branch_index": 1,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1101",
+            "limit_sha256": "91118938b827d10a32270a681b91135eae5f03dcb5505681f9b4038cde466f3e",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f646471268eafc2721c0d488c24d330c350c93d9be846725f423f5c77e5a962e",
+                "limit_sha256": "2b709c318459336f16d3f5372faddedb0094cd8f01a519dff0f7f8f7ef3620cd",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100  }"
+              }
+            ],
+            "chain_sha256": "6daaa80184e25399e66081582de33a5e727bea90ce9c785bc96a6fba860d0c43",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1101
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "c3e5f88168b9b55d98c2ddd7a009fc879d65d50434ceb38e67c0252d068bce11",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "branch_index": 2,
+            "statement_ordinal": 3,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1102",
+            "limit_sha256": "daf55602089706d74e71153ec4f6602b6577509409f56cd5cb3dde39223e03c9",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f646471268eafc2721c0d488c24d330c350c93d9be846725f423f5c77e5a962e",
+                "limit_sha256": "2b709c318459336f16d3f5372faddedb0094cd8f01a519dff0f7f8f7ef3620cd",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100  }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "c3e5f88168b9b55d98c2ddd7a009fc879d65d50434ceb38e67c0252d068bce11",
+                "limit_sha256": "91118938b827d10a32270a681b91135eae5f03dcb5505681f9b4038cde466f3e",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1101 var:ywc_shu_prov_pending_event = 1101  }"
+              }
+            ],
+            "chain_sha256": "c672b15a8450034b8d58d2d74fea0f88adbbffb529698c7204814c6d7314744b",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1102
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "16eca34e46b9cb9b3505dc2ef71707e3aa034ffec8850627d6573b381f2e2e7d",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "branch_index": 3,
+            "statement_ordinal": 4,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1103",
+            "limit_sha256": "a86ca13f11c67195f71a5e796587f9f9d1c7751b6faf2af96f94b088394e4cf4",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f646471268eafc2721c0d488c24d330c350c93d9be846725f423f5c77e5a962e",
+                "limit_sha256": "2b709c318459336f16d3f5372faddedb0094cd8f01a519dff0f7f8f7ef3620cd",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100  }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "c3e5f88168b9b55d98c2ddd7a009fc879d65d50434ceb38e67c0252d068bce11",
+                "limit_sha256": "91118938b827d10a32270a681b91135eae5f03dcb5505681f9b4038cde466f3e",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1101 var:ywc_shu_prov_pending_event = 1101  }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "16eca34e46b9cb9b3505dc2ef71707e3aa034ffec8850627d6573b381f2e2e7d",
+                "limit_sha256": "daf55602089706d74e71153ec4f6602b6577509409f56cd5cb3dde39223e03c9",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1102 var:ywc_shu_prov_pending_event = 1102  }"
+              }
+            ],
+            "chain_sha256": "26484b455879ac97b63873f56c34f86cf2b520a8d303a46615d2ec4ca948ac8c",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1103
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "d611d6947e4ed131d20319d257a0ed82b4a1f4a127e7e80c1fe5b76132f32ef7",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "branch_index": 4,
+            "statement_ordinal": 5,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1104",
+            "limit_sha256": "5e69f6a83a554701e099252e7752f06e1cca6f79b6d54b8c6fe79a3e75d74716",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f646471268eafc2721c0d488c24d330c350c93d9be846725f423f5c77e5a962e",
+                "limit_sha256": "2b709c318459336f16d3f5372faddedb0094cd8f01a519dff0f7f8f7ef3620cd",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100  }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "c3e5f88168b9b55d98c2ddd7a009fc879d65d50434ceb38e67c0252d068bce11",
+                "limit_sha256": "91118938b827d10a32270a681b91135eae5f03dcb5505681f9b4038cde466f3e",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1101 var:ywc_shu_prov_pending_event = 1101  }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "16eca34e46b9cb9b3505dc2ef71707e3aa034ffec8850627d6573b381f2e2e7d",
+                "limit_sha256": "daf55602089706d74e71153ec4f6602b6577509409f56cd5cb3dde39223e03c9",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1102 var:ywc_shu_prov_pending_event = 1102  }"
+              },
+              {
+                "ordinal": 4,
+                "sha256": "d611d6947e4ed131d20319d257a0ed82b4a1f4a127e7e80c1fe5b76132f32ef7",
+                "limit_sha256": "a86ca13f11c67195f71a5e796587f9f9d1c7751b6faf2af96f94b088394e4cf4",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1103 var:ywc_shu_prov_pending_event = 1103  }"
+              }
+            ],
+            "chain_sha256": "c458ff693f4fab67976cdc9b6a36e951275a2a814316d0194a9c63be90309a29",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1104
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "23a9ec362b277269950aded65207d603453cd4a31d9525fcc720a9f78e1a729a",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_charter",
+            "branch_index": 5,
+            "statement_ordinal": 6,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1105",
+            "limit_sha256": "cd601b8ca49d9db4da548bdb40d69da89231a9e352888481831b9590b6399827",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f646471268eafc2721c0d488c24d330c350c93d9be846725f423f5c77e5a962e",
+                "limit_sha256": "2b709c318459336f16d3f5372faddedb0094cd8f01a519dff0f7f8f7ef3620cd",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1100 var:ywc_shu_prov_pending_event = 1100  }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "c3e5f88168b9b55d98c2ddd7a009fc879d65d50434ceb38e67c0252d068bce11",
+                "limit_sha256": "91118938b827d10a32270a681b91135eae5f03dcb5505681f9b4038cde466f3e",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1101 var:ywc_shu_prov_pending_event = 1101  }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "16eca34e46b9cb9b3505dc2ef71707e3aa034ffec8850627d6573b381f2e2e7d",
+                "limit_sha256": "daf55602089706d74e71153ec4f6602b6577509409f56cd5cb3dde39223e03c9",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1102 var:ywc_shu_prov_pending_event = 1102  }"
+              },
+              {
+                "ordinal": 4,
+                "sha256": "d611d6947e4ed131d20319d257a0ed82b4a1f4a127e7e80c1fe5b76132f32ef7",
+                "limit_sha256": "a86ca13f11c67195f71a5e796587f9f9d1c7751b6faf2af96f94b088394e4cf4",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1103 var:ywc_shu_prov_pending_event = 1103  }"
+              },
+              {
+                "ordinal": 5,
+                "sha256": "23a9ec362b277269950aded65207d603453cd4a31d9525fcc720a9f78e1a729a",
+                "limit_sha256": "5e69f6a83a554701e099252e7752f06e1cca6f79b6d54b8c6fe79a3e75d74716",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1104 var:ywc_shu_prov_pending_event = 1104  }"
+              }
+            ],
+            "chain_sha256": "233d071f7a9753d02308d80aafdb67b5ba9ae580dbfd66377aa0b1647fe4489b",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1105
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "bee3ea1d21c9c982c3665f76e4ccafddfaa1fd32a4ad11803ff03fa5f3485ede",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_ledger",
+            "branch_index": 0,
+            "statement_ordinal": 1,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_shu.1106",
+            "limit_sha256": "b1e180718aee898c6ad7f638cdbc57a3fbcb713cd098fb981871a656a47827e7",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1106
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "3e7a5d66fab6e5e7af94e8c53f157e5917b13a906cd2cb14651f6b1cdad36a1b",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_provincial_ledger",
+            "branch_index": 1,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1107",
+            "limit_sha256": "b97e4c253ba76a15e1af07e6e44cb598a2277153608a32210d1968ba00c45c52",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "3e7a5d66fab6e5e7af94e8c53f157e5917b13a906cd2cb14651f6b1cdad36a1b",
+                "limit_sha256": "b1e180718aee898c6ad7f638cdbc57a3fbcb713cd098fb981871a656a47827e7",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_prov_stage = 1106 var:ywc_shu_prov_pending_event = 1106 OR = { has_variable = ywc_shu_prov_review_mature has_variable = ywc_shu_prov_review_interrupted } }"
+              }
+            ],
+            "chain_sha256": "51da2df615374c720c913ffc37e755446699f40846ad4c66ebe106995a268f61",
+            "candidates": [
+              {
+                "queue": "ywc_shu_prov_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1107
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "9f846b285ae5c9a43a9310fd718c488546a8f90119d12855b138fb4a7f87e6c4",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_prov_pending_event"
               }
             ]
           }

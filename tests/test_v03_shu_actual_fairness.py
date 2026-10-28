@@ -75,9 +75,11 @@ def _install_real_shu_render(world, outputs):
                 candidate_id += 1
                 world._shu_candidates[candidate_id] = {
                     "arc": arc, "proof": proof, "candidate": candidate}
-    if branch_count != 31 or candidate_id != 31:
+    foundation_sites = sum(len(arc["inline_delivery_adapter"]["branches"])
+                           for arc in world.cat["arcs"] if arc["era"] == "foundation")
+    if foundation_sites != 31 or branch_count != 39 or candidate_id != 39:
         raise AssertionError(("unexpected_shu_source_branch_or_candidate_count",
-                              branch_count, candidate_id))
+                              foundation_sites, branch_count, candidate_id))
     world.trace.append({"op": "load_real_rendered_shu_helpers",
                         "effects": sorted(helper_effects),
                         "triggers": sorted(helper_triggers),
@@ -185,8 +187,13 @@ def _root_arc(world, slug):
 
 
 def _refresh_actual_journal_history(world):
-    """Apply authored completion/admission checks without pulsing terminal JEs."""
-    for arc in world.cat["arcs"]:
+    """Drive the six foundation JEs covered by this historical regression.
+
+    The middle arc has separate admission/interleaving coverage. Automatically
+    admitting it here while never pulsing it would create a silent competitor
+    outside this regression's explicit two-root/three-root schedules.
+    """
+    for arc in (arc for arc in world.cat["arcs"] if arc["era"] == "foundation"):
         world.refresh(arc)
 
 
