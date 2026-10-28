@@ -373,7 +373,7 @@ def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
             if negative:
                 continue
             if node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_") and node.value.endswith(("_pending_event", "_notice_event")):
-                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)", node.value):
+                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_public_pending_event", node.value):
                     raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.value}")
                 continue
             if not node.key.startswith("var:ywc_lan_"):
@@ -381,13 +381,13 @@ def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
                     raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.key}")
                 continue
             queue = node.key.removeprefix("var:")
-            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)", queue)
+            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_public_pending_event", queue)
             if not match:
                 raise ValueError(f"LAN sender contains an unknown queue predicate: {queue}")
             if node.op != "=" or not isinstance(node.value, str) or not node.value.isdigit():
                 raise ValueError(f"LAN queue predicate must be an exact integer equality: {queue}")
             value = int(node.value)
-            kind = "normal" if match.group(2) == "pending_event" else "notice"
+            kind = "normal" if queue.endswith("_pending_event") else "notice"
             if kind == "notice" and value not in {12, 36}:
                 raise ValueError(f"LAN notice queue must equal 12 or 36: {queue}={value}")
             found.append({"queue": queue, "kind": kind, "mode": "exact", "value": value})
@@ -941,27 +941,77 @@ def _lan_source_binding(journal_id: str, pulse: str) -> dict[str, Any]:
     return binding
 
 
+_LAN_FOUNDATION_SLUGS = (
+    "v03_lan_mine_accounts", "v03_lan_river_compacts", "v03_lan_work_accident_fund",
+)
+_LAN_COMPANY_SLUG = "v03_lan_company_public"
+
+
+def _lan_native_receipt(event: dict[str, Any]) -> tuple[str | None, int | None]:
+    event_id = event.get("id", "")
+    receipt, value = None, None
+    expected = "{ ywc_v03_mark_major_delivered = yes }"
+    if re.fullmatch(r"ywc_lan\.(100[0-7]|101[0-7]|102[0-7])", event_id):
+        pass
+    elif re.fullmatch(r"ywc_lan\.110[0-9]", event_id):
+        receipt = "ywc_v03_lan_v03_lan_company_public_last_event"
+        value = int(event_id.rsplit(".", 1)[1]) - 1099
+        expected = ("{ ywc_v03_mark_major_delivered = yes "
+                    f"set_variable = {{ name = {receipt} value = {value} }} }}")
+    else:
+        raise ValueError(f"{event_id}: unregistered LAN native receipt")
+    actual = parse_block(event.get("immediate", ""))
+    canonical = parse_block(expected)
+    if tuple(_nqg_node_shape(n) for n in actual) != tuple(_nqg_node_shape(n) for n in canonical):
+        raise ValueError(f"{event_id}: unsupported LAN immediate body")
+    return receipt, value
+
+
+def _lan_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
+    foundation = [arc for arc in catalog["arcs"]
+                  if isinstance(arc, dict) and arc.get("era") == "foundation"]
+    if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_LAN_FOUNDATION_SLUGS):
+        raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
+    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    for arc in extra:
+        if not isinstance(arc, dict) or arc.get("slug") != _LAN_COMPANY_SLUG or arc.get("era") != "middle":
+            slug = arc.get("slug") if isinstance(arc, dict) else None
+            raise ValueError(f"unregistered LAN inline arc: {slug}")
+    if len(extra) > 1:
+        raise ValueError("LAN inline adapter permits one registered company-public arc")
+    return [next(arc for arc in foundation if arc["slug"] == slug)
+            for slug in _LAN_FOUNDATION_SLUGS] + extra
+
+
 def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
-    """Bound LAN's exact six-JE source and native immediate contract."""
+    """Bind LAN's foundation sources and the explicitly registered public card."""
     expected_slugs = {"v03_lan_mine_accounts", "v03_lan_river_compacts", "v03_lan_work_accident_fund"}
     if catalog.get("key") != "country_lan" or not isinstance(catalog.get("arcs"), list):
         raise ValueError("LAN inline adapter requires the LAN catalog")
-    active = [a for a in catalog["arcs"] if isinstance(a, dict) and a.get("era") == "foundation"]
-    if len(active) != 3 or {a.get("slug") for a in active} != expected_slugs:
+    active = _lan_active_arcs(catalog)
+    if {a.get("slug") for a in active[:3]} != expected_slugs:
         raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
+    has_company = len(active) == 4
     counts = {"ywc_je_v03_lan_mine_ledger": 7, "ywc_je_v03_lan_mine_settlement": 5,
               "ywc_je_v03_lan_river_compacts": 8, "ywc_je_v03_lan_river_settlement": 4,
-              "ywc_je_v03_lan_accident_fund": 7, "ywc_je_v03_lan_fund_settlement": 5}
+              "ywc_je_v03_lan_accident_fund": 7, "ywc_je_v03_lan_fund_settlement": 5,
+              "ywc_je_v03_lan_public_mandate": 4, "ywc_je_v03_lan_public_budget": 4,
+              "ywc_je_v03_lan_public_succession": 2}
     all_events: set[str] = set()
     witnesses: set[str] = set()
     modes = {"normal": 0, "notice12": 0, "notice36": 0}
     for arc in active:
+        is_company = arc["slug"] == _LAN_COMPANY_SLUG
         adapter = arc.get("inline_delivery_adapter")
         if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches", "direct_adds"} or adapter.get("schema") != "v03.foundation_inline_adapter.v2":
             raise ValueError(f"{arc['slug']}: LAN requires strict v2 inline metadata")
         journals = arc.get("journals")
         if not isinstance(journals, list) or not journals:
             raise ValueError(f"{arc['slug']}: source journals are required")
+        if is_company and [journal.get("id") for journal in journals] != [
+                "ywc_je_v03_lan_public_mandate", "ywc_je_v03_lan_public_budget",
+                "ywc_je_v03_lan_public_succession"]:
+            raise ValueError("LAN public card requires its three ordered native phases")
         phases = adapter["live_phases"]
         if not isinstance(phases, list) or len(phases) != len(journals):
             raise ValueError(f"{arc['slug']}: every source JE needs one live phase")
@@ -982,8 +1032,9 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
         if not isinstance(records, list) or len(records) != len(expected):
             raise ValueError(f"{arc['slug']}: all LAN sender sites must be bound")
         event_ids = {e.get("id") for e in arc.get("events", []) if isinstance(e, dict)}
-        expected_base={"v03_lan_mine_accounts":1000,"v03_lan_river_compacts":1010,"v03_lan_work_accident_fund":1020}[arc["slug"]]
-        if event_ids != {f"ywc_lan.{n}" for n in range(expected_base,expected_base+8)}:
+        expected_base={"v03_lan_mine_accounts":1000,"v03_lan_river_compacts":1010,"v03_lan_work_accident_fund":1020,
+                       _LAN_COMPANY_SLUG:1100}[arc["slug"]]
+        if event_ids != {f"ywc_lan.{n}" for n in range(expected_base,expected_base+(10 if is_company else 8))}:
             raise ValueError(f"{arc['slug']}: LAN native event inventory drift")
         all_events |= event_ids
         for proof, (jid, source) in zip(records, expected):
@@ -996,11 +1047,14 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             if proof["event"] not in event_ids:
                 raise ValueError(f"{arc['slug']}/{jid}: LAN sender event is not owned by its arc")
             cand = proof["candidates"][0]
-            stem = re.match(r"ywc_lan_(mine|river|fund)_", cand["queue"])
-            expected_stem = {"v03_lan_mine_accounts": "mine", "v03_lan_river_compacts": "river", "v03_lan_work_accident_fund": "fund"}[arc["slug"]]
+            stem = re.match(r"ywc_lan_(mine|river|fund|public)_", cand["queue"])
+            expected_stem = {"v03_lan_mine_accounts": "mine", "v03_lan_river_compacts": "river",
+                             "v03_lan_work_accident_fund": "fund", _LAN_COMPANY_SLUG: "public"}[arc["slug"]]
             if not stem or stem.group(1) != expected_stem or cand["mode"] != "exact":
                 raise ValueError(f"{arc['slug']}/{jid}: LAN queue is not exact and arc-owned")
             if cand["kind"] == "notice":
+                if is_company:
+                    raise ValueError("LAN public card has only its ten normal event queues")
                 if cand["queue"] != f"ywc_lan_{expected_stem}_notice_event" or cand["value"] not in {12, 36}:
                     raise ValueError(f"{arc['slug']}/{jid}: malformed LAN notice queue")
                 modes[f"notice{cand['value']}"] += 1
@@ -1032,8 +1086,16 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
         direct_adds = adapter["direct_adds"]
         if not isinstance(direct_adds, list) or direct_adds != _kor_direct_adds(arc):
             raise ValueError(f"{arc['slug']}: LAN direct-add inventory drift")
-        if len(expected) != counts.get(journals[0]["id"], -1) + (counts.get(journals[1]["id"], -1) if len(journals) > 1 else 0):
+        if len(expected) != sum(counts.get(journal["id"], -1) for journal in journals):
             raise ValueError(f"{arc['slug']}: LAN source sender count drift")
+        if is_company:
+            if len(expected) != 10 or {proof["event"] for proof in records} != event_ids:
+                raise ValueError("LAN public card must bind each of its ten events once")
+            for journal in journals:
+                if sum(jid == journal["id"] for jid, _ in expected) != counts[journal["id"]]:
+                    raise ValueError("LAN public card native phase sender inventory drift")
+            for event in arc["events"]:
+                _lan_native_receipt(event)
         for event in arc.get("events", []):
             if not isinstance(event, dict) or not re.fullmatch(r"ywc_lan\.(100[0-7]|101[0-7]|102[0-7])", event.get("id", "")):
                 continue
@@ -1042,7 +1104,7 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}/{event['id']}: LAN native trigger drift")
             if event.get("immediate") != "{ ywc_v03_mark_major_delivered = yes }":
                 raise ValueError(f"{arc['slug']}/{event['id']}: LAN native immediate must remain the pinned complete body")
-    if modes != {"normal": 24, "notice12": 6, "notice36": 6}:
+    if modes != {"normal": 34 if has_company else 24, "notice12": 6, "notice36": 6}:
         raise ValueError(f"LAN sender class inventory drift: {modes}")
 
 
@@ -1976,6 +2038,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     is_supported_inline_country = is_dmg or is_kor or is_nqg or is_shu or is_lan or is_nmg or is_mgl
     prefix = "ywc_v03_mgl_inline" if is_mgl else "ywc_v03_nmg_inline" if is_nmg else "ywc_v03_lan_inline" if is_lan else "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
     arcs = (_shu_active_arcs(catalog) if is_shu else _dmg_active_arcs(catalog) if is_dmg
+            else _lan_active_arcs(catalog) if is_lan
             else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"])
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}
@@ -2014,10 +2077,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     receipt_pattern = r"name\s*=\s*(ywc_v03_dmg_[a-z0-9_]*_last_event|ywc_nmg_[a-z0-9_]*_last_event)\s+value\s*=\s*([0-9]+)"
                     receipt_match = re.search(receipt_pattern, event["immediate"])
                 if is_lan:
-                    receipt_variable, receipt_value = None, None
-                    nodes = parse_block(event["immediate"])
-                    if len(nodes) != 1 or nodes[0].key != "ywc_v03_mark_major_delivered" or nodes[0].op != "=" or nodes[0].value != "yes":
-                        raise ValueError(f"{event['id']}: unsupported LAN immediate body")
+                    receipt_variable, receipt_value = _lan_native_receipt(event)
                 elif is_shu:
                     receipt_variable, receipt_value = _shu_expected_receipt(event["id"])
                     native_receipt = re.search(rf"name\s*=\s*{re.escape(receipt_variable)}\s+value\s*=\s*([0-9]+)", event["immediate"])
@@ -2730,7 +2790,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         pulse=direct_values(children(monthly),"effect")[0]
         prepare = f" {prefix}_prepare = yes\n" if is_nmg else f" {prefix}_prepare = yes "
         script=script[:pulse.value_start+1]+prepare+script[pulse.value_start+1:]
-        if is_kor or is_shu or is_dmg:
+        if is_kor or is_shu or is_dmg or is_lan:
             script = re.sub(r"[ \t]+(?=\r?\n)", "", script)
         journal_scripts[journal_id]=script
     event_hooks={}; ack_hooks={}
