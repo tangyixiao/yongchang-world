@@ -40,7 +40,7 @@ class OIRWorld(PulseWorld):
  def __init__(self):
   facts={'ywc_v03_initialized':1,'ywc_v03_active_arc_count':0,'ywc_v03_visible_task_count':0,
    'ywc_flavor_oir_banner_cohesion':70,'yearly_gross_income':5200,'gold_reserves':10000,
-   'bureaucracy':100,'net_fixed_income':100,'army_size':2200,
+   'bureaucracy':100,'net_fixed_income':100,'army_size':10,
    'fixture_modifiers':{'military_wages_medium'},'fixture_relations':{'SHU':10,'RUS':10},
    'goods':{'grain':{'imports':300},'tea':{'exports':60},'small_arms':{'sell_orders':300}},
    'fixture_laws':{'law_serfdom','law_professional_army','law_mercantilism'},
@@ -154,7 +154,7 @@ def play_final(arc,route,w=None):
  return w,ev
 def lose(v,p,partial=False):
  if p=='pasture':v['fixture_states'][0]['buildings'][1]['occupancy']=0.5 if partial else 0.2
- elif p=='supply':v['army_size']=600 if partial else 100
+ elif p=='supply':v['army_size']=3 if partial else 0
  else:v['fixture_states'][0]['market_access']=0.5 if partial else 0.2
 
 def arrive_notice(w,arc,ev):
@@ -333,7 +333,7 @@ class OIRContract(unittest.TestCase):
      fee=fees[p][route-1];w,ev=play_final(a,route);v=w.countries['OIR']
      self.assertEqual(w.treasury['OIR'],-fee);choose(w,ev,'defer')
      if p=='pasture':v['ywc_flavor_oir_banner_cohesion']=40
-     elif p=='supply':v['army_size']=600
+     elif p=='supply':v['army_size']=3
      else:
       v['fixture_states'][0]['market_access']=0.45;v['ywc_flavor_oir_banner_cohesion']=40
      ev=deliver(w,a);choose(w,ev,'defer');w.advance_days(365)
@@ -366,7 +366,7 @@ class OIRContract(unittest.TestCase):
    self.assertEqual(len(w.events),before+1);ev=fire(w,a,int(w.events[-1][1].split('.')[-1]))
    v['in_default']=True
    if p=='pasture':v['fixture_states'][0]['buildings'][1]['occupancy']=0.2
-   elif p=='supply':v['army_size']=100
+   elif p=='supply':v['army_size']=0
    else:v['fixture_states'][0]['market_access']=0.2
    pulse_current(w,a);self.assertIn(key+'_blocked_timer_started',v);self.assertNotIn(key+'_six_months_complete',v)
    w.advance_days(365);other=self.arcs[(i+1)%len(self.arcs)];start(w,other);other_event=deliver(w,other,0);choose(w,other_event,'defer')
@@ -403,7 +403,7 @@ class OIRContract(unittest.TestCase):
    p=pre(a);key='ywc_oir_'+p;w,ev=play_final(a,3);v=w.countries['OIR']
    choose(w,ev,'defer');ev=deliver(w,a);choose(w,ev,'defer')
    if p=='pasture':v['ywc_flavor_oir_banner_cohesion']=30
-   elif p=='supply':v['army_size']=400
+   elif p=='supply':v['army_size']=1
    else:v['fixture_states'][0]['market_access']=0.45
    ev=deliver(w,a);choose(w,ev,'defer');w.advance_days(365);notice=deliver(w,a,0)
    self.assertEqual(notice['id'],a['events'][-2]['id']);choose(w,notice,'narrow_scope')
@@ -442,7 +442,7 @@ class OIRContract(unittest.TestCase):
    w.advance_days(365);n=deliver(w,a,0);self.assertEqual(n['id'],a['events'][-2]['id']);choose(w,n,'defer')
    w.advance_days(730);n=deliver(w,a,0);self.assertEqual(n['id'],a['events'][-1]['id']);choose(w,n,'defer')
    if p=='pasture':v['fixture_states'][0]['buildings'][1]['occupancy']=0.8
-   elif p=='supply':v['army_size']=2200
+   elif p=='supply':v['army_size']=10
    else:v['fixture_states'][0]['market_access']=0.9
    pulse_current(w,a)
    for suffix in ('blocked_timer_started','blocked_12_due','blocked_36_due','12_notice_sent','36_notice_sent','notice_event','last_notice_event'):
