@@ -201,7 +201,10 @@ def _fresh_three_arcs(order=ARC_ORDER, is_subject=True):
     assert world.countries["LAN"].get("ywc_v03_active_arc_count") == 0
     assert world.countries["LAN"].get("ywc_v03_visible_task_count") == 0
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
-    native = {arc["slug"]: journals[arc["journals"][0]["id"]] for arc in catalog["arcs"]}
+    # This fixture proves the original three arcs and six native source orders.
+    # Company-public participation has its own real-fact source-order scenario.
+    native = {arc["slug"]: journals[arc["journals"][0]["id"]]
+              for arc in catalog["arcs"] if arc["era"] == "foundation"}
     admissions = []
     for slug in order:
         definition = native[slug]
