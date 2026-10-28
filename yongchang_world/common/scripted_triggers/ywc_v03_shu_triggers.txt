@@ -182,11 +182,19 @@ ywc_shu_service_terminal_ready = {
 		}
 	}
 }
+# Both records resolve this fee. Source eligibility is checked when granting
+# the waiver; later loss of historical source evidence does not create a debt.
+ywc_shu_port_fee_covered = {
+ OR = {
+  has_variable = ywc_shu_port_fee_paid
+  has_variable = ywc_shu_port_fee_waived
+ }
+}
 ywc_shu_port_terminal_unified_ready = {
-	AND = { var:ywc_shu_port_route = 1 has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_receipts_checked has_variable = ywc_shu_port_fee_paid ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
+	AND = { var:ywc_shu_port_route = 1 has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_receipts_checked ywc_shu_port_fee_covered = yes ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
 }
 ywc_shu_port_terminal_shared_ready = {
-	AND = { var:ywc_shu_port_route = 2 has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_receipts_checked has_variable = ywc_shu_port_fee_paid ywc_shu_v03_port_execution_ready = yes has_variable = ywc_shu_port_merchant_review has_variable = ywc_shu_port_local_share NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
+	AND = { var:ywc_shu_port_route = 2 has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_receipts_checked ywc_shu_port_fee_covered = yes ywc_shu_v03_port_execution_ready = yes has_variable = ywc_shu_port_merchant_review has_variable = ywc_shu_port_local_share NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
 }
 ywc_shu_port_terminal_limited_ready = {
 	AND = { OR = { var:ywc_shu_port_route = 3 var:ywc_shu_port_route = 4 } has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_receipts_checked has_variable = ywc_shu_port_law_verified ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
@@ -379,6 +387,43 @@ ywc_shu_port_credit_offer_ready = {
  net_fixed_income >= 0
  NOT = { in_default = yes }
  NOT = { has_modifier = declared_bankruptcy }
+}
+
+# A real tax-book merchant advance: the acceptance record, a positive principal,
+# and the consultation right granted at acceptance. Repayment of the principal
+# does not erase the recorded consultation right; a forged flag or a broken
+# (nonpositive) principal is not a source.
+ywc_shu_merchant_consultation_source = {
+ has_variable = ywc_shu_merchant_consultation
+ has_variable = ywc_shu_merchant_advance
+ has_variable = ywc_shu_merchant_principal
+ var:ywc_shu_merchant_principal > 0
+}
+
+# The 1019 promise: an actual settled central register result plus the still-
+# owned original pilot state halves the later verification fee. A non-central
+# result, or a lost pilot state, keeps the original fee.
+ywc_shu_port_central_discount_ready = {
+ var:ywc_v03_shu_v03_shu_fiscal_register_outcome = 1
+ has_variable = ywc_shu_fiscal_outcome_central_audit
+ ywc_shu_v03_has_pilot_state = yes
+}
+
+# The menu and execution must use the same current price. Half cash alone
+# does not establish a central discount after the original pilot is lost.
+ywc_shu_port_verification_affordable = {
+ OR = {
+  ywc_shu_port_fee_covered = yes
+  AND = {
+   has_variable = ywc_shu_port_cost
+   var:ywc_shu_port_cost > 0
+   OR = {
+    ywc_shu_merchant_consultation_source = yes
+    AND = { ywc_shu_port_central_discount_ready = yes gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
+    gold_reserves >= var:ywc_shu_port_cost
+   }
+  }
+ }
 }
 
 ywc_shu_port_legacy_offer_reopen_ready = {

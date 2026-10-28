@@ -246,7 +246,11 @@ class ShuFoundationContractTest(unittest.TestCase):
         port = _arc(self.catalog, PORT_SLUG)
         verify = next(row for row in port["events"] if row["id"] == "ywc_shu.1022")
         verification = next(row for row in verify["options"] if row["key"] == "pay_verification")
-        self.assertIn("gold_reserves >= { value = var:ywc_shu_port_cost }", verification["trigger"])
+        for phase in ("trigger", "effect"):
+            self.assertIn("ywc_shu_port_verification_affordable = yes", verification[phase])
+        price_guard = _helper_body(self.triggers, "ywc_shu_port_verification_affordable")
+        self.assertIn("gold_reserves >= var:ywc_shu_port_cost", price_guard)
+        self.assertIn("ywc_shu_port_central_discount_ready = yes", price_guard)
         self.assertIn("One-time fee equals weekly income", verification["cost_note"]["en"])
 
     def test_charges_are_real_guarded_and_never_double_billed(self):
