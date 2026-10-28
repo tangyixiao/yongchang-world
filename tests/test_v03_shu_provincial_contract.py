@@ -98,6 +98,27 @@ def finish_review(world, arc, outcome=1):
 
 
 class ShuProvincialContractMiddle(unittest.TestCase):
+    def test_losing_all_candidate_pilots_after_admission_still_delivers_a_real_exit(self):
+        world = new_world()
+        arc = middle_arc(world.cat)
+        state = world.countries[world.tag]
+        world.refresh(arc)
+        self.assertEqual(state["ywc_v03_active_arc_count"], 1)
+        state["states"][0]["owned"] = False
+        other = copy.deepcopy(state["states"][0])
+        other["region"] = "s:STATE_BEIJING"
+        other["owned"] = True
+        state["states"].append(other)
+        world.pulse(arc)
+        self.assertEqual([event for _, event in world.events], ["ywc_shu.1100"])
+        opening = world.deliver(arc, "ywc_shu.1100")
+        self.assertFalse(option_legal(world, opening, "pilot_sichuan"))
+        self.assertTrue(option_legal(world, opening, "no_provincial_pilot"))
+        choose(world, arc, opening, "withdraw_before_prov_pilot")
+        self.assertEqual(state["ywc_shu_prov_outcome"], 4)
+        self.assertEqual((state["ywc_v03_active_arc_count"], state["ywc_v03_visible_task_count"]), (0, 0))
+        self.assertEqual(world.treasury[world.tag], 0)
+
     def test_registered_content_keeps_all_foundation_events_and_has_no_calendar_force(self):
         world = new_world()
         arc = middle_arc(world.cat)
