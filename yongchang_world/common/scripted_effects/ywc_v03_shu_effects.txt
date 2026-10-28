@@ -653,8 +653,26 @@ ywc_shu_collect_port_repayment = {
 
 ywc_shu_pay_port_fee = {
 	if = {
-		limit = { NOT = { has_variable = ywc_shu_port_fee_paid } has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		limit = { NOT = { has_variable = ywc_shu_port_fee_paid } NOT = { has_variable = ywc_shu_port_fee_waived } has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		# A real, still-present tax-book consultation right waives the same
+		# consultation fee without any treasury transfer. An already paid fee is
+		# never retroactively rewritten into a waiver and never refunded.
 		if = {
+			limit = { ywc_shu_merchant_consultation_source = yes }
+			set_variable = { name = ywc_shu_port_fee_waived value = 1 }
+		}
+		else_if = {
+			# The 1019 promise: a settled central register result plus the still-
+			# owned original pilot state halves this verification fee. A leftover
+			# consultation half-mode does not stack the two discounts into a
+			# quarter fee; the halved fee stays a real treasury payment.
+			limit = { ywc_shu_port_central_discount_ready = yes gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
+			set_variable = { name = ywc_shu_port_fee_amount value = var:ywc_shu_port_cost }
+			change_variable = { name = ywc_shu_port_fee_amount multiply = 0.5 }
+			set_variable = { name = ywc_shu_port_fee_paid value = 1 }
+			add_treasury = { value = var:ywc_shu_port_fee_amount multiply = -1 }
+		}
+		else_if = {
 			limit = { has_variable = ywc_shu_port_fee_half_mode gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
 			set_variable = { name = ywc_shu_port_fee_amount value = var:ywc_shu_port_cost }
 			change_variable = { name = ywc_shu_port_fee_amount multiply = 0.5 }
