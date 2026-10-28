@@ -982,7 +982,7 @@ def _run_actual_full_shu_native_handoffs():
         "ywc_shu.1021": "current_law_review",
         "ywc_shu.1022": "pay_verification",
         "ywc_shu.1023": "central_form",
-        "ywc_shu.1024": "retry_after_repair",
+        "ywc_shu.1024": "central_burden",
         "ywc_shu.1025": "settle_unified",
     }
     world = _new_world()
@@ -1072,7 +1072,7 @@ def _run_port_notice_presence_and_same_id_priority():
                "ywc_shu.1021": "current_law_review",
                "ywc_shu.1022": "pay_verification",
                "ywc_shu.1023": "share_form",
-               "ywc_shu.1024": "retry_after_repair"}
+               "ywc_shu.1024": "central_burden"}
     world, _ = _run_monthly_fairness_order((ROOTS[1], ROOTS[2]), choices)
     state = world.countries[world.tag]
     deliveries = []
@@ -1082,9 +1082,13 @@ def _run_port_notice_presence_and_same_id_priority():
         world.advance_days(30)
         world.elapsed_months += 1
         _refresh_actual_journal_history(world)
-        if day == 990:
-            # Controlled business fact for the authored in-default notice path.
+        if day == 1230:
+            # Let the real 1200 burden choice start observation before the
+            # controlled default interrupts it and creates a native notice.
             state["in_default"] = True
+            # No repair has occurred: acknowledge and retain the unfinished
+            # step instead of using the now-guarded observation restart.
+            choices["ywc_shu.1024"] = "resume_pending_port_step"
         service_rows = _pulse_actual_active_arc(world, ROOTS[1][0], day, choices)
         if day == 1230:
             port_rows = _pulse_actual_active_arc(world, ROOTS[2][0], day, choices)
@@ -1138,13 +1142,13 @@ def _run_port_notice_presence_and_same_id_priority():
                                           dict(state)))
             port_rows = _pulse_actual_active_arc(world, ROOTS[2][0], day, choices)
         if day == 1350:
-            # The authored tracker may refresh the notice queue during its
-            # pulse; set the presence-mode-zero variant only after that real
-            # source work, one opportunity before the actual retry.
-            state[queue_name] = 0
+            # Zero is a controlled presence-predicate probe, not a naturally
+            # produced notice value. Keep the live 1024 snapshot unchanged:
+            # the interruption tracker legitimately refreshes it before ACK.
             state["ywc_shu_port_pending_event"] = 1024
             probe = copy.deepcopy(world)
             probe_state = probe.countries[probe.tag]
+            probe_state[queue_name] = 0
             probe_state.pop("ywc_v03_major_event_cooldown", None)
             probe.days_until_expiry[probe.tag].pop("ywc_v03_major_event_cooldown", None)
             if not probe.conditions([["ywc_v03_shu_inline_candidate_31", "=", "yes"]],
@@ -1177,7 +1181,7 @@ def _run_port_notice_presence_and_same_id_priority():
         deliveries.extend(port_rows)
     actual_notice = [row for row in deliveries
                      if row.get("event") == "ywc_shu.1024" and row.get("day") == 1380]
-    if len(actual_notice) != 1 or actual_notice[0].get("option") != "retry_after_repair":
+    if len(actual_notice) != 1 or actual_notice[0].get("option") != "resume_pending_port_step":
         raise AssertionError(("actual_port_notice_ack_mismatch", deliveries,
                               dict(state)))
     proof = next(row for row in reversed(world.trace)
@@ -1443,7 +1447,9 @@ class ShuActualFairnessBaseline(unittest.TestCase):
         result = _run_port_notice_presence_and_same_id_priority()
         self.assertEqual(result["delivery"],
                          {"event": "ywc_shu.1024", "day": 1380,
-                          "option": "retry_after_repair"})
+                          "option": "resume_pending_port_step"})
+        self.assertTrue(result["final_state"]["in_default"])
+        self.assertNotIn("ywc_shu_port_review_due", result["final_state"])
         proof = result["proof"]
         self.assertEqual((proof["candidate"], proof["queue"], proof["epoch"]),
                          (31, "ywc_shu_port_notice_pending_event", 16.0))

@@ -233,7 +233,7 @@ ywc_shu_collect_merchant_repayment = {
 		remove_variable = ywc_shu_merchant_advance_unpaid
 		remove_variable = ywc_shu_merchant_repayment_months
 		set_variable = { name = ywc_shu_merchant_advance_repaid value = 1 }
-		remove_modifier = ywc_shu_local_credit_arrears
+		if = { limit = { NOT = { AND = { has_variable = ywc_shu_port_advance_unpaid OR = { NOT = { has_variable = ywc_shu_port_repayment_clock_initialized } has_variable = ywc_shu_port_legacy_shared_arrears } } } } remove_modifier = ywc_shu_local_credit_arrears }
 	}
 	else = {
 		if = {
@@ -615,24 +615,45 @@ ywc_shu_service_close_withdrawn = {
 	}
 }
 ywc_shu_accept_port_advance = {
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_shu_port_advance_accepted }
-			net_fixed_income >= 0
-			in_default = no
-			NOT = { has_modifier = declared_bankruptcy }
-		}
-		ywc_v03_claim_arc_shu_v03_shu_port_treasury = yes
-		set_variable = { name = ywc_shu_port_principal value = var:ywc_shu_port_cost }
-		add_treasury = { value = var:ywc_shu_port_principal }
-		set_variable = { name = ywc_shu_port_advance_accepted value = 1 }
-		set_variable = { name = ywc_shu_port_advance_unpaid value = 1 }
-		set_variable = { name = ywc_shu_port_repayment_months value = 0 }
-	}
+ if = {
+  limit = { ywc_shu_port_credit_offer_ready = yes }
+  set_variable = { name = ywc_shu_port_principal value = var:ywc_shu_port_cost }
+  add_treasury = { value = var:ywc_shu_port_principal }
+  set_variable = { name = ywc_shu_port_advance_accepted value = 1 }
+  set_variable = { name = ywc_shu_port_advance_unpaid value = 1 }
+  set_variable = { name = ywc_shu_port_repayment_months value = 0 }
+  set_variable = { name = ywc_shu_port_repayment_clock_initialized value = 1 }
+  set_variable = { name = ywc_shu_port_repayment_due value = 1 months = 12 }
+ }
 }
+
+# Old loans lack a reliable signing date; start a conservative clock on upgrade.
+ywc_shu_collect_port_repayment = {
+ if = {
+  limit = { has_variable = ywc_shu_port_advance_unpaid NOT = { has_variable = ywc_shu_port_repayment_clock_initialized } has_modifier = ywc_shu_local_credit_arrears }
+  set_variable = { name = ywc_shu_port_legacy_shared_arrears value = 1 }
+ }
+ if = {
+  limit = { has_variable = ywc_shu_port_advance_unpaid has_variable = ywc_shu_port_principal var:ywc_shu_port_principal > 0 NOT = { has_variable = ywc_shu_port_repayment_clock_initialized } }
+  set_variable = { name = ywc_shu_port_repayment_clock_initialized value = 1 }
+  if = { limit = { NOT = { has_variable = ywc_shu_port_repayment_due } } set_variable = { name = ywc_shu_port_repayment_due value = 1 months = 12 } }
+ }
+ if = {
+  limit = { has_variable = ywc_shu_port_advance_unpaid has_variable = ywc_shu_port_principal var:ywc_shu_port_principal > 0 has_variable = ywc_shu_port_repayment_clock_initialized NOT = { has_variable = ywc_shu_port_repayment_due } gold_reserves >= var:ywc_shu_port_principal }
+  add_treasury = { value = var:ywc_shu_port_principal multiply = -1 }
+  remove_variable = ywc_shu_port_advance_unpaid
+  remove_variable = ywc_shu_port_legacy_shared_arrears
+  set_variable = { name = ywc_shu_port_advance_repaid value = 1 }
+  remove_modifier = ywc_shu_port_credit_arrears
+ }
+ else = {
+  if = { limit = { has_variable = ywc_shu_port_advance_unpaid has_variable = ywc_shu_port_principal var:ywc_shu_port_principal > 0 has_variable = ywc_shu_port_repayment_clock_initialized NOT = { has_variable = ywc_shu_port_repayment_due } } add_modifier = { modifier = ywc_shu_port_credit_arrears months = 12 } }
+ }
+}
+
 ywc_shu_pay_port_fee = {
 	if = {
-		limit = { NOT = { has_variable = ywc_shu_port_fee_paid } net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
+		limit = { NOT = { has_variable = ywc_shu_port_fee_paid } has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
 		if = {
 			limit = { has_variable = ywc_shu_port_fee_half_mode gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
 			set_variable = { name = ywc_shu_port_fee_amount value = var:ywc_shu_port_cost }
@@ -657,18 +678,6 @@ ywc_shu_port_close_unified = {
 			ywc_shu_port_terminal_unified_ready = yes
 		}
 		set_variable = { name = ywc_shu_port_outcome value = 1 }
-		if = {
-			limit = { has_variable = ywc_shu_port_advance_unpaid }
-			if = {
-				limit = { gold_reserves >= { value = var:ywc_shu_port_principal } }
-				add_treasury = { value = var:ywc_shu_port_principal multiply = -1 }
-				remove_variable = ywc_shu_port_advance_unpaid
-				set_variable = { name = ywc_shu_port_advance_repaid value = 1 }
-			}
-			else = {
-				add_modifier = { modifier = ywc_shu_local_credit_arrears months = 12 }
-			}
-		}
 		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_outcome value = var:ywc_shu_port_outcome }
 		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_settled value = 1 }
 		change_variable = { name = ywc_v03_active_arc_count add = -1 }
@@ -686,18 +695,6 @@ ywc_shu_port_close_shared = {
 			ywc_shu_port_terminal_shared_ready = yes
 		}
 		set_variable = { name = ywc_shu_port_outcome value = 2 }
-		if = {
-			limit = { has_variable = ywc_shu_port_advance_unpaid }
-			if = {
-				limit = { gold_reserves >= { value = var:ywc_shu_port_principal } }
-				add_treasury = { value = var:ywc_shu_port_principal multiply = -1 }
-				remove_variable = ywc_shu_port_advance_unpaid
-				set_variable = { name = ywc_shu_port_advance_repaid value = 1 }
-			}
-			else = {
-				add_modifier = { modifier = ywc_shu_local_credit_arrears months = 12 }
-			}
-		}
 		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_outcome value = var:ywc_shu_port_outcome }
 		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_settled value = 1 }
 		change_variable = { name = ywc_v03_active_arc_count add = -1 }
@@ -715,18 +712,6 @@ ywc_shu_port_close_legacy = {
 			ywc_shu_port_terminal_limited_ready = yes
 		}
 		set_variable = { name = ywc_shu_port_outcome value = 3 }
-		if = {
-			limit = { has_variable = ywc_shu_port_advance_unpaid }
-			if = {
-				limit = { gold_reserves >= { value = var:ywc_shu_port_principal } }
-				add_treasury = { value = var:ywc_shu_port_principal multiply = -1 }
-				remove_variable = ywc_shu_port_advance_unpaid
-				set_variable = { name = ywc_shu_port_advance_repaid value = 1 }
-			}
-			else = {
-				add_modifier = { modifier = ywc_shu_local_credit_arrears months = 12 }
-			}
-		}
 		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_outcome value = var:ywc_shu_port_outcome }
 		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_settled value = 1 }
 		change_variable = { name = ywc_v03_active_arc_count add = -1 }
