@@ -200,3 +200,38 @@ ywc_v03_release_arc_shu_v03_shu_fiscal_register = {
 		ywc_v03_bridge_shu_court_one = yes
 	}
 }
+
+# M3 SHU provincial contract: source-owned helpers.
+ywc_v03_claim_arc_shu_v03_shu_provincial_contract = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_started }
+			NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+		}
+		set_variable = { name = ywc_v03_shu_v03_shu_provincial_contract_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	}
+}
+
+ywc_v03_release_arc_shu_v03_shu_provincial_contract = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_shu_v03_shu_provincial_contract_started
+			NOT = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_settled }
+			has_variable = ywc_shu_prov_outcome
+			var:ywc_shu_prov_outcome > 0
+		}
+		set_variable = { name = ywc_v03_shu_v03_shu_provincial_contract_settled value = 1 }
+		set_variable = { name = ywc_v03_shu_v03_shu_provincial_contract_outcome value = var:ywc_shu_prov_outcome }
+		remove_variable = ywc_shu_prov_pending_event
+remove_variable = ywc_shu_prov_review_running
+change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
