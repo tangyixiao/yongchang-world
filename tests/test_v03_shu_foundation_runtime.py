@@ -1068,6 +1068,41 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         self.assertGreaterEqual(runtime.delivered.count("ywc_shu.1024"), 2)
 
 
+    def test_shared_port_terms_recovery_follows_the_generated_delivery_queue(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "merchant_share"),
+                              ("ywc_shu.1019", "split_books"),
+                              ("ywc_shu.1020", "refuse_credit"),
+                              ("ywc_shu.1021", "current_law_review"),
+                              ("ywc_shu.1022", "pay_verification"),
+                              ("ywc_shu.1023", "central_form"),
+                              ("ywc_shu.1024", "shared_burden")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1025")
+        options = {o["key"]: o for o in runtime.event_map["ywc_shu.1025"]["options"]}
+        self.assertFalse(runtime.cond(options["settle_share"]["trigger"]))
+        self.assertTrue(runtime.cond(options["revisit_share_terms"]["trigger"]))
+        cash = runtime.world.treasury["SHU"]
+        runtime.choose("ywc_shu.1025", "revisit_share_terms")
+        self.assertEqual(runtime.state["SHU"]["ywc_shu_port_pending_event"], 1023)
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        for event, option in (("ywc_shu.1023", "share_form"),
+                              ("ywc_shu.1024", "shared_burden")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        self.assertIn("ywc_shu_port_review_due", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        runtime.dispatch_until("ywc_shu.1025")
+        self.assertTrue(runtime.cond(options["settle_share"]["trigger"]))
+        self.assertFalse(runtime.cond(options["revisit_share_terms"]["trigger"]))
+        runtime.choose("ywc_shu.1025", "settle_share")
+        self.assertEqual(runtime.state["SHU"]["ywc_shu_port_outcome"], 2)
+        self.assertEqual(runtime.world.treasury["SHU"], cash)
+
     def test_port_retry_requires_actual_interruption_and_preserves_qualified_observation(self):
         for burden_choice in ("central_burden", "shared_burden"):
             with self.subTest(burden_choice=burden_choice):
@@ -1079,7 +1114,7 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
                 })
                 runtime.open()
                 for event, option in (("ywc_shu.1018", "unified_customs"),
-                                      ("ywc_shu.1019", "publish_books"),
+                                      ("ywc_shu.1019", "split_books" if burden_choice == "shared_burden" else "publish_books"),
                                       ("ywc_shu.1020", "refuse_credit"),
                                       ("ywc_shu.1021", "current_law_review"),
                                       ("ywc_shu.1022", "pay_verification"),

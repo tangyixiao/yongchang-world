@@ -667,7 +667,7 @@ _SHU_SOURCE_HASHES = {
     "ywc_je_v03_shu_service_contract": "b5b8acdee5f291e52e7ad35a94611fcab5104263c56f85ff4f5835c223fd174f",
     "ywc_je_v03_shu_service_appointments": "bd5a2562cdf059f0267f81c2766ba9eac7e1e119d72876d5f644571242779b16",
     "ywc_je_v03_shu_service_successor": "8063472bcaecbc2db0b782e270dcb8e2a1c6b89671e6e0204725d7791cce4b4d",
-    "ywc_je_v03_shu_port_customs": "6fbce69e2ff4e47651c7cfa81147bfae8117416ffddc46c55aa1ad96e7de31df",
+    "ywc_je_v03_shu_port_customs": "8a69d7f45b08fce68c41036ace18ba713e2c2171cb261928ed682f04ccb585e9",
 }
 
 _SHU_IMMEDIATE_HASHES = {
@@ -691,7 +691,7 @@ _SHU_IMMEDIATE_HASHES = {
     "ywc_shu.1017": "caff16ec7fc375553a49fe71f02d81f79bf5488558885667d3a95591f7550817",
     "ywc_shu.1018": "9362934ea8a50f8e448126c372b49e101747ceccb0b6bd769be194f328c30069",
     "ywc_shu.1019": "63e4c6f8d4bd0675276fa6146c9aaad7f5af16cbba8d545040f40c89f1b0dc39",
-    "ywc_shu.1020": "3a3f1d6ab86d2f6115d0934f7a76599aea5bcb1e70687a836f7a2f7fde8e25c1",
+    "ywc_shu.1020": "92ba2da3bc3c60570dccfbebb4e4b140a3f454a69b68af322437e647da48a53d",
     "ywc_shu.1021": "ec3ca968f8bb30d848e77b2084ad347ea5375df8187bcfdf05cfd0bab2901adf",
     "ywc_shu.1022": "ef10aea6dd7349bdd27cadc07aa6fa8832fc5c96be1d567bbc36b27bf127c52e",
     "ywc_shu.1023": "5378b52b333f4cc761568e59847471e22e250de43fc9b11b1456f8c5140e3ce5",
