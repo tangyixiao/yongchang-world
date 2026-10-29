@@ -710,6 +710,7 @@ _SHU_FOUNDATION_SLUGS = (
     "v03_shu_fiscal_register", "v03_shu_service_compact", "v03_shu_port_treasury",
 )
 _SHU_MIDDLE_SLUG = "v03_shu_provincial_contract"
+_SHU_PUBLIC_SLUG = "v03_shu_public_deliberation"
 # Filled only from reviewed authored sources, never from mutable metadata.
 _SHU_MIDDLE_SOURCE_HASHES: dict[str, str] = {
     "ywc_je_v03_shu_provincial_charter": "31ada106f54d24b24fbf0f569759cfb7aa00ee1b7fc70bdb9e2ef0d74b6cc057",
@@ -725,6 +726,21 @@ _SHU_MIDDLE_IMMEDIATE_HASHES: dict[str, str] = {
     "ywc_shu.1106": "3b66aeb131b771f516ff8867b812bcdf2f194047575c493530a7bbf6eb30587d",
     "ywc_shu.1107": "534845181a7d98079ed085c99210e5b139aaacd80f99b44d175afc06987a057d"
 }
+# Reviewed frozen public JE and immediate sources; metadata is never a pin.
+_SHU_PUBLIC_SOURCE_HASHES: dict[str, str] = {
+    "ywc_je_v03_shu_deliberation_eligibility": "5f613a494026d580dc385f664f2404890c9e34e8c39243c4149ff37a166908f5",
+    "ywc_je_v03_shu_deliberation_appeal_execution": "80b443e0068540c23ecd0bc6efd9e336f95fcc927532d850335c920ce434e526"
+}
+_SHU_PUBLIC_IMMEDIATE_HASHES: dict[str, str] = {
+    "ywc_shu.1120": "70963768baa5da1b41f63d371fdb97be0c57cf3dba47ef7d6b35f7dfed180932",
+    "ywc_shu.1121": "71ef236260b7ae81c367a171bc7773fe6ab30ce5ba3aba61089caebed480737c",
+    "ywc_shu.1122": "59f7b5cf2a7191c41e82f9a69b1f4b7662712c571b19bc487fd59dbdb3a3abb1",
+    "ywc_shu.1123": "cfc97b9db48ac90052481ae825a0bad755546909c4d3f72bd039637375950dc7",
+    "ywc_shu.1124": "dcfceddd5961119eb1357b0c33ca52d3b48612481da6ff367ae60e42635e44fe",
+    "ywc_shu.1125": "e153b5acd487819029eec45e03b6de4b185464d6393b09f719e1db717ef08d3e",
+    "ywc_shu.1126": "37518a86cd00849009beed68de0f9875acd998b352be93e5a1d325530d7591ff",
+    "ywc_shu.1127": "069ba148b5c57db18998b37511cb675fe41b7c38dfe2e7da17886244b8b4a240"
+}
 
 
 def _shu_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -733,18 +749,40 @@ def _shu_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_SHU_FOUNDATION_SLUGS):
         raise ValueError("SHU inline adapter requires exactly its three foundation arcs")
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    middle = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") != _SHU_MIDDLE_SLUG or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG} or arc.get("era") != "middle":
             slug = arc.get("slug") if isinstance(arc, dict) else None
             raise ValueError(f"unregistered SHU inline arc: {slug}")
-    if len(extra) > 1:
-        raise ValueError("SHU inline adapter permits one registered provincial-contract arc")
-    # Append middle sites after the original 31, regardless of catalog order.
+        if arc["slug"] in middle:
+            raise ValueError("duplicate registered SHU middle arc")
+        middle[arc["slug"]] = arc
+    if _SHU_PUBLIC_SLUG in middle and _SHU_MIDDLE_SLUG not in middle:
+        raise ValueError("SHU public registration must preserve the provincial-contract sources")
+    # Append registered middle sites after the original 31 in fixed order.
     return [next(arc for arc in foundation if arc["slug"] == slug)
-            for slug in _SHU_FOUNDATION_SLUGS] + extra
+            for slug in _SHU_FOUNDATION_SLUGS] + [middle[slug] for slug in
+                (_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG) if slug in middle]
+
+
+def _shu_public_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_shu\.112[0-7]", event_id):
+        raise ValueError(f"{event_id}: unsupported SHU public native event")
+    value = int(event_id.rsplit(".", 1)[1])
+    name = "ywc_shu_delib_last_event"
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = ywc_v03_shu_event_dispatch value = {value} }} "
+                f"set_variable = {{ name = {name} value = {value} }} }}")
+    if tuple(_nqg_node_shape(node) for node in parse_block(event.get("immediate", ""))) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported SHU public native immediate body")
+    return name, value
 
 
 def _shu_expected_receipt(event_id: str) -> tuple[str, int]:
+    if isinstance(event_id, str) and re.fullmatch(r"ywc_shu\.112[0-7]", event_id):
+        return "ywc_shu_delib_last_event", int(event_id.rsplit(".", 1)[1])
     match = re.fullmatch(r"ywc_shu\.(10(?:0[0-9]|1[0-9]|2[0-5])|110[0-7])", event_id)
     if not match:
         raise ValueError(f"unsupported SHU native event receipt owner: {event_id}")
@@ -802,9 +840,12 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
     if catalog.get("key") != "country_shu" or not isinstance(catalog.get("arcs"), list):
         raise ValueError("SHU inline adapter requires the SHU catalog")
     active = _shu_active_arcs(catalog)
-    has_middle = len(active) == 4
-    source_hashes = {**_SHU_SOURCE_HASHES, **(_SHU_MIDDLE_SOURCE_HASHES if has_middle else {})}
-    immediate_hashes = {**_SHU_IMMEDIATE_HASHES, **(_SHU_MIDDLE_IMMEDIATE_HASHES if has_middle else {})}
+    has_middle = any(arc["slug"] == _SHU_MIDDLE_SLUG for arc in active)
+    has_public = any(arc["slug"] == _SHU_PUBLIC_SLUG for arc in active)
+    source_hashes = {**_SHU_SOURCE_HASHES, **(_SHU_MIDDLE_SOURCE_HASHES if has_middle else {}),
+                     **(_SHU_PUBLIC_SOURCE_HASHES if has_public else {})}
+    immediate_hashes = {**_SHU_IMMEDIATE_HASHES, **(_SHU_MIDDLE_IMMEDIATE_HASHES if has_middle else {}),
+                        **(_SHU_PUBLIC_IMMEDIATE_HASHES if has_public else {})}
     witnesses: set[str] = set()
     queues_by_arc: dict[str, set[str]] = {}
     queue_owners: dict[str, str] = {}
@@ -818,6 +859,12 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
         journals = arc.get("journals")
         if not isinstance(journals, list) or not journals:
             raise ValueError(f"{arc['slug']}: source journals are required")
+        if arc["slug"] == _SHU_PUBLIC_SLUG:
+            if [j.get("id") for j in journals] != ["ywc_je_v03_shu_deliberation_eligibility", "ywc_je_v03_shu_deliberation_appeal_execution"]:
+                raise ValueError("SHU public requires its two ordered native phases")
+            if len(arc.get("events", [])) != 8 or {event.get("id") for event in arc["events"]} != {
+                    f"ywc_shu.{n}" for n in range(1120, 1128)}:
+                raise ValueError("SHU public requires its eight native events")
         phases = adapter["live_phases"]
         if not isinstance(phases, list) or len(phases) != len(journals):
             raise ValueError(f"{arc['slug']}: every native JE needs a phase witness")
@@ -843,6 +890,8 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}/{event_id}: native immediate must remain source-owned text")
             if event_id not in immediate_hashes or hashlib.sha256(immediate.encode("utf-8")).hexdigest() != immediate_hashes[event_id]:
                 raise ValueError(f"{arc['slug']}/{event_id}: frozen native immediate source changed")
+            if arc["slug"] == _SHU_PUBLIC_SLUG:
+                _shu_public_native_receipt(event)
             immediate_nodes = parse_block(immediate)
             major_calls = [i for i, node in enumerate(immediate_nodes) if node.key == "ywc_v03_mark_major_delivered" and node.op == "=" and node.value == "yes"]
             receipts = [(i, node) for i, node in enumerate(immediate_nodes) if node.key == "set_variable" and isinstance(node.value, tuple) and len(direct_values(children(node), "name")) == 1 and direct_values(children(node), "name")[0].value == receipt_name]
@@ -857,6 +906,13 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
         records = adapter["branches"]
         if not isinstance(records, list) or len(records) != len(actual):
             raise ValueError(f"{arc['slug']}: every native sender site must be recorded")
+        if arc["slug"] == _SHU_PUBLIC_SLUG:
+            if len(records) != 8:
+                raise ValueError("SHU public requires eight native sender sites")
+            for journal, numbers in zip(journals, (range(1120, 1124), range(1124, 1128))):
+                bound = [proof for proof in records if isinstance(proof, dict) and proof.get("journal") == journal["id"]]
+                if len(bound) != 4 or {proof.get("event") for proof in bound} != {f"ywc_shu.{n}" for n in numbers}:
+                    raise ValueError("SHU public native phases must bind their four/four partition")
         event_ids = {event["id"] for event in arc["events"]}
         for proof, (jid, source) in zip(records, actual):
             total_sites += 1
@@ -895,6 +951,10 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
                 prior_owner = queue_owners.setdefault(candidate["queue"], owner)
                 if prior_owner != owner:
                     raise ValueError(f"SHU queue ownership crosses arcs: {candidate['queue']}")
+            if arc["slug"] == _SHU_PUBLIC_SLUG and proof["candidates"] != [{
+                    "queue": "ywc_shu_delib_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(proof["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("SHU public sender must own its exact native event queue")
             # Bind every pre-trigger transaction operation (queue removal, auxiliary cleanup and claim).
             script = next(j["script"] for j in journals if j["id"] == jid)
             native = _branch_node(script, source)[0]
@@ -914,12 +974,14 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
         if direct_adds != _kor_direct_adds(arc):
             raise ValueError(f"{arc['slug']}: direct-add source inventory drift")
         observed_direct_adds.extend(direct_adds)
-    expected_sites = 39 if has_middle else 31
+    expected_sites = 31 + (8 if has_middle else 0) + (8 if has_public else 0)
     if total_sites != expected_sites:
         raise ValueError(f"SHU adapter requires exactly {expected_sites} native sender sites")
     required_ids = {f"ywc_shu.{n}" for n in range(1000, 1026)}
     if has_middle:
         required_ids |= {f"ywc_shu.{n}" for n in range(1100, 1108)}
+    if has_public:
+        required_ids |= {f"ywc_shu.{n}" for n in range(1120, 1128)}
     if expected_event_ids != required_ids:
         raise ValueError(f"SHU adapter requires exactly its {len(required_ids)} native events")
     if set(immediate_hashes) != expected_event_ids:
@@ -2587,7 +2649,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     checks += [f"has_variable = {q['queue']}", f"var:{q['queue']} = var:{snap_value}"]
             if not is_shu:
                 checks += [f"var:{callback_proof} = 1",f"has_variable = {callback_id}",f"has_variable = {callback_epoch}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {callback_queue}"]
-            if (is_dmg or is_nmg) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
+            if (is_dmg or is_nmg or (is_shu and c["arc"]["slug"] == _SHU_PUBLIC_SLUG)) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
                 checks += [f"has_variable = {c['receipt_variable']}",f"var:{c['receipt_variable']} = {c['receipt_value']}"]
             checks += _nmg_native_postchecks(c, prefix) if is_nmg else []
             if is_nmg:

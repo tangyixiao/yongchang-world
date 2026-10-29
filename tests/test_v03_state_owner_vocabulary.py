@@ -24,7 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # nested in the selected owned state before entering pop/workplace scope.
 # Eight more selected-state predicates belong to the market card; PHI's own
 # border predicate uses c:PHI and cannot count as one of ROOT's eight.
-COUNTS = dict(dmg=23, jhg=4, kor=6, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
+# Public deliberation appends sixteen state-owner reads; the old44 remain intact.
+COUNTS = dict(dmg=23, jhg=4, kor=6, shu=60, oir=9, nmg=6, tib=8, nqg=1, lan=9)
 
 
 def source(path):
