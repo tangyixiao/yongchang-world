@@ -489,3 +489,408 @@ ywc_nmg_market_offer_matches = {
   market ?= scope:ywc_nmg_market_request_market
  }
 }
+
+# Parish school gates. Every threshold reads the real employed pop at its real
+# workplace, the current laws, the live institution investment and one actual
+# governing interest group; no school building, teacher profession or parish
+# fund is invented anywhere in this card.
+ywc_nmg_school_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled }
+}
+
+ywc_nmg_school_pilot_owned = {
+	has_variable = ywc_nmg_school_pilot
+	var:ywc_nmg_school_pilot = { owner = ROOT }
+}
+
+ywc_nmg_school_office_staffed_25 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_office_staffed_5 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_office_staffed_8 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_academics_5 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = academics
+			is_employed = yes
+			workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_academics_8 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = academics
+			is_employed = yes
+			workplace ?= { is_building_type = building_university occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_clergymen_5 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = clergymen
+			is_employed = yes
+			workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_ig_civic_support = {
+	OR = {
+		any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+		any_interest_group = { is_interest_group_type = ig_petty_bourgeoisie is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+	}
+}
+
+ywc_nmg_school_ig_devout_support = {
+	any_interest_group = { is_interest_group_type = ig_devout is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_nmg_school_ig_secular_support = {
+	any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_nmg_school_mode1_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	OR = {
+		has_law_or_variant = law_type:law_religious_schools
+		has_law_or_variant = law_type:law_public_schools
+	}
+	has_law_or_variant = law_type:law_freedom_of_conscience
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	legitimacy >= 25
+	ywc_nmg_school_office_staffed_5 = yes
+	ywc_nmg_school_academics_5 = yes
+	ywc_nmg_school_ig_civic_support = yes
+}
+
+ywc_nmg_school_mode2_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	has_law_or_variant = law_type:law_religious_schools
+	OR = {
+		has_law_or_variant = law_type:law_state_religion
+		has_law_or_variant = law_type:law_freedom_of_conscience
+	}
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_nmg_school_office_staffed_5 = yes
+	ywc_nmg_school_clergymen_5 = yes
+	ywc_nmg_school_ig_devout_support = yes
+}
+
+ywc_nmg_school_mode3_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	has_law_or_variant = law_type:law_public_schools
+	has_law_or_variant = law_type:law_total_separation
+	institution_investment_level = { institution = institution_schools value >= 2 }
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	legitimacy >= 25
+	ywc_nmg_school_office_staffed_8 = yes
+	ywc_nmg_school_academics_8 = yes
+	ywc_nmg_school_ig_secular_support = yes
+}
+
+ywc_nmg_school_mode_ready = {
+	OR = {
+		AND = { var:ywc_nmg_school_mode = 1 ywc_nmg_school_mode1_ready = yes }
+		AND = { var:ywc_nmg_school_mode = 2 ywc_nmg_school_mode2_ready = yes }
+		AND = { var:ywc_nmg_school_mode = 3 ywc_nmg_school_mode3_ready = yes }
+	}
+}
+
+ywc_nmg_school_limited_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	bureaucracy >= 0
+	legitimacy >= 20
+	ywc_nmg_school_office_staffed_25 = yes
+}
+
+# The genuine old bilingual office completed outcome 3 in full, with every
+# earned record intact, and still meets its current office, school and
+# literacy qualification. A lone roster flag never satisfies this contract.
+ywc_nmg_school_prior_office_current = {
+	ywc_nmg_school_pilot_owned = yes
+	ywc_nmg_school_office_staffed_8 = yes
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	literacy_rate >= 0.4
+}
+
+ywc_nmg_school_prior_bilingual_contract = {
+	has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started
+	has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled
+	var:ywc_v03_nmg_v03_nmg_bilingual_office_outcome = 3
+	has_variable = ywc_nmg_office_established
+	has_variable = ywc_nmg_office_closed
+	var:ywc_nmg_office_route = 1
+	has_variable = ywc_nmg_office_fee_paid
+	var:ywc_nmg_office_fee > 0
+	has_variable = ywc_nmg_office_roster_full
+	has_variable = ywc_nmg_office_schools
+	has_variable = ywc_nmg_office_parish_recorded
+	has_variable = ywc_nmg_office_six_months_complete
+	NOT = { has_variable = ywc_nmg_office_limited_selected }
+	NOT = { has_variable = ywc_nmg_office_withdrawn }
+	ywc_nmg_school_prior_office_current = yes
+}
+
+ywc_nmg_school_teacher_current = {
+	OR = {
+		AND = { var:ywc_nmg_school_teacher_kind = 1 ywc_nmg_school_academics_8 = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 2 ywc_nmg_school_clergymen_5 = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 3 ywc_nmg_school_prior_bilingual_contract = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 4 ywc_nmg_school_office_staffed_25 = yes }
+	}
+}
+
+ywc_nmg_school_duty_ready = {
+	has_variable = ywc_nmg_school_mode
+	has_variable = ywc_nmg_school_target
+	OR = {
+		AND = { var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 ywc_nmg_school_limited_ready = yes }
+		AND = { var:ywc_nmg_school_target = 1 ywc_nmg_school_mode_ready = yes }
+	}
+	ywc_nmg_school_teacher_current = yes
+}
+
+ywc_nmg_school_review_alive = {
+	ywc_nmg_school_pilot_owned = yes
+	ywc_nmg_school_signed_current = yes
+	ywc_nmg_school_duty_snapshot_current = yes
+}
+
+ywc_nmg_school_register_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_school_fee
+	OR = {
+		AND = { var:ywc_nmg_school_mode = 2 OR = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_target = 2 } gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 0.5 } }
+		AND = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 ywc_nmg_school_prior_bilingual_contract = yes gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 0.5 } }
+		AND = { var:ywc_nmg_school_target = 1 OR = { var:ywc_nmg_school_mode = 1 var:ywc_nmg_school_mode = 3 } gold_reserves >= var:ywc_nmg_school_fee }
+	}
+}
+
+ywc_nmg_school_wage_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_school_fee
+	OR = {
+		AND = { var:ywc_nmg_school_mode = 2 OR = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_target = 2 } gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 0.5 } }
+		AND = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 3 gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 1.5 } }
+		AND = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 gold_reserves >= var:ywc_nmg_school_fee }
+	}
+}
+
+# Stage guards: originating phase, journal, stage, independent receipt ordinal
+# and the own-line pending queue must all match; missing, zero or wrong values
+# can never display or mutate anything.
+ywc_nmg_school_at_1110 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1110
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 1
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1110 }
+}
+
+ywc_nmg_school_at_1111 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1111
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 2
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1111 }
+}
+
+ywc_nmg_school_at_1112 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1112
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 3
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1112 }
+}
+
+ywc_nmg_school_at_1113 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1113
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 4
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1113 }
+}
+
+ywc_nmg_school_at_1114 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1114
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 5
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1114 }
+}
+
+ywc_nmg_school_at_1115 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1115
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 6
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1115 }
+}
+
+ywc_nmg_school_at_1116 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1116
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 7
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1116 }
+}
+
+ywc_nmg_school_at_1117 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1117
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 8
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1117 }
+}
+
+# Earned responsibility snapshots. The teacher choice records its own
+# kind/mode/target/pilot triple, the signature records a second triple and the
+# audit a third; every later node compares all completed triples against the
+# current facts. Missing or zero mode/target never counts as finite and no
+# stage demands a snapshot that a later stage has not written yet.
+ywc_nmg_school_policy_ready = {
+	has_variable = ywc_nmg_school_mode
+	has_variable = ywc_nmg_school_target
+	OR = {
+		AND = { var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 ywc_nmg_school_limited_ready = yes }
+		AND = { var:ywc_nmg_school_target = 1 ywc_nmg_school_mode_ready = yes }
+	}
+}
+
+ywc_nmg_school_teacher_policy_match = {
+	OR = {
+		AND = { var:ywc_nmg_school_teacher_kind = 1 var:ywc_nmg_school_target = 1 OR = { var:ywc_nmg_school_mode = 1 var:ywc_nmg_school_mode = 3 } }
+		AND = { var:ywc_nmg_school_teacher_kind = 2 var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 2 }
+		AND = { var:ywc_nmg_school_teacher_kind = 3 var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 ywc_nmg_school_prior_bilingual_contract = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 4 var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 }
+	}
+}
+
+ywc_nmg_school_teacher_snapshot_current = {
+	has_variable = ywc_nmg_school_teacher_kind
+	has_variable = ywc_nmg_school_teacher_mode
+	has_variable = ywc_nmg_school_teacher_target
+	has_variable = ywc_nmg_school_teacher_pilot
+	var:ywc_nmg_school_teacher_mode ?= var:ywc_nmg_school_mode
+	var:ywc_nmg_school_teacher_target ?= var:ywc_nmg_school_target
+	var:ywc_nmg_school_teacher_pilot ?= var:ywc_nmg_school_pilot
+}
+
+ywc_nmg_school_signature_snapshot_current = {
+	has_variable = ywc_nmg_school_signed_kind
+	has_variable = ywc_nmg_school_signed_mode
+	has_variable = ywc_nmg_school_signed_target
+	has_variable = ywc_nmg_school_signed_pilot
+	var:ywc_nmg_school_signed_kind ?= var:ywc_nmg_school_teacher_kind
+	var:ywc_nmg_school_signed_mode ?= var:ywc_nmg_school_mode
+	var:ywc_nmg_school_signed_target ?= var:ywc_nmg_school_target
+	var:ywc_nmg_school_signed_pilot ?= var:ywc_nmg_school_pilot
+}
+
+ywc_nmg_school_duty_snapshot_current = {
+	has_variable = ywc_nmg_school_duty_kind
+	has_variable = ywc_nmg_school_duty_mode
+	has_variable = ywc_nmg_school_duty_target
+	has_variable = ywc_nmg_school_duty_pilot
+	var:ywc_nmg_school_duty_kind ?= var:ywc_nmg_school_teacher_kind
+	var:ywc_nmg_school_duty_mode ?= var:ywc_nmg_school_mode
+	var:ywc_nmg_school_duty_target ?= var:ywc_nmg_school_target
+	var:ywc_nmg_school_duty_pilot ?= var:ywc_nmg_school_pilot
+}
+
+ywc_nmg_school_signed_current = {
+	ywc_nmg_school_signature_snapshot_current = yes
+	ywc_nmg_school_teacher_snapshot_current = yes
+	ywc_nmg_school_teacher_policy_match = yes
+	OR = {
+		AND = { var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 ywc_nmg_school_limited_ready = yes }
+		AND = { var:ywc_nmg_school_target = 1 ywc_nmg_school_mode_ready = yes }
+	}
+	ywc_nmg_school_teacher_current = yes
+}
+
+# Both real bills must still exist as paid flags with positive recorded
+# amounts. Missing or zeroed records fail closed; requests never seed or
+# repair amounts, and legitimate recount/narrow leaves the two values intact.
+ywc_nmg_school_bills_paid_positive = {
+	has_variable = ywc_nmg_school_register_paid
+	has_variable = ywc_nmg_school_register_amount
+	var:ywc_nmg_school_register_amount > 0
+	has_variable = ywc_nmg_school_wage_paid
+	has_variable = ywc_nmg_school_wage_amount
+	var:ywc_nmg_school_wage_amount > 0
+}
