@@ -26,7 +26,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # border predicate uses c:PHI and cannot count as one of ROOT's eight.
 # Crown appends eight used selected-state predicates; the original 23 remain intact.
 # Revenue adds one candidate-state query and one typed saved-state owner check.
-COUNTS = dict(dmg=31, jhg=4, kor=8, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
+# Public deliberation appends sixteen state-owner reads; the old44 remain intact.
+COUNTS = dict(dmg=31, jhg=4, kor=8, shu=60, oir=9, nmg=6, tib=8, nqg=1, lan=9)
 
 
 def source(path):
