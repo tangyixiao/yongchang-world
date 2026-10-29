@@ -1535,14 +1535,48 @@ def validate_nmg_native_helper_source(source: str) -> None:
         raise ValueError("NMG shared native cooldown helper must preserve the exact 90-day set-once effect")
 
 
+_KOR_FOUNDATION_SLUGS = (
+    "v03_kor_military_accounts", "v03_kor_school_factions", "v03_kor_controlled_ports",
+)
+_KOR_REVENUE_SLUG = "v03_kor_provincial_revenue"
+
+
+def _kor_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
+    foundation = [arc for arc in catalog["arcs"]
+                  if isinstance(arc, dict) and arc.get("era") == "foundation"]
+    if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_KOR_FOUNDATION_SLUGS):
+        raise ValueError("KOR v2 inline adapter requires exactly the three foundation arcs")
+    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    if any(not isinstance(arc, dict) or arc.get("slug") != _KOR_REVENUE_SLUG
+           or arc.get("era") != "middle" for arc in extra):
+        raise ValueError("unregistered KOR inline arc")
+    if len(extra) > 1:
+        raise ValueError("duplicate registered KOR revenue arc")
+    return [next(arc for arc in foundation if arc["slug"] == slug)
+            for slug in _KOR_FOUNDATION_SLUGS] + extra
+
+
+def _kor_revenue_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_kor\.110[0-7]", event_id):
+        raise ValueError(f"{event_id}: unregistered KOR revenue native event")
+    name = "ywc_v03_kor_v03_kor_provincial_revenue_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1099
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} }}")
+    actual = parse_block(event.get("immediate", ""))
+    if tuple(_nqg_node_shape(node) for node in actual) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported KOR revenue native immediate body")
+    return name, value
+
+
 def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
     if catalog.get("key") != "country_kor" or not isinstance(catalog.get("arcs"), list):
         raise ValueError("KOR inline adapter requires the KOR catalog")
-    expected_slugs = {"v03_kor_military_accounts", "v03_kor_school_factions", "v03_kor_controlled_ports"}
-    active = [arc for arc in catalog["arcs"] if isinstance(arc, dict) and arc.get("era") == "foundation"]
-    if len(active) != 3 or {arc.get("slug") for arc in active} != expected_slugs:
-        raise ValueError("KOR v2 inline adapter requires exactly the three foundation arcs")
+    active = _kor_active_arcs(catalog)
     all_witnesses: set[str] = set()
+    queue_owners: dict[str, str] = {}
     for arc in active:
         adapter = arc.get("inline_delivery_adapter")
         if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches", "direct_adds"} or adapter.get("schema") != "v03.foundation_inline_adapter.v2":
@@ -1570,6 +1604,24 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
         records = adapter.get("branches")
         if not isinstance(records, list) or len(records) != len(actual):
             raise ValueError(f"{arc['slug']}: every native sender site, including redundant else_if, must be recorded")
+        if arc["slug"] == _KOR_REVENUE_SLUG:
+            revenue_phases = {
+                "ywc_je_v03_kor_provincial_revenue_settlement": set(range(1100, 1104)),
+                "ywc_je_v03_kor_provincial_revenue_review": set(range(1104, 1108)),
+            }
+            if [journal.get("id") for journal in journals] != list(revenue_phases):
+                raise ValueError("KOR revenue requires its two ordered native phases")
+            if len(arc.get("events", [])) != 8 or {
+                    event.get("id") for event in arc["events"]} != {
+                    f"ywc_kor.{n}" for n in range(1100, 1108)} or len(records) != 8:
+                raise ValueError("KOR revenue requires its eight native events and sender sites")
+            for jid, numbers in revenue_phases.items():
+                bound = [proof for proof in records if isinstance(proof, dict) and proof.get("journal") == jid]
+                if len(bound) != 4 or {proof.get("event") for proof in bound} != {
+                        f"ywc_kor.{n}" for n in numbers}:
+                    raise ValueError("KOR revenue native phases must bind their four/four partition")
+            for event in arc["events"]:
+                _kor_revenue_native_receipt(event)
         for proof, (jid, source) in zip(records, actual):
             required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
             if not isinstance(proof, dict) or set(proof) != required:
@@ -1594,10 +1646,17 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError(f"{arc['slug']}/{jid}: queue semantics do not match positive source predicates")
                 if "value" in candidate and type(candidate["value"]) is not int:
                     raise ValueError(f"{arc['slug']}/{jid}: queue value must be an integer")
+                owner = queue_owners.setdefault(candidate["queue"], arc["slug"])
+                if owner != arc["slug"]:
+                    raise ValueError(f"KOR queue ownership crosses arcs: {candidate['queue']}")
                 if proof["event"] == "ywc_kor.1031" and candidate != {"queue": "ywc_kor_instructor_notice_event", "kind": "notice", "mode": "exact", "value": 1031}:
                     raise ValueError("KOR 1031 requires the exact instructor notice queue")
                 if proof["event"] == "ywc_kor.1034" and candidate != {"queue": "ywc_kor_procurement_notice_event", "kind": "notice", "mode": "exact", "value": 1034}:
                     raise ValueError("KOR 1034 requires the exact procurement notice queue")
+            if arc["slug"] == _KOR_REVENUE_SLUG and candidates != [{
+                    "queue": "ywc_kor_revenue_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(proof["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("KOR revenue sender must own its exact native event queue")
             for prior in proof["chain_prior"]:
                 if not isinstance(prior, dict) or set(prior) != {"ordinal", "sha256", "limit_sha256", "limit_source"} or type(prior.get("ordinal")) is not int or not isinstance(prior.get("limit_source"), str):
                     raise ValueError(f"{arc['slug']}/{jid}: invalid prior predicate record")
@@ -2084,6 +2143,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     prefix = "ywc_v03_mgl_inline" if is_mgl else "ywc_v03_nmg_inline" if is_nmg else "ywc_v03_lan_inline" if is_lan else "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
     arcs = (_shu_active_arcs(catalog) if is_shu else _dmg_active_arcs(catalog) if is_dmg
             else _lan_active_arcs(catalog) if is_lan
+            else _kor_active_arcs(catalog) if is_kor
             else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"])
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}
@@ -2123,6 +2183,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     receipt_match = re.search(receipt_pattern, event["immediate"])
                 if is_lan:
                     receipt_variable, receipt_value = _lan_native_receipt(event)
+                elif is_kor and arc["slug"] == _KOR_REVENUE_SLUG:
+                    receipt_variable, receipt_value = _kor_revenue_native_receipt(event)
                 elif is_shu:
                     receipt_variable, receipt_value = _shu_expected_receipt(event["id"])
                     native_receipt = re.search(rf"name\s*=\s*{re.escape(receipt_variable)}\s+value\s*=\s*([0-9]+)", event["immediate"])
@@ -2587,7 +2649,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     checks += [f"has_variable = {q['queue']}", f"var:{q['queue']} = var:{snap_value}"]
             if not is_shu:
                 checks += [f"var:{callback_proof} = 1",f"has_variable = {callback_id}",f"has_variable = {callback_epoch}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {callback_queue}"]
-            if (is_dmg or is_nmg) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
+            if (is_dmg or is_nmg or (is_kor and c["arc"]["slug"] == _KOR_REVENUE_SLUG)) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
                 checks += [f"has_variable = {c['receipt_variable']}",f"var:{c['receipt_variable']} = {c['receipt_value']}"]
             checks += _nmg_native_postchecks(c, prefix) if is_nmg else []
             if is_nmg:

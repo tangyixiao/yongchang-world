@@ -28,7 +28,7 @@
             "en": "Choose court supply, provincial shares or capped legacy forces. Monthly real-state checks must pass continuously for six months; a failed month clears the timer. Show a blocked notice after 12 months and offer exit at 36. Without an army, a staffed office can sustain limited border service."
           },
           "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } } possible = { c:KOR ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_kor_v03_unsettled = yes ywc_kor_v03_has_owned_state = yes } immediate = { ywc_kor_claim_military_accounts = yes ywc_kor_open_military_accounts_once = yes } on_fail = { ywc_kor_close_as_breach = yes } on_monthly_pulse = { effect = {\n ywc_kor_pay_selected_contracts = yes\n if = { limit = { has_variable = ywc_kor_supply_route NOT = { ywc_kor_v03_route_execution_ready = yes } }\n  remove_variable = ywc_kor_observation_timer remove_variable = ywc_kor_observation_started remove_variable = ywc_kor_six_months_complete set_variable = { name = ywc_kor_ready_supply_months value = 0 }\n  if = { limit = { NOT = { has_variable = ywc_kor_blocked_timer_started } } set_variable = { name = ywc_kor_blocked_timer_started value = 1 } set_variable = { name = ywc_kor_blocked_12_due value = 1 days = 365 } set_variable = { name = ywc_kor_blocked_36_due value = 1 days = 1095 } }\n  if = { limit = { has_variable = ywc_kor_blocked_timer_started NOT = { has_variable = ywc_kor_blocked_12_due } NOT = { has_variable = ywc_kor_blocked_12_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_blocked_12_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1006 } }\n  if = { limit = { has_variable = ywc_kor_blocked_timer_started NOT = { has_variable = ywc_kor_blocked_36_due } NOT = { has_variable = ywc_kor_blocked_36_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_blocked_36_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1006 } }\n }\n if = { limit = { has_variable = ywc_kor_supply_route ywc_kor_v03_route_execution_ready = yes }\n  if = { limit = { has_variable = ywc_kor_observation_started NOT = { has_variable = ywc_kor_observation_timer } } set_variable = { name = ywc_kor_six_months_complete value = 1 } remove_variable = ywc_kor_observation_started }\n  if = { limit = { NOT = { has_variable = ywc_kor_observation_started } NOT = { has_variable = ywc_kor_six_months_complete } } set_variable = { name = ywc_kor_observation_timer value = 1 months = 6 } set_variable = { name = ywc_kor_observation_started value = 1 } }\n  ywc_kor_pay_monthly_supply = yes remove_variable = ywc_kor_blocked_12_due remove_variable = ywc_kor_blocked_36_due remove_variable = ywc_kor_blocked_timer_started\n }\n if = { limit = { has_variable = ywc_kor_intro_complete has_variable = ywc_kor_six_months_complete NOT = { has_variable = ywc_kor_review_event_prompted } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1006 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1000 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1000 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1001 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1001 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1002 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1002 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1003 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1003 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1004 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1004 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1005 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1005 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1006 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1006 } }\n if = { limit = { ywc_v03_can_deliver_major = yes ywc_kor_instructor_notice_live = yes var:ywc_kor_instructor_notice_event = 1031 NOT = { has_variable = ywc_kor_pending_event } } remove_variable = ywc_kor_instructor_notice_event trigger_event = { id = ywc_kor.1031 } }\n if = { limit = { ywc_v03_can_deliver_major = yes ywc_kor_procurement_notice_live = yes var:ywc_kor_procurement_notice_event = 1034 NOT = { has_variable = ywc_kor_pending_event } } remove_variable = ywc_kor_procurement_notice_event trigger_event = { id = ywc_kor.1034 } }\n} } }",
-          "goal": "{ OR = { has_variable = ywc_kor_review_complete has_variable = ywc_kor_outcome_withdrawn_breach } }",
+          "goal": "{ AND = { OR = { has_variable = ywc_kor_review_complete has_variable = ywc_kor_outcome_withdrawn_breach } NOT = { has_variable = ywc_kor_arc_abandoned } } }",
           "exit_conditions": "{ has_variable = ywc_kor_arc_abandoned }"
         },
         {
@@ -42,7 +42,7 @@
             "en": "After the first review, check nine continuous months. Each passing month requires actual payment; any failed month clears the timer. In peace review training, rotations and procurement; in war prioritize supply and allow narrowing. Subject status does not interrupt domestic work."
           },
           "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized has_variable = ywc_kor_review_complete NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } } possible = { c:KOR ?= this has_variable = ywc_kor_review_complete ywc_kor_v03_unsettled = yes } immediate = { set_variable = { name = ywc_kor_pending_event value = 1007 } } on_fail = { ywc_kor_close_as_breach = yes } on_monthly_pulse = { effect = {\n ywc_kor_pay_selected_contracts = yes\n if = { limit = { NOT = { has_variable = ywc_kor_service_review_complete } has_variable = ywc_kor_review_complete NOT = { ywc_kor_v03_route_execution_ready = yes } }\n  remove_variable = ywc_kor_service_timer remove_variable = ywc_kor_service_observation_started remove_variable = ywc_kor_nine_months_complete remove_variable = ywc_kor_service_review_complete set_variable = { name = ywc_kor_service_paid_months value = 0 }\n  if = { limit = { NOT = { has_variable = ywc_kor_service_blocked_timer_started } } set_variable = { name = ywc_kor_service_blocked_timer_started value = 1 } set_variable = { name = ywc_kor_service_blocked_12_due value = 1 days = 365 } set_variable = { name = ywc_kor_service_blocked_36_due value = 1 days = 1095 } }\n  if = { limit = { has_variable = ywc_kor_service_blocked_timer_started NOT = { has_variable = ywc_kor_service_blocked_12_due } NOT = { has_variable = ywc_kor_service_12_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_service_12_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } }\n  if = { limit = { has_variable = ywc_kor_service_blocked_timer_started NOT = { has_variable = ywc_kor_service_blocked_36_due } NOT = { has_variable = ywc_kor_service_36_notice } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_service_36_notice value = 1 } set_variable = { name = ywc_kor_pending_event value = 1008 } }\n }\n if = { limit = { NOT = { has_variable = ywc_kor_service_review_complete } has_variable = ywc_kor_review_complete ywc_kor_v03_route_execution_ready = yes }\n  if = { limit = { has_variable = ywc_kor_service_observation_started NOT = { has_variable = ywc_kor_service_timer } } set_variable = { name = ywc_kor_nine_months_complete value = 1 } remove_variable = ywc_kor_service_observation_started }\n  if = { limit = { NOT = { has_variable = ywc_kor_service_observation_started } NOT = { has_variable = ywc_kor_nine_months_complete } } set_variable = { name = ywc_kor_service_timer value = 1 months = 9 } set_variable = { name = ywc_kor_service_observation_started value = 1 } }\n  ywc_kor_pay_monthly_supply = yes remove_variable = ywc_kor_service_blocked_12_due remove_variable = ywc_kor_service_blocked_36_due remove_variable = ywc_kor_service_blocked_timer_started\n }\n if = { limit = { has_variable = ywc_kor_nine_months_complete NOT = { has_variable = ywc_kor_service_event_prompted } NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1008 } }\n if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1007 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1007 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1008 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1008 } }\n else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_pending_event = 1009 } remove_variable = ywc_kor_pending_event trigger_event = { id = ywc_kor.1009 } }\n if = { limit = { ywc_v03_can_deliver_major = yes ywc_kor_instructor_notice_live = yes var:ywc_kor_instructor_notice_event = 1031 NOT = { has_variable = ywc_kor_pending_event } } remove_variable = ywc_kor_instructor_notice_event trigger_event = { id = ywc_kor.1031 } }\n if = { limit = { ywc_v03_can_deliver_major = yes ywc_kor_procurement_notice_live = yes var:ywc_kor_procurement_notice_event = 1034 NOT = { has_variable = ywc_kor_pending_event } } remove_variable = ywc_kor_procurement_notice_event trigger_event = { id = ywc_kor.1034 } }\n} } }",
-          "goal": "{ has_variable = ywc_kor_any_outcome }",
+          "goal": "{ AND = { has_variable = ywc_kor_any_outcome NOT = { has_variable = ywc_kor_arc_abandoned } } }",
           "exit_conditions": "{ has_variable = ywc_kor_arc_abandoned }"
         }
       ],
@@ -1550,14 +1550,14 @@
             "journal": "ywc_je_v03_kor_military_audit",
             "live_witness": "ywc_v03_kor_inline_live_military_audit",
             "source_script_sha256": "42edffb671bb845e5c7069cd31994970d549f18b7f0c6906779a4a259755427f",
-            "goal_sha256": "f0b47ff01fb6904386cff6f8b7e7f90c556025d3940f4c51c35567bd1ef76148",
+            "goal_sha256": "3f583043a1a4a423b33865261062d366d93bd24c7985e4f4f7cafd53e077f579",
             "exit_sha256": "b4e7d33b454fb2738c15b9a0b8b4a08d30fa43c43af1a94b0d2f1d83ebebafa3"
           },
           {
             "journal": "ywc_je_v03_kor_service_settlement",
             "live_witness": "ywc_v03_kor_inline_live_service_settlement",
             "source_script_sha256": "5f688ae477b5c4cf6bd77178c81dbf4c93601cfeaec24b32358983e06fb8c90e",
-            "goal_sha256": "826b5232a9b3255a726a833e90c8962caf6983c41bf90b8c5fda270fd22098c2",
+            "goal_sha256": "5448f1c8571ba650cefed2470b21efac53ecc62955be59687af98894c8e2ac2e",
             "exit_sha256": "b4e7d33b454fb2738c15b9a0b8b4a08d30fa43c43af1a94b0d2f1d83ebebafa3"
           }
         ],
@@ -4316,6 +4316,1253 @@
               }
             ],
             "queue_exclusions": []
+          }
+        ],
+        "direct_adds": []
+      }
+    },
+    {
+      "slug": "v03_kor_provincial_revenue",
+      "era": "middle",
+      "participants": [
+        "朝鲜王廷与户曹税务",
+        "各道官署在职公务与文书",
+        "政府中的乡绅、知识界、军方、地主与僧俗集团",
+        "试点州的学校与农田承办者",
+        "旧军门、书院与港市已签合同的经办者"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_kor_provincial_revenue_settlement",
+          "title": {
+            "zh": "留用先写在谁的账上",
+            "en": "Whose Ledger Records the Retained Share"
+          },
+          "desc": {
+            "zh": "在朝鲜当前自有的一个试点州约定成文分税、中央统收或项目拨款，或明确选择保守有限目标。每一模式都有不同的现行税法、政府集团、在职公务与动荡条件。本步只登记政策与试点，真正立契与复核另需两次实付。",
+            "en": "In one currently owned Joseon pilot state, agree to written shares, central collection or project grants, or explicitly choose the conservative finite target. Each mode carries different current tax-law, in-government group, staffed-post and turmoil conditions. This step only records the policy and pilot; a charter and a review each require a real later payment."
+          },
+          "script": "{\nis_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started } }\npossible = { c:KOR ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started } NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled } ywc_v03_has_capacity = yes ywc_kor_revenue_has_any_owned_state = yes }\nimmediate = { ywc_kor_revenue_claim_once = yes }\non_complete = { ywc_kor_revenue_open_review_once = yes }\non_fail = { ywc_kor_revenue_release_once = yes }\non_monthly_pulse = { effect = {\nywc_kor_revenue_prepare_queue = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1100 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1100 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1101 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1101 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1102 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1102 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1103 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1103 } }\n} }\n}",
+          "goal": "{ has_variable = ywc_kor_revenue_settlement_ready NOT = { has_variable = ywc_kor_revenue_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_kor_revenue_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_kor_provincial_revenue_review",
+          "title": {
+            "zh": "六个月里没有写出的欠账",
+            "en": "Arrears Absent from Six Monthly Ledgers"
+          },
+          "desc": {
+            "zh": "在试点州连续六个月核对同一政策、法则、集团、在职公务与动荡；任一失效即中断，须明确重启并重数。缴复核账后不复位成熟证明。中断不要求本线仍持州，也不静默换州。",
+            "en": "Check the same policy, law, groups, staffed posts and turmoil in the pilot for six consecutive months; any failure interrupts the run and needs an explicit restart from zero. Submitting the review does not erase the maturity proof. An interruption neither requires the arc to still hold a state nor silently swaps the pilot."
+          },
+          "script": "{\nis_shown_when_inactive = { c:KOR ?= this ywc_kor_revenue_open = yes has_variable = ywc_kor_revenue_settlement_ready NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled } NOT = { has_journal_entry = ywc_je_v03_kor_provincial_revenue_review } }\npossible = { c:KOR ?= this ywc_kor_revenue_open = yes has_variable = ywc_kor_revenue_settlement_ready NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled } }\nimmediate = { ywc_kor_revenue_review_claimed_once = yes }\non_fail = { ywc_kor_revenue_release_once = yes }\non_monthly_pulse = { effect = {\nywc_kor_revenue_track_review = yes\nywc_kor_revenue_prepare_queue = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1104 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1104 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1105 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1105 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1106 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1106 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1107 } remove_variable = ywc_kor_revenue_pending_event trigger_event = { id = ywc_kor.1107 } }\n} }\n}",
+          "goal": "{ OR = { var:ywc_kor_revenue_outcome = 1 var:ywc_kor_revenue_outcome = 2 var:ywc_kor_revenue_outcome = 3 } NOT = { has_variable = ywc_kor_revenue_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_kor_revenue_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_kor.1100",
+          "title": {
+            "zh": "留用先写在谁的账上",
+            "en": "Whose Ledger Records the Retained Share"
+          },
+          "desc": {
+            "zh": "中央要用新税办学校与军备，各道要先把留用固定下来。王廷须在试点州选定成文分税、中央统收或项目拨款，也可明确只做保守有限目标；不造地方税权法，也不自动通过税法。",
+            "en": "The court wants new revenue for schools and garrisons, while the provinces want their retained share fixed first. In one pilot state the court must choose written shares, central collection or project grants, or explicitly aim only at a conservative finite target. No local tax-power law is invented and no tax law passes by itself."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1100 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 1 } }",
+          "options": [
+            {
+              "key": "written_shares",
+              "label": {
+                "zh": "成文分税：各道留用写进契约",
+                "en": "Written shares: the retained portion enters a charter"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } } set_variable = { name = ywc_kor_revenue_mode_choice value = 1 } ywc_kor_revenue_set_pilot_and_mode = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费。立契与复核两笔费用在后续各按开线时一周收入为基准收取，最低100。",
+                "en": "No charge now. The charter and review fees are charged later from one opening week of gross income, minimum100."
+              },
+              "consequence_note": {
+                "zh": "选定当前自有的一个试点州与成文分税，随后办理立契并核实现行税法、集团与岗位。",
+                "en": "Select one currently owned pilot state and written shares, then charter it and verify current law, groups and posts."
+              }
+            },
+            {
+              "key": "central_collection",
+              "label": {
+                "zh": "中央统收：由户曹统一征收",
+                "en": "Central collection: the Court of Revenue collects"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } } set_variable = { name = ywc_kor_revenue_mode_choice value = 2 } ywc_kor_revenue_set_pilot_and_mode = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费。统收需真实官署与军营在职，立契价为两份周收入基准。",
+                "en": "No charge now. Central collection needs real staffed offices and barracks; its charter costs two weekly-income bases."
+              },
+              "consequence_note": {
+                "zh": "选定试点与中央统收，随后须有在职公务与军营及政府中的军方集团。",
+                "en": "Select the pilot and central collection; later needs staffed officials and barracks and the armed forces in government."
+              }
+            },
+            {
+              "key": "project_grants",
+              "label": {
+                "zh": "项目拨款：只按项目下拨",
+                "en": "Project grants: release funds by project only"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } } set_variable = { name = ywc_kor_revenue_mode_choice value = 3 } ywc_kor_revenue_set_pilot_and_mode = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费。项目拨款是独立完整策略，不是有限目标，需真实农田就业与地主或僧俗集团。",
+                "en": "No charge now. Project grants are a complete independent strategy, not the finite target, and need real farm employment and landowners or the devout."
+              },
+              "consequence_note": {
+                "zh": "选定试点与项目拨款，随后须有农田在职与相应集团；不承诺成文地方税权。",
+                "en": "Select the pilot and project grants; later needs farm employment and the relevant group, and promises no local tax power."
+              }
+            },
+            {
+              "key": "finite_target",
+              "label": {
+                "zh": "保守有限：只核现成岗位与申诉",
+                "en": "Conservative finite: verify existing posts and appeals only"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1100 = yes ywc_kor_revenue_has_any_owned_state = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } } ywc_kor_revenue_set_pilot_finite = yes } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "本步不收费，两笔费用均按半份周收入基准收取。无需学校、港口、军营、改法或外国合作。",
+                "en": "No charge now; both fees cost half a weekly-income base. No school, port, barracks, law change or foreign cooperation is required."
+              },
+              "consequence_note": {
+                "zh": "明确选择有限目标，随后只核试点在职公务、合法性与动荡；仍有真实岗位与两次费用。",
+                "en": "Explicitly choose the finite target; later verifies only the pilot's staffed officials, legitimacy and turmoil, still with real posts and two fees."
+              }
+            },
+            {
+              "key": "wait_pilot",
+              "label": {
+                "zh": "等待当前条件恢复",
+                "en": "Wait for current conditions"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1100 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1100 = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议；已付费用保留。",
+                "en": "Keep the question open for a later monthly chance; paid fees remain."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1100 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1100 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧军门、书院或港市合同。",
+                "en": "No new charge or refund; old military, school or port contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "固定同一真实试点和互斥政策或显式有限目标。",
+            "en": "Fix one real pilot and one mutually exclusive policy or the explicit finite target."
+          },
+          "reads": [
+            "ywc_kor_revenue_has_any_owned_state",
+            "yearly_gross_income"
+          ],
+          "writes": [
+            "ywc_v03_kor_v03_kor_provincial_revenue_started",
+            "ywc_v03_active_arc_count",
+            "ywc_v03_visible_task_count",
+            "ywc_kor_revenue_budget",
+            "ywc_kor_revenue_pilot_state",
+            "ywc_kor_revenue_mode",
+            "ywc_kor_revenue_target",
+            "ywc_kor_revenue_finite_chosen",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1101",
+          "title": {
+            "zh": "一道税票，两套抄本",
+            "en": "One Tax Receipt, Two Copies"
+          },
+          "desc": {
+            "zh": "立契要付真实的官署账。成文分税付一份周收入基准，中央统收付两份，项目拨款与有限目标付半份。旧军门省报账合同已真实结清时，成文分税立契减半。未实扣不得记为已付。",
+            "en": "Chartering pays a real office account. Written shares cost one weekly-income base, central collection two, and project grants or the finite target half. A genuinely settled old military provincial-report contract halves the written-share charter. A fee that is not actually debited is never recorded as paid."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1101 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 2 } }",
+          "options": [
+            {
+              "key": "pay_charter",
+              "label": {
+                "zh": "支付当前立契费",
+                "en": "Pay the charter fee now due"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1101 = yes NOT = { has_variable = ywc_kor_revenue_charter_paid } ywc_kor_revenue_can_pay_charter = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1101 = yes NOT = { has_variable = ywc_kor_revenue_charter_paid } ywc_kor_revenue_can_pay_charter = yes } ywc_kor_revenue_pay_charter_once = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "成文分税一份、中央统收两份、项目拨款或有限目标半份周收入基准；旧省报账合同令成文分税减半。",
+                "en": "Written shares cost one base, central collection two, project grants or the finite target half. An old provincial-report contract halves the written-share fee."
+              },
+              "consequence_note": {
+                "zh": "只有真实扣款后才继续并记录正实际金额；已付不退款、不重复扣，优惠到期不追补。",
+                "en": "Continue only after a real debit, recording its positive actual amount; paid fees are never refunded or recharged and earned discounts are not collected later."
+              }
+            },
+            {
+              "key": "wait_cash",
+              "label": {
+                "zh": "等待现金或条件恢复",
+                "en": "Wait for cash or conditions"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1101 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1101 = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议；已付费用保留。",
+                "en": "Keep the question open for a later monthly chance; paid fees remain."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1101 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1101 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "让真实旧军门合同改变第一笔支出，并用真实扣款守卫已付。",
+            "en": "Let the real old military contract change the first spend, and guard paid with a real debit."
+          },
+          "reads": [
+            "ywc_kor_revenue_can_pay_charter",
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_kor_revenue_prior_provincial_contract"
+          ],
+          "writes": [
+            "ywc_kor_revenue_charter_paid",
+            "ywc_kor_revenue_charter_paid_amount",
+            "ywc_kor_revenue_charter_pilot",
+            "ywc_kor_revenue_charter_mode",
+            "ywc_kor_revenue_charter_target",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "treasury",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1102",
+          "title": {
+            "zh": "学校、营房与田间的领款人",
+            "en": "Claimants from School, Barracks and Fields"
+          },
+          "desc": {
+            "zh": "按所选政策确定谁核账、谁担责：成文分税要学校与官署在职，中央统收要军营在职，项目拨款要农田在职。旧省报账合同可让本试点沿用地方核账，公务阈值降为半份但仍须当下在职；无此合同的新核账须满在职。",
+            "en": "By the chosen policy, decide who audits and who is liable: written shares need staffed schools and offices, central collection needs staffed barracks, project grants need farm employment. An old provincial-report contract lets this pilot reuse local audit at a half office threshold that still requires current staffed posts; a new audit without that contract needs full staffed posts."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1102 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 3 } }",
+          "options": [
+            {
+              "key": "settle_reviewer",
+              "label": {
+                "zh": "按现行政策登记核账人与责任条款",
+                "en": "Register the reviewer and liability by current policy"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1102 = yes ywc_kor_revenue_reviewer_office = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1102 = yes ywc_kor_revenue_reviewer_office = yes } ywc_kor_revenue_choose_reviewer = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "不新增费用。旧书院或港市合同只改变采用的核账人与责任来源，不赠资、不冒领资格。",
+                "en": "No new fee. Old school or port contracts only change which reviewer and liability source is used; they grant no funds and assume no eligibility."
+              },
+              "consequence_note": {
+                "zh": "记录实际核账人及其来源；后续 1105/1106 会重读同一合同与当下岗位。",
+                "en": "Record the actual reviewer and source; later 1105/1106 reread the same contract and current posts."
+              }
+            },
+            {
+              "key": "narrow_finite",
+              "label": {
+                "zh": "缩为明确有限目标后再核",
+                "en": "Narrow to the explicit finite target and verify"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1102 = yes ywc_kor_revenue_target2_finite = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1102 = yes ywc_kor_revenue_target2_finite = yes } set_variable = { name = ywc_kor_revenue_target value = 2 } set_variable = { name = ywc_kor_revenue_finite_chosen value = 1 } if = { limit = { has_variable = ywc_kor_revenue_charter_paid } set_variable = { name = ywc_kor_revenue_charter_target value = 2 } } ywc_kor_revenue_choose_reviewer = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不新增费用；已付立契保留，不清零。",
+                "en": "No new fee; the paid charter remains and is not reset."
+              },
+              "consequence_note": {
+                "zh": "明确改走有限目标；不自动换税法或偷偷换试点。",
+                "en": "Explicitly move to the finite target; no automatic tax-law change or silent pilot swap."
+              }
+            },
+            {
+              "key": "wait_posts",
+              "label": {
+                "zh": "等待岗位或供给恢复",
+                "en": "Wait for posts or supply to recover"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1102 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1102 = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议；已付费用保留。",
+                "en": "Keep the question open for a later monthly chance; paid fees remain."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1102 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1102 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "让真实政策承办岗位与旧合同决定本轮采用的核账人。",
+            "en": "Let real policy claimants and old contracts decide which reviewer is adopted."
+          },
+          "reads": [
+            "ywc_kor_revenue_reviewer_office",
+            "ywc_kor_revenue_prior_school",
+            "ywc_kor_revenue_prior_ports",
+            "ywc_kor_revenue_prior_provincial_contract"
+          ],
+          "writes": [
+            "ywc_kor_revenue_reviewer",
+            "ywc_kor_revenue_reviewer_pilot",
+            "ywc_kor_revenue_target",
+            "ywc_kor_revenue_finite_chosen",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1103",
+          "title": {
+            "zh": "印封之前谁来签字",
+            "en": "Who Signs Before the Seal"
+          },
+          "desc": {
+            "zh": "签字前复核当下责任、已付与试点、政策、目标快照。旧书院或港市合同的核价人若不再与当下岗位一致，签字改用新核账。签字后真实交接第二日志并开始六个月连续观察。",
+            "en": "Before sealing, recheck current responsibility, paid flags and the pilot, policy and target snapshot. If an old school or port reviewer no longer matches current posts, sign with a fresh audit instead. Signing truly hands off to the second journal and begins the six-month run."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1103 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 4 } }",
+          "options": [
+            {
+              "key": "sign",
+              "label": {
+                "zh": "签字并把旧合同写进责任条款",
+                "en": "Sign and bind the old contract into the liability terms"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1103 = yes has_variable = ywc_kor_revenue_charter_paid has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_mode_chosen = yes ywc_kor_revenue_target_chosen = yes ywc_kor_revenue_pilot_owned = yes ywc_kor_revenue_reviewer_office = yes ywc_kor_revenue_selected_current_ready = yes ywc_kor_revenue_both_snapshots_match = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1103 = yes has_variable = ywc_kor_revenue_charter_paid has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_mode_chosen = yes ywc_kor_revenue_target_chosen = yes ywc_kor_revenue_pilot_owned = yes ywc_kor_revenue_reviewer_office = yes ywc_kor_revenue_selected_current_ready = yes ywc_kor_revenue_both_snapshots_match = yes } ywc_kor_revenue_sign = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "不新增费用；交接只推进日志与观察，不重扣已付立契。",
+                "en": "No new fee; handoff only advances the journal and observation and does not recharge the paid charter."
+              },
+              "consequence_note": {
+                "zh": "记录签字时的政策、目标与试点快照，真实进入六个月观察。",
+                "en": "Record policy, target and pilot snapshot at signing and truly enter the six-month run."
+              }
+            },
+            {
+              "key": "reselect_reviewer",
+              "label": {
+                "zh": "改选核账人：回到1102重新登记",
+                "en": "Reselect the reviewer: return to 1102 and register again"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1103 = yes var:ywc_kor_revenue_phase = 1 has_variable = ywc_kor_revenue_charter_paid var:ywc_kor_revenue_charter_paid_amount > 0 has_variable = ywc_kor_revenue_reviewer NOT = { ywc_kor_revenue_reviewer_current_duty = yes } }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1103 = yes var:ywc_kor_revenue_phase = 1 has_variable = ywc_kor_revenue_charter_paid var:ywc_kor_revenue_charter_paid_amount > 0 has_variable = ywc_kor_revenue_reviewer NOT = { ywc_kor_revenue_reviewer_current_duty = yes } } ywc_kor_revenue_reselect_reviewer = yes } }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "不新增费用；不改已付账单，不退款、不重扣。",
+                "en": "No new fee; paid bills are untouched, with no refund or recharge."
+              },
+              "consequence_note": {
+                "zh": "当采用的书院/港市核账人失去当下资格时，显式回到1102以真实在任来源或新核账人重登；不静默沿用失效特权。",
+                "en": "When the adopted school/port reviewer has lost its current qualification, explicitly return to 1102 to register a genuinely present source or a fresh auditor; no defunct privilege is silently kept."
+              }
+            },
+            {
+              "key": "wait_seal",
+              "label": {
+                "zh": "等待岗位或状态恢复后再签",
+                "en": "Wait for posts or state before signing"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1103 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1103 = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议；已付费用保留。",
+                "en": "Keep the question open for a later monthly chance; paid fees remain."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1103 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1103 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "在签字时复核冻结的责任与快照并真实交接观察。",
+            "en": "Recheck the frozen liability and snapshot at signing and truly hand off to observation."
+          },
+          "reads": [
+            "ywc_kor_revenue_reviewer_office",
+            "ywc_kor_revenue_reviewer_current_duty",
+            "ywc_kor_revenue_charter_paid",
+            "ywc_kor_revenue_pilot_owned"
+          ],
+          "writes": [
+            "ywc_kor_revenue_sign_mode",
+            "ywc_kor_revenue_sign_target",
+            "ywc_kor_revenue_sign_pilot",
+            "ywc_kor_revenue_reviewer",
+            "ywc_kor_revenue_reviewer_pilot",
+            "ywc_kor_revenue_settlement_ready",
+            "ywc_kor_revenue_review_running",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1104",
+          "title": {
+            "zh": "六个月里没有写出的欠账",
+            "en": "Arrears Absent from Six Monthly Ledgers"
+          },
+          "desc": {
+            "zh": "缴复核账要付真实费用：成文分税一份、中央统收一份半（有旧中央查核合同时为一份）、项目拨款与有限目标半份。只有连续六个月同一政策、法则、集团、在职与动荡都合格，才可缴账；中断须明确重启并从零重数，两笔已付保留。",
+            "en": "Submitting the review ledger pays a real fee: written shares one base, central collection one and a half (one where an old central-inspection contract exists), project grants and the finite target half. You may submit only after six consecutive months of the same policy, law, groups, posts and turmoil all passing; an interruption needs an explicit restart from zero, and both paid fees remain."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1104 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 5 } }",
+          "options": [
+            {
+              "key": "pay_review",
+              "label": {
+                "zh": "成熟后支付复核费",
+                "en": "Pay the review fee after maturity"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1104 = yes NOT = { has_variable = ywc_kor_revenue_review_paid } ywc_kor_revenue_can_pay_review = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1104 = yes NOT = { has_variable = ywc_kor_revenue_review_paid } ywc_kor_revenue_can_pay_review = yes } ywc_kor_revenue_pay_review_and_run = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "成文分税一份、中央统收一份半（旧中央查核合同为一份）、项目拨款与有限目标半份周收入基准。",
+                "en": "Written shares one base, central collection one and a half (one with the old central-inspection contract), project grants and the finite target half."
+              },
+              "consequence_note": {
+                "zh": "只在真实连续六个月成熟后收费；实扣保留成熟与计数，不重扣、不免费完成。",
+                "en": "Billed only after a genuine six-month maturity; the debit keeps maturity and streak, with no recharge or free completion."
+              }
+            },
+            {
+              "key": "restart_review",
+              "label": {
+                "zh": "明确重启：从零重数六次",
+                "en": "Explicit restart: recount six months from zero"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1104 = yes has_variable = ywc_kor_revenue_charter_paid var:ywc_kor_revenue_charter_paid_amount > 0 has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_mode_chosen = yes ywc_kor_revenue_target_chosen = yes ywc_kor_revenue_both_snapshots_match = yes ywc_kor_revenue_selected_current_ready = yes ywc_kor_revenue_finance_safe = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1104 = yes has_variable = ywc_kor_revenue_charter_paid var:ywc_kor_revenue_charter_paid_amount > 0 has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_mode_chosen = yes ywc_kor_revenue_target_chosen = yes ywc_kor_revenue_both_snapshots_match = yes ywc_kor_revenue_selected_current_ready = yes ywc_kor_revenue_finance_safe = yes } ywc_kor_revenue_restart_review = yes } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不重扣已付复核费。",
+                "en": "The paid review fee is not recharged."
+              },
+              "consequence_note": {
+                "zh": "清除中断与成熟标记，从零重数六次，已付两费保留。",
+                "en": "Clear interruption and maturity and recount six months from zero; both paid fees remain."
+              }
+            },
+            {
+              "key": "submit",
+              "label": {
+                "zh": "缴账：已成熟则进入下一阶段",
+                "en": "Submit: advance if the run has matured"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1104 = yes ywc_kor_revenue_both_fees_paid = yes has_variable = ywc_kor_revenue_review_mature var:ywc_kor_revenue_review_streak >= 6 ywc_kor_revenue_both_snapshots_match = yes has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_reviewer_current_duty = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1104 = yes ywc_kor_revenue_both_fees_paid = yes has_variable = ywc_kor_revenue_review_mature var:ywc_kor_revenue_review_streak >= 6 ywc_kor_revenue_both_snapshots_match = yes has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_reviewer_current_duty = yes } ywc_kor_revenue_submit_review = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "不新增费用。",
+                "en": "No new fee."
+              },
+              "consequence_note": {
+                "zh": "停止运行但保留成熟证明；进入责任重审。",
+                "en": "Stop running but keep the maturity proof; proceed to responsibility review."
+              }
+            },
+            {
+              "key": "narrow_finite",
+              "label": {
+                "zh": "缩为明确有限目标后重数",
+                "en": "Narrow to the explicit finite target and recount"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1104 = yes ywc_kor_revenue_both_fees_paid = yes has_variable = ywc_kor_revenue_review_mature has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_finance_safe = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1104 = yes ywc_kor_revenue_both_fees_paid = yes has_variable = ywc_kor_revenue_review_mature has_variable = ywc_kor_revenue_reviewer ywc_kor_revenue_finance_safe = yes } ywc_kor_revenue_narrow_to_finite = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不新增费用；已付两费保留，无需再付。",
+                "en": "No new fee; both paid fees remain, no re-payment."
+              },
+              "consequence_note": {
+                "zh": "真实重签为有限目标并回到 1104，从零重数六次；不自动换税法或偷偷换试点。",
+                "en": "Truly re-sign as the finite target and return to 1104 for six fresh months; no automatic tax-law change or silent pilot swap."
+              }
+            },
+            {
+              "key": "wait_run",
+              "label": {
+                "zh": "等待下一月观察",
+                "en": "Wait for the next monthly observation"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1104 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1104 = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议。",
+                "en": "Keep the question open for a later monthly chance."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1104 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1104 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "用真实复核费与真实连续观察决定能否缴账，保留重启与两笔费用。",
+            "en": "Use the real review fee and real continuous run to decide submission, keeping restart and both fees."
+          },
+          "reads": [
+            "ywc_kor_revenue_can_pay_review",
+            "ywc_kor_revenue_selected_current_ready",
+            "ywc_kor_revenue_reviewer_current_duty",
+            "ywc_kor_revenue_prior_court_contract",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_kor_revenue_review_paid",
+            "ywc_kor_revenue_review_paid_amount",
+            "ywc_kor_revenue_review_pilot",
+            "ywc_kor_revenue_review_mode",
+            "ywc_kor_revenue_review_target",
+            "ywc_kor_revenue_review_streak",
+            "ywc_kor_revenue_review_mature",
+            "ywc_kor_revenue_review_running",
+            "ywc_kor_revenue_target",
+            "ywc_kor_revenue_finite_chosen",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "treasury",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1105",
+          "title": {
+            "zh": "没有加税的那一页",
+            "en": "The Page Without a New Levy"
+          },
+          "desc": {
+            "zh": "按当下税法、政府中的集团、在职岗位与试点动荡重审公共责任，记录本线当前是完整落实、明确有限，还是真实受挫请求。长期和平下学校、公共机构与军备仍要真实岗位；旧中央查核合同在此重读原承诺与当下军营。",
+            "en": "Reread public responsibility against current tax law, in-government groups, staffed posts and pilot turmoil, recording whether this line is now a full implementation, an explicit finite one, or a genuine setback request. In long peace, schools, public bodies and garrisons still need real posts; the old central-inspection contract is reread here against its commitment and current barracks."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1105 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 6 } }",
+          "options": [
+            {
+              "key": "review_responsibility",
+              "label": {
+                "zh": "按当下事实记录公共责任",
+                "en": "Record public responsibility on current facts"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1105 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1105 = yes } ywc_kor_revenue_review_responsibility = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "不新增费用，只重读当下事实。",
+                "en": "No new fee; only reread current facts."
+              },
+              "consequence_note": {
+                "zh": "记录当前责任分类；不赠资、不冒认外国同意、不自动换税法。",
+                "en": "Record the current responsibility class; grant no funds, assume no foreign consent and change no tax law."
+              }
+            },
+            {
+              "key": "wait_conditions",
+              "label": {
+                "zh": "等待岗位或条件恢复",
+                "en": "Wait for posts or conditions"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1105 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1105 = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议；已付费用保留。",
+                "en": "Keep the question open for a later monthly chance; paid fees remain."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1105 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1105 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "用当下税法、集团、岗位与动荡重审公共责任。",
+            "en": "Reread public responsibility on current law, groups, posts and turmoil."
+          },
+          "reads": [
+            "ywc_kor_revenue_full_conditions",
+            "ywc_kor_revenue_target2_finite",
+            "ywc_kor_revenue_reviewer_current_duty",
+            "ywc_kor_revenue_prior_court_contract"
+          ],
+          "writes": [
+            "ywc_kor_revenue_responsibility",
+            "ywc_kor_revenue_reviewer",
+            "ywc_kor_revenue_reviewer_pilot",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1106",
+          "title": {
+            "zh": "留用权不是第二次收款",
+            "en": "Retention Rights Are Not a Second Bill"
+          },
+          "desc": {
+            "zh": "核验两笔已付、责任来源与当下状态。可明确重数回 1104 而不重收两费；重数清请求、成熟与中断标记，从零重计但保留已付。核验通过则进入最终结算。",
+            "en": "Verify both paid fees, the responsibility source and current state. You may explicitly recount back to 1104 without charging either fee again; recount clears request, maturity and interruption and recounts from zero but keeps payments. Passing verification proceeds to the final settlement."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1106 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 7 } }",
+          "options": [
+            {
+              "key": "verify",
+              "label": {
+                "zh": "核验已付与责任并进入结算",
+                "en": "Verify payments and liability and proceed to close"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes } ywc_kor_revenue_verify_and_close = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "不新增费用。",
+                "en": "No new fee."
+              },
+              "consequence_note": {
+                "zh": "两笔已付与责任来源核对后进入最终结算。",
+                "en": "After checking both paid fees and the liability source, proceed to the final settlement."
+              }
+            },
+            {
+              "key": "recount",
+              "label": {
+                "zh": "明确重数：回 1104 不重收两费",
+                "en": "Explicit recount: back to 1104 with no second charge"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes } ywc_kor_revenue_recount = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不重扣两笔已付；重数只清计时与请求。",
+                "en": "Neither paid fee is recharged; recount only clears the timer and request."
+              },
+              "consequence_note": {
+                "zh": "回到 1104 从零重数六次，已付保留。",
+                "en": "Return to 1104 and recount six months from zero; payments remain."
+              }
+            },
+            {
+              "key": "wait_verify",
+              "label": {
+                "zh": "等待条件恢复后再核",
+                "en": "Wait for conditions before verifying"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1106 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1106 = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议。",
+                "en": "Keep the question open for a later monthly chance."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本次留用议案",
+                "en": "Withdraw this retained-share mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1106 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1106 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "结束本次议案并幂等释放本线名额一次。",
+                "en": "End this mandate and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "核验两笔已付与责任，提供不重收的重数出口。",
+            "en": "Verify both paid fees and liability and offer a recount exit without recharging."
+          },
+          "reads": [
+            "ywc_kor_revenue_both_fees_paid",
+            "ywc_kor_revenue_reviewer_current_duty"
+          ],
+          "writes": [
+            "ywc_kor_revenue_reviewer",
+            "ywc_kor_revenue_reviewer_pilot",
+            "ywc_kor_revenue_requested",
+            "ywc_kor_revenue_review_streak",
+            "ywc_kor_revenue_review_mature",
+            "ywc_kor_revenue_review_interrupted",
+            "ywc_kor_revenue_stage",
+            "ywc_kor_revenue_pending_event",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_kor.1107",
+          "title": {
+            "zh": "府库关账以后",
+            "en": "After the Treasury Closes Its Books"
+          },
+          "desc": {
+            "zh": "执行当前核验后的唯一终态：完整落实、明确有限、真实受挫或主动退出。请求与最终执行都重核当下事实；两支完整政策在当下条件失效时才能请求受挫，恢复后旧受挫按钮不再合法。",
+            "en": "Execute the single terminal state after the current check: full implementation, explicit finite, genuine setback or voluntary exit. Both request and final execution recheck current facts; a full policy may request a setback only once current conditions fail, and the old setback button is no longer legal after recovery."
+          },
+          "trigger": "{ c:KOR ?= this ywc_v03_can_deliver_major = yes ywc_kor_revenue_stage_1107 = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 8 } }",
+          "options": [
+            {
+              "key": "request_full",
+              "label": {
+                "zh": "请求完整落实终态",
+                "en": "Request the full-implementation terminal state"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_full = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_full = yes } ywc_kor_revenue_request_full = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "不新增费用。",
+                "en": "No new fee."
+              },
+              "consequence_note": {
+                "zh": "记录完整请求；最终仍须再核当下事实后才结算。",
+                "en": "Record the full request; final settlement still rechecks current facts."
+              }
+            },
+            {
+              "key": "request_finite",
+              "label": {
+                "zh": "请求明确有限终态",
+                "en": "Request the explicit-finite terminal state"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_finite = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_finite = yes } ywc_kor_revenue_request_finite = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不新增费用。",
+                "en": "No new fee."
+              },
+              "consequence_note": {
+                "zh": "记录有限请求；不冒称完整改革。",
+                "en": "Record the finite request; never claim a full reform."
+              }
+            },
+            {
+              "key": "request_setback",
+              "label": {
+                "zh": "请求真实受挫终态",
+                "en": "Request the genuine-setback terminal state"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_setback = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_setback = yes } ywc_kor_revenue_request_setback = yes } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不新增费用，不退款。",
+                "en": "No new fee or refund."
+              },
+              "consequence_note": {
+                "zh": "只在已付且已成熟但当下运行资格丢失时合法；恢复后不再合法。",
+                "en": "Legal only once paid and matured but current running eligibility is lost; not legal after recovery."
+              }
+            },
+            {
+              "key": "wait_close",
+              "label": {
+                "zh": "等待当前事实恢复后再关账",
+                "en": "Wait for current facts before closing"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1107 = yes }",
+              "effect": "{ ywc_kor_revenue_wait_1107 = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "不收费，既有责任保留。",
+                "en": "No charge; existing obligations remain."
+              },
+              "consequence_note": {
+                "zh": "保留本议题，待后续月度机会再议；已付费用保留。",
+                "en": "Keep the question open for a later monthly chance; paid fees remain."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "主动退出本次议案",
+                "en": "Voluntarily withdraw this mandate"
+              },
+              "trigger": "{ ywc_kor_revenue_at_1107 = yes }",
+              "effect": "{ if = { limit = { ywc_kor_revenue_at_1107 = yes } ywc_kor_revenue_withdraw = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不新收费，不退款，不冲销旧合同。",
+                "en": "No new charge or refund; old contracts remain."
+              },
+              "consequence_note": {
+                "zh": "记录退出终态并幂等释放本线名额一次。",
+                "en": "Record the withdrawal terminal state and idempotently release this arc's slot once."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "在执行层再核当下事实后确认唯一终态。",
+            "en": "Confirm the single terminal state after rechecking current facts at execution."
+          },
+          "reads": [
+            "ywc_kor_revenue_terminal_full",
+            "ywc_kor_revenue_terminal_finite",
+            "ywc_kor_revenue_terminal_setback",
+            "ywc_kor_revenue_reviewer_current_duty"
+          ],
+          "writes": [
+            "ywc_kor_revenue_outcome",
+            "ywc_v03_kor_v03_kor_provincial_revenue_settled",
+            "ywc_v03_kor_v03_kor_provincial_revenue_outcome",
+            "ywc_v03_active_arc_count",
+            "ywc_v03_visible_task_count",
+            "ywc_v03_kor_v03_kor_provincial_revenue_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        }
+      ],
+      "outcomes": [
+        "full:显式完整政策在当下税法、集团、在职岗位、动荡及两笔真实付款与六次真实成熟都成立后结算，不赠税法或选票",
+        "finite:显式保守有限目标在试点在职公务、合法性与动荡、和平与财务成立后结算，不冒称完整改革",
+        "setback:两支完整政策已付且已成熟、但当下运行资格丢失时请求与执行，保留已付与条款供后续读取",
+        "withdrawn:明确退出并仅释放一次本线名额，旧军门/书院/港市合同与已付费用保留"
+      ],
+      "legacy_links": [
+        "v03_kor_military_accounts:真实省报账合同令成文分税立契减半并沿用地方核账半份公务，真实中央查核合同令中央统收复核降为一份并在1105重读原承诺与当下军营；不调用旧release、不改旧outcome",
+        "v03_kor_school_factions:已真实支付的合办或官学任用、旧账、复核与当下大学/官署岗位改变1102采用的核价人与1105/1106责任条款，不赠资、不冒领资格",
+        "v03_kor_controlled_ports:已真实支付的指定或一般港市、先前合同核验与当下审计者改变1102核价人与1105/1106责任条款，退出或折中不计为正向合同",
+        "既有外教与军用品付款不被本卡冒认；无真实双同意与合作时不新增外国投入"
+      ],
+      "inline_delivery_adapter": {
+        "schema": "v03.foundation_inline_adapter.v2",
+        "live_phases": [
+          {
+            "journal": "ywc_je_v03_kor_provincial_revenue_settlement",
+            "live_witness": "ywc_v03_kor_inline_live_provincial_revenue_settlement",
+            "source_script_sha256": "aa5e2f8c3ccbbd19e678f45ac2d7e76d3a60c09398cbb1c1286f0e2a785e6c89",
+            "goal_sha256": "19f4e20b7c7f29cd6e6974e60348c7580d71b7c3fd9c9d7f943b0d21cf6a994e",
+            "exit_sha256": "32695fa201f93e3224b4ad4d00b7af67f5a64987f6f8fcc18cf422cb7f8a3832"
+          },
+          {
+            "journal": "ywc_je_v03_kor_provincial_revenue_review",
+            "live_witness": "ywc_v03_kor_inline_live_provincial_revenue_review",
+            "source_script_sha256": "c082f0a8f3d0450c49580679ef2f3ab93656defb56d7c0fa28f0f7b4332a0068",
+            "goal_sha256": "4ac638406705e4114f216d45d68926877349987aeed7cb8809307ec1c87ab8d3",
+            "exit_sha256": "32695fa201f93e3224b4ad4d00b7af67f5a64987f6f8fcc18cf422cb7f8a3832"
+          }
+        ],
+        "branches": [
+          {
+            "branch_index": 0,
+            "statement_ordinal": 1,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_kor.1100",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1100
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_settlement",
+            "branch_sha256": "e48d97c69471f2c1196c4f0498d9ce1be6f89e942398566e3c0e2a4b78ab31b9",
+            "limit_sha256": "eca7d2a6141958da3e72ebb50f897d99670d5ae53c50558aae59c8e8d0059146"
+          },
+          {
+            "branch_index": 1,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_kor.1101",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "e48d97c69471f2c1196c4f0498d9ce1be6f89e942398566e3c0e2a4b78ab31b9",
+                "limit_sha256": "eca7d2a6141958da3e72ebb50f897d99670d5ae53c50558aae59c8e8d0059146",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1100 }"
+              }
+            ],
+            "chain_sha256": "569335a48b795ca232f4ba383f130d9d6fd38eb85309a0f8c2ee42bdd8004121",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1101
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_settlement",
+            "branch_sha256": "516fad5d9d6e9c0957ac8c2442d8b02b86b97533b2c6fbbae48b653f651627df",
+            "limit_sha256": "8dbc2ab228d304596f04f909b0ca0960e98e3f6e7769319e7ca085b95a60c5c0"
+          },
+          {
+            "branch_index": 2,
+            "statement_ordinal": 3,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_kor.1102",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "e48d97c69471f2c1196c4f0498d9ce1be6f89e942398566e3c0e2a4b78ab31b9",
+                "limit_sha256": "eca7d2a6141958da3e72ebb50f897d99670d5ae53c50558aae59c8e8d0059146",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1100 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "516fad5d9d6e9c0957ac8c2442d8b02b86b97533b2c6fbbae48b653f651627df",
+                "limit_sha256": "8dbc2ab228d304596f04f909b0ca0960e98e3f6e7769319e7ca085b95a60c5c0",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1101 }"
+              }
+            ],
+            "chain_sha256": "e40e1229900d3011b632ff367fa5fd49d0f86549d0fe99bc6495f8bfa139adbd",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1102
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_settlement",
+            "branch_sha256": "7058325dd9a42e05be793c65be60ea93949490557e9caa82846a235bb875ee5e",
+            "limit_sha256": "ad055199f9cf5ee6d3b9105de5b419a32c098740a0c04a39f654b31988be3901"
+          },
+          {
+            "branch_index": 3,
+            "statement_ordinal": 4,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_kor.1103",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "e48d97c69471f2c1196c4f0498d9ce1be6f89e942398566e3c0e2a4b78ab31b9",
+                "limit_sha256": "eca7d2a6141958da3e72ebb50f897d99670d5ae53c50558aae59c8e8d0059146",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1100 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "516fad5d9d6e9c0957ac8c2442d8b02b86b97533b2c6fbbae48b653f651627df",
+                "limit_sha256": "8dbc2ab228d304596f04f909b0ca0960e98e3f6e7769319e7ca085b95a60c5c0",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1101 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "7058325dd9a42e05be793c65be60ea93949490557e9caa82846a235bb875ee5e",
+                "limit_sha256": "ad055199f9cf5ee6d3b9105de5b419a32c098740a0c04a39f654b31988be3901",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1102 }"
+              }
+            ],
+            "chain_sha256": "e3f43973859b63568b1eb70083c9a612443b8c70b4e7d803bbe0d768378e9d85",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1103
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_settlement",
+            "branch_sha256": "ac174e3fbdf080a6a95bfd81a0ce74a647e4ef9a2c86e87f067797884b197254",
+            "limit_sha256": "1dfa0ccebc2121f5d7248b79803f474427e9cb6aa9041481ac2187e5c49c6ec1"
+          },
+          {
+            "branch_index": 0,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_kor.1104",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1104
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_review",
+            "branch_sha256": "5cee57b411b2577827909b184d0072a87231a88e89758db9c4f4807a2ba6520a",
+            "limit_sha256": "89403694a08d6fd1b306d5ec95ffdb4762c8f6f6154d28d22a0627719163ef28"
+          },
+          {
+            "branch_index": 1,
+            "statement_ordinal": 3,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_kor.1105",
+            "chain_prior": [
+              {
+                "ordinal": 2,
+                "sha256": "5cee57b411b2577827909b184d0072a87231a88e89758db9c4f4807a2ba6520a",
+                "limit_sha256": "89403694a08d6fd1b306d5ec95ffdb4762c8f6f6154d28d22a0627719163ef28",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1104 }"
+              }
+            ],
+            "chain_sha256": "0f416aa35d4f94e1478f624a292f06b2bb6f9eb931ae58e0ff4b20241e6e588e",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1105
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_review",
+            "branch_sha256": "0f5e56da78890cc22e1accce412042ecef8e36d44de716148e2d6edba9ed25a2",
+            "limit_sha256": "0c6970314ea0b48d88b3bb7146025a1eee1f0f4a703d4c571d1dbddfa6760665"
+          },
+          {
+            "branch_index": 2,
+            "statement_ordinal": 4,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_kor.1106",
+            "chain_prior": [
+              {
+                "ordinal": 2,
+                "sha256": "5cee57b411b2577827909b184d0072a87231a88e89758db9c4f4807a2ba6520a",
+                "limit_sha256": "89403694a08d6fd1b306d5ec95ffdb4762c8f6f6154d28d22a0627719163ef28",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1104 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "0f5e56da78890cc22e1accce412042ecef8e36d44de716148e2d6edba9ed25a2",
+                "limit_sha256": "0c6970314ea0b48d88b3bb7146025a1eee1f0f4a703d4c571d1dbddfa6760665",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1105 }"
+              }
+            ],
+            "chain_sha256": "e638cebc7f0cd3b2b6b1b33302fd1a4c8bd224f03862ff055cd8cfd232586809",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1106
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_review",
+            "branch_sha256": "eec88b3d02140d9a0eedc6f24095c6dad3016cb4baba16986d3c288d6b4e903e",
+            "limit_sha256": "2dcf45fa52bdfdf1cea34653928dc81fc6db9aa5ad9958aa3887434635ac761d"
+          },
+          {
+            "branch_index": 3,
+            "statement_ordinal": 5,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_kor.1107",
+            "chain_prior": [
+              {
+                "ordinal": 2,
+                "sha256": "5cee57b411b2577827909b184d0072a87231a88e89758db9c4f4807a2ba6520a",
+                "limit_sha256": "89403694a08d6fd1b306d5ec95ffdb4762c8f6f6154d28d22a0627719163ef28",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1104 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "0f5e56da78890cc22e1accce412042ecef8e36d44de716148e2d6edba9ed25a2",
+                "limit_sha256": "0c6970314ea0b48d88b3bb7146025a1eee1f0f4a703d4c571d1dbddfa6760665",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1105 }"
+              },
+              {
+                "ordinal": 4,
+                "sha256": "eec88b3d02140d9a0eedc6f24095c6dad3016cb4baba16986d3c288d6b4e903e",
+                "limit_sha256": "2dcf45fa52bdfdf1cea34653928dc81fc6db9aa5ad9958aa3887434635ac761d",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_kor_revenue_pending_event = 1106 }"
+              }
+            ],
+            "chain_sha256": "6985f2e6e7be5a3e38558f6d8d3ac2a345da44dbc58276a5305d4bb073600ba9",
+            "candidates": [
+              {
+                "queue": "ywc_kor_revenue_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1107
+              }
+            ],
+            "queue_exclusions": [],
+            "journal": "ywc_je_v03_kor_provincial_revenue_review",
+            "branch_sha256": "ce6be12ffd314c38af34c2b2468a5abb49f18db8305225ba875776490a8c1056",
+            "limit_sha256": "b08cabdd7d209b77ce0ca26a8fd827aee68f9187e1f0e1b9e33e307ad40bf060"
           }
         ],
         "direct_adds": []
