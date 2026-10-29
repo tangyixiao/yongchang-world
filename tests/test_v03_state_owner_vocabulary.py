@@ -24,7 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # nested in the selected owned state before entering pop/workplace scope.
 # Eight more selected-state predicates belong to the market card; PHI's own
 # border predicate uses c:PHI and cannot count as one of ROOT's eight.
-COUNTS = dict(dmg=23, jhg=4, kor=6, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
+# Revenue adds one candidate-state query and one typed saved-state owner check.
+COUNTS = dict(dmg=23, jhg=4, kor=8, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
 
 
 def source(path):
@@ -46,6 +47,11 @@ def walk(nodes, scope="country"):
                 next_scope = "building"
             elif key in ("any_scope_pop", "every_scope_pop"):
                 next_scope = "pop"
+            elif key == "var:ywc_kor_revenue_pilot_state":
+                # This variable stores the native state object selected by
+                # claim_pilot; kor_revenue_runtime primitive tests exercise its
+                # identity, ownership loss and unavailable-object behavior.
+                next_scope = "state"
             elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
                 next_scope = "country"
             yield from walk(value, next_scope)
