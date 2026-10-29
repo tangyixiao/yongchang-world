@@ -25,7 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # Eight more selected-state predicates belong to the market card; PHI's own
 # border predicate uses c:PHI and cannot count as one of ROOT's eight.
 # Revenue adds one candidate-state query and one typed saved-state owner check.
-COUNTS = dict(dmg=23, jhg=4, kor=8, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
+# Court public adds the same two shapes with its own saved StateRef variable.
+COUNTS = dict(dmg=23, jhg=4, kor=10, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
 
 
 def source(path):
@@ -47,10 +48,9 @@ def walk(nodes, scope="country"):
                 next_scope = "building"
             elif key in ("any_scope_pop", "every_scope_pop"):
                 next_scope = "pop"
-            elif key == "var:ywc_kor_revenue_pilot_state":
-                # This variable stores the native state object selected by
-                # claim_pilot; kor_revenue_runtime primitive tests exercise its
-                # identity, ownership loss and unavailable-object behavior.
+            elif key in ("var:ywc_kor_revenue_pilot_state", "var:ywc_kor_public_pilot_state"):
+                # Only these exact native StateRef variables cross into state
+                # scope; all other var:/scope: forms keep the country rule.
                 next_scope = "state"
             elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
                 next_scope = "country"
@@ -67,7 +67,8 @@ class StateOwnerVocabularyTests(unittest.TestCase):
             self.assertEqual((op, value, current_scope), ("=", "ROOT", "state"))
 
     def test_inventory_rejects_owner_after_non_state_scope_transition(self):
-        for nested in ("any_scope_building", "any_scope_pop", "c:SHU", "scope:ywc_kor_requester"):
+        for nested in ("any_scope_building", "any_scope_pop", "c:SHU", "scope:ywc_kor_requester",
+                       "var:unknown_country_var"):
             with self.subTest(nested=nested):
                 script = f"any_scope_state = {{ {nested} = {{ owner = ROOT }} }}"
                 owner = [row for row in walk(parse(script)) if row[0] == "owner"]

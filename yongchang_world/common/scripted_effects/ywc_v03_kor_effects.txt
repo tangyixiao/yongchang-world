@@ -2154,3 +2154,691 @@ ywc_kor_revenue_prepare_queue = {
 		set_variable = { name = ywc_kor_revenue_pending_event value = var:ywc_kor_revenue_stage }
 	}
 }
+
+# M5 KOR court public effects (v03_kor_court_public). Append-only.
+# Claim once captures B = opening yearly_gross_income / 52 (min 100, max 1e9) and the
+# first currently owned state via a saved-scope guard, then stores public_pilot_state.
+ywc_kor_public_claim_once = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_started }
+			NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_settled }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+			ywc_kor_public_has_any_owned_state = yes
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		set_variable = { name = ywc_kor_public_budget value = yearly_gross_income }
+		change_variable = { name = ywc_kor_public_budget divide = 52 }
+		clamp_variable = { name = ywc_kor_public_budget min = 100 max = 1000000000 }
+		every_scope_state = {
+			limit = { owner = c:KOR NOT = { exists = scope:ywc_kor_public_first_pilot } }
+			save_scope_as = ywc_kor_public_first_pilot
+		}
+		if = {
+			limit = { exists = scope:ywc_kor_public_first_pilot }
+			set_variable = { name = ywc_kor_public_pilot_state value = scope:ywc_kor_public_first_pilot }
+		}
+		set_variable = { name = ywc_kor_public_stage value = 1120 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1120 }
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_last_event value = 0 }
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_phase value = 1 }
+	}
+}
+
+# 1120: choose the policy and target. The pilot was already captured by claim; no
+# re-capture happens here. The pending event advances to 1121.
+ywc_kor_public_set_mode_court_open = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 1 }
+		set_variable = { name = ywc_kor_public_target value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+ywc_kor_public_set_mode_local_delegates = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 2 }
+		set_variable = { name = ywc_kor_public_target value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+ywc_kor_public_set_mode_conservative = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 3 }
+		set_variable = { name = ywc_kor_public_target value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+# 1120 finite choice: explicit mode 3 / target 2 for the conservative finite goal.
+ywc_kor_public_set_finite = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 3 }
+		set_variable = { name = ywc_kor_public_target value = 2 }
+		set_variable = { name = ywc_kor_public_finite_chosen value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+ywc_kor_public_wait_1120 = {
+	if = { limit = { ywc_kor_public_at_1120 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1121 petition fee: atomic recheck of current cash/default/bankruptcy, then real debit.
+# Only a completed debit writes paid + positive amount. Never refunded, never recharged.
+ywc_kor_public_pay_petition_once = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1121 = yes
+			NOT = { has_variable = ywc_kor_public_petition_paid }
+			ywc_kor_public_can_pay_petition = yes
+		}
+		set_variable = { name = ywc_kor_public_petition_paid_amount value = var:ywc_kor_public_budget }
+		if = { limit = { ywc_kor_public_petition_half = yes } change_variable = { name = ywc_kor_public_petition_paid_amount multiply = 0.5 } }
+		if = { limit = { var:ywc_kor_public_mode = 2 NOT = { ywc_kor_public_petition_prior_written_shares = yes } } change_variable = { name = ywc_kor_public_petition_paid_amount multiply = 2 } }
+		add_treasury = { value = var:ywc_kor_public_petition_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_public_petition_paid value = 1 }
+		set_variable = { name = ywc_kor_public_petition_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_petition_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_petition_target value = var:ywc_kor_public_target }
+		if = { limit = { var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 ywc_kor_public_petition_prior_written_shares = yes } set_variable = { name = ywc_kor_public_petition_source_written_shares value = 1 } }
+		set_variable = { name = ywc_kor_public_handler value = 4 }
+		if = { limit = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 } set_variable = { name = ywc_kor_public_handler value = 1 } }
+		if = { limit = { var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 } set_variable = { name = ywc_kor_public_handler value = 2 } }
+		if = { limit = { var:ywc_kor_public_mode = 3 var:ywc_kor_public_target = 1 } set_variable = { name = ywc_kor_public_handler value = 3 } }
+		set_variable = { name = ywc_kor_public_handler_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_stage value = 1122 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1122 }
+	}
+}
+
+ywc_kor_public_wait_1121 = {
+	if = { limit = { ywc_kor_public_at_1121 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1122: choose the professional witness by real current posts at the saved pilot.
+# New witness kind 1: academics -> university or bureaucrats/clerks -> office at .8.
+# Reuse coop (2) / office (3): old paid school source, .5 posts. Conservative full (4)
+# office .5; finite (5) office .25. The witness triple is mode/target/pilot-bound.
+ywc_kor_public_choose_new_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid OR = { ywc_kor_public_pilot_academic_post = yes ywc_kor_public_pilot_clerk_post_full = yes } }
+		set_variable = { name = ywc_kor_public_witness_kind value = 1 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_coop_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid ywc_kor_revenue_prior_school_coop = yes ywc_kor_public_pilot_academic_post_half = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 2 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_school_route_snapshot value = 1 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_office_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid ywc_kor_revenue_prior_school_office = yes ywc_kor_public_pilot_clerk_post_half = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 3 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_school_route_snapshot value = 2 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_conservative_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid var:ywc_kor_public_target = 1 var:ywc_kor_public_mode = 3 ywc_kor_public_pilot_office_half = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 4 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_finite_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid var:ywc_kor_public_target = 2 ywc_kor_public_pilot_office_bounded = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 5 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+# Record the actual out-of-government, dissatisfied IG opposition categories as bits.
+# 0 only means this real query found no such category, not a substituted world fact.
+ywc_kor_public_record_opposition = {
+	set_variable = { name = ywc_kor_public_opp_landowners value = 0 }
+	set_variable = { name = ywc_kor_public_opp_devout value = 0 }
+	set_variable = { name = ywc_kor_public_opp_armed_forces value = 0 }
+	set_variable = { name = ywc_kor_public_opp_intelligentsia value = 0 }
+	set_variable = { name = ywc_kor_public_opp_industrialists value = 0 }
+	set_variable = { name = ywc_kor_public_opp_rural_folk value = 0 }
+	set_variable = { name = ywc_kor_public_opp_petty_bourgeoisie value = 0 }
+	set_variable = { name = ywc_kor_public_opp_trade_unions value = 0 }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_landowners is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_landowners value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_devout is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_devout value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_armed_forces is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_armed_forces value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_intelligentsia value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_industrialists is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_industrialists value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_rural_folk value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_petty_bourgeoisie is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_petty_bourgeoisie value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_trade_unions is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_trade_unions value = 1 } }
+}
+
+# Record the existential suppressed-movement category (same movement suppressed +
+# radicalism >= .25). This is a suppression fact, never "an underground organization
+# formed"; the public answer never claims to represent or lift its suppression.
+ywc_kor_public_record_suppressed = {
+	set_variable = { name = ywc_kor_public_suppressed_category value = 0 }
+	if = { limit = { ywc_kor_public_suppressed_movement_present = yes } set_variable = { name = ywc_kor_public_suppressed_category value = 1 } }
+}
+
+ywc_kor_public_wait_1122 = {
+	if = { limit = { ywc_kor_public_at_1122 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1123: sign responsibility against the CURRENT earned handler/witness and first fee.
+# It never requires the signature it is about to write or the future accept. Valid
+# signing sets phase 2, stage 1124, and the settlement-ready marker that lets JE2
+# auto-activate via its native possible trigger (no literal add_journal_entry, so the
+# catalog direct_add count stays zero). JE2 activates regardless of later capacity or
+# state loss.
+ywc_kor_public_sign_responsibility = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1123 = yes
+			var:ywc_kor_public_phase = 1
+			has_variable = ywc_kor_public_petition_paid
+			var:ywc_kor_public_petition_paid_amount > 0
+			has_variable = ywc_kor_public_handler
+			has_variable = ywc_kor_public_witness_kind
+			ywc_kor_public_mode_chosen = yes
+			ywc_kor_public_target_chosen = yes
+			ywc_kor_public_pilot_owned = yes
+			ywc_kor_public_selected_current_ready = yes
+			ywc_kor_public_witness_current_duty = yes
+			ywc_kor_public_petition_snapshot_match = yes
+			ywc_kor_public_adopted_written_shares_current = yes
+			ywc_kor_public_adopted_school_source_current = yes
+		}
+		set_variable = { name = ywc_kor_public_phase value = 2 }
+		set_variable = { name = ywc_kor_public_sign_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_sign_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_sign_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_signed value = 1 }
+		set_variable = { name = ywc_kor_public_settlement_ready value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1124 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1124 }
+	}
+}
+
+ywc_kor_public_wait_1123 = {
+	if = { limit = { ywc_kor_public_at_1123 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1124 sealed-case reply clause: if a suppressed movement category is present, the
+# extra option records a sealed case reply (office .5 full / .25 finite) BEFORE the
+# route reply. Without the movement the option is not offered.
+ywc_kor_public_record_sealed_case = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes ywc_kor_public_suppressed_movement_present = yes }
+		set_variable = { name = ywc_kor_public_sealed_case_recorded value = 1 }
+	}
+}
+
+# 1124 route reply: reread the current witness source, opposition list and legal
+# boundary, record accept triple + channel, and genuinely start the review. When a real
+# suppressed movement category is present, the sealed case clause must already be
+# recorded (the extra option above), so the reply never half-mutates.
+ywc_kor_public_accept_court_read = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 ywc_kor_public_law_court_speech = yes ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 1 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+ywc_kor_public_accept_local_open = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 ywc_kor_public_law_assembly_speech = yes ywc_kor_public_law_voting_power = yes ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 2 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+ywc_kor_public_accept_sealed_royal = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_mode = 3 var:ywc_kor_public_target = 1 ywc_kor_public_law_conservative_speech = yes ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 3 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+ywc_kor_public_accept_bounded_clerk = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_target = 2 ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 4 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+# Begin the six-month observation from 1124. It re-checks that the sealed case clause is
+# satisfied, then initializes streak 0, starts running behind a one-day tick gate, and
+# advances to stage 1125.
+ywc_kor_public_start_review = {
+	if = {
+		limit = {
+			OR = {
+				ywc_kor_public_suppressed_movement_present = no
+				has_variable = ywc_kor_public_sealed_case_recorded
+			}
+		}
+		remove_variable = ywc_kor_public_review_running
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1125 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1125 }
+	}
+}
+
+ywc_kor_public_wait_1124 = {
+	if = { limit = { ywc_kor_public_at_1124 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# Monthly observation at stage 1125 in two phases: (a) counting while review_running,
+# (b) a continuous mature watch after maturity that clears mature/streak on any ordinary
+# current loss. Counting still runs while explicitly running even when both fees are
+# already paid (a paid recount or finite re-sign must earn six FRESH months); the stage
+# 1125 gate alone suppresses any late 1126/1127 post-payment mutation, which preserves the
+# genuinely paid earned maturity for honest setback. At streak 6 the run stops
+# (review_running removed).
+ywc_kor_public_track_review = {
+	if = {
+		limit = {
+			ywc_kor_public_open = yes
+			var:ywc_kor_public_stage = 1125
+			NOT = { has_variable = ywc_kor_public_review_ticked }
+			OR = { has_variable = ywc_kor_public_review_running has_variable = ywc_kor_public_review_mature }
+		}
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		if = {
+			limit = {
+				OR = {
+					NOT = { ywc_kor_public_selected_current_ready = yes }
+					NOT = { ywc_kor_public_witness_current_duty = yes }
+					NOT = { ywc_kor_public_channel_current_legal = yes }
+					ywc_kor_public_new_opposition_appeared = yes
+					ywc_kor_public_new_suppressed_appeared = yes
+					NOT = { ywc_kor_public_adopted_school_source_current = yes }
+					NOT = { ywc_kor_public_adopted_written_shares_current = yes }
+				}
+			}
+			set_variable = { name = ywc_kor_public_review_streak value = 0 }
+			remove_variable = ywc_kor_public_review_mature
+			remove_variable = ywc_kor_public_review_running
+			set_variable = { name = ywc_kor_public_review_interrupted value = 1 }
+		}
+		else_if = {
+			limit = { NOT = { has_variable = ywc_kor_public_review_mature } }
+			change_variable = { name = ywc_kor_public_review_streak add = 1 }
+			if = { limit = { var:ywc_kor_public_review_streak >= 6 } set_variable = { name = ywc_kor_public_review_mature value = 1 } remove_variable = ywc_kor_public_review_running }
+		}
+	}
+}
+
+# 1125: bill the real review fee only after genuine six-month maturity. Paying must NOT
+# reset the run: keep mature/streak, stop running, and advance to 1126.
+ywc_kor_public_pay_review_and_run = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			NOT = { has_variable = ywc_kor_public_review_paid }
+			ywc_kor_public_can_pay_review = yes
+		}
+		set_variable = { name = ywc_kor_public_review_paid_amount value = var:ywc_kor_public_budget }
+		if = { limit = { ywc_kor_public_review_half = yes } change_variable = { name = ywc_kor_public_review_paid_amount multiply = 0.5 } }
+		else_if = { limit = { var:ywc_kor_public_mode = 2 } change_variable = { name = ywc_kor_public_review_paid_amount multiply = 1.5 } }
+		if = { limit = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 ywc_kor_public_review_school_discount = yes } set_variable = { name = ywc_kor_public_review_paid_amount value = var:ywc_kor_public_budget } change_variable = { name = ywc_kor_public_review_paid_amount multiply = 0.75 } }
+		if = { limit = { var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 ywc_kor_public_petition_prior_written_shares = yes } set_variable = { name = ywc_kor_public_review_paid_amount value = var:ywc_kor_public_budget } }
+		add_treasury = { value = var:ywc_kor_public_review_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_public_review_paid value = 1 }
+		set_variable = { name = ywc_kor_public_review_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_review_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_review_target value = var:ywc_kor_public_target }
+		if = { limit = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 ywc_kor_public_review_school_discount = yes } set_variable = { name = ywc_kor_public_review_source_school value = 1 } }
+		remove_variable = ywc_kor_public_review_running
+		set_variable = { name = ywc_kor_public_stage value = 1126 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1126 }
+	}
+}
+
+# Free advance after payment: positive paid amount + mature + current, no cash gate and
+# no recharge. It advances to 1126 without charging again.
+ywc_kor_public_advance_paid_review = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			ywc_kor_public_both_fees_paid = yes
+			has_variable = ywc_kor_public_review_mature
+			var:ywc_kor_public_review_streak >= 6
+			NOT = { has_variable = ywc_kor_public_review_interrupted }
+			ywc_kor_public_selected_current_ready = yes
+			ywc_kor_public_historical_identity_complete = yes
+			ywc_kor_public_witness_current_duty = yes
+			ywc_kor_public_channel_current_legal = yes
+			ywc_kor_public_new_opposition_appeared = no
+			ywc_kor_public_new_suppressed_appeared = no
+			ywc_kor_public_adopted_school_source_current = yes
+			ywc_kor_public_adopted_written_shares_current = yes
+		}
+		remove_variable = ywc_kor_public_review_running
+		set_variable = { name = ywc_kor_public_stage value = 1126 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1126 }
+	}
+}
+
+# Explicit restart after interruption: refresh the current opposition/sealed records and
+# start six fresh, preserving any real paid bill. It does not require matching the old
+# failed opposition snapshot first.
+ywc_kor_public_restart_review = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			has_variable = ywc_kor_public_petition_paid
+			var:ywc_kor_public_petition_paid_amount > 0
+			has_variable = ywc_kor_public_witness_kind
+			ywc_kor_public_mode_chosen = yes
+			ywc_kor_public_target_chosen = yes
+			ywc_kor_public_petition_snapshot_match = yes
+			ywc_kor_public_selected_current_ready = yes
+			ywc_kor_public_finance_safe = yes
+			ywc_kor_public_witness_current_duty = yes
+			ywc_kor_public_channel_current_legal = yes
+			ywc_kor_public_adopted_written_shares_current = yes
+			ywc_kor_public_adopted_school_source_current = yes
+		}
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		remove_variable = ywc_kor_public_sealed_case_recorded
+		if = { limit = { ywc_kor_public_suppressed_movement_present = yes } set_variable = { name = ywc_kor_public_sealed_case_recorded value = 1 } }
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_requested
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+	}
+}
+
+# Narrow a full policy to the explicit finite target AFTER maturity. This is a real
+# re-sign: mode 3 target 2, handler 4, witness 5, channel 4, and all matching sign/accept
+# triples rewritten, preserving both paid bills. It requires the current bounded office
+# and finance, not the mature proof (an interruption may already have cleared it), and
+# starts six fresh months from zero.
+ywc_kor_public_narrow_to_finite = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			ywc_kor_public_both_fees_paid = yes
+			has_variable = ywc_kor_public_witness_kind
+			ywc_kor_public_finance_safe = yes
+			ywc_kor_public_pilot_office_bounded = yes
+		}
+		set_variable = { name = ywc_kor_public_mode value = 3 }
+		set_variable = { name = ywc_kor_public_target value = 2 }
+		set_variable = { name = ywc_kor_public_finite_chosen value = 1 }
+		set_variable = { name = ywc_kor_public_petition_mode value = 3 }
+		set_variable = { name = ywc_kor_public_petition_target value = 2 }
+		set_variable = { name = ywc_kor_public_petition_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_review_mode value = 3 }
+		set_variable = { name = ywc_kor_public_review_target value = 2 }
+		set_variable = { name = ywc_kor_public_review_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_handler value = 4 }
+		set_variable = { name = ywc_kor_public_handler_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_kind value = 5 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = 3 }
+		set_variable = { name = ywc_kor_public_witness_target value = 2 }
+		set_variable = { name = ywc_kor_public_sign_mode value = 3 }
+		set_variable = { name = ywc_kor_public_sign_target value = 2 }
+		set_variable = { name = ywc_kor_public_sign_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_accept_channel value = 4 }
+		set_variable = { name = ywc_kor_public_accept_mode value = 3 }
+		set_variable = { name = ywc_kor_public_accept_target value = 2 }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		remove_variable = ywc_kor_public_petition_source_written_shares
+		remove_variable = ywc_kor_public_review_source_school
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_phase value = 2 }
+		remove_variable = ywc_kor_public_requested
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1125 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1125 }
+	}
+}
+
+ywc_kor_public_wait_1125 = {
+	if = { limit = { ywc_kor_public_at_1125 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+ywc_kor_public_recount = {
+	if = {
+		limit = { OR = { ywc_kor_public_at_1126 = yes ywc_kor_public_at_1127 = yes } ywc_kor_public_both_fees_paid = yes }
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_requested
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1125 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1125 }
+	}
+}
+
+ywc_kor_public_wait_1126 = {
+	if = { limit = { ywc_kor_public_at_1126 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1127 terminal settling. Each request at 1126 records the intent and advances to 1127;
+# each close at 1127 rechecks the same current facts and settles. A stale intent whose
+# facts no longer hold closes nothing (so a recovered setback stays inert).
+ywc_kor_public_request_full = {
+	if = {
+		limit = { ywc_kor_public_at_1126 = yes ywc_kor_public_terminal_full = yes }
+		set_variable = { name = ywc_kor_public_requested value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1127 }
+	}
+}
+
+ywc_kor_public_request_finite = {
+	if = {
+		limit = { ywc_kor_public_at_1126 = yes ywc_kor_public_terminal_finite = yes }
+		set_variable = { name = ywc_kor_public_requested value = 2 }
+		set_variable = { name = ywc_kor_public_stage value = 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1127 }
+	}
+}
+
+ywc_kor_public_request_setback = {
+	if = {
+		limit = { ywc_kor_public_at_1126 = yes ywc_kor_public_terminal_setback = yes }
+		set_variable = { name = ywc_kor_public_requested value = 3 }
+		set_variable = { name = ywc_kor_public_stage value = 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1127 }
+	}
+}
+
+ywc_kor_public_close_full = {
+	if = {
+		limit = { ywc_kor_public_at_1127 = yes has_variable = ywc_kor_public_requested var:ywc_kor_public_requested = 1 ywc_kor_public_terminal_full = yes }
+		set_variable = { name = ywc_kor_public_outcome value = 1 }
+		ywc_kor_public_release_once = yes
+	}
+}
+
+ywc_kor_public_close_finite = {
+	if = {
+		limit = { ywc_kor_public_at_1127 = yes has_variable = ywc_kor_public_requested var:ywc_kor_public_requested = 2 ywc_kor_public_terminal_finite = yes }
+		set_variable = { name = ywc_kor_public_outcome value = 2 }
+		ywc_kor_public_release_once = yes
+	}
+}
+
+ywc_kor_public_close_setback = {
+	if = {
+		limit = { ywc_kor_public_at_1127 = yes has_variable = ywc_kor_public_requested var:ywc_kor_public_requested = 3 ywc_kor_public_terminal_setback = yes }
+		set_variable = { name = ywc_kor_public_outcome value = 3 }
+		ywc_kor_public_release_once = yes
+	}
+}
+
+ywc_kor_public_wait_1127 = {
+	if = { limit = { ywc_kor_public_at_1127 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# Voluntary exit body: records outcome 4 and releases exactly this arc once. It is only
+# ever reached through a per-stage withdraw wrapper that already checked the exact
+# at_N origin, so a cached old button can never re-enter a generic live guard.
+ywc_kor_public_do_withdraw = {
+	set_variable = { name = ywc_kor_public_outcome value = 4 }
+	set_variable = { name = ywc_kor_public_withdrawn value = 1 }
+	ywc_kor_public_release_once = yes
+}
+
+# Per-stage withdraw wrappers. Each checks the exact origin at_N (phase/JE/stage/own
+# ordinal receipt/pending missing-or-own-N/open-not-settled), then runs the shared body.
+ywc_kor_public_withdraw_1120 = {
+	if = { limit = { ywc_kor_public_at_1120 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1121 = {
+	if = { limit = { ywc_kor_public_at_1121 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1122 = {
+	if = { limit = { ywc_kor_public_at_1122 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1123 = {
+	if = { limit = { ywc_kor_public_at_1123 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1124 = {
+	if = { limit = { ywc_kor_public_at_1124 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1125 = {
+	if = { limit = { ywc_kor_public_at_1125 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1126 = {
+	if = { limit = { ywc_kor_public_at_1126 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1127 = {
+	if = { limit = { ywc_kor_public_at_1127 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+# Release is idempotent and touches only this arc. Paid fees and old contracts are
+# preserved; it never clears generated witnesses, reservations or other queues.
+ywc_kor_public_release_once = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_court_public_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_settled }
+			has_variable = ywc_kor_public_outcome
+			var:ywc_kor_public_outcome > 0
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_settled value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_outcome value = var:ywc_kor_public_outcome }
+		remove_variable = ywc_kor_public_pending_event
+		remove_variable = ywc_kor_public_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+# Queue preparation: only advance the stage-bound event when nothing is pending.
+ywc_kor_public_prepare_queue = {
+	if = {
+		limit = { ywc_kor_public_open = yes NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_stage >= 1120 var:ywc_kor_public_stage <= 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = var:ywc_kor_public_stage }
+	}
+}

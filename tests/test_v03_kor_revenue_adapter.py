@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "9980153ba0edb9c48f141df84c11b2f530ab39b6"
 FOUNDATION = ("v03_kor_military_accounts", "v03_kor_school_factions", "v03_kor_controlled_ports")
 REVENUE = "v03_kor_provincial_revenue"
+COURT = "v03_kor_court_public"
 JES = ("ywc_je_v03_kor_provincial_revenue_settlement", "ywc_je_v03_kor_provincial_revenue_review")
 RECEIPT = "ywc_v03_kor_v03_kor_provincial_revenue_last_event"
 QUEUE = "ywc_kor_revenue_pending_event"
@@ -198,9 +199,20 @@ class KorRevenueGeneratedAdapter(unittest.TestCase):
         self.assertEqual(set(re.findall(r"(?m)^(ywc_kor\.110[0-7])\s*=\s*\{", source)),
                          {f"ywc_kor.{n}" for n in range(1100, 1108)})
         current = json.loads((ROOT / "data/content/v03/countries/kor.json").read_text("utf-8-sig"))
+        # Validate the whole registered catalog before taking any legacy view;
+        # an unknown/duplicate arc must never disappear through projection.
+        adapter.validate_inline_catalog(current)
         active = adapter._kor_active_arcs(current)
+        slugs = tuple(arc["slug"] for arc in active)
+        self.assertIn(slugs, (FOUNDATION, (*FOUNDATION, REVENUE), (*FOUNDATION, REVENUE, COURT)))
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active),
+                         {3: 31, 4: 39, 5: 47}[len(active)])
+        self.assertEqual(sum(len(a["journals"]) for a in active), {3: 6, 4: 8, 5: 10}[len(active)])
+        self.assertIn(REVENUE, slugs)
+        foundation = [next(a for a in active if a["slug"] == slug) for slug in FOUNDATION]
+        revenue = next(a for a in active if a["slug"] == REVENUE)
         previous = frozen_catalog()["arcs"]
-        projected = copy.deepcopy(active[:-1])
+        projected = copy.deepcopy(foundation)
         # Approved withdrawal fix: precisely two goal leaves and their phase
         # goal hashes differ; all other old content and source proofs are equal.
         exceptions = (
@@ -225,17 +237,19 @@ class KorRevenueGeneratedAdapter(unittest.TestCase):
             self.assertEqual(hashlib.sha256(new_goal.encode()).hexdigest(), new_hash)
             after["goal"], phase_after["goal_sha256"] = old_goal, old_hash
         self.assertEqual(projected, previous, "old three source content differs beyond the exact four-leaf exception")
-        self.assertEqual(active[-1]["slug"], REVENUE)
-        self.assertEqual([j["id"] for j in active[-1]["journals"]], list(JES))
-        metadata = active[-1]["inline_delivery_adapter"]
+        self.assertEqual(revenue["slug"], REVENUE)
+        self.assertEqual([j["id"] for j in revenue["journals"]], list(JES))
+        metadata = revenue["inline_delivery_adapter"]
         self.assertEqual(metadata["schema"], "v03.foundation_inline_adapter.v2")
         proofs = metadata["branches"]
         self.assertEqual([sum(p["journal"] == jid for p in proofs) for jid in JES], [4, 4])
         self.assertEqual([p["event"] for p in proofs], [f"ywc_kor.{n}" for n in range(1100, 1108)])
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:-1]), 31)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in active[:-1]), 5)
-        adapter.validate_inline_catalog(current)
-        rendered = adapter.render_inline_country_adapters(current)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in foundation), 31)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in foundation), 5)
+        revenue_catalog = copy.deepcopy(current)
+        revenue_catalog["arcs"] = copy.deepcopy([*foundation, revenue])
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in revenue_catalog["arcs"]), 39)
+        rendered = adapter.render_inline_country_adapters(revenue_catalog)
         self.assertEqual(len(rendered["journal_scripts"]), 8)
         self.assertIn("ywc_v03_kor_inline_served_4", rendered["effects"])
         for candidate in range(32, 40):
