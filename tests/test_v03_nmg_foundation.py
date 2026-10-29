@@ -13,6 +13,7 @@ import re
 import sys
 import unittest
 from pathlib import Path
+from tests.nmg_foundation_projection import foundation_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
@@ -254,10 +255,13 @@ class NmgFoundationContractTest(unittest.TestCase):
             self.assertEqual(len(arc["events"]), events, arc["slug"])
             self.assertEqual(len(arc["journals"]), journals, arc["slug"])
         total = sum(len(arc["events"]) for arc in self.catalog["arcs"])
-        self.assertEqual(total, 28)
+        foundation = foundation_catalog()
+        self.assertEqual(sum(len(arc["events"]) for arc in foundation["arcs"]), 28)
+        self.assertEqual(total, 36)
         # The four added protocol events do not replace the ten narrative cards.
         self.assertEqual(len([e for e in self.revenue["events"] if e["id"] not in PROTOCOL_EVENTS]), 10)
-        self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 6)
+        self.assertEqual(sum(len(arc["journals"]) for arc in foundation["arcs"]), 6)
+        self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 8)
 
     def test_foundation_arcs_keep_the_locked_card_shape(self):
         for arc in (self.land, self.office, self.revenue):
@@ -485,9 +489,13 @@ class NmgFoundationContractTest(unittest.TestCase):
             encoding="utf-8-sig"
         )
         rendered = re.findall(r"(?m)^ywc_nmg\.(\d{4}) = \{", events_text)
-        self.assertEqual(len(rendered), 28)
+        self.assertEqual(len(rendered), 36)
+        rendered_ids = {"ywc_nmg." + number for number in rendered}
+        school_ids = {f"ywc_nmg.{n}" for n in range(1110, 1118)}
+        self.assertEqual(rendered_ids, {e["id"] for a in self.catalog["arcs"] for e in a["events"]})
+        self.assertEqual(rendered_ids & school_ids, school_ids)
         self.assertEqual(
-            sorted("ywc_nmg." + number for number in rendered),
+            sorted(rendered_ids - school_ids),
             sorted(LAND_EVENTS + OFFICE_EVENTS + REVENUE_EVENTS),
         )
 

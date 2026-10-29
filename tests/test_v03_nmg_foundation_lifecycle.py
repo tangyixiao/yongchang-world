@@ -8,8 +8,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
 from clausewitz_harness import PulseWorld, parse
+from tests.nmg_foundation_projection import foundation_catalog
 
-CATALOG = json.loads((ROOT / "data/content/v03/countries/nmg.json").read_text(encoding="utf-8"))
+# This legacy fixture admits exactly its three original foundation arcs.
+CATALOG = foundation_catalog()
 MOD = ROOT / "yongchang_world"
 EFFECTS = (MOD / "common/scripted_effects/ywc_v03_nmg_effects.txt").read_text(encoding="utf-8-sig")
 SHARED_EFFECTS = (MOD / "common/scripted_effects/ywc_v03_effects.txt").read_text(encoding="utf-8-sig")

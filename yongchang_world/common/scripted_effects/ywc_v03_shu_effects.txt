@@ -929,3 +929,305 @@ set_variable = { name = ywc_shu_prov_pending_event value = 1104 } }
 else_if = { limit = { var:ywc_shu_prov_mode_intent = 3 } set_variable = { name = ywc_shu_prov_stage value = 1105 }
 set_variable = { name = ywc_shu_prov_pending_event value = 1105 } }
 }
+
+# M3+ SHU public deliberation: source-owned helpers for 1120..1127.
+# Two real fees only (1121 register, 1125 review); B is captured once at claim
+# from yearly_gross_income / 52, clamped 100..1e9, never recomputed on popups.
+
+# Claim exactly once against shared capacity; the arc owns one active slot.
+ywc_v03_claim_arc_shu_v03_shu_public_deliberation = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+	 NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started }
+	 NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }
+	 var:ywc_v03_active_arc_count < 3
+	 var:ywc_v03_visible_task_count < 6 }
+	 set_variable = { name = ywc_v03_shu_v03_shu_public_deliberation_started value = 1 }
+	 change_variable = { name = ywc_v03_active_arc_count add = 1 }
+	 change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	 ywc_shu_delib_capture_base = yes
+	}
+}
+
+ywc_shu_delib_open_once = {
+if = { limit = { ywc_shu_v03_delib_open = yes NOT = { has_variable = ywc_shu_delib_ledger_open } }
+ set_variable = { name = ywc_shu_delib_ledger_open value = 1 }
+ set_variable = { name = ywc_shu_delib_stage value = 1120 }
+ set_variable = { name = ywc_shu_delib_phase value = 1 }
+ set_variable = { name = ywc_shu_delib_pending_event value = 1120 }
+ # The claim itself picks the first actually owned candidate in fixed order;
+ # this line never silently switches states afterwards.
+ if = { limit = { NOT = { has_variable = ywc_shu_delib_pilot } any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN } } set_variable = { name = ywc_shu_delib_pilot value = 1 } }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_delib_pilot } any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING } } set_variable = { name = ywc_shu_delib_pilot value = 2 } }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_delib_pilot } any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN } } set_variable = { name = ywc_shu_delib_pilot value = 3 } }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_delib_pilot } any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU } } set_variable = { name = ywc_shu_delib_pilot value = 4 } }
+}
+}
+
+ywc_shu_delib_capture_base = {
+if = { limit = { NOT = { has_variable = ywc_shu_delib_cost_captured } }
+ set_variable = { name = ywc_shu_delib_cost value = yearly_gross_income }
+ change_variable = { name = ywc_shu_delib_cost divide = 52 }
+ clamp_variable = { name = ywc_shu_delib_cost min = 100 max = 1000000000 }
+ set_variable = { name = ywc_shu_delib_cost_captured value = 1 }
+}
+}
+
+# Release exactly once, on this arc's own outcome variable; never touches
+# other lines' queues or reservations.
+ywc_v03_release_arc_shu_v03_shu_public_deliberation = {
+if = { limit = {
+ has_variable = ywc_v03_shu_v03_shu_public_deliberation_started
+ NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }
+ has_variable = ywc_shu_delib_outcome
+ var:ywc_shu_delib_outcome > 0 }
+ set_variable = { name = ywc_v03_shu_v03_shu_public_deliberation_outcome value = var:ywc_shu_delib_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_public_deliberation_settled value = 1 }
+ remove_variable = ywc_shu_delib_pending_event
+ remove_variable = ywc_shu_delib_review_running
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+}
+}
+
+# Mutually exclusive price branches per bill: full mode2 without the real old
+# local audit right pays 1.5B; with it, B. Limited or full mode3 always .5B
+# and can never be upgraded by a full-policy discount. The review bill uses
+# the genuinely repaid-principal merchant source, never the register source.
+ywc_shu_delib_price_multiplier = {
+set_variable = { name = ywc_shu_delib_price value = var:ywc_shu_delib_cost }
+if = { limit = { OR = { var:ywc_shu_delib_target = 2 AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 3 } } } change_variable = { name = ywc_shu_delib_price multiply = 0.5 } }
+else_if = { limit = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_old_witness_source = yes } }
+else_if = { limit = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 NOT = { ywc_shu_v03_delib_old_witness_source = yes } } change_variable = { name = ywc_shu_delib_price multiply = 1.5 } }
+}
+
+ywc_shu_delib_review_price_multiplier = {
+set_variable = { name = ywc_shu_delib_price value = var:ywc_shu_delib_cost }
+if = { limit = { OR = { var:ywc_shu_delib_target = 2 AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 3 } } } change_variable = { name = ywc_shu_delib_price multiply = 0.5 } }
+else_if = { limit = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_merchant_repaid_discount = yes } }
+else_if = { limit = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 NOT = { ywc_shu_v03_delib_merchant_repaid_discount = yes } } change_variable = { name = ywc_shu_delib_price multiply = 1.5 } }
+}
+
+ywc_shu_delib_pay_register_once = {
+if = { limit = { ywc_shu_v03_delib_at_1121 = yes NOT = { has_variable = ywc_shu_delib_register_paid } NOT = { has_variable = ywc_shu_delib_register_paid_amount } }
+ ywc_shu_delib_capture_base = yes
+ ywc_shu_delib_price_multiplier = yes
+ if = { limit = { ywc_shu_v03_delib_register_affordable = yes }
+  add_treasury = { value = var:ywc_shu_delib_price multiply = -1 }
+  set_variable = { name = ywc_shu_delib_register_paid value = 1 }
+  set_variable = { name = ywc_shu_delib_register_paid_amount value = var:ywc_shu_delib_price }
+  remove_variable = ywc_shu_delib_price
+ }
+ else = { remove_variable = ywc_shu_delib_price }
+}
+}
+
+ywc_shu_delib_pay_review_once = {
+if = { limit = { ywc_shu_v03_delib_at_1125 = yes has_variable = ywc_shu_delib_review_mature NOT = { has_variable = ywc_shu_delib_review_interrupted } }
+ # A genuinely paid review advances without recharging; an unpaid one pays
+ # the current review tariff once. A zero/forged amount never counts as paid.
+ if = { limit = { has_variable = ywc_shu_delib_review_paid var:ywc_shu_delib_review_paid_amount > 0 }
+  remove_variable = ywc_shu_delib_price
+  set_variable = { name = ywc_shu_delib_stage value = 1126 }
+  set_variable = { name = ywc_shu_delib_pending_event value = 1126 }
+ }
+ else = {
+  ywc_shu_delib_capture_base = yes
+  ywc_shu_delib_review_price_multiplier = yes
+  if = { limit = { ywc_shu_v03_delib_review_affordable = yes NOT = { has_variable = ywc_shu_delib_review_paid } NOT = { has_variable = ywc_shu_delib_review_paid_amount } }
+   add_treasury = { value = var:ywc_shu_delib_price multiply = -1 }
+   set_variable = { name = ywc_shu_delib_review_paid value = 1 }
+   set_variable = { name = ywc_shu_delib_review_paid_amount value = var:ywc_shu_delib_price }
+   set_variable = { name = ywc_shu_delib_stage value = 1126 }
+   set_variable = { name = ywc_shu_delib_pending_event value = 1126 }
+  }
+  remove_variable = ywc_shu_delib_price
+ }
+}
+}
+
+# A genuinely paid review advances to 1126 without a second affordability charge;
+# the already-paid recount path never refunds, tops up or rewrites the amount.
+ywc_shu_delib_advance_paid_review = {
+if = { limit = { ywc_shu_v03_delib_at_1125 = yes has_variable = ywc_shu_delib_review_paid var:ywc_shu_delib_review_paid_amount > 0 has_variable = ywc_shu_delib_review_mature NOT = { has_variable = ywc_shu_delib_review_interrupted } }
+ set_variable = { name = ywc_shu_delib_stage value = 1126 }
+ set_variable = { name = ywc_shu_delib_pending_event value = 1126 }
+}
+}
+
+
+# Adopt a genuinely central-funded budget responsibility once at 1122, with an
+# own mode-target-pilot snapshot; later sign/request/close re-read its genuine
+# union through central_budget_bound. It never infers central funding from a
+# lone outcome and never auto-switches the adopted source after a loss.
+ywc_shu_delib_adopt_central_budget = {
+if = { limit = { ywc_shu_v03_delib_at_1122 = yes ywc_shu_v03_delib_central_evidence = yes NOT = { has_variable = ywc_shu_delib_central_budget } }
+ set_variable = { name = ywc_shu_delib_central_budget value = 1 }
+ set_variable = { name = ywc_shu_delib_central_budget_mode value = var:ywc_shu_delib_mode }
+ set_variable = { name = ywc_shu_delib_central_budget_target value = var:ywc_shu_delib_target }
+ set_variable = { name = ywc_shu_delib_central_budget_pilot value = var:ywc_shu_delib_pilot }
+}
+}
+
+ywc_shu_delib_set_sign_snapshot = {
+if = { limit = { ywc_shu_v03_delib_at_1123 = yes NOT = { has_variable = ywc_shu_delib_signed } }
+ set_variable = { name = ywc_shu_delib_sign_mode value = var:ywc_shu_delib_mode }
+ set_variable = { name = ywc_shu_delib_sign_target value = var:ywc_shu_delib_target }
+ set_variable = { name = ywc_shu_delib_sign_pilot value = var:ywc_shu_delib_pilot }
+ set_variable = { name = ywc_shu_delib_signed value = 1 }
+ set_variable = { name = ywc_shu_delib_phase value = 2 }
+ set_variable = { name = ywc_shu_delib_stage value = 1124 }
+ set_variable = { name = ywc_shu_delib_pending_event value = 1124 }
+}
+}
+
+ywc_shu_delib_set_accept_snapshot = {
+if = { limit = { ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } }
+ set_variable = { name = ywc_shu_delib_accept_mode value = var:ywc_shu_delib_mode }
+ set_variable = { name = ywc_shu_delib_accept_target value = var:ywc_shu_delib_target }
+ set_variable = { name = ywc_shu_delib_accept_pilot value = var:ywc_shu_delib_pilot }
+ set_variable = { name = ywc_shu_delib_accepted value = 1 }
+}
+}
+
+# Fresh six-month observation. The one-day expiry gate blocks double counting
+# when a newly added JE receives a second pulse on the same day.
+ywc_shu_delib_start_review = {
+if = { limit = { ywc_shu_v03_delib_open = yes }
+ set_variable = { name = ywc_shu_delib_review_running value = 1 }
+ set_variable = { name = ywc_shu_delib_review_streak value = 0 }
+ set_variable = { name = ywc_shu_delib_review_ticked value = 1 days = 1 }
+ remove_variable = ywc_shu_delib_review_mature
+ remove_variable = ywc_shu_delib_review_interrupted
+}
+}
+
+# The 1123 signature also owns the phase-2 handoff so JE1's completion and
+# JE2's opening come from one actual staged step; no capacity/owner gate.
+ywc_shu_delib_signed_handoff = {
+if = { limit = { has_variable = ywc_shu_delib_signed var:ywc_shu_delib_phase = 2 }
+ set_variable = { name = ywc_shu_delib_stage value = 1124 }
+ set_variable = { name = ywc_shu_delib_pending_event value = 1124 }
+}
+}
+
+# Six real monthly pulses mature; five is never six. Any interruption clears
+# streak/mature/running and records the interruption; recovery never resumes.
+
+# The review track re-reads the real current contract each month, including
+# the recorded witness duty; the staged guard accepts pre-sign and post-sign
+# states but never a forged snapshot or a lost current duty.
+ywc_shu_delib_track_review = {
+if = { limit = { ywc_shu_v03_delib_open = yes has_variable = ywc_shu_delib_review_running NOT = { has_variable = ywc_shu_delib_review_ticked } }
+ set_variable = { name = ywc_shu_delib_review_ticked value = 1 days = 1 }
+ if = { limit = { OR = { is_at_war = yes NOT = { ywc_shu_v03_finance_safe = yes } NOT = { ywc_shu_v03_delib_has_pilot = yes } NOT = { ywc_shu_v03_delib_target_current = yes } NOT = { ywc_shu_v03_delib_office_current = yes } NOT = { ywc_shu_v03_delib_witness_duty = yes } NOT = { ywc_shu_v03_delib_staged_contract = yes } } }
+  set_variable = { name = ywc_shu_delib_review_streak value = 0 }
+  remove_variable = ywc_shu_delib_review_mature
+  remove_variable = ywc_shu_delib_review_running
+  set_variable = { name = ywc_shu_delib_review_interrupted value = 1 }
+ }
+  else_if = { limit = { NOT = { has_variable = ywc_shu_delib_review_mature } }
+   change_variable = { name = ywc_shu_delib_review_streak add = 1 }
+   if = { limit = { var:ywc_shu_delib_review_streak >= 6 }
+    set_variable = { name = ywc_shu_delib_review_mature value = 1 }
+    remove_variable = ywc_shu_delib_review_running
+    if = { limit = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_stage = 1125 } set_variable = { name = ywc_shu_delib_pending_event value = 1125 } }
+   }
+  }
+ }
+ # A mature but still-unpaid 1125 contract keeps being monitored: losing any
+ # current duty clears streak/mature and marks interruption, so recovery needs
+ # an explicit fresh restart with six new months. It never rewinds an already
+ # paid 1126/27 stage or erases honest maturity evidence.
+ if = { limit = { ywc_shu_v03_delib_open = yes has_variable = ywc_shu_delib_review_mature NOT = { has_variable = ywc_shu_delib_review_paid } NOT = { has_variable = ywc_shu_delib_review_ticked } var:ywc_shu_delib_stage = 1125 OR = { is_at_war = yes NOT = { ywc_shu_v03_finance_safe = yes } NOT = { ywc_shu_v03_delib_has_pilot = yes } NOT = { ywc_shu_v03_delib_target_current = yes } NOT = { ywc_shu_v03_delib_office_current = yes } NOT = { ywc_shu_v03_delib_witness_duty = yes } NOT = { ywc_shu_v03_delib_staged_contract = yes } } }
+  set_variable = { name = ywc_shu_delib_review_ticked value = 1 days = 1 }
+  set_variable = { name = ywc_shu_delib_review_streak value = 0 }
+  remove_variable = ywc_shu_delib_review_mature
+  set_variable = { name = ywc_shu_delib_review_interrupted value = 1 }
+  if = { limit = { NOT = { has_variable = ywc_shu_delib_pending_event } } set_variable = { name = ywc_shu_delib_pending_event value = 1125 } }
+ }
+}
+
+ywc_shu_delib_restart_review = {
+if = { limit = { ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_mature } ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }
+ # Interrupted observation restarts from zero with the actual bills kept.
+ remove_variable = ywc_shu_delib_review_interrupted
+ ywc_shu_delib_start_review = yes
+}
+}
+
+# Narrow re-sign: rewrites witness/acceptance and all snapshots against the
+# current limited obligation, clears the old source reference and mature
+# state, and starts six fresh months. Actual payments are never refunded or
+# recharged on the recount.
+ywc_shu_delib_narrow_and_recount = {
+if = { limit = { ywc_shu_v03_delib_at_1125 = yes ywc_shu_v03_delib_target2_ready = yes }
+ set_variable = { name = ywc_shu_delib_target value = 2 }
+ set_variable = { name = ywc_shu_delib_sign_target value = 2 }
+ set_variable = { name = ywc_shu_delib_accept_target value = 2 }
+ remove_variable = ywc_shu_delib_witness_source
+ remove_variable = ywc_shu_delib_witness_mode
+ remove_variable = ywc_shu_delib_witness_target
+ remove_variable = ywc_shu_delib_witness_pilot
+ set_variable = { name = ywc_shu_delib_witness_source value = 3 }
+ set_variable = { name = ywc_shu_delib_witness_mode value = var:ywc_shu_delib_mode }
+ set_variable = { name = ywc_shu_delib_witness_target value = 2 }
+ set_variable = { name = ywc_shu_delib_witness_pilot value = var:ywc_shu_delib_pilot }
+ set_variable = { name = ywc_shu_delib_accept_mode value = var:ywc_shu_delib_mode }
+ set_variable = { name = ywc_shu_delib_accept_target value = 2 }
+ set_variable = { name = ywc_shu_delib_accept_pilot value = var:ywc_shu_delib_pilot }
+ remove_variable = ywc_shu_delib_central_budget
+ remove_variable = ywc_shu_delib_central_budget_mode
+ remove_variable = ywc_shu_delib_central_budget_target
+ remove_variable = ywc_shu_delib_central_budget_pilot
+ remove_variable = ywc_shu_delib_review_mature
+ remove_variable = ywc_shu_delib_review_interrupted
+ remove_variable = ywc_shu_delib_review_streak
+ ywc_shu_delib_start_review = yes
+}
+}
+
+ywc_shu_delib_write_register_phase = {
+if = { limit = { var:ywc_shu_delib_stage = 1120 OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1120 } ywc_shu_v03_delib_open = yes }
+ set_variable = { name = ywc_shu_delib_pending_event value = var:ywc_shu_delib_stage }
+}
+}
+
+ywc_shu_delib_close_full = {
+if = { limit = { ywc_shu_v03_delib_at_1127 = yes ywc_shu_v03_delib_full_terminal = yes NOT = { has_variable = ywc_shu_delib_outcome } }
+ set_variable = { name = ywc_shu_delib_outcome value = 1 }
+ ywc_v03_release_arc_shu_v03_shu_public_deliberation = yes
+}
+}
+
+ywc_shu_delib_close_limited = {
+if = { limit = { ywc_shu_v03_delib_at_1127 = yes ywc_shu_v03_delib_limited_terminal = yes NOT = { has_variable = ywc_shu_delib_outcome } }
+ set_variable = { name = ywc_shu_delib_outcome value = 2 }
+ ywc_v03_release_arc_shu_v03_shu_public_deliberation = yes
+}
+}
+
+# Outcome3 only after real maturity and the paid review, while the current
+# full or limited obligation is genuinely lost; recovery makes it inert.
+ywc_shu_delib_close_setback = {
+if = { limit = { ywc_shu_v03_delib_at_1127 = yes ywc_shu_v03_delib_setback_available = yes NOT = { has_variable = ywc_shu_delib_outcome } }
+ set_variable = { name = ywc_shu_delib_outcome value = 3 }
+ ywc_v03_release_arc_shu_v03_shu_public_deliberation = yes
+}
+}
+
+ywc_shu_delib_close_withdrawn = {
+if = { limit = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }
+ set_variable = { name = ywc_shu_delib_withdrawn value = 1 }
+ if = { limit = { NOT = { has_variable = ywc_shu_delib_outcome } } set_variable = { name = ywc_shu_delib_outcome value = 4 } }
+ set_variable = { name = ywc_v03_shu_v03_shu_public_deliberation_outcome value = var:ywc_shu_delib_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_public_deliberation_settled value = 1 }
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ remove_variable = ywc_shu_delib_pending_event
+}
+}
