@@ -5,6 +5,7 @@ import json
 import re
 import unittest
 from pathlib import Path
+from tests.nmg_foundation_projection import foundation_catalog
 
 from tools.v03_inline_delivery_adapter import (
     _kor_direct_adds, _kor_source_binding, children, direct_values, parse_block,
@@ -22,7 +23,8 @@ def native_journals():
 
 
 def catalog():
-    return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    # The receipt/comment/notice grammar below is the original 36-site ABI.
+    return foundation_catalog()
 
 
 def _sender_candidates(branch_source, owner=None):

@@ -1138,3 +1138,534 @@ ywc_nmg_market_refuse = {
   scope:ywc_nmg_market_requester = { ywc_nmg_market_cancel_unsigned = yes }
  }
 }
+
+
+# Parish school middle card. Every fee is a real national treasury debit; the
+# pilot is one saved typed state that is claimed once and never re-borrowed.
+ywc_nmg_school_release_slot = {
+ if = {
+  limit = {
+   has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+   NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_released }
+  }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_released value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = -1 }
+  change_variable = { name = ywc_v03_visible_task_count add = -1 }
+  clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+  clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ }
+}
+
+ywc_nmg_school_fee_snapshot = {
+ if = {
+  limit = { NOT = { has_variable = ywc_nmg_school_fee } }
+  set_variable = { name = ywc_nmg_school_fee value = yearly_gross_income }
+  change_variable = { name = ywc_nmg_school_fee divide = 52 }
+  clamp_variable = { name = ywc_nmg_school_fee min = 100 max = 1000000000 }
+ }
+}
+
+ywc_nmg_school_claim_slot = {
+ if = {
+  limit = {
+   NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_started }
+   var:ywc_v03_active_arc_count < 3
+   var:ywc_v03_visible_task_count < 6
+  }
+  ywc_v03_initialize_country = yes
+  if = {
+   limit = {
+    NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_started }
+    var:ywc_v03_active_arc_count < 3
+    var:ywc_v03_visible_task_count < 6
+   }
+   set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_started value = 1 }
+   set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_last_event value = 0 }
+   set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_outcome value = 0 }
+   change_variable = { name = ywc_v03_active_arc_count add = 1 }
+   change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  }
+ }
+}
+
+ywc_nmg_school_claim = {
+ ywc_nmg_school_claim_slot = yes
+}
+
+ywc_nmg_school_open_once = {
+ if = {
+  limit = { NOT = { has_variable = ywc_nmg_school_opened } }
+  set_variable = { name = ywc_nmg_school_opened value = 1 }
+  ywc_nmg_school_claim_pilot = yes
+  ywc_nmg_school_fee_snapshot = yes
+  set_variable = { name = ywc_nmg_school_phase value = 1 }
+  set_variable = { name = ywc_nmg_school_stage value = 1110 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1110 }
+ }
+}
+
+ywc_nmg_school_claim_pilot = {
+ if = {
+  limit = { NOT = { has_variable = ywc_nmg_school_pilot } }
+  every_scope_state = {
+   limit = { owner = ROOT NOT = { exists = scope:ywc_nmg_school_pilot_taken } }
+   save_scope_as = ywc_nmg_school_pilot_taken
+  }
+  if = {
+   limit = { exists = scope:ywc_nmg_school_pilot_taken }
+   set_variable = { name = ywc_nmg_school_pilot value = scope:ywc_nmg_school_pilot_taken }
+  }
+ }
+}
+
+ywc_nmg_school_choose_joint = {
+ if = {
+  limit = { ywc_nmg_school_at_1110 = yes ywc_nmg_school_mode1_ready = yes }
+  ywc_nmg_school_claim_pilot = yes
+  set_variable = { name = ywc_nmg_school_mode value = 1 }
+  set_variable = { name = ywc_nmg_school_target value = 1 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1111 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1111 }
+ }
+}
+
+ywc_nmg_school_choose_parish_split = {
+ if = {
+  limit = { ywc_nmg_school_at_1110 = yes ywc_nmg_school_mode2_ready = yes }
+  ywc_nmg_school_claim_pilot = yes
+  set_variable = { name = ywc_nmg_school_mode value = 2 }
+  set_variable = { name = ywc_nmg_school_target value = 1 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1111 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1111 }
+ }
+}
+
+ywc_nmg_school_choose_secular = {
+ if = {
+  limit = { ywc_nmg_school_at_1110 = yes ywc_nmg_school_mode3_ready = yes }
+  ywc_nmg_school_claim_pilot = yes
+  set_variable = { name = ywc_nmg_school_mode value = 3 }
+  set_variable = { name = ywc_nmg_school_target value = 1 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1111 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1111 }
+ }
+}
+
+ywc_nmg_school_choose_limited = {
+ if = {
+  limit = { ywc_nmg_school_at_1110 = yes ywc_nmg_school_limited_ready = yes }
+  ywc_nmg_school_claim_pilot = yes
+  set_variable = { name = ywc_nmg_school_mode value = 2 }
+  set_variable = { name = ywc_nmg_school_target value = 2 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1111 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1111 }
+ }
+}
+
+ywc_nmg_school_pay_register = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1111 = yes
+   ywc_nmg_school_pilot_owned = yes
+   ywc_nmg_school_policy_ready = yes
+   NOT = { has_variable = ywc_nmg_school_register_paid }
+   ywc_nmg_school_register_affordable = yes
+  }
+  if = {
+   limit = { AND = { var:ywc_nmg_school_mode = 2 OR = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_target = 2 } } }
+   set_variable = { name = ywc_nmg_school_register_amount value = var:ywc_nmg_school_fee }
+   change_variable = { name = ywc_nmg_school_register_amount multiply = 0.5 }
+  }
+  else_if = {
+   limit = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 ywc_nmg_school_prior_bilingual_contract = yes }
+   set_variable = { name = ywc_nmg_school_register_amount value = var:ywc_nmg_school_fee }
+   change_variable = { name = ywc_nmg_school_register_amount multiply = 0.5 }
+  }
+  else = {
+   set_variable = { name = ywc_nmg_school_register_amount value = var:ywc_nmg_school_fee }
+  }
+  add_treasury = { value = var:ywc_nmg_school_register_amount multiply = -1 }
+  set_variable = { name = ywc_nmg_school_register_paid value = 1 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1112 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1112 }
+ }
+}
+
+ywc_nmg_school_reuse_roster = {
+ if = {
+  limit = { ywc_nmg_school_at_1112 = yes ywc_nmg_school_pilot_owned = yes var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 ywc_nmg_school_prior_bilingual_contract = yes }
+  set_variable = { name = ywc_nmg_school_teacher_kind value = 3 }
+  set_variable = { name = ywc_nmg_school_teacher_mode value = var:ywc_nmg_school_mode }
+  set_variable = { name = ywc_nmg_school_teacher_target value = var:ywc_nmg_school_target }
+  set_variable = { name = ywc_nmg_school_teacher_pilot value = var:ywc_nmg_school_pilot }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1113 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1113 }
+ }
+}
+
+ywc_nmg_school_hire_academic = {
+ if = {
+  limit = { ywc_nmg_school_at_1112 = yes ywc_nmg_school_pilot_owned = yes var:ywc_nmg_school_target = 1 OR = { var:ywc_nmg_school_mode = 1 var:ywc_nmg_school_mode = 3 } ywc_nmg_school_academics_8 = yes }
+  set_variable = { name = ywc_nmg_school_teacher_kind value = 1 }
+  set_variable = { name = ywc_nmg_school_teacher_mode value = var:ywc_nmg_school_mode }
+  set_variable = { name = ywc_nmg_school_teacher_target value = var:ywc_nmg_school_target }
+  set_variable = { name = ywc_nmg_school_teacher_pilot value = var:ywc_nmg_school_pilot }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1113 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1113 }
+ }
+}
+
+ywc_nmg_school_appoint_clergy = {
+ if = {
+  limit = { ywc_nmg_school_at_1112 = yes ywc_nmg_school_pilot_owned = yes var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 2 ywc_nmg_school_clergymen_5 = yes }
+  set_variable = { name = ywc_nmg_school_teacher_kind value = 2 }
+  set_variable = { name = ywc_nmg_school_teacher_mode value = var:ywc_nmg_school_mode }
+  set_variable = { name = ywc_nmg_school_teacher_target value = var:ywc_nmg_school_target }
+  set_variable = { name = ywc_nmg_school_teacher_pilot value = var:ywc_nmg_school_pilot }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1113 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1113 }
+ }
+}
+
+ywc_nmg_school_local_instructor = {
+ if = {
+  limit = { ywc_nmg_school_at_1112 = yes ywc_nmg_school_pilot_owned = yes var:ywc_nmg_school_target = 2 ywc_nmg_school_office_staffed_25 = yes }
+  set_variable = { name = ywc_nmg_school_teacher_kind value = 4 }
+  set_variable = { name = ywc_nmg_school_teacher_mode value = var:ywc_nmg_school_mode }
+  set_variable = { name = ywc_nmg_school_teacher_target value = var:ywc_nmg_school_target }
+  set_variable = { name = ywc_nmg_school_teacher_pilot value = var:ywc_nmg_school_pilot }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1113 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1113 }
+ }
+}
+
+ywc_nmg_school_sign_curriculum = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1113 = yes
+   ywc_nmg_school_pilot_owned = yes
+   ywc_nmg_school_duty_ready = yes
+   ywc_nmg_school_teacher_snapshot_current = yes
+   ywc_nmg_school_teacher_policy_match = yes
+   has_variable = ywc_nmg_school_register_paid
+   var:ywc_nmg_school_register_amount > 0
+  }
+  set_variable = { name = ywc_nmg_school_signed_kind value = var:ywc_nmg_school_teacher_kind }
+  set_variable = { name = ywc_nmg_school_signed_mode value = var:ywc_nmg_school_mode }
+  set_variable = { name = ywc_nmg_school_signed_target value = var:ywc_nmg_school_target }
+  set_variable = { name = ywc_nmg_school_signed_pilot value = var:ywc_nmg_school_pilot }
+  set_variable = { name = ywc_nmg_school_phase value = 2 }
+  set_variable = { name = ywc_nmg_school_stage value = 1114 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1114 }
+ }
+}
+
+ywc_nmg_school_pay_wages = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1114 = yes
+   ywc_nmg_school_pilot_owned = yes
+   ywc_nmg_school_signed_current = yes
+   NOT = { has_variable = ywc_nmg_school_wage_paid }
+   ywc_nmg_school_wage_affordable = yes
+  }
+  if = {
+   limit = { AND = { var:ywc_nmg_school_mode = 2 OR = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_target = 2 } } }
+   set_variable = { name = ywc_nmg_school_wage_amount value = var:ywc_nmg_school_fee }
+   change_variable = { name = ywc_nmg_school_wage_amount multiply = 0.5 }
+  }
+  else_if = {
+   limit = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 3 }
+   set_variable = { name = ywc_nmg_school_wage_amount value = var:ywc_nmg_school_fee }
+   change_variable = { name = ywc_nmg_school_wage_amount multiply = 1.5 }
+  }
+  else = {
+   set_variable = { name = ywc_nmg_school_wage_amount value = var:ywc_nmg_school_fee }
+  }
+  add_treasury = { value = var:ywc_nmg_school_wage_amount multiply = -1 }
+  set_variable = { name = ywc_nmg_school_wage_paid value = 1 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1115 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1115 }
+ }
+}
+
+ywc_nmg_school_audit_duties = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1115 = yes
+   ywc_nmg_school_pilot_owned = yes
+   ywc_nmg_school_signed_current = yes
+   has_variable = ywc_nmg_school_register_paid
+   var:ywc_nmg_school_register_amount > 0
+   has_variable = ywc_nmg_school_wage_paid
+   var:ywc_nmg_school_wage_amount > 0
+  }
+  set_variable = { name = ywc_nmg_school_duty_kind value = var:ywc_nmg_school_teacher_kind }
+  set_variable = { name = ywc_nmg_school_duty_mode value = var:ywc_nmg_school_mode }
+  set_variable = { name = ywc_nmg_school_duty_target value = var:ywc_nmg_school_target }
+  set_variable = { name = ywc_nmg_school_duty_pilot value = var:ywc_nmg_school_pilot }
+  set_variable = { name = ywc_nmg_school_stage value = 1116 }
+  set_variable = { name = ywc_nmg_school_review_running value = 1 }
+  set_variable = { name = ywc_nmg_school_review_streak value = 0 }
+  remove_variable = ywc_nmg_school_review_mature
+  remove_variable = ywc_nmg_school_review_interrupted
+  remove_variable = ywc_nmg_school_setback_requested
+  set_variable = { name = ywc_nmg_school_review_last_month value = ywc_nmg_current_calendar_month }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1116 }
+ }
+}
+
+ywc_nmg_school_request_full = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1116 = yes
+   NOT = { has_variable = ywc_nmg_school_setback_requested }
+   NOT = { has_variable = ywc_nmg_school_review_interrupted }
+   var:ywc_nmg_school_target = 1
+   has_variable = ywc_nmg_school_review_mature
+   ywc_nmg_school_bills_paid_positive = yes
+   ywc_nmg_school_review_alive = yes
+  }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1117 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1117 }
+ }
+}
+
+ywc_nmg_school_request_limited = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1116 = yes
+   NOT = { has_variable = ywc_nmg_school_setback_requested }
+   NOT = { has_variable = ywc_nmg_school_review_interrupted }
+   var:ywc_nmg_school_target = 2
+   var:ywc_nmg_school_mode = 2
+   has_variable = ywc_nmg_school_review_mature
+   ywc_nmg_school_bills_paid_positive = yes
+   ywc_nmg_school_review_alive = yes
+  }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1117 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1117 }
+ }
+}
+
+ywc_nmg_school_request_setback = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1116 = yes
+   NOT = { has_variable = ywc_nmg_school_review_interrupted }
+   has_variable = ywc_nmg_school_review_mature
+   ywc_nmg_school_bills_paid_positive = yes
+   NOT = { ywc_nmg_school_review_alive = yes }
+  }
+  set_variable = { name = ywc_nmg_school_setback_requested value = 1 }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1117 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1117 }
+ }
+}
+
+ywc_nmg_school_restart_review = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1116 = yes
+   has_variable = ywc_nmg_school_review_interrupted
+   ywc_nmg_school_review_alive = yes
+  }
+  remove_variable = ywc_nmg_school_review_interrupted
+  remove_variable = ywc_nmg_school_review_mature
+  remove_variable = ywc_nmg_school_setback_requested
+  set_variable = { name = ywc_nmg_school_review_running value = 1 }
+  set_variable = { name = ywc_nmg_school_review_streak value = 0 }
+  set_variable = { name = ywc_nmg_school_review_last_month value = ywc_nmg_current_calendar_month }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1116 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1116 }
+ }
+}
+
+ywc_nmg_school_narrow_recount = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1116 = yes
+   has_variable = ywc_nmg_school_review_interrupted
+   ywc_nmg_school_limited_ready = yes
+  }
+  set_variable = { name = ywc_nmg_school_mode value = 2 }
+  set_variable = { name = ywc_nmg_school_target value = 2 }
+  set_variable = { name = ywc_nmg_school_teacher_kind value = 4 }
+  set_variable = { name = ywc_nmg_school_teacher_mode value = 2 }
+  set_variable = { name = ywc_nmg_school_teacher_target value = 2 }
+  set_variable = { name = ywc_nmg_school_teacher_pilot value = var:ywc_nmg_school_pilot }
+  set_variable = { name = ywc_nmg_school_signed_kind value = 4 }
+  set_variable = { name = ywc_nmg_school_signed_mode value = 2 }
+  set_variable = { name = ywc_nmg_school_signed_target value = 2 }
+  set_variable = { name = ywc_nmg_school_signed_pilot value = var:ywc_nmg_school_pilot }
+  set_variable = { name = ywc_nmg_school_duty_kind value = 4 }
+  set_variable = { name = ywc_nmg_school_duty_mode value = 2 }
+  set_variable = { name = ywc_nmg_school_duty_target value = 2 }
+  set_variable = { name = ywc_nmg_school_duty_pilot value = var:ywc_nmg_school_pilot }
+  remove_variable = ywc_nmg_school_review_interrupted
+  remove_variable = ywc_nmg_school_review_mature
+  remove_variable = ywc_nmg_school_setback_requested
+  set_variable = { name = ywc_nmg_school_review_running value = 1 }
+  set_variable = { name = ywc_nmg_school_review_streak value = 0 }
+  set_variable = { name = ywc_nmg_school_review_last_month value = ywc_nmg_current_calendar_month }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1116 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1116 }
+ }
+}
+
+ywc_nmg_school_close_full = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1117 = yes
+   NOT = { has_variable = ywc_nmg_school_setback_requested }
+   var:ywc_nmg_school_target = 1
+   has_variable = ywc_nmg_school_review_mature
+   has_variable = ywc_nmg_school_register_paid
+   var:ywc_nmg_school_register_amount > 0
+   has_variable = ywc_nmg_school_wage_paid
+   var:ywc_nmg_school_wage_amount > 0
+   NOT = { has_variable = ywc_nmg_school_review_interrupted }
+   ywc_nmg_school_review_alive = yes
+  }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_outcome value = 1 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_settled value = 1 }
+  set_variable = { name = ywc_nmg_school_outcome value = 1 }
+  set_variable = { name = ywc_nmg_school_closed value = 1 }
+  set_variable = { name = ywc_nmg_school_established value = 1 }
+  remove_variable = ywc_nmg_school_pending_event
+  remove_variable = ywc_nmg_school_blocked_defer
+  ywc_nmg_school_release_slot = yes
+ }
+}
+
+ywc_nmg_school_close_limited = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1117 = yes
+   NOT = { has_variable = ywc_nmg_school_setback_requested }
+   var:ywc_nmg_school_target = 2
+   var:ywc_nmg_school_mode = 2
+   has_variable = ywc_nmg_school_review_mature
+   has_variable = ywc_nmg_school_register_paid
+   var:ywc_nmg_school_register_amount > 0
+   has_variable = ywc_nmg_school_wage_paid
+   var:ywc_nmg_school_wage_amount > 0
+   NOT = { has_variable = ywc_nmg_school_review_interrupted }
+   ywc_nmg_school_review_alive = yes
+  }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_outcome value = 2 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_settled value = 1 }
+  set_variable = { name = ywc_nmg_school_outcome value = 2 }
+  set_variable = { name = ywc_nmg_school_closed value = 1 }
+  set_variable = { name = ywc_nmg_school_limited value = 1 }
+  remove_variable = ywc_nmg_school_pending_event
+  remove_variable = ywc_nmg_school_blocked_defer
+  ywc_nmg_school_release_slot = yes
+ }
+}
+
+ywc_nmg_school_close_setback = {
+ if = {
+  limit = {
+   ywc_nmg_school_at_1117 = yes
+   has_variable = ywc_nmg_school_setback_requested
+   has_variable = ywc_nmg_school_review_mature
+   has_variable = ywc_nmg_school_register_paid
+   var:ywc_nmg_school_register_amount > 0
+   has_variable = ywc_nmg_school_wage_paid
+   var:ywc_nmg_school_wage_amount > 0
+   NOT = { ywc_nmg_school_review_alive = yes }
+  }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_outcome value = 3 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_settled value = 1 }
+  set_variable = { name = ywc_nmg_school_outcome value = 3 }
+  set_variable = { name = ywc_nmg_school_closed value = 1 }
+  set_variable = { name = ywc_nmg_school_setback value = 1 }
+  remove_variable = ywc_nmg_school_pending_event
+  remove_variable = ywc_nmg_school_blocked_defer
+  ywc_nmg_school_release_slot = yes
+ }
+}
+
+ywc_nmg_school_recount_settlement = {
+ if = {
+  limit = { ywc_nmg_school_at_1117 = yes }
+  remove_variable = ywc_nmg_school_setback_requested
+  remove_variable = ywc_nmg_school_review_mature
+  set_variable = { name = ywc_nmg_school_review_streak value = 0 }
+  set_variable = { name = ywc_nmg_school_review_last_month value = ywc_nmg_current_calendar_month }
+  remove_variable = ywc_nmg_school_blocked_defer
+  set_variable = { name = ywc_nmg_school_stage value = 1116 }
+  set_variable = { name = ywc_nmg_school_pending_event value = 1116 }
+ }
+}
+
+ywc_nmg_school_close_as_withdraw = {
+ if = {
+  limit = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled } }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_outcome value = 4 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_parish_school_settled value = 1 }
+  set_variable = { name = ywc_nmg_school_outcome value = 4 }
+  set_variable = { name = ywc_nmg_school_closed value = 1 }
+  set_variable = { name = ywc_nmg_school_withdrawn value = 1 }
+  remove_variable = ywc_nmg_school_pending_event
+  remove_variable = ywc_nmg_school_blocked_defer
+  ywc_nmg_school_release_slot = yes
+ }
+}
+
+# The monthly watch counts one real calendar month at a time and never touches
+# stage 1117 or an already matured streak. Any lost current obligation records
+# an honest interruption that only an explicit restart or re-engagement clears.
+ywc_nmg_school_monthly_review = {
+ if = {
+  limit = {
+   has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+   NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled }
+   NOT = { has_variable = ywc_nmg_school_withdrawn }
+   var:ywc_nmg_school_phase = 2
+   has_variable = ywc_nmg_school_review_running
+   var:ywc_nmg_school_stage = 1116
+   NOT = { has_variable = ywc_nmg_school_review_interrupted }
+   NOT = { has_variable = ywc_nmg_school_setback_requested }
+   NOT = { has_variable = ywc_nmg_school_review_mature }
+  }
+  if = {
+   limit = { ywc_nmg_school_review_alive = yes }
+   set_variable = { name = ywc_nmg_school_review_month value = ywc_nmg_current_calendar_month }
+   if = {
+    limit = { NOT = { var:ywc_nmg_school_review_last_month ?= var:ywc_nmg_school_review_month } }
+    set_variable = { name = ywc_nmg_school_review_last_month value = var:ywc_nmg_school_review_month }
+    change_variable = { name = ywc_nmg_school_review_streak add = 1 }
+    if = {
+     limit = { var:ywc_nmg_school_review_streak >= 6 }
+     set_variable = { name = ywc_nmg_school_review_mature value = 1 }
+    }
+   }
+  }
+  else = {
+   set_variable = { name = ywc_nmg_school_review_streak value = 0 }
+   remove_variable = ywc_nmg_school_review_mature
+   remove_variable = ywc_nmg_school_review_running
+   remove_variable = ywc_nmg_school_review_last_month
+   remove_variable = ywc_nmg_school_review_month
+   set_variable = { name = ywc_nmg_school_review_interrupted value = 1 }
+   set_variable = { name = ywc_nmg_school_pending_event value = 1116 }
+  }
+ }
+}

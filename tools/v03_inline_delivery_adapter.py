@@ -545,7 +545,7 @@ def _nmg_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
                 if node.key in {"OR", "XOR", "NOR"}:
                     raise ValueError(f"unsupported NMG queue Boolean/container {node.key}")
                 visit(node.value, negative)
-            elif not negative and node.key.startswith("var:ywc_nmg_") and node.op == "=" and isinstance(node.value, str) and node.value.isdigit() and node.key.endswith(("_pending", "_notice_pending")):
+            elif not negative and node.key.startswith("var:ywc_nmg_") and node.op == "=" and isinstance(node.value, str) and node.value.isdigit() and (node.key.endswith(("_pending", "_notice_pending")) or node.key == "var:ywc_nmg_school_pending_event"):
                 queue = node.key.removeprefix("var:")
                 found.append({"queue": queue, "kind": "notice" if queue.endswith("_notice_pending") else "normal", "mode": "exact", "value": int(node.value)})
     visit(children(limits[0]))
@@ -569,9 +569,9 @@ def _nmg_queue_exclusions(branch_source: str) -> list[dict[str, Any]]:
                 if node.key in {"OR", "XOR", "NOR"}:
                     raise ValueError(f"unsupported NMG Boolean queue container {node.key}")
                 visit(node.value, neg)
-            elif neg and node.key.startswith("var:ywc_nmg_") and node.key.endswith(("_pending", "_notice_pending")):
+            elif neg and node.key.startswith("var:ywc_nmg_") and (node.key.endswith(("_pending", "_notice_pending")) or node.key == "var:ywc_nmg_school_pending_event"):
                 out.append({"queue": node.key.removeprefix("var:"), "op": node.op, "mode": "exact", "value": node.value})
-            elif neg and node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_nmg_") and node.value.endswith(("_pending", "_notice_pending")):
+            elif neg and node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_nmg_") and (node.value.endswith(("_pending", "_notice_pending")) or node.value == "ywc_nmg_school_pending_event"):
                 out.append({"queue": node.value, "op": node.op, "mode": "presence"})
     visit(children(limits[0]))
     return out
@@ -1531,20 +1531,61 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError("DMG crown sender must own its exact native event queue")
 
 
-def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
-    expected = {"v03_nmg_land_arbitration", "v03_nmg_bilingual_office", "v03_nmg_autonomy_revenue"}
-    arcs = [a for a in catalog.get("arcs", []) if isinstance(a, dict) and a.get("era") == "foundation"]
-    if len(arcs) != 3 or {a.get("slug") for a in arcs} != expected:
+_NMG_FOUNDATION_SLUGS = (
+    "v03_nmg_land_arbitration", "v03_nmg_bilingual_office", "v03_nmg_autonomy_revenue",
+)
+_NMG_SCHOOL_SLUG = "v03_nmg_parish_school"
+
+
+def _nmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
+    foundation = [a for a in catalog["arcs"] if isinstance(a, dict) and a.get("era") == "foundation"]
+    if len(foundation) != 3 or {a.get("slug") for a in foundation} != set(_NMG_FOUNDATION_SLUGS):
         raise ValueError("NMG inline adapter requires its three foundation arcs and six native JEs")
+    extra = [a for a in catalog["arcs"] if a not in foundation]
+    if any(not isinstance(a, dict) or a.get("slug") != _NMG_SCHOOL_SLUG or a.get("era") != "middle" for a in extra):
+        raise ValueError("unregistered NMG inline arc")
+    if len(extra) > 1:
+        raise ValueError("duplicate registered NMG school arc")
+    return [next(a for a in foundation if a["slug"] == slug) for slug in _NMG_FOUNDATION_SLUGS] + extra
+
+
+def _nmg_school_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_nmg\.111[0-7]", event_id):
+        raise ValueError(f"{event_id}: unsupported NMG school native event")
+    name = "ywc_v03_nmg_v03_nmg_parish_school_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1109
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} }}")
+    if not isinstance(event.get("immediate"), str) or tuple(
+            _nqg_node_shape(node) for node in parse_block(event["immediate"])) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported NMG school native immediate body")
+    return name, value
+
+
+def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
+    if not isinstance(catalog, dict) or catalog.get("key") != "country_nmg" or not isinstance(catalog.get("arcs"), list):
+        raise ValueError("NMG inline adapter requires the NMG catalog")
+    arcs = _nmg_active_arcs(catalog)
     witnesses = set()
     total = 0
-    owner_for = {"v03_nmg_land_arbitration": "land", "v03_nmg_bilingual_office": "office", "v03_nmg_autonomy_revenue": "revenue"}
+    owner_for = {"v03_nmg_land_arbitration": "land", "v03_nmg_bilingual_office": "office", "v03_nmg_autonomy_revenue": "revenue", _NMG_SCHOOL_SLUG: "school"}
     for arc in arcs:
         ad = arc.get("inline_delivery_adapter")
         if not isinstance(ad, dict) or set(ad) != {"schema", "live_phases", "branches", "direct_adds"} or ad.get("schema") != "v03.foundation_inline_adapter.v2":
             raise ValueError(f"{arc['slug']}: NMG requires strict v2 source metadata")
         journals = arc.get("journals")
         if not isinstance(journals, list) or not journals: raise ValueError(f"{arc['slug']}: source journals required")
+        if arc["slug"] == _NMG_SCHOOL_SLUG:
+            if [j.get("id") for j in journals] != ["ywc_je_v03_nmg_parish_school", "ywc_je_v03_nmg_parish_settlement"]:
+                raise ValueError("NMG school requires its two ordered native phases")
+            if len(arc.get("events", [])) != 8 or {e.get("id") for e in arc["events"]} != {f"ywc_nmg.{n}" for n in range(1110, 1118)}:
+                raise ValueError("NMG school requires its eight native events")
+            for event in arc["events"]:
+                if event.get("hidden") is True:
+                    raise ValueError("NMG school player events cannot be hidden")
+                _nmg_school_native_receipt(event)
         phases = ad.get("live_phases")
         if not isinstance(phases, list) or len(phases) != len(journals): raise ValueError(f"{arc['slug']}: every JE needs a live phase")
         for phase, journal in zip(phases, journals):
@@ -1561,10 +1602,19 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
             actual.extend((journal["id"], row) for row in _nmg_source_binding(journal["id"], journal["script"])["branches"])
         records = ad.get("branches")
         if not isinstance(records, list) or len(records) != len(actual): raise ValueError(f"{arc['slug']}: sender source inventory mismatch")
+        if arc["slug"] == _NMG_SCHOOL_SLUG:
+            if len(records) != 8:
+                raise ValueError("NMG school requires its eight native senders")
+            for journal, numbers in zip(journals, (range(1110, 1114), range(1114, 1118))):
+                bound = [r for r in records if isinstance(r, dict) and r.get("journal") == journal["id"]]
+                if len(bound) != 4 or {r.get("event") for r in bound} != {f"ywc_nmg.{n}" for n in numbers}:
+                    raise ValueError("NMG school native phases must bind their four/four partition")
         event_ids = {e["id"] for e in arc["events"]}
         for proof, (jid, src) in zip(records, actual):
             required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
             if not isinstance(proof, dict) or set(proof) != required: raise ValueError(f"{jid}: malformed NMG branch metadata")
+            if any(type(proof.get(field)) is not int for field in ("branch_index", "statement_ordinal", "chain_index")):
+                raise ValueError(f"{jid}: NMG sender ordinals must be integers")
             mapping = {"journal": jid, "branch_index": src["branch_index"], "statement_ordinal": src["statement_ordinal"], "chain_index": src["chain_index"], "branch_kind": src["branch_kind"], "event": src["event"], "branch_sha256": src["sha256"], "limit_sha256": src["limit_sha256"], "chain_prior": src["chain_prior"], "chain_sha256": src["chain_sha256"], "candidates": src["candidates"], "queue_exclusions": src["queue_exclusions"]}
             if proof != mapping: raise ValueError(f"{jid}: NMG source branch/chain binding drift")
             if proof["event"] not in event_ids: raise ValueError(f"{jid}: event not owned by source arc")
@@ -1576,17 +1626,24 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
             triggers = [n for n in children(branch_node) if n.key == "trigger_event"]
             if len(matching) != 1 or matching[0].op != "=" or not isinstance(matching[0].value, str) or len(triggers) != 1 or matching[0].start >= triggers[0].start:
                 raise ValueError(f"{jid}: selected queue must be removed exactly once as a literal before its source trigger")
-            if proof["candidates"][0]["queue"] != f"ywc_nmg_{owner_for[arc['slug']]}_{'notice_pending' if proof['candidates'][0]['kind'] == 'notice' else 'pending'}":
+            expected_queue = "ywc_nmg_school_pending_event" if arc["slug"] == _NMG_SCHOOL_SLUG else f"ywc_nmg_{owner_for[arc['slug']]}_{'notice_pending' if proof['candidates'][0]['kind'] == 'notice' else 'pending'}"
+            if proof["candidates"][0]["queue"] != expected_queue:
                 raise ValueError(f"{jid}: queue owner or class mismatch")
             if proof["candidates"][0]["value"] != int(proof["event"].rsplit(".", 1)[1]): raise ValueError(f"{jid}: queue value does not select source event")
             event = next(e for e in arc["events"] if e["id"] == proof["event"])
             _validate_nmg_native_event(event, owner_for[arc["slug"]])
             total += 1
         if ad["direct_adds"] != _kor_direct_adds(arc): raise ValueError(f"{arc['slug']}: direct-add source binding drift")
-    if total != 36: raise ValueError("NMG source binding must cover exactly 36 sender branches")
+        if arc["slug"] == _NMG_SCHOOL_SLUG and ad["direct_adds"]:
+            raise ValueError("NMG school cannot add unregistered direct JE callers")
+    expected_total = 44 if any(a["slug"] == _NMG_SCHOOL_SLUG for a in arcs) else 36
+    if total != expected_total: raise ValueError(f"NMG source binding must cover exactly {expected_total} sender branches")
 
 
 def _validate_nmg_native_event(event: dict[str, Any], owner: str) -> None:
+    if owner == "school":
+        _nmg_school_native_receipt(event)
+        return
     number = int(event["id"].rsplit(".", 1)[1])
     last = f"ywc_nmg_{owner}_last_event"
     notice = {1006: 12, 1007: 36, 1014: 12, 1015: 36, 1028: 12, 1029: 36}.get(number)
@@ -1611,6 +1668,8 @@ def _validate_nmg_native_event(event: dict[str, Any], owner: str) -> None:
 
 def _nmg_native_receipt(event: dict[str, Any], owner: str) -> tuple[str, int]:
     """Return NMG's one supported last_event receipt from its validated AST."""
+    if owner == "school":
+        return _nmg_school_native_receipt(event)
     _validate_nmg_native_event(event, owner)
     target = f"ywc_nmg_{owner}_last_event"
     writes = []
@@ -2249,6 +2308,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     arcs = (_shu_active_arcs(catalog) if is_shu else _dmg_active_arcs(catalog) if is_dmg
             else _lan_active_arcs(catalog) if is_lan
             else _kor_active_arcs(catalog) if is_kor
+            else _nmg_active_arcs(catalog) if is_nmg
             else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"])
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}

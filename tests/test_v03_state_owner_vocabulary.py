@@ -27,7 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # Crown appends eight used selected-state predicates; the original 23 remain intact.
 # Revenue adds one candidate-state query and one typed saved-state owner check.
 # Public deliberation appends sixteen state-owner reads; the old44 remain intact.
-COUNTS = dict(dmg=31, jhg=4, kor=8, shu=60, oir=9, nmg=6, tib=8, nqg=1, lan=9)
+# School appends seven original-pilot owner reads; the old six remain intact.
+COUNTS = dict(dmg=31, jhg=4, kor=8, shu=60, oir=9, nmg=13, tib=8, nqg=1, lan=9)
 
 
 def source(path):
@@ -53,6 +54,10 @@ def walk(nodes, scope="country"):
                 # This variable stores the native state object selected by
                 # claim_pilot; kor_revenue_runtime primitive tests exercise its
                 # identity, ownership loss and unavailable-object behavior.
+                next_scope = "state"
+            elif key == "var:ywc_nmg_school_pilot":
+                # The school claim stores a native StateRef once; literal
+                # runtime tests prove its identity and current ownership.
                 next_scope = "state"
             elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
                 next_scope = "country"
