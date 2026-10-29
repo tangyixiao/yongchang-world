@@ -1539,6 +1539,7 @@ _KOR_FOUNDATION_SLUGS = (
     "v03_kor_military_accounts", "v03_kor_school_factions", "v03_kor_controlled_ports",
 )
 _KOR_REVENUE_SLUG = "v03_kor_provincial_revenue"
+_KOR_COURT_PUBLIC_SLUG = "v03_kor_court_public"
 
 
 def _kor_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1547,13 +1548,18 @@ def _kor_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_KOR_FOUNDATION_SLUGS):
         raise ValueError("KOR v2 inline adapter requires exactly the three foundation arcs")
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
-    if any(not isinstance(arc, dict) or arc.get("slug") != _KOR_REVENUE_SLUG
-           or arc.get("era") != "middle" for arc in extra):
-        raise ValueError("unregistered KOR inline arc")
-    if len(extra) > 1:
-        raise ValueError("duplicate registered KOR revenue arc")
+    middle = {}
+    for arc in extra:
+        if not isinstance(arc, dict) or arc.get("slug") not in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG} or arc.get("era") != "middle":
+            raise ValueError("unregistered KOR inline arc")
+        if arc["slug"] in middle:
+            raise ValueError("duplicate registered KOR middle arc")
+        middle[arc["slug"]] = arc
+    if _KOR_COURT_PUBLIC_SLUG in middle and _KOR_REVENUE_SLUG not in middle:
+        raise ValueError("KOR court public registration must preserve the revenue sources")
     return [next(arc for arc in foundation if arc["slug"] == slug)
-            for slug in _KOR_FOUNDATION_SLUGS] + extra
+            for slug in _KOR_FOUNDATION_SLUGS] + [middle[slug] for slug in
+                (_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG) if slug in middle]
 
 
 def _kor_revenue_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -1568,6 +1574,20 @@ def _kor_revenue_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
     if tuple(_nqg_node_shape(node) for node in actual) != tuple(
             _nqg_node_shape(node) for node in parse_block(expected)):
         raise ValueError(f"{event_id}: unsupported KOR revenue native immediate body")
+    return name, value
+
+
+def _kor_court_public_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_kor\.112[0-7]", event_id):
+        raise ValueError(f"{event_id}: unregistered KOR court public native event")
+    name = "ywc_v03_kor_v03_kor_court_public_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1119
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} }}")
+    if tuple(_nqg_node_shape(node) for node in parse_block(event.get("immediate", ""))) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported KOR court public native immediate body")
     return name, value
 
 
@@ -1622,6 +1642,26 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError("KOR revenue native phases must bind their four/four partition")
             for event in arc["events"]:
                 _kor_revenue_native_receipt(event)
+        if arc["slug"] == _KOR_COURT_PUBLIC_SLUG:
+            court_phases = {
+                "ywc_je_v03_kor_court_public_deliberation": set(range(1120, 1124)),
+                "ywc_je_v03_kor_court_public_review": set(range(1124, 1128)),
+            }
+            if [journal.get("id") for journal in journals] != list(court_phases):
+                raise ValueError("KOR court public requires its two ordered native phases")
+            if len(arc.get("events", [])) != 8 or {
+                    event.get("id") for event in arc["events"]} != {
+                    f"ywc_kor.{n}" for n in range(1120, 1128)} or len(records) != 8:
+                raise ValueError("KOR court public requires its eight native events and sender sites")
+            for jid, numbers in court_phases.items():
+                bound = [proof for proof in records if isinstance(proof, dict) and proof.get("journal") == jid]
+                if len(bound) != 4 or {proof.get("event") for proof in bound} != {
+                        f"ywc_kor.{n}" for n in numbers}:
+                    raise ValueError("KOR court public native phases must bind their four/four partition")
+            for event in arc["events"]:
+                if event.get("hidden") in (True, "yes"):
+                    raise ValueError("KOR court public events must be visible native events")
+                _kor_court_public_native_receipt(event)
         for proof, (jid, source) in zip(records, actual):
             required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
             if not isinstance(proof, dict) or set(proof) != required:
@@ -1657,6 +1697,10 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                     "queue": "ywc_kor_revenue_pending_event", "kind": "normal", "mode": "exact",
                     "value": int(proof["event"].rsplit(".", 1)[1])}]:
                 raise ValueError("KOR revenue sender must own its exact native event queue")
+            if arc["slug"] == _KOR_COURT_PUBLIC_SLUG and candidates != [{
+                    "queue": "ywc_kor_public_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(proof["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("KOR court public sender must own its exact native event queue")
             for prior in proof["chain_prior"]:
                 if not isinstance(prior, dict) or set(prior) != {"ordinal", "sha256", "limit_sha256", "limit_source"} or type(prior.get("ordinal")) is not int or not isinstance(prior.get("limit_source"), str):
                     raise ValueError(f"{arc['slug']}/{jid}: invalid prior predicate record")
@@ -1678,6 +1722,8 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}: direct-add source hashes are malformed")
         if direct_adds != _kor_direct_adds(arc):
             raise ValueError(f"{arc['slug']}: source direct-add callers drift or are incomplete")
+        if arc["slug"] == _KOR_COURT_PUBLIC_SLUG and direct_adds:
+            raise ValueError("KOR court public must not add direct journal callers")
         for record in direct_adds:
             target = next((journal for journal in arc["journals"] if journal["id"] == record["journal"]), None)
             if target is None:
@@ -2185,6 +2231,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     receipt_variable, receipt_value = _lan_native_receipt(event)
                 elif is_kor and arc["slug"] == _KOR_REVENUE_SLUG:
                     receipt_variable, receipt_value = _kor_revenue_native_receipt(event)
+                elif is_kor and arc["slug"] == _KOR_COURT_PUBLIC_SLUG:
+                    receipt_variable, receipt_value = _kor_court_public_native_receipt(event)
                 elif is_shu:
                     receipt_variable, receipt_value = _shu_expected_receipt(event["id"])
                     native_receipt = re.search(rf"name\s*=\s*{re.escape(receipt_variable)}\s+value\s*=\s*([0-9]+)", event["immediate"])
@@ -2649,7 +2697,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     checks += [f"has_variable = {q['queue']}", f"var:{q['queue']} = var:{snap_value}"]
             if not is_shu:
                 checks += [f"var:{callback_proof} = 1",f"has_variable = {callback_id}",f"has_variable = {callback_epoch}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {callback_queue}"]
-            if (is_dmg or is_nmg or (is_kor and c["arc"]["slug"] == _KOR_REVENUE_SLUG)) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
+            if (is_dmg or is_nmg or (is_kor and c["arc"]["slug"] in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG})) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
                 checks += [f"has_variable = {c['receipt_variable']}",f"var:{c['receipt_variable']} = {c['receipt_value']}"]
             checks += _nmg_native_postchecks(c, prefix) if is_nmg else []
             if is_nmg:
