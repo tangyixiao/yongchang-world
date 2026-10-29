@@ -149,3 +149,45 @@ ywc_je_v03_nmg_revenue_settlement = {
     fail = { has_variable = ywc_nmg_revenue_withdrawn }
     on_complete = { remove_variable = ywc_v03_nmg_inline_live_revenue_settlement }
 }
+
+ywc_je_v03_nmg_parish_school = {
+    is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled } }
+    possible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_nmg_school_unsettled = yes ywc_nmg_v03_has_owned_state = yes }
+    immediate = { ywc_nmg_school_claim = yes ywc_nmg_school_open_once = yes set_variable = { name = ywc_v03_nmg_inline_live_parish_school value = 1 } }
+    on_fail = { ywc_nmg_school_close_as_withdraw = yes remove_variable = ywc_v03_nmg_inline_live_parish_school }
+    on_monthly_pulse = {
+    effect = { ywc_v03_nmg_inline_prepare = yes
+
+    ywc_nmg_school_monthly_review = yes
+    if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1110   OR = { ywc_v03_nmg_inline_turn_37 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_37 = yes } ywc_v03_nmg_inline_reserve_37 = yes }   trigger_event = { id = ywc_nmg.1110 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1111   OR = { ywc_v03_nmg_inline_turn_38 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_38 = yes } ywc_v03_nmg_inline_reserve_38 = yes }   trigger_event = { id = ywc_nmg.1111 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1112   OR = { ywc_v03_nmg_inline_turn_39 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_39 = yes } ywc_v03_nmg_inline_reserve_39 = yes }   trigger_event = { id = ywc_nmg.1112 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1113   OR = { ywc_v03_nmg_inline_turn_40 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_40 = yes } ywc_v03_nmg_inline_reserve_40 = yes }   trigger_event = { id = ywc_nmg.1113 } }
+    }
+
+    }
+    complete = { var:ywc_nmg_school_phase = 2 }
+    fail = { has_variable = ywc_nmg_school_withdrawn }
+    on_complete = { remove_variable = ywc_v03_nmg_inline_live_parish_school }
+}
+
+ywc_je_v03_nmg_parish_settlement = {
+    is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized var:ywc_nmg_school_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled } }
+    possible = { c:NMG ?= this var:ywc_nmg_school_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled } }
+    immediate = { if = { limit = { NOT = { has_variable = ywc_nmg_school_pending_event } } set_variable = { name = ywc_nmg_school_pending_event value = 1114 } } set_variable = { name = ywc_v03_nmg_inline_live_parish_settlement value = 1 } }
+    on_fail = { ywc_nmg_school_close_as_withdraw = yes remove_variable = ywc_v03_nmg_inline_live_parish_settlement }
+    on_monthly_pulse = {
+    effect = { ywc_v03_nmg_inline_prepare = yes
+
+    ywc_nmg_school_monthly_review = yes
+    if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1114   OR = { ywc_v03_nmg_inline_turn_41 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_41 = yes } ywc_v03_nmg_inline_reserve_41 = yes }   trigger_event = { id = ywc_nmg.1114 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1115   OR = { ywc_v03_nmg_inline_turn_42 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_42 = yes } ywc_v03_nmg_inline_reserve_42 = yes }   trigger_event = { id = ywc_nmg.1115 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1116   OR = { ywc_v03_nmg_inline_turn_43 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_43 = yes } ywc_v03_nmg_inline_reserve_43 = yes }   trigger_event = { id = ywc_nmg.1116 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_school_pending_event = 1117   OR = { ywc_v03_nmg_inline_turn_44 = yes } } if = { limit = { ywc_v03_nmg_inline_turn_44 = yes } ywc_v03_nmg_inline_reserve_44 = yes }   trigger_event = { id = ywc_nmg.1117 } }
+    }
+
+    }
+    complete = { OR = { has_variable = ywc_nmg_school_established has_variable = ywc_nmg_school_limited has_variable = ywc_nmg_school_setback } NOT = { has_variable = ywc_nmg_school_withdrawn } }
+    fail = { has_variable = ywc_nmg_school_withdrawn }
+    on_complete = { remove_variable = ywc_v03_nmg_inline_live_parish_settlement }
+}
