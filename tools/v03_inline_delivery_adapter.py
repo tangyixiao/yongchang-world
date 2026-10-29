@@ -1281,6 +1281,22 @@ _DMG_FOUNDATION_SLUGS = (
     "v03_dmg_common_subjects", "v03_dmg_two_land_titles", "v03_dmg_court_provinces",
 )
 _DMG_SCHOOL_SLUG = "v03_dmg_school_languages"
+_DMG_MARKET_SLUG = "v03_dmg_luzon_border_market"
+
+
+def _dmg_market_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_dmg\.110[0-7]", event_id):
+        raise ValueError(f"{event_id}: unregistered DMG market native event")
+    name = "ywc_v03_dmg_v03_dmg_luzon_border_market_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1099
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} }}")
+    actual = parse_block(event.get("immediate", ""))
+    if tuple(_nqg_node_shape(node) for node in actual) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported DMG market native immediate body")
+    return name, value
 
 
 def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1289,14 +1305,19 @@ def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_DMG_FOUNDATION_SLUGS):
         raise ValueError("DMG inline adapter requires exactly its three foundation arcs")
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    middle = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") != _DMG_SCHOOL_SLUG or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG} or arc.get("era") != "middle":
             slug = arc.get("slug") if isinstance(arc, dict) else None
             raise ValueError(f"unregistered DMG inline arc: {slug}")
-    if len(extra) > 1:
-        raise ValueError("DMG inline adapter permits one registered school arc")
+        if arc["slug"] in middle:
+            raise ValueError(f"duplicate registered DMG middle arc: {arc['slug']}")
+        middle[arc["slug"]] = arc
+    if _DMG_MARKET_SLUG in middle and _DMG_SCHOOL_SLUG not in middle:
+        raise ValueError("DMG market registration must preserve the registered school sources")
     return [next(arc for arc in foundation if arc["slug"] == slug)
-            for slug in _DMG_FOUNDATION_SLUGS] + extra
+            for slug in _DMG_FOUNDATION_SLUGS] + [middle[slug] for slug in
+                (_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG) if slug in middle]
 
 
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
@@ -1364,6 +1385,26 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError("DMG school requires its one native journal")
             if len(arc.get("events", [])) != 6 or {event.get("id") for event in arc.get("events", [])} != {f"ywc_dmg.{n}" for n in range(1120, 1126)} or len(recorded) != 6:
                 raise ValueError("DMG school requires its six native events and sender sites")
+        if arc["slug"] == _DMG_MARKET_SLUG:
+            market_phases = {
+                "ywc_je_v03_dmg_luzon_market_terms": set(range(1100, 1105)),
+                "ywc_je_v03_dmg_luzon_market_review": set(range(1105, 1108)),
+            }
+            if [journal.get("id") for journal in journals] != list(market_phases):
+                raise ValueError("DMG market requires its two ordered native phases")
+            if len(arc.get("events", [])) != 8 or {
+                    event.get("id") for event in arc["events"]} != {
+                    f"ywc_dmg.{n}" for n in range(1100, 1108)} or len(recorded) != 8:
+                raise ValueError("DMG market requires its eight native events and sender sites")
+            if not all(isinstance(item, dict) for item in recorded):
+                raise ValueError("DMG market source records must be objects")
+            for jid, numbers in market_phases.items():
+                bound = [item for item in recorded if item.get("journal") == jid]
+                if len(bound) != len(numbers) or {item.get("event") for item in bound} != {
+                        f"ywc_dmg.{n}" for n in numbers}:
+                    raise ValueError("DMG market native phase must bind its five/three event partition")
+            for event in arc["events"]:
+                _dmg_market_native_receipt(event)
         for item, (jid, branch) in zip(recorded, expected):
             if not isinstance(item, dict) or set(item) != {"journal", "branch_index", "event", "branch_sha256", "limit_sha256", "candidates"}: raise ValueError(f"{arc['slug']}: malformed branch binding")
             if item["journal"] != jid or type(item["branch_index"]) is not int or item["branch_index"] != branch["branch_index"] or item["event"] != branch["event"] or item["branch_sha256"] != branch["sha256"] or item["limit_sha256"] != branch["limit_sha256"]: raise ValueError(f"{arc['slug']}/{jid}: exact source branch drift")
@@ -1379,6 +1420,10 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError(f"DMG queue ownership crosses arcs: {candidate['queue']}")
             if arc["slug"] == _DMG_SCHOOL_SLUG and candidates != [{"queue": "ywc_dmg_school_pending_event", "kind": "normal", "mode": "exact", "value": int(item["event"].rsplit(".", 1)[1])}]:
                 raise ValueError("DMG school sender must own its exact native event queue")
+            if arc["slug"] == _DMG_MARKET_SLUG and candidates != [{
+                    "queue": "ywc_dmg_market_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(item["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("DMG market sender must own its exact native event queue")
 
 
 def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
