@@ -1282,6 +1282,7 @@ _DMG_FOUNDATION_SLUGS = (
 )
 _DMG_SCHOOL_SLUG = "v03_dmg_school_languages"
 _DMG_MARKET_SLUG = "v03_dmg_luzon_border_market"
+_DMG_CROWN_SLUG = "v03_dmg_representative_crown"
 
 
 def _dmg_market_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -1299,6 +1300,21 @@ def _dmg_market_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
     return name, value
 
 
+def _dmg_crown_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_dmg\.111[0-9]", event_id):
+        raise ValueError(f"{event_id}: unregistered DMG crown native event")
+    name = "ywc_v03_dmg_v03_dmg_representative_crown_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1109
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} }}")
+    actual = parse_block(event.get("immediate", ""))
+    if tuple(_nqg_node_shape(node) for node in actual) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported DMG crown native immediate body")
+    return name, value
+
+
 def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     foundation = [arc for arc in catalog["arcs"]
                   if isinstance(arc, dict) and arc.get("era") == "foundation"]
@@ -1307,7 +1323,7 @@ def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
     middle = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG} or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG, _DMG_CROWN_SLUG} or arc.get("era") != "middle":
             slug = arc.get("slug") if isinstance(arc, dict) else None
             raise ValueError(f"unregistered DMG inline arc: {slug}")
         if arc["slug"] in middle:
@@ -1315,9 +1331,11 @@ def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
         middle[arc["slug"]] = arc
     if _DMG_MARKET_SLUG in middle and _DMG_SCHOOL_SLUG not in middle:
         raise ValueError("DMG market registration must preserve the registered school sources")
+    if _DMG_CROWN_SLUG in middle and not {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG} <= middle.keys():
+        raise ValueError("DMG crown registration must preserve the registered school and market sources")
     return [next(arc for arc in foundation if arc["slug"] == slug)
             for slug in _DMG_FOUNDATION_SLUGS] + [middle[slug] for slug in
-                (_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG) if slug in middle]
+                (_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG, _DMG_CROWN_SLUG) if slug in middle]
 
 
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
@@ -1405,6 +1423,27 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError("DMG market native phase must bind its five/three event partition")
             for event in arc["events"]:
                 _dmg_market_native_receipt(event)
+        if arc["slug"] == _DMG_CROWN_SLUG:
+            crown_phases = {
+                "ywc_je_v03_dmg_crown_representation": set(range(1110, 1114)),
+                "ywc_je_v03_dmg_crown_budget": set(range(1114, 1117)),
+                "ywc_je_v03_dmg_crown_continuity": set(range(1117, 1120)),
+            }
+            if [journal.get("id") for journal in journals] != list(crown_phases):
+                raise ValueError("DMG crown requires its three ordered native phases")
+            if len(arc.get("events", [])) != 10 or {
+                    event.get("id") for event in arc["events"]} != {
+                    f"ywc_dmg.{n}" for n in range(1110, 1120)} or len(recorded) != 10:
+                raise ValueError("DMG crown requires its ten native events and sender sites")
+            if not all(isinstance(item, dict) for item in recorded):
+                raise ValueError("DMG crown source records must be objects")
+            for jid, numbers in crown_phases.items():
+                bound = [item for item in recorded if item.get("journal") == jid]
+                if len(bound) != len(numbers) or {item.get("event") for item in bound} != {
+                        f"ywc_dmg.{n}" for n in numbers}:
+                    raise ValueError("DMG crown native phase must bind its four/three/three event partition")
+            for event in arc["events"]:
+                _dmg_crown_native_receipt(event)
         for item, (jid, branch) in zip(recorded, expected):
             if not isinstance(item, dict) or set(item) != {"journal", "branch_index", "event", "branch_sha256", "limit_sha256", "candidates"}: raise ValueError(f"{arc['slug']}: malformed branch binding")
             if item["journal"] != jid or type(item["branch_index"]) is not int or item["branch_index"] != branch["branch_index"] or item["event"] != branch["event"] or item["branch_sha256"] != branch["sha256"] or item["limit_sha256"] != branch["limit_sha256"]: raise ValueError(f"{arc['slug']}/{jid}: exact source branch drift")
@@ -1424,6 +1463,10 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
                     "queue": "ywc_dmg_market_pending_event", "kind": "normal", "mode": "exact",
                     "value": int(item["event"].rsplit(".", 1)[1])}]:
                 raise ValueError("DMG market sender must own its exact native event queue")
+            if arc["slug"] == _DMG_CROWN_SLUG and candidates != [{
+                    "queue": "ywc_dmg_crown_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(item["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("DMG crown sender must own its exact native event queue")
 
 
 def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
