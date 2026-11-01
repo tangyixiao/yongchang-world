@@ -66,7 +66,20 @@ class InlineSourceParserTests(unittest.TestCase):
         previous = json.loads(subprocess.run(
             ["git", "show", "9980153ba0edb9c48f141df84c11b2f530ab39b6:data/content/v03/countries/dmg.json"],
             cwd=ROOT, check=True, capture_output=True).stdout.decode("utf-8-sig"))
-        self.assertEqual(old_arcs, previous["arcs"], "all five old cards and exact source proofs are preserved")
+        # The court's three opening effects now delegate their transaction to
+        # guarded choice helpers. Only those exact effects migrate; every other
+        # old field, JE, native immediate and source proof remains historical.
+        court = next(a for a in previous["arcs"] if a["slug"] == "v03_dmg_court_provinces")
+        opening = next(e for e in court["events"] if e["id"] == "ywc_dmg.1016")
+        replacements = {
+            "royal_administration": "{ ywc_dmg_foundation_choose_court_royal = yes }",
+            "joint_appointment": "{ ywc_dmg_foundation_choose_court_joint = yes }",
+            "local_compact": "{ ywc_dmg_foundation_choose_court_local = yes }",
+        }
+        for option in opening["options"]:
+            if option["key"] in replacements:
+                option["effect"] = replacements[option["key"]]
+        self.assertEqual(old_arcs, previous["arcs"], "only the three approved court choice effects may change")
         old_bindings = [source_binding(j["id"], j["script"]) for a in old_arcs for j in a["journals"]]
         self.assertEqual(sum(len(item["branches"]) for item in old_bindings), 43)
         self.assertEqual(len(old_bindings), 9)
