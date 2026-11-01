@@ -23,9 +23,11 @@ EXPECTED_JES = {
     "ywc_je_v03_mgl_roads_register", "ywc_je_v03_mgl_roads_review",
     "ywc_je_v03_mgl_debt_register", "ywc_je_v03_mgl_debt_review",
     "ywc_je_v03_mgl_grain_register", "ywc_je_v03_mgl_grain_review",
+    "ywc_je_v03_mgl_mobile_offices",
 }
 EXPECTED_ARCS = {"v03_mgl_two_trade_roads", "v03_mgl_pastoral_debt",
-                 "v03_mgl_princes_monasteries"}
+                 "v03_mgl_princes_monasteries", "v03_mgl_mobile_offices"}
+FOUNDATION_ARCS = EXPECTED_ARCS - {"v03_mgl_mobile_offices"}
 
 
 def _catalog():
@@ -124,8 +126,12 @@ def _v2_catalog_from_formal_mgl_source():
                     "branch_sha256": source["sha256"], "limit_sha256": source["limit_sha256"],
                     "chain_prior": source["chain_prior"], "chain_sha256": source["chain_sha256"],
                     "candidates": source["candidates"], "queue_exclusions": source["queue_exclusions"]})
-        arc["inline_delivery_adapter"] = {"schema": "v03.foundation_inline_adapter.v2",
-            "live_phases": phases, "branches": branches, "direct_adds": _kor_direct_adds(arc)}
+        if arc["era"] == "middle":
+            arc["inline_delivery_adapter"] = {"schema": "v03.mgl_mobile_inline_adapter.v1",
+                "live_phases": phases, "branches": branches}
+        else:
+            arc["inline_delivery_adapter"] = {"schema": "v03.foundation_inline_adapter.v2",
+                "live_phases": phases, "branches": branches, "direct_adds": _kor_direct_adds(arc)}
     return result
 
 
@@ -149,7 +155,8 @@ def _rebind_v2_catalog(candidate):
                     "candidates": source["candidates"], "queue_exclusions": source["queue_exclusions"]})
         arc["inline_delivery_adapter"]["live_phases"] = phases
         arc["inline_delivery_adapter"]["branches"] = branches
-        arc["inline_delivery_adapter"]["direct_adds"] = _kor_direct_adds(arc)
+        if arc["era"] == "foundation":
+            arc["inline_delivery_adapter"]["direct_adds"] = _kor_direct_adds(arc)
     return candidate
 
 
@@ -293,22 +300,35 @@ class MglInlineAdapterStaticContract(unittest.TestCase):
                     kinds[candidate["kind"]] += 1
                     events.append(row["event"])
         self.assertEqual(set(counts), EXPECTED_JES)
-        self.assertEqual(counts, {jid: 11 for jid in EXPECTED_JES})
-        self.assertEqual(kinds, {"normal": 48, "notice": 18})
+        self.assertEqual({jid: count for jid, count in counts.items() if jid != "ywc_je_v03_mgl_mobile_offices"},
+                         {jid: 11 for jid in EXPECTED_JES - {"ywc_je_v03_mgl_mobile_offices"}})
+        self.assertEqual(counts["ywc_je_v03_mgl_mobile_offices"], 6)
+        self.assertEqual(kinds, {"normal": 54, "notice": 18})
         for arc in cat["arcs"]:
             for je in arc["journals"]:
                 rows = _binding(je["id"], je["script"])
-                self.assertEqual([row["candidates"][0]["kind"] for row in rows],
-                                 ["notice", "notice", "notice"] + ["normal"] * 8)
-                base_event = {"roads": 1000, "debt": 1010, "grain": 1020}[
-                    next(name for name in ("roads", "debt", "grain") if name in je["id"])]
-                self.assertEqual([row["candidates"][0]["value"] for row in rows],
-                                 [base_event + 6, base_event + 7, base_event + 6,
-                                  *range(base_event, base_event + 8)])
+                if arc["era"] == "middle":
+                    self.assertEqual([row["candidates"][0]["kind"] for row in rows], ["normal"] * 6)
+                    self.assertEqual([row["candidates"][0]["value"] for row in rows], list(range(1100, 1106)))
+                    self.assertEqual({row["candidates"][0]["queue"] for row in rows},
+                                     {"ywc_mgl_mobile_pending_event"})
+                else:
+                    self.assertEqual([row["candidates"][0]["kind"] for row in rows],
+                                     ["notice", "notice", "notice"] + ["normal"] * 8)
+                    base_event = {"roads": 1000, "debt": 1010, "grain": 1020}[
+                        next(name for name in ("roads", "debt", "grain") if name in je["id"])]
+                    self.assertEqual([row["candidates"][0]["value"] for row in rows],
+                                     [base_event + 6, base_event + 7, base_event + 6,
+                                      *range(base_event, base_event + 8)])
                 self.assertEqual([int(row["event"].rsplit(".", 1)[1]) for row in rows],
                                  [row["candidates"][0]["value"] for row in rows])
-        self.assertEqual(len(events), 66)
-        self.assertEqual(len(set(events)), 24)
+        self.assertEqual(len(events), 72)
+        self.assertEqual(len(set(events)), 30)
+        foundation_events = [event for arc in cat["arcs"] if arc["era"] == "foundation" for event in arc["events"]]
+        foundation_branches = [row for arc in cat["arcs"] if arc["era"] == "foundation"
+                               for je in arc["journals"] for row in _binding(je["id"], je["script"])]
+        self.assertEqual(len(foundation_branches), 66)
+        self.assertEqual(len(foundation_events), 24)
         native_events = {k for k, _, _ in parse(EVENT_PATH.read_text(encoding="utf-8-sig")) if k != "namespace"}
         self.assertEqual(set(events), native_events)
         # Same native notice event has independent notice and normal senders.
@@ -319,7 +339,7 @@ class MglInlineAdapterStaticContract(unittest.TestCase):
                     if row["event"] == event_id}
                 self.assertEqual(kinds_for_event, {"normal", "notice"})
 
-    def test_all_24_full_native_event_and_helper_asts_are_bound(self):
+    def test_all_30_full_native_event_and_helper_asts_are_bound(self):
         cat = _catalog()
         native_events = {k: b for k, _, b in parse(EVENT_PATH.read_text(encoding="utf-8-sig"))
                          if k != "namespace"}
@@ -401,14 +421,21 @@ class MglInlineAdapterStaticContract(unittest.TestCase):
 
     def test_source_bound_v2_candidate_reaches_both_public_apis_before_mutants(self):
         valid = _v2_catalog_from_formal_mgl_source()
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in valid["arcs"]), 66)
-        self.assertTrue(all(a["inline_delivery_adapter"]["schema"] == "v03.foundation_inline_adapter.v2"
-                            for a in valid["arcs"]))
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in valid["arcs"]), 72)
+        self.assertTrue(all(a["inline_delivery_adapter"]["schema"] ==
+                            ("v03.mgl_mobile_inline_adapter.v1" if a["era"] == "middle"
+                             else "v03.foundation_inline_adapter.v2") for a in valid["arcs"]))
+        wrong_middle_schema = copy.deepcopy(valid)
+        mobile = next(arc for arc in wrong_middle_schema["arcs"] if arc["era"] == "middle")
+        mobile["inline_delivery_adapter"]["schema"] = "v03.foundation_inline_adapter.v2"
+        mobile["inline_delivery_adapter"]["direct_adds"] = []
+        with self.assertRaisesRegex(ValueError, "strict mobile inline adapter"):
+            validate_inline_catalog(wrong_middle_schema)
         # Intended ordinary feature RED on baseline: first source candidate is
         # validated by the public API, then both renderers run before mutants.
         from tests.test_v03_mgl_inline_actual_source import assert_inline_supported
         rendered = assert_inline_supported(self)
-        self.assertEqual(len(rendered["event_hooks"]), 24)
+        self.assertEqual(len(rendered["event_hooks"]), 30)
         mutations = []
         missing = copy.deepcopy(valid)
         missing["arcs"][0]["inline_delivery_adapter"]["branches"].pop()
@@ -548,7 +575,7 @@ class MglInlineAdapterStaticContract(unittest.TestCase):
 
         candidate = _v2_catalog_from_formal_mgl_source()
         rendered = assert_inline_supported(self)
-        self.assertEqual(len(rendered["event_hooks"]), 24)
+        self.assertEqual(len(rendered["event_hooks"]), 30)
         validate_helpers = getattr(public, "validate_mgl_native_helper_source", None)
         self.assertTrue(callable(validate_helpers),
                         "MGL source helper ABI must have a public fail-closed source validator")
@@ -595,7 +622,7 @@ class MglInlineAdapterStaticContract(unittest.TestCase):
 
         valid = _v2_catalog_from_formal_mgl_source()
         rendered = assert_inline_supported(self)
-        self.assertEqual(len(rendered["event_hooks"]), 24)
+        self.assertEqual(len(rendered["event_hooks"]), 30)
 
         cases = []
         limit_mutant = copy.deepcopy(valid)

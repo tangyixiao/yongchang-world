@@ -22,7 +22,9 @@ LEGACY_EVENTS = ("ywc_mng.7", "ywc_mng.100", "ywc_mng.101", "ywc_mng.102", "ywc_
 PREFIX = {"v03_mgl_two_trade_roads": "roads", "v03_mgl_pastoral_debt": "debt",
           "v03_mgl_princes_monasteries": "grain"}
 PRE = {slug: prefix for slug, prefix in PREFIX.items()}
-MGL_ARCS = json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8"))["arcs"]
+_MGL_CATALOG_ARCS = json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8"))["arcs"]
+MGL_ARCS = [arc for arc in _MGL_CATALOG_ARCS if arc.get("era") == "foundation"]
+MGL_MOBILE_ARC = next(arc for arc in _MGL_CATALOG_ARCS if arc.get("slug") == "v03_mgl_mobile_offices")
 
 
 def _read(path):
@@ -108,6 +110,11 @@ class _StrictMglWorld(base.MglWorldFacts):
             if comparison != "=" or value not in self.journal_defs:
                 raise AssertionError(("invalid_has_journal_entry", node))
             return value in self.active_journals.get(tag, ())
+        if key == "has_building":
+            if comparison != "=" or type(value) is not str:
+                raise AssertionError(("invalid_state_building_condition", node))
+            return self.scope_state is not None and any(
+                building.get("type") == value for building in self.scope_state.get("buildings", []))
         # Delegate ordinary Clausewitz atoms to the formal MGL fact evaluator.
         # Its unknown atom branch is made fail closed here.
         known = {"has_variable", "has_journal_entry", "has_law", "market_access", "average_sol",
@@ -144,8 +151,9 @@ def _ordinary_facts():
             "military_expenses_share": 0.15, "modifiers": set()}
 
 
-def actual_mgl_admission_world(admission_order=None, ordinary_facts=None):
-    """Create a fresh world via actual history, legacy events, terminal and roots."""
+def actual_mgl_admission_world(admission_order=None, ordinary_facts=None, *, admit_mobile=False,
+                               register_mobile=False, root_slugs=None):
+    """Create a source world; the middle arc is an explicit separate admission control."""
     state = deepcopy(_ordinary_facts() if ordinary_facts is None else ordinary_facts)
     allowed_facts = set(_ordinary_facts())
     forbidden = sorted(set(state) - allowed_facts)
@@ -166,8 +174,11 @@ def actual_mgl_admission_world(admission_order=None, ordinary_facts=None):
                             {TAG: state, "SHU": {"relations": {TAG: 0}}, "RUS": {"relations": {TAG: 0}}})
     # Keep legacy source on disk and project current formal v03 native business.
     # The separate inline fixture overlays real transport before root activation.
+    include_mobile = admit_mobile or register_mobile or (root_slugs is not None and
+                         "v03_mgl_mobile_offices" in root_slugs)
     native_journals, native_events = base._native_business_projection(
-        json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8")))
+        json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8")),
+        include_mobile=include_mobile)
     world.journal_defs = _defs(("yongchang_world/common/journal_entries/ywc_mng.txt",))
     for key, body in native_journals.items():
         if key in world.journal_defs:
@@ -188,7 +199,8 @@ def actual_mgl_admission_world(admission_order=None, ordinary_facts=None):
         world.event_defs[key] = body
     world.generated_journals = world.journal_defs
     world.generated_events = world.event_defs
-    world.arc_by_slug = {arc["slug"]: arc for arc in MGL_ARCS}
+    registered_arcs = [*MGL_ARCS, *([MGL_MOBILE_ARC] if include_mobile else [])]
+    world.arc_by_slug = {arc["slug"]: arc for arc in registered_arcs}
 
     history = _defs(("yongchang_world/common/history/countries/ywc_content_starts.txt",))["COUNTRIES"]
     country = next((n for n in history if n[0] == "c:MGL"), None)
@@ -253,12 +265,19 @@ def actual_mgl_admission_world(admission_order=None, ordinary_facts=None):
     state_business = sorted(k for k in state if k.startswith(("ywc_mgl_", "ywc_v03_mgl_")))
     if state_business:
         raise AssertionError(("business_state_seeded_before_roots", state_business))
-    orders = [arc["slug"] for arc in MGL_ARCS]
+    if root_slugs is not None:
+        by_available = {arc["slug"]: arc for arc in registered_arcs}
+        if len(root_slugs) > 3 or len(set(root_slugs)) != len(root_slugs) or any(slug not in by_available for slug in root_slugs):
+            raise ValueError("root_slugs must be unique registered MGL arcs and fit the three-active-arc cap")
+        root_arcs = [by_available[slug] for slug in root_slugs]
+    else:
+        root_arcs = [MGL_MOBILE_ARC] if admit_mobile else MGL_ARCS
+    orders = [arc["slug"] for arc in root_arcs]
     if admission_order is not None:
         orders = list(admission_order)
-        if len(orders) != len(MGL_ARCS) or set(orders) != {a["slug"] for a in MGL_ARCS}:
-            raise ValueError("admission_order must contain each MGL root slug exactly once")
-    by_slug = {a["slug"]: a for a in MGL_ARCS}
+        if len(orders) != len(root_arcs) or set(orders) != {a["slug"] for a in root_arcs}:
+            raise ValueError("admission_order must contain each selected MGL root slug exactly once")
+    by_slug = {a["slug"]: a for a in root_arcs}
     admissions = []
     for slug in orders:
         arc = by_slug[slug]
@@ -275,7 +294,8 @@ def actual_mgl_admission_world(admission_order=None, ordinary_facts=None):
                            "delta": {k: v for k, v in state.items() if before.get(k) != v}})
     counts = {"active": state.get("ywc_v03_active_arc_count"),
               "visible": state.get("ywc_v03_visible_task_count")}
-    if counts != {"active": 3, "visible": 3}:
+    expected_root_count = len(root_arcs)
+    if counts != {"active": expected_root_count, "visible": expected_root_count}:
         raise AssertionError(("root_admission_counts", counts))
     return world, {"history_legacy_je": LEGACY_JE, "legacy_trace": legacy_trace,
                    "root_admission_month": post_history_month,
