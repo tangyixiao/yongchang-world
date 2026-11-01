@@ -10,6 +10,11 @@ from tests.test_v03_mgl_actual_source import _StrictMglWorld, _ordinary_facts
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _canonical_git_text_newlines(content: bytes) -> bytes:
+    """Normalize only Git's CRLF checkout conversion while preserving bytes otherwise."""
+    return content.replace(b"\r\n", b"\n")
+
+
 class _MobileWorld(_StrictMglWorld):
     def condition(self, node, tag):
         key, comparison, value = node
@@ -621,20 +626,31 @@ class MglMobileOfficeCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "live phase binding is malformed"):
             render_inline_country_adapters(unknown_phase)
 
-    def test_frozen_foundation_trigger_prefix_remains_byte_identical(self):
+    def test_frozen_foundation_trigger_prefix_preserves_content_across_line_endings(self):
         import subprocess
         relative = "yongchang_world/common/scripted_triggers/ywc_v03_mgl_triggers.txt"
-        frozen = subprocess.check_output(["git", "show", f"HEAD:{relative}"], cwd=ROOT)
+        frozen = subprocess.check_output(["git", "show", f"c7ca59ca16092df816828f19a229cdc5dd0ac5a2:{relative}"], cwd=ROOT)
         current = (ROOT / relative).read_bytes()
-        self.assertTrue(current.startswith(frozen))
+        self.assertTrue(_canonical_git_text_newlines(current).startswith(
+            _canonical_git_text_newlines(frozen)))
+        simulated_crlf_checkout = _canonical_git_text_newlines(current).replace(b"\n", b"\r\n")
+        self.assertTrue(_canonical_git_text_newlines(simulated_crlf_checkout).startswith(
+            _canonical_git_text_newlines(frozen)))
 
-    def test_frozen_foundation_effect_prefix_and_catalog_arcs_are_unchanged(self):
+    def test_frozen_foundation_effect_prefix_and_catalog_arcs_preserve_base_content(self):
         import subprocess
         effect_path = "yongchang_world/common/scripted_effects/ywc_v03_mgl_effects.txt"
-        frozen_effects = subprocess.check_output(["git", "show", f"HEAD:{effect_path}"], cwd=ROOT)
-        self.assertTrue((ROOT / effect_path).read_bytes().startswith(frozen_effects))
+        frozen_effects = subprocess.check_output(
+            ["git", "show", f"c7ca59ca16092df816828f19a229cdc5dd0ac5a2:{effect_path}"], cwd=ROOT)
+        current_effects = (ROOT / effect_path).read_bytes()
+        self.assertTrue(_canonical_git_text_newlines(current_effects).startswith(
+            _canonical_git_text_newlines(frozen_effects)))
+        simulated_crlf_effects = _canonical_git_text_newlines(current_effects).replace(b"\n", b"\r\n")
+        self.assertTrue(_canonical_git_text_newlines(simulated_crlf_effects).startswith(
+            _canonical_git_text_newlines(frozen_effects)))
         frozen_catalog = json.loads(subprocess.check_output(
-            ["git", "show", "HEAD:data/content/v03/countries/mgl.json"], cwd=ROOT).decode("utf-8"))
+            ["git", "show", "c7ca59ca16092df816828f19a229cdc5dd0ac5a2:data/content/v03/countries/mgl.json"],
+            cwd=ROOT).decode("utf-8"))
         current = json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8"))
         old = {arc["slug"]: arc for arc in current["arcs"] if arc["era"] == "foundation"}
         self.assertEqual(old, {arc["slug"]: arc for arc in frozen_catalog["arcs"]})
