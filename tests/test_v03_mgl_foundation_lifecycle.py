@@ -11,7 +11,8 @@ from clausewitz_harness import PulseWorld, parse
 
 MOD = ROOT / "yongchang_world"
 COUNTRY = json.loads((ROOT / "data/content/v03/countries/mgl.json").read_text(encoding="utf-8"))
-CATALOG_ARCS = COUNTRY["arcs"]
+CATALOG_ARCS = [arc for arc in COUNTRY["arcs"] if arc.get("era") == "foundation"]
+MOBILE_ARCS = [arc for arc in COUNTRY["arcs"] if arc.get("slug") == "v03_mgl_mobile_offices"]
 PRE = {"v03_mgl_two_trade_roads": "roads", "v03_mgl_pastoral_debt": "debt",
        "v03_mgl_princes_monasteries": "grain"}
 
@@ -20,8 +21,8 @@ def _definitions(text):
     return {key: body for key, _, body in parse(text)}
 
 
-def _native_business_projection(catalog):
-    """Render current authored business source without inline transport.
+def _native_business_projection(catalog, *, include_mobile=False):
+    """Render the frozen foundation control, optionally adding mobile separately.
 
     Integrated delivery is exercised by the separate inline fixture, which
     installs real renderer registries and wrappers before root activation.
@@ -38,8 +39,22 @@ def _native_business_projection(catalog):
         if len(result) != expected:
             raise AssertionError(("native_projection_count", label, len(result), expected))
         return result
-    journals = definitions(build_v03_content._render_journal_file(catalog, None), 6, "journals")
-    events = definitions(build_v03_content._render_event_file(catalog, ROOT, None), 24, "events")
+    foundation = {**catalog, "arcs": [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"]}
+    journals = definitions(build_v03_content._render_journal_file(foundation, None), 6, "foundation journals")
+    events = definitions(build_v03_content._render_event_file(foundation, ROOT, None), 24, "foundation events")
+    if include_mobile:
+        mobile = [arc for arc in catalog["arcs"] if arc.get("slug") == "v03_mgl_mobile_offices"]
+        if len(mobile) != 1 or mobile[0].get("era") != "middle":
+            raise AssertionError(("expected_one_mobile_middle_arc", len(mobile)))
+        mobile_catalog = {**catalog, "arcs": mobile}
+        mobile_journals = definitions(build_v03_content._render_journal_file(mobile_catalog, None),
+                                      1, "mobile journals")
+        mobile_events = definitions(build_v03_content._render_event_file(mobile_catalog, ROOT, None),
+                                    6, "mobile events")
+        if set(journals) & set(mobile_journals) or set(events) & set(mobile_events):
+            raise AssertionError("mobile source projection collides with frozen MGL foundation")
+        journals.update(mobile_journals)
+        events.update(mobile_events)
     return journals, events
 
 
