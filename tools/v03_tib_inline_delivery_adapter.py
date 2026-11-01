@@ -16,7 +16,7 @@ EXPECTED_ARCS = {
     "v03_tib_service_register",
     "v03_tib_shared_schools",
 }
-EFFECTS_AST_SHA256 = '7f881249c308c25d42d95a1d654091b44fa504fded2799b4c12d15c2f3fe76f0'
+EFFECTS_AST_SHA256 = 'c9b718033ba43f7bbc337bdbc35a568b426fa445817cbe7f0c064c63666ce760'
 TRIGGERS_AST_SHA256 = 'd1232cce1f1c6f465a1b2c69edf6626d42aeecd57dfcdfe8c311baa0ef2784ee'
 
 

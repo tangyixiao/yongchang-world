@@ -163,9 +163,9 @@ class ReferenceIntegrityTest(unittest.TestCase):
                 continue
             for var in re.findall(r"has_variable\s*=\s*(ywc_[A-Za-z0-9_]+)", block.group(0)):
                 checked += 1
-                setter = re.findall(
+                setter = re.search(
                     rf"set_variable\s*=\s*(?:{var}\b|\{{[^}}]*\bname\s*=\s*{var}\b)",
-                    all_text(),
+                    self.text,
                 )
                 if not setter and var not in known_unwired:
                     failures.append(f"journal {name}: {var} has no set_variable anywhere")

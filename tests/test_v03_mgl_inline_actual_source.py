@@ -38,8 +38,8 @@ def assert_inline_supported(testcase):
         if "inline adapter is currently enabled only for registered inline countries" in str(exc):
             testcase.fail(f"MGL inline adapter feature is not registered: {exc}")
         raise
-    if len(rendered.get("event_hooks", {})) != 24:
-        testcase.fail("MGL renderer must guard all 24 native event bodies")
+    if len(rendered.get("event_hooks", {})) != 30:
+        testcase.fail("MGL renderer must guard all 30 native event bodies")
     return rendered
 
 
@@ -54,7 +54,7 @@ def _script_nodes(script):
 
 
 @contextmanager
-def _registered_source_world(catalog, rendered):
+def _registered_source_world(catalog, rendered, *, include_mobile=False):
     """Temporarily teach the old strict fixture to register renderer output.
 
     The seam installs only generated FX/TRG and generated journal/event
@@ -92,7 +92,12 @@ def _registered_source_world(catalog, rendered):
                 adapter = self._inline_rendered
                 journal_text = build_v03_content._render_journal_file(self._inline_catalog, adapter)
                 generated_journals = _script_nodes(journal_text)
-                for jid in (journal["id"] for arc in self._inline_catalog["arcs"]
+                selected_arcs = [arc for arc in self._inline_catalog["arcs"]
+                                 if arc.get("era") == "foundation"]
+                if include_mobile:
+                    selected_arcs += [arc for arc in self._inline_catalog["arcs"]
+                                      if arc.get("slug") == "v03_mgl_mobile_offices"]
+                for jid in (journal["id"] for arc in selected_arcs
                             for journal in arc["journals"]):
                     if jid not in generated_journals:
                         raise AssertionError(("generated_journal_script_missing", jid))
@@ -105,7 +110,7 @@ def _registered_source_world(catalog, rendered):
                 events_text = build_v03_content._render_event_file(
                     self._inline_catalog, source_fixture.ROOT, adapter)
                 generated_events = _script_nodes(events_text)
-                event_ids = (event["id"] for arc in self._inline_catalog["arcs"]
+                event_ids = (event["id"] for arc in selected_arcs
                              for event in arc["events"])
                 for event_id in event_ids:
                     if event_id not in generated_events or event_id not in self.event_defs:
@@ -138,14 +143,20 @@ def legal_ordinary_facts(ordinary_facts=None):
     return validate_ordinary_facts(facts)
 
 
-def actual_mgl_inline_identity_control_world(admission_order=None, ordinary_facts=None):
+def actual_mgl_inline_identity_control_world(admission_order=None, ordinary_facts=None, *, admit_mobile=False,
+                                             register_mobile=False, root_slugs=None):
     """Build normal source files through the production builder, with no adapter."""
     catalog = _v2_catalog_from_formal_mgl_source()
-    with _registered_source_world(catalog, None):
-        return source_fixture.actual_mgl_admission_world(admission_order, legal_ordinary_facts(ordinary_facts))
+    include_mobile = admit_mobile or register_mobile or (root_slugs is not None and
+                         "v03_mgl_mobile_offices" in root_slugs)
+    with _registered_source_world(catalog, None, include_mobile=include_mobile):
+        return source_fixture.actual_mgl_admission_world(
+            admission_order, legal_ordinary_facts(ordinary_facts), admit_mobile=admit_mobile,
+            register_mobile=register_mobile, root_slugs=root_slugs)
 
 
-def actual_mgl_inline_world(admission_order=None, ordinary_facts=None):
+def actual_mgl_inline_world(admission_order=None, ordinary_facts=None, *, admit_mobile=False,
+                             register_mobile=False, root_slugs=None):
     """Return a strict world with real renderer registrations and source history."""
     try:
         catalog, rendered = _render_registered_candidate()
@@ -153,8 +164,15 @@ def actual_mgl_inline_world(admission_order=None, ordinary_facts=None):
         if "inline adapter is currently enabled only for registered inline countries" in str(exc):
             raise InlineFeatureUnavailable(str(exc)) from exc
         raise
-    with _registered_source_world(catalog, rendered):
-        return source_fixture.actual_mgl_admission_world(admission_order, legal_ordinary_facts(ordinary_facts))
+    # The rendered four-arc candidate table contains mobile predicates even
+    # when the old foundation-only root control is in use. Register its real
+    # JE/event definitions so those predicates resolve to an inactive JE
+    # instead of an unknown identifier; `admit_mobile` still selects roots.
+    include_mobile = True
+    with _registered_source_world(catalog, rendered, include_mobile=include_mobile):
+        return source_fixture.actual_mgl_admission_world(
+            admission_order, legal_ordinary_facts(ordinary_facts), admit_mobile=admit_mobile,
+            register_mobile=True, root_slugs=root_slugs)
 
 
 def pulse_inline_journals(world):
@@ -191,6 +209,18 @@ class MglInlineActualSourceFactoryControls(source_fixture.unittest.TestCase):
         self.assertEqual(evidence["counts"], {"active": 3, "visible": 3})
         self.assertEqual(len(evidence["legacy_trace"]), 6)
         self.assertIs(world.strict_trigger_defs, world.trigger_defs)
+
+    def test_inline_world_registers_mobile_symbols_without_admitting_a_fourth_root(self):
+        world, evidence = actual_mgl_inline_world(ordinary_facts=legal_ordinary_facts())
+        mobile_je = "ywc_je_v03_mgl_mobile_offices"
+        self.assertEqual(evidence["counts"], {"active": 3, "visible": 3})
+        self.assertIn(mobile_je, world.journal_defs)
+        self.assertNotIn(mobile_je, world.active_journals["MGL"])
+        self.assertIn("ywc_mng.1105", world.event_defs)
+        self.assertNotIn("ywc_v03_mgl_v03_mgl_mobile_offices_started", world.countries["MGL"])
+        emitted = pulse_inline_journals(world)
+        self.assertIn(emitted, {"ywc_mng.1000", "ywc_mng.1010", "ywc_mng.1020"})
+        self.assertEqual(world.countries["MGL"]["ywc_v03_active_arc_count"], 3)
 
     def test_real_builder_identity_registration_preserves_native_ast_and_pulse(self):
         baseline, _ = source_fixture.actual_mgl_admission_world(ordinary_facts=legal_ordinary_facts())

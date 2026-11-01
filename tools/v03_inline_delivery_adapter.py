@@ -1221,6 +1221,22 @@ _MGL_EVENT_AST_SHA256 = {
        for n in (*range(1000, 1005), 1006, 1007, *range(1010, 1015), 1016, 1017,
                  *range(1020, 1025), 1026, 1027)},
 }
+
+_MGL_MOBILE_JOURNAL_SHA256 = (
+    "02701516c118d928dc3a87b76da4fc5f88a43734baa8e38139b2996c377fec1b",
+    "89e5e42b6e62c54a369eaa14eae75a6db4ad7434c748a43bc267ab00292771e8",
+    "4105c3ade058cb41e1211366244e0b3f9085b1222d7b6d503f5a86e6db2091eb",
+)
+_MGL_MOBILE_BRANCH_SHA256 = (
+    ("dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3", "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c"),
+    ("a6d1a13c81df5c6f851ed6c5e02b5ae0a272dd14e1b1c76c364bbf062443becd", "d4f4d3d82b8e9f467f52d9949ed89a952576df6820fd38ec5d7ca3af6fd9dd97"),
+    ("97550e774470c6455b7bb534bd70c97fe9e5247188a6276c8f9b0ffc4db4e5d0", "634c0ff503e4a6e8b89f3400f8b3de0a2f88f1f5dd63dda7cfcdc62f25a3af8b"),
+    ("6ecf347ca567ae4fb841fb1e62995c95d8feb9fe9f38bd88c8f18a2568f93d38", "2b01cf00a3e941043af51362ca22037bbcca861bcfd5bf2b742fab53feec3222"),
+    ("139bfc724ea66de512f7cfbe842aca3ff4a53de73a35ae99eb061b06e7da3ec5", "7f381512bb481d1ee7d633f15f8949ef405f2c067e483465c875055fa0fb2a03"),
+    ("f46fb1d5272ec25ddbd1f8b057d7ad375c854796bc4418755290d22b69b67777", "8bf4c0992f32d296cb80749e47808251cdedbdcf9d788361d5cb4518f8b075a9"),
+)
+_MGL_MOBILE_EVENT_AST_SHA256 = {f"ywc_mng.{1100 + n}": "4c2d62dd649e12e6b2ee771fcaee2d62b8063c145521792c52cb4e47c8fb3440" for n in range(6)}
+_MGL_MOBILE_EVENT_AST_SHA256["ywc_mng.1104"] = "cbc5f1a3fc154f8ab6b3a808ca7ca743812a987163ab50b6bd2c49bf2a2a7dc3"
 _MGL_HELPER_AST_SHA256 = {
     "ywc_mgl_roads_any_affordable_entry_offer": "9ece4fdcd6f5312a9c89b66ed20678ff97e902bddf846afe4ff5415f5925ffb9",
     "ywc_mgl_roads_selected_current_obligation": "e8908d6adfdbdfa24d3766fb600b2e7e592838b61626e398980e35f42d1df882",
@@ -1231,6 +1247,14 @@ _MGL_HELPER_AST_SHA256 = {
     "ywc_mgl_grain_any_affordable_entry_offer": "1cb660e5f28574767cea48611c36e049d99dcda76ccf11af95a029adc2e2d3b3",
     "ywc_mgl_grain_selected_current_obligation": "75e09126159745f4e06b2111f2c79c0ce66485fbdff37cc2d42ddbfe3b2dbcd8",
     "ywc_mgl_grain_current_obligation_ready": "2254e59832c107b3cb52fb3da9db7e38ac41078d0d7fbb599bf3af87e0ee68ab",
+}
+
+_MGL_MOBILE_TRIGGER_AST_SHA256 = {
+    "ywc_mgl_mobile_job_live": "3eddc227c99e1845ca3307806faead5fab1208afe8d2ad0cd7fd96b146a1fa4c",
+    "ywc_mgl_mobile_circuit_ready": "2d25d78972f2fcf05b907d4cfc9bf605f786e13a0840ee32436bf5bc721d3975",
+    "ywc_mgl_mobile_joint_ready": "93ca9627f3aea7c2978d06eae97b223b76f027067ec56d301e6c05226a5c8f4a",
+    "ywc_mgl_mobile_quota_ready": "98e08c58adc151801e74e78eb71993f7393f73b41f0679d2577d1f9bd10dd307",
+    "ywc_mgl_mobile_route_ready": "90f7fd2216568ed13e60d052360286788ed325ba0eee9ae2e7f2b8c8bde6e9aa",
 }
 
 
@@ -1257,6 +1281,15 @@ def validate_mgl_native_helper_source(source: str) -> None:
         digest = hashlib.sha256(json.dumps(_nqg_node_shape(found[name]), separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
         if digest != expected:
             raise ValueError(f"{name}: full native helper AST drift")
+    mobile = set(_MGL_MOBILE_TRIGGER_AST_SHA256)
+    mobile_found = [node.key for node in nodes if node.key.startswith("ywc_mgl_mobile_")]
+    if mobile_found and (len(mobile_found) != len(mobile) or set(mobile_found) != mobile):
+        raise ValueError("MGL mobile-office source must define its five distinct native triggers exactly once")
+    for node in nodes:
+        if node.key in mobile:
+            digest = hashlib.sha256(json.dumps(_nqg_node_shape(node), separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+            if digest != _MGL_MOBILE_TRIGGER_AST_SHA256[node.key]:
+                raise ValueError(f"{node.key}: MGL mobile trigger AST drift")
 
 
 def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
@@ -1328,6 +1361,53 @@ def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
             event_count += 1
     if total_branches != 66 or event_count != 24 or event_ids != set(_MGL_EVENT_AST_SHA256):
         raise ValueError("MGL native source inventory must contain exactly 66 sender sites and 24 event bodies")
+    mobile = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("slug") == "v03_mgl_mobile_offices"]
+    middle = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("era") == "middle"]
+    if not middle and not mobile:
+        return
+    if len(middle) != 1 or len(mobile) != 1 or middle[0] is not mobile[0]:
+        raise ValueError("MGL inline adapter supports only its registered mobile-offices middle card")
+    arc = mobile[0]
+    if len(arc.get("journals", [])) != 1 or len(arc.get("events", [])) != 6:
+        raise ValueError("MGL mobile offices requires one middle-era JE and six events")
+    journal = arc["journals"][0]
+    adapter = arc.get("inline_delivery_adapter")
+    if (not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches"}
+            or adapter.get("schema") != "v03.mgl_mobile_inline_adapter.v1"):
+        raise ValueError("MGL mobile offices requires the strict mobile inline adapter v1")
+    phases = adapter["live_phases"]
+    phase_fields = {"journal", "live_witness", "source_script_sha256", "goal_sha256", "exit_sha256"}
+    if (not isinstance(phases, list) or len(phases) != 1 or not isinstance(phases[0], dict)
+            or set(phases[0]) != phase_fields or phases[0].get("journal") != journal.get("id")
+            or phases[0].get("live_witness") != "ywc_v03_mgl_inline_live_mobile_offices"
+            or any(type(phases[0].get(field)) is not str
+                   or re.fullmatch(r"[0-9a-f]{64}", phases[0][field]) is None
+                   for field in ("source_script_sha256", "goal_sha256", "exit_sha256"))):
+        raise ValueError("MGL mobile offices live phase binding is malformed")
+    for field, key in (("source_script_sha256", "script"), ("goal_sha256", "goal"), ("exit_sha256", "exit_conditions")):
+        raw = journal.get(key)
+        expected_hash = _MGL_MOBILE_JOURNAL_SHA256[("script", "goal", "exit_conditions").index(key)]
+        if type(raw) is not str or hashlib.sha256(raw.encode("utf-8")).hexdigest() != expected_hash or phases[0].get(field) != expected_hash:
+            raise ValueError(f"MGL mobile offices JE {key} source binding drift")
+    binding = _mgl_source_binding(journal["id"], journal["script"])
+    recorded = adapter.get("branches")
+    if len(binding["branches"]) != 6 or not isinstance(recorded, list) or len(recorded) != 6:
+        raise ValueError("MGL mobile offices requires six source-bound event senders")
+    expected_events = {event.get("id") for event in arc["events"]}
+    for index, (item, branch) in enumerate(zip(recorded, binding["branches"])):
+        expected = {"branch_index": branch["branch_index"], "statement_ordinal": branch["statement_ordinal"],
+                    "chain_index": branch["chain_index"], "branch_kind": branch["branch_kind"],
+                    "event": branch["event"], "branch_sha256": branch["sha256"],
+                    "limit_sha256": branch["limit_sha256"], "chain_prior": branch["chain_prior"],
+                    "chain_sha256": branch["chain_sha256"], "candidates": branch["candidates"],
+                    "queue_exclusions": branch["queue_exclusions"], "journal": journal["id"]}
+        if (not _mgl_exact_typed_equal(item, expected) or item.get("event") not in expected_events
+                or (branch["sha256"], branch["limit_sha256"]) != _MGL_MOBILE_BRANCH_SHA256[index]):
+            raise ValueError("MGL mobile offices source sender binding drift")
+    for index, event in enumerate(arc["events"]):
+        event_id = f"ywc_mng.{1100 + index}"
+        if event.get("id") != event_id or _mgl_native_event_digest(event) != _MGL_MOBILE_EVENT_AST_SHA256[event_id]:
+            raise ValueError("MGL mobile offices events must occupy the reserved 1100-1105 range")
 
 
 def validate_jhg_native_helper_source(effects_source: str, triggers_source: str) -> None:
@@ -2304,7 +2384,10 @@ def _nmg_native_postchecks(c: dict[str, Any], prefix: str) -> list[str]:
 
 def _mgl_tracked_state(c: dict[str, Any]) -> list[str]:
     stem = {"v03_mgl_two_trade_roads": "roads", "v03_mgl_pastoral_debt": "debt",
-            "v03_mgl_princes_monasteries": "grain"}[c["arc"]["slug"]]
+            "v03_mgl_princes_monasteries": "grain",
+            "v03_mgl_mobile_offices": "mobile"}[c["arc"]["slug"]]
+    if stem == "mobile":
+        return ["ywc_mgl_mobile_pending_event"]
     return [f"ywc_mgl_{stem}_pending_event", f"ywc_mgl_{stem}_blocked_12_notice_event",
             f"ywc_mgl_{stem}_blocked_36_notice_event", f"ywc_mgl_{stem}_blocked_notice_last_delivered"]
 
@@ -2355,7 +2438,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             else _lan_active_arcs(catalog) if is_lan
             else _kor_active_arcs(catalog) if is_kor
             else _nmg_active_arcs(catalog) if is_nmg
-            else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"])
+            else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"] +
+                 ([arc for arc in catalog["arcs"] if arc.get("slug") == "v03_mgl_mobile_offices"] if is_mgl else []))
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}
     candidates: list[dict[str, Any]] = []

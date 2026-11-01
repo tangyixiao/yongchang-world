@@ -1257,6 +1257,8 @@ class LanLifecycleRegressionTest(unittest.TestCase):
         for slug, helper, route_var, route, cost in cases:
             with self.subTest(helper=helper):
                 world = self._world(cost - 1)
+                if slug == "v03_lan_work_accident_fund":
+                    world.countries["LAN"]["test_laws"] = {"law_poor_laws"}
                 self._activate_arc(world, slug)
                 world.run(helper, "LAN")
                 country = world.countries["LAN"]
@@ -1288,6 +1290,8 @@ class LanLifecycleRegressionTest(unittest.TestCase):
         for slug, opening, route_var, route, helper, paid in cases:
             with self.subTest(helper=helper):
                 world = self._world(1000)
+                if slug == "v03_lan_work_accident_fund":
+                    world.countries["LAN"]["test_laws"] = {"law_poor_laws"}
                 self._activate_arc(world, slug)
                 world.run(opening, "LAN")
                 self.assertEqual(world.countries["LAN"][route_var], route)

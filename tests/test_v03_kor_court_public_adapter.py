@@ -246,7 +246,9 @@ class KorCourtPublicGeneratedAdapter(unittest.TestCase):
         catalog = current_catalog()
         active = adapter._kor_active_arcs(catalog)
         prior = json.loads(frozen("data/content/v03/countries/kor.json"))["arcs"]
-        self.assertEqual(active[:-1], prior, "all four accepted arcs and exact metadata remain frozen")
+        from test_v03_current_choice_guards import migrated_opening_projection
+        expected = migrated_opening_projection("kor", prior)
+        self.assertEqual(active[:-1], expected, "only the nine reviewed foundation opening effects may change")
         self.assertEqual([a["slug"] for a in active], [*FOUNDATION, REVENUE, COURT])
         self.assertEqual(sum(len(a["journals"]) for a in active[:-1]), 8)
         self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:-1]), 39)

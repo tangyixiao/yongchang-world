@@ -6247,6 +6247,819 @@
         ],
         "direct_adds": []
       }
+    },
+    {
+      "slug": "v03_mgl_mobile_offices",
+      "era": "middle",
+      "participants": [
+        "喀尔喀王公",
+        "旗署官员",
+        "寺院商团",
+        "转场牧户"
+      ],
+      "depends_on": [],
+      "outcomes": [
+        "mobile_circuit",
+        "joint_banner_office",
+        "limited_registry",
+        "withdrawn"
+      ],
+      "legacy_links": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_mgl_mobile_offices",
+          "title": {
+            "zh": "跟得上转场的官署",
+            "en": "跟得上转场的官署"
+          },
+          "desc": {
+            "zh": "官署、牧道与土地申诉需要一套能持续运行的安排。每月重新核对行政就业、法律、财政和两条前序长线的真实结局；任一条件中断都会重置观察。",
+            "en": "官署、牧道与土地申诉需要一套能持续运行的安排。每月重新核对行政就业、法律、财政和两条前序长线的真实结局；任一条件中断都会重置观察。"
+          },
+          "script": "{ is_shown_when_inactive = { c:MGL ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_started } NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } possible = { c:MGL ?= this } immediate = { if = { limit = { NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_started } NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_settled } var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } set_variable = { name = ywc_v03_mgl_v03_mgl_mobile_offices_started value = 1 } set_variable = { name = ywc_mgl_mobile_pending_event value = 1100 } set_variable = { name = ywc_mgl_mobile_fee value = yearly_gross_income } change_variable = { name = ywc_mgl_mobile_fee divide = 52 } clamp_variable = { name = ywc_mgl_mobile_fee min = 100 max = 1000000000 } set_variable = { name = ywc_mgl_mobile_half_fee value = var:ywc_mgl_mobile_fee } change_variable = { name = ywc_mgl_mobile_half_fee divide = 2 } clamp_variable = { name = ywc_mgl_mobile_half_fee min = 50 max = 500000000 } set_variable = { name = ywc_mgl_mobile_quarter_fee value = var:ywc_mgl_mobile_fee } change_variable = { name = ywc_mgl_mobile_quarter_fee divide = 4 } clamp_variable = { name = ywc_mgl_mobile_quarter_fee min = 25 max = 250000000 } } } on_fail = { ywc_mgl_mobile_withdraw = yes } on_monthly_pulse = { effect = { ywc_mgl_mobile_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1100 } remove_variable = ywc_mgl_mobile_pending_event trigger_event = { id = ywc_mng.1100 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1101 } remove_variable = ywc_mgl_mobile_pending_event trigger_event = { id = ywc_mng.1101 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1102 } remove_variable = ywc_mgl_mobile_pending_event trigger_event = { id = ywc_mng.1102 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1103 } remove_variable = ywc_mgl_mobile_pending_event trigger_event = { id = ywc_mng.1103 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1104 } remove_variable = ywc_mgl_mobile_pending_event trigger_event = { id = ywc_mng.1104 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1105 } remove_variable = ywc_mgl_mobile_pending_event trigger_event = { id = ywc_mng.1105 } } } } }",
+          "goal": "{ AND = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_settled NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_withdrawn } } }",
+          "exit_conditions": "{ has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_mng.1100",
+          "title": {
+            "zh": "流动账桌来到旗营",
+            "en": "Travelling Ledgers Reach the Banner Camps"
+          },
+          "desc": {
+            "zh": "王公与商人都要求官署跟着转场：中央要可核对的账册，地方则要保留牧道与土地申诉。",
+            "en": "Princes and merchants want offices to follow the seasonal move. The court needs auditable accounts, while local communities seek to preserve pasture routes and land appeals."
+          },
+          "trigger": "{ c:MGL ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "circuit",
+              "label": {
+                "zh": "巡回官署：中央巡账与转场道路",
+                "en": "Travelling circuit: central accounts and route service"
+              },
+              "effect": "{ ywc_mgl_mobile_pay_circuit = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "一次性启动费：年总收入÷52（最低100）；全额支付。",
+                "en": "One-time setup payment: annual gross income divided by 52, minimum 100; paid in full."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_circuit_ready = yes gold_reserves >= var:ywc_mgl_mobile_fee in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "joint",
+              "label": {
+                "zh": "旗署合办：地方共同核账",
+                "en": "Joint banner office: local co-accounting"
+              },
+              "effect": "{ ywc_mgl_mobile_pay_joint = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "一次性启动费：年总收入÷104（最低50）；全额支付。",
+                "en": "One-time setup payment: annual gross income divided by 104, minimum 50; paid in full."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_joint_ready = yes gold_reserves >= var:ywc_mgl_mobile_half_fee in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "quota",
+              "label": {
+                "zh": "限额登记：保留旧署并缩小范围",
+                "en": "Quota registry: retain existing offices with a limited remit"
+              },
+              "effect": "{ ywc_mgl_mobile_pay_quota = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "一次性启动费：年总收入÷208（最低25）；全额支付。",
+                "en": "One-time setup payment: annual gross income divided by 208, minimum 25; paid in full."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_quota_ready = yes gold_reserves >= var:ywc_mgl_mobile_quarter_fee in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "暂不设立，退出本轮议约",
+                "en": "Withdraw from this round of talks"
+              },
+              "effect": "{ ywc_mgl_mobile_withdraw = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不退还；确认及复核阶段不会重复收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "流动账桌来到旗营",
+            "en": "Travelling Ledgers Reach the Banner Camps"
+          },
+          "reads": [
+            "当前政府行政就业",
+            "官僚制度法",
+            "土地制度法",
+            "已登记的两条基础长线结果"
+          ],
+          "writes": [
+            "移动官署路线",
+            "实付资金记录",
+            "六个月条件观察",
+            "结局与退出状态"
+          ]
+        },
+        {
+          "id": "ywc_mng.1101",
+          "title": {
+            "zh": "三种办公办法",
+            "en": "Three Ways to Keep the Books"
+          },
+          "desc": {
+            "zh": "巡回官署、旗署合办和限额登记各有成本；所有启动款在再次核验财库后才会支付。",
+            "en": "A travelling circuit, a joint banner office and a quota registry each have a different cost. The treasury is checked again before any setup payment is made."
+          },
+          "trigger": "{ c:MGL ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "register",
+              "label": {
+                "zh": "登记本方案并开始六个月观察",
+                "en": "Record this arrangement and begin six months of observation"
+              },
+              "effect": "{ ywc_mgl_mobile_commit = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不退还；确认及复核阶段不会重复收费。",
+                "en": "No additional fee; observation is included in the setup payment."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_route_ready = yes }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本轮议约",
+                "en": "Withdraw from this round of talks"
+              },
+              "effect": "{ ywc_mgl_mobile_withdraw = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不退还；确认及复核阶段不会重复收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "三种办公办法",
+            "en": "Three Ways to Keep the Books"
+          },
+          "reads": [
+            "当前政府行政就业",
+            "官僚制度法",
+            "土地制度法",
+            "已登记的两条基础长线结果"
+          ],
+          "writes": [
+            "移动官署路线",
+            "实付资金记录",
+            "六个月条件观察",
+            "结局与退出状态"
+          ]
+        },
+        {
+          "id": "ywc_mng.1102",
+          "title": {
+            "zh": "第一季账册",
+            "en": "The First Season’s Register"
+          },
+          "desc": {
+            "zh": "官吏、牧户与寺院商团交来的账册并不相同，前两条长线的真实结局决定了哪一方愿意协助。",
+            "en": "Officials, herders and monastery merchants bring different ledgers. The actual outcomes of the two earlier arcs determine who is willing to help."
+          },
+          "trigger": "{ c:MGL ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "roads_recorded",
+              "label": {
+                "zh": "商路已成：沿用实际货单协作经验",
+                "en": "Trade routes held: carry forward the recorded cooperation"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_roads_influence value = 1 } set_variable = { name = ywc_mgl_mobile_pending_event value = 1103 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No extra charge; this node records the outcome already reached."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ has_variable = ywc_v03_mgl_v03_mgl_two_trade_roads_settled var:ywc_v03_mgl_v03_mgl_two_trade_roads_outcome = 1 }"
+            },
+            {
+              "key": "roads_narrow",
+              "label": {
+                "zh": "商路收缩：按旧账保留有限登记",
+                "en": "Trade routes narrowed: retain a limited registry under the old accounts"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_roads_influence value = 2 } set_variable = { name = ywc_mgl_mobile_pending_event value = 1103 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No extra charge; this node records the outcome already reached."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ has_variable = ywc_v03_mgl_v03_mgl_two_trade_roads_settled var:ywc_v03_mgl_v03_mgl_two_trade_roads_outcome >= 2 var:ywc_v03_mgl_v03_mgl_two_trade_roads_outcome <= 4 }"
+            },
+            {
+              "key": "debt_recorded",
+              "label": {
+                "zh": "欠契已裁：沿用真实债务仲裁范围",
+                "en": "Debt contracts were arbitrated: carry forward the recorded scope"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_debt_influence value = 1 } set_variable = { name = ywc_mgl_mobile_pending_event value = 1103 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No extra charge; this node records the outcome already reached."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ has_variable = ywc_v03_mgl_v03_mgl_pastoral_debt_settled var:ywc_v03_mgl_v03_mgl_pastoral_debt_outcome = 1 }"
+            },
+            {
+              "key": "debt_limited",
+              "label": {
+                "zh": "欠契未决：沿用旧契或有限救济记录",
+                "en": "Debt contracts remain limited: retain the recorded relief or old terms"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_debt_influence value = 2 } set_variable = { name = ywc_mgl_mobile_pending_event value = 1103 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No extra charge; this node records the outcome already reached."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ has_variable = ywc_v03_mgl_v03_mgl_pastoral_debt_settled var:ywc_v03_mgl_v03_mgl_pastoral_debt_outcome >= 2 var:ywc_v03_mgl_v03_mgl_pastoral_debt_outcome <= 4 }"
+            },
+            {
+              "key": "new_record",
+              "label": {
+                "zh": "前序账册缺失：从本轮自筹新建限额登记",
+                "en": "Earlier ledgers are missing: create a new, self-funded quota registry"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_missing_foundation_record value = 1 } set_variable = { name = ywc_mgl_mobile_pending_event value = 1103 } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；使用本轮已经缴纳的登记费。",
+                "en": "No new charge; use the fee already paid for this round."
+              },
+              "consequence_note": {
+                "zh": "旧账缺失时只建立限额登记，不推定旧商路获利或牧户债务已经豁免。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ NOT = { has_variable = ywc_v03_mgl_v03_mgl_two_trade_roads_settled } NOT = { has_variable = ywc_v03_mgl_v03_mgl_pastoral_debt_settled } }"
+            }
+          ],
+          "purpose": {
+            "zh": "第一季账册",
+            "en": "The First Season’s Register"
+          },
+          "reads": [
+            "当前政府行政就业",
+            "官僚制度法",
+            "土地制度法",
+            "已登记的两条基础长线结果"
+          ],
+          "writes": [
+            "移动官署路线",
+            "实付资金记录",
+            "六个月条件观察",
+            "结局与退出状态"
+          ]
+        },
+        {
+          "id": "ywc_mng.1103",
+          "title": {
+            "zh": "账册之间的权限",
+            "en": "Who Keeps Each Ledger"
+          },
+          "desc": {
+            "zh": "若商路或欠契前案在册，就按当时真实的协商、裁断或旧约记录申诉责任；没有前案，就只登记本轮已付费用与限额权限。任何一方都不替汗廷改法。",
+            "en": "Where trade or debt records exist, register appeals under the actual agreement, ruling or old terms already reached. Without earlier records, record only this round’s paid cost and limited authority. No law is changed for the court."
+          },
+          "trigger": "{ c:MGL ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "roads_appeal",
+              "label": {
+                "zh": "按商路协商旧例登记申诉责任",
+                "en": "Record appeals under the trade-route agreement already reached"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_roads_reviewed value = 1 } ywc_mgl_mobile_begin_observation = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No extra charge; records the earlier trade-route decision."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_route_ready = yes  has_variable = ywc_mgl_mobile_roads_influence  }"
+            },
+            {
+              "key": "debt_appeal",
+              "label": {
+                "zh": "按欠契实际处置范围登记牧户申诉",
+                "en": "Record herder appeals within the debt settlement already reached"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_debt_reviewed value = 1 } ywc_mgl_mobile_begin_observation = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No extra charge; records the earlier debt decision."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_route_ready = yes  has_variable = ywc_mgl_mobile_debt_influence  }"
+            },
+            {
+              "key": "continue",
+              "label": {
+                "zh": "维持当前权责，继续观察",
+                "en": "Keep the current responsibilities and continue observation"
+              },
+              "effect": "{ ywc_mgl_mobile_begin_observation = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；此节点只记录既有结局。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "读取此前实际完成的长线结果，不补造收益或承诺。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_route_ready = yes  always = yes  }"
+            },
+            {
+              "key": "missing_record",
+              "label": {
+                "zh": "按本轮实付金额登记，不承接旧商路或旧债",
+                "en": "Record only this round’s payment; assume no old trade or debt obligations"
+              },
+              "effect": "{ set_variable = { name = ywc_mgl_mobile_missing_reviewed value = 1 } ywc_mgl_mobile_begin_observation = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不另收费；使用本轮已经缴纳的登记费。",
+                "en": "No new charge; records only the payment already made."
+              },
+              "consequence_note": {
+                "zh": "旧账缺失时只建立限额登记，不推定旧商路获利或牧户债务已经豁免。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_route_ready = yes NOT = { has_variable = ywc_v03_mgl_v03_mgl_two_trade_roads_settled } NOT = { has_variable = ywc_v03_mgl_v03_mgl_pastoral_debt_settled } }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "退出本轮官署议约",
+                "en": "Withdraw from this office agreement"
+              },
+              "effect": "{ ywc_mgl_mobile_withdraw = yes }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "已付启动费不退；若尚未选择路线则不收费用。",
+                "en": "Any setup fee already paid is non-refundable; withdrawing before choosing a route costs nothing."
+              },
+              "consequence_note": {
+                "zh": "登记为明确退出，结束任务并保留已付成本记录。",
+                "en": "Records an explicit withdrawal, closes the task, and retains the payment record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "账册之间的权限",
+            "en": "Who Keeps Each Ledger"
+          },
+          "reads": [
+            "当前政府行政就业",
+            "官僚制度法",
+            "土地制度法",
+            "已登记的两条基础长线结果"
+          ],
+          "writes": [
+            "移动官署路线",
+            "实付资金记录",
+            "六个月条件观察",
+            "结局与退出状态"
+          ]
+        },
+        {
+          "id": "ywc_mng.1104",
+          "title": {
+            "zh": "条件变了，账册待续",
+            "en": "Conditions Have Changed"
+          },
+          "desc": {
+            "zh": "行政任用、制度或财政条件暂时不再支持已付费的方案。记录已经暂停，已付费用不退；条件恢复后可重启六个月观察，也可以改成限额登记或明确退出。",
+            "en": "Employment, law or budget conditions no longer support the paid arrangement. Observation is paused and the payment is non-refundable. Resume the six-month review when conditions recover, pay to revise the plan to a quota registry, or withdraw explicitly."
+          },
+          "trigger": "{ c:MGL ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes remove_variable = ywc_mgl_mobile_recovery_notice_queued }",
+          "options": [
+            {
+              "key": "retry",
+              "label": {
+                "zh": "条件恢复后重新核验",
+                "en": "Recheck conditions when they recover"
+              },
+              "effect": "{ ywc_mgl_mobile_retry = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不退还；确认及复核阶段不会重复收费。",
+                "en": "No charge; checks whether the selected arrangement can resume."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ ywc_mgl_mobile_route_ready = yes }"
+            },
+            {
+              "key": "revise",
+              "label": {
+                "zh": "另付限额登记费，改行保留旧署",
+                "en": "Pay for a quota registry and retain the old offices"
+              },
+              "effect": "{ ywc_mgl_mobile_revise_quota = yes }",
+              "ai_chance": "{ base = 15 }",
+              "cost_note": {
+                "zh": "仅当官吏仍在本地官署任职、土地法与行政法有效且财库足额时，另付年总收入÷208（最低25）。不退费。",
+                "en": "A further setup payment of annual gross income / 208 (minimum 25) is charged only if local office employment and current administrative and land laws qualify and the treasury can pay. Non-refundable."
+              },
+              "consequence_note": {
+                "zh": "切换为限额登记并重新观察六个月；不会承接不存在的商路成功或债务豁免。",
+                "en": "Switches to quota registration and restarts the six-month observation; it does not assume missing trade success or debt relief."
+              },
+              "trigger": "{ has_variable = ywc_mgl_mobile_paused has_variable = ywc_mgl_mobile_paid NOT = { var:ywc_mgl_mobile_route = 3 } ywc_mgl_mobile_quota_ready = yes gold_reserves >= var:ywc_mgl_mobile_quarter_fee in_default = no NOT = { has_modifier = declared_bankruptcy } }"
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "停止登记并结算为未完成",
+                "en": "Withdraw from this round of talks"
+              },
+              "effect": "{ ywc_mgl_mobile_withdraw = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不退还；确认及复核阶段不会重复收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "条件变了，账册待续",
+            "en": "Conditions Have Changed"
+          },
+          "reads": [
+            "当前政府行政就业",
+            "官僚制度法",
+            "土地制度法",
+            "已登记的两条基础长线结果"
+          ],
+          "writes": [
+            "移动官署路线",
+            "实付资金记录",
+            "六个月条件观察",
+            "结局与退出状态"
+          ]
+        },
+        {
+          "id": "ywc_mng.1105",
+          "title": {
+            "zh": "账册留在路上",
+            "en": "The Register Remains on the Road"
+          },
+          "desc": {
+            "zh": "六个月连续观察已经完成。完成选定的官署安排后，实际商路或欠契前案会留下各自的长期后果；若无前序账册，则只兑现本轮所付费用对应的限额登记。",
+            "en": "Six months of continuous observation are complete. Settling the chosen office arrangement applies the distinct long-term consequence recorded for the actual trade or debt case. If no earlier ledger exists, only the paid quota registry takes effect."
+          },
+          "trigger": "{ c:MGL ?= this ywc_v03_can_deliver_major = yes }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes }",
+          "options": [
+            {
+              "key": "close",
+              "label": {
+                "zh": "封存本轮账册",
+                "en": "Seal the accounts for this round"
+              },
+              "effect": "{ ywc_mgl_mobile_settle = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不退还；确认及复核阶段不会重复收费。",
+                "en": "No charge; closes the current record."
+              },
+              "consequence_note": {
+                "zh": "选择只登记实际承担的成本、权责和后续风险，不改变国家法律或边界。",
+                "en": "Only recorded costs, responsibilities and later risks are carried forward. No law or border is changed."
+              },
+              "trigger": "{ has_variable = ywc_mgl_mobile_outcome_ready NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_settled } NOT = { has_variable = ywc_v03_mgl_v03_mgl_mobile_offices_withdrawn } ywc_mgl_mobile_route_ready = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "账册留在路上",
+            "en": "The Register Remains on the Road"
+          },
+          "reads": [
+            "当前政府行政就业",
+            "官僚制度法",
+            "土地制度法",
+            "已登记的两条基础长线结果"
+          ],
+          "writes": [
+            "移动官署路线",
+            "实付资金记录",
+            "六个月条件观察",
+            "结局与退出状态"
+          ]
+        }
+      ],
+      "inline_delivery_adapter": {
+        "schema": "v03.mgl_mobile_inline_adapter.v1",
+        "live_phases": [
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "live_witness": "ywc_v03_mgl_inline_live_mobile_offices",
+            "source_script_sha256": "02701516c118d928dc3a87b76da4fc5f88a43734baa8e38139b2996c377fec1b",
+            "goal_sha256": "89e5e42b6e62c54a369eaa14eae75a6db4ad7434c748a43bc267ab00292771e8",
+            "exit_sha256": "4105c3ade058cb41e1211366244e0b3f9085b1222d7b6d503f5a86e6db2091eb"
+          }
+        ],
+        "branches": [
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "branch_index": 0,
+            "statement_ordinal": 1,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_mng.1100",
+            "branch_sha256": "dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3",
+            "limit_sha256": "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_mgl_mobile_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1100
+              }
+            ],
+            "queue_exclusions": []
+          },
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "branch_index": 1,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_mng.1101",
+            "branch_sha256": "a6d1a13c81df5c6f851ed6c5e02b5ae0a272dd14e1b1c76c364bbf062443becd",
+            "limit_sha256": "d4f4d3d82b8e9f467f52d9949ed89a952576df6820fd38ec5d7ca3af6fd9dd97",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3",
+                "limit_sha256": "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1100 }"
+              }
+            ],
+            "chain_sha256": "dfd50069f9d3af545c52960f799fa86e187d250c50e2ee306aea219de2b48d81",
+            "candidates": [
+              {
+                "queue": "ywc_mgl_mobile_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1101
+              }
+            ],
+            "queue_exclusions": []
+          },
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "branch_index": 2,
+            "statement_ordinal": 3,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_mng.1102",
+            "branch_sha256": "97550e774470c6455b7bb534bd70c97fe9e5247188a6276c8f9b0ffc4db4e5d0",
+            "limit_sha256": "634c0ff503e4a6e8b89f3400f8b3de0a2f88f1f5dd63dda7cfcdc62f25a3af8b",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3",
+                "limit_sha256": "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1100 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "a6d1a13c81df5c6f851ed6c5e02b5ae0a272dd14e1b1c76c364bbf062443becd",
+                "limit_sha256": "d4f4d3d82b8e9f467f52d9949ed89a952576df6820fd38ec5d7ca3af6fd9dd97",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1101 }"
+              }
+            ],
+            "chain_sha256": "6bb49c99c7732ae6adc3e704b82ce6333bd70d243d6d6eb7d6803b72b1b221fc",
+            "candidates": [
+              {
+                "queue": "ywc_mgl_mobile_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1102
+              }
+            ],
+            "queue_exclusions": []
+          },
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "branch_index": 3,
+            "statement_ordinal": 4,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_mng.1103",
+            "branch_sha256": "6ecf347ca567ae4fb841fb1e62995c95d8feb9fe9f38bd88c8f18a2568f93d38",
+            "limit_sha256": "2b01cf00a3e941043af51362ca22037bbcca861bcfd5bf2b742fab53feec3222",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3",
+                "limit_sha256": "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1100 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "a6d1a13c81df5c6f851ed6c5e02b5ae0a272dd14e1b1c76c364bbf062443becd",
+                "limit_sha256": "d4f4d3d82b8e9f467f52d9949ed89a952576df6820fd38ec5d7ca3af6fd9dd97",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1101 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "97550e774470c6455b7bb534bd70c97fe9e5247188a6276c8f9b0ffc4db4e5d0",
+                "limit_sha256": "634c0ff503e4a6e8b89f3400f8b3de0a2f88f1f5dd63dda7cfcdc62f25a3af8b",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1102 }"
+              }
+            ],
+            "chain_sha256": "2dff0a1ab2005186ba1218fe73f0db866dc6454705a34046c08815bf373c13e1",
+            "candidates": [
+              {
+                "queue": "ywc_mgl_mobile_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1103
+              }
+            ],
+            "queue_exclusions": []
+          },
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "branch_index": 4,
+            "statement_ordinal": 5,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_mng.1104",
+            "branch_sha256": "139bfc724ea66de512f7cfbe842aca3ff4a53de73a35ae99eb061b06e7da3ec5",
+            "limit_sha256": "7f381512bb481d1ee7d633f15f8949ef405f2c067e483465c875055fa0fb2a03",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3",
+                "limit_sha256": "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1100 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "a6d1a13c81df5c6f851ed6c5e02b5ae0a272dd14e1b1c76c364bbf062443becd",
+                "limit_sha256": "d4f4d3d82b8e9f467f52d9949ed89a952576df6820fd38ec5d7ca3af6fd9dd97",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1101 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "97550e774470c6455b7bb534bd70c97fe9e5247188a6276c8f9b0ffc4db4e5d0",
+                "limit_sha256": "634c0ff503e4a6e8b89f3400f8b3de0a2f88f1f5dd63dda7cfcdc62f25a3af8b",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1102 }"
+              },
+              {
+                "ordinal": 4,
+                "sha256": "6ecf347ca567ae4fb841fb1e62995c95d8feb9fe9f38bd88c8f18a2568f93d38",
+                "limit_sha256": "2b01cf00a3e941043af51362ca22037bbcca861bcfd5bf2b742fab53feec3222",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1103 }"
+              }
+            ],
+            "chain_sha256": "51ffaabc0551e2b7a13fb1c75d9dc32226274e250f491725cefd1eeee1d9a1e3",
+            "candidates": [
+              {
+                "queue": "ywc_mgl_mobile_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1104
+              }
+            ],
+            "queue_exclusions": []
+          },
+          {
+            "journal": "ywc_je_v03_mgl_mobile_offices",
+            "branch_index": 5,
+            "statement_ordinal": 6,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_mng.1105",
+            "branch_sha256": "f46fb1d5272ec25ddbd1f8b057d7ad375c854796bc4418755290d22b69b67777",
+            "limit_sha256": "8bf4c0992f32d296cb80749e47808251cdedbdcf9d788361d5cb4518f8b075a9",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "dc64edb3f033ed8092c858d0ea8f86475bfd870f4bc95f6d5fd807fde8ff2ae3",
+                "limit_sha256": "56e5eed535117b6da53a72447a9f50982f7b61c09dd94e13d42ee2d39a63212c",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1100 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "a6d1a13c81df5c6f851ed6c5e02b5ae0a272dd14e1b1c76c364bbf062443becd",
+                "limit_sha256": "d4f4d3d82b8e9f467f52d9949ed89a952576df6820fd38ec5d7ca3af6fd9dd97",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1101 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "97550e774470c6455b7bb534bd70c97fe9e5247188a6276c8f9b0ffc4db4e5d0",
+                "limit_sha256": "634c0ff503e4a6e8b89f3400f8b3de0a2f88f1f5dd63dda7cfcdc62f25a3af8b",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1102 }"
+              },
+              {
+                "ordinal": 4,
+                "sha256": "6ecf347ca567ae4fb841fb1e62995c95d8feb9fe9f38bd88c8f18a2568f93d38",
+                "limit_sha256": "2b01cf00a3e941043af51362ca22037bbcca861bcfd5bf2b742fab53feec3222",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1103 }"
+              },
+              {
+                "ordinal": 5,
+                "sha256": "139bfc724ea66de512f7cfbe842aca3ff4a53de73a35ae99eb061b06e7da3ec5",
+                "limit_sha256": "7f381512bb481d1ee7d633f15f8949ef405f2c067e483465c875055fa0fb2a03",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_mgl_mobile_pending_event = 1104 }"
+              }
+            ],
+            "chain_sha256": "ae72316faf981e5e4718410b2e57ee8f1251e97099b0c7f5d3c284994c222146",
+            "candidates": [
+              {
+                "queue": "ywc_mgl_mobile_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1105
+              }
+            ],
+            "queue_exclusions": []
+          }
+        ]
+      }
     }
   ]
 }
