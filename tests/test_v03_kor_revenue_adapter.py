@@ -211,7 +211,8 @@ class KorRevenueGeneratedAdapter(unittest.TestCase):
         self.assertIn(REVENUE, slugs)
         foundation = [next(a for a in active if a["slug"] == slug) for slug in FOUNDATION]
         revenue = next(a for a in active if a["slug"] == REVENUE)
-        previous = frozen_catalog()["arcs"]
+        from test_v03_current_choice_guards import migrated_opening_projection
+        previous = migrated_opening_projection("kor", frozen_catalog()["arcs"])
         projected = copy.deepcopy(foundation)
         # Approved withdrawal fix: precisely two goal leaves and their phase
         # goal hashes differ; all other old content and source proofs are equal.
@@ -236,7 +237,7 @@ class KorRevenueGeneratedAdapter(unittest.TestCase):
             self.assertEqual((after["goal"], phase_after["goal_sha256"]), (new_goal, new_hash))
             self.assertEqual(hashlib.sha256(new_goal.encode()).hexdigest(), new_hash)
             after["goal"], phase_after["goal_sha256"] = old_goal, old_hash
-        self.assertEqual(projected, previous, "old three source content differs beyond the exact four-leaf exception")
+        self.assertEqual(projected, previous, "only the exact goal migration and nine reviewed opening effects may change")
         self.assertEqual(revenue["slug"], REVENUE)
         self.assertEqual([j["id"] for j in revenue["journals"]], list(JES))
         metadata = revenue["inline_delivery_adapter"]

@@ -148,7 +148,7 @@ class KorMilitaryAccountsTest(unittest.TestCase):
             ("ywc_kor_choose_provincial_supply", "ywc_kor_provincial_report_right", 2),
             ("ywc_kor_choose_limited_legacy", "ywc_kor_legacy_ceiling", 3),
         ):
-            world = PulseWorld(self.effects, {"KOR": {"yearly_gross_income": 52_000, "net_fixed_income": 0, "gold_reserves": 20_000}})
+            world = PulseWorld(self.effects, {"KOR": {"yearly_gross_income": 52_000, "net_fixed_income": 0, "gold_reserves": 20_000, "army_size": 5}})
             world.run(helper, tag="KOR")
             first_treasury = world.treasury["KOR"]
             world.run(helper, tag="KOR")
