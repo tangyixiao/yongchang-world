@@ -179,3 +179,37 @@ ywc_je_v03_shu_provincial_ledger = {
     fail = { has_variable = ywc_shu_prov_withdrawn }
     on_complete = { remove_variable = ywc_v03_shu_inline_live_provincial_ledger }
 }
+
+ywc_je_v03_shu_deliberation_eligibility = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started } NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }
+    possible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started } NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } ywc_shu_v03_has_candidate_state = yes }
+    immediate = { ywc_v03_claim_arc_shu_v03_shu_public_deliberation = yes ywc_shu_delib_open_once = yes set_variable = { name = ywc_v03_shu_inline_live_deliberation_eligibility value = 1 } }
+    on_fail = { ywc_shu_delib_close_withdrawn = yes remove_variable = ywc_v03_shu_inline_live_deliberation_eligibility }
+    on_monthly_pulse = { effect = { ywc_v03_shu_inline_prepare = yes
+    ywc_shu_delib_write_register_phase = yes
+    if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1120 var:ywc_shu_delib_pending_event = 1120   OR = { ywc_v03_shu_inline_turn_40 = yes } } if = { limit = { ywc_v03_shu_inline_turn_40 = yes } ywc_v03_shu_inline_reserve_40 = yes }   trigger_event = { id = ywc_shu.1120 } }
+    else_if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1121 var:ywc_shu_delib_pending_event = 1121   OR = { ywc_v03_shu_inline_turn_41 = yes } } if = { limit = { ywc_v03_shu_inline_turn_41 = yes } ywc_v03_shu_inline_reserve_41 = yes }   trigger_event = { id = ywc_shu.1121 } }
+    else_if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1122 var:ywc_shu_delib_pending_event = 1122   OR = { ywc_v03_shu_inline_turn_42 = yes } } if = { limit = { ywc_v03_shu_inline_turn_42 = yes } ywc_v03_shu_inline_reserve_42 = yes }   trigger_event = { id = ywc_shu.1122 } }
+    else_if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1123 var:ywc_shu_delib_pending_event = 1123   OR = { ywc_v03_shu_inline_turn_43 = yes } } if = { limit = { ywc_v03_shu_inline_turn_43 = yes } ywc_v03_shu_inline_reserve_43 = yes }   trigger_event = { id = ywc_shu.1123 } }
+    } }
+    complete = { has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_shu_delib_withdrawn } }
+    fail = { has_variable = ywc_shu_delib_withdrawn }
+    on_complete = { remove_variable = ywc_v03_shu_inline_live_deliberation_eligibility }
+}
+
+ywc_je_v03_shu_deliberation_appeal_execution = {
+    is_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }
+    possible = { c:SHU ?= this has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }
+    immediate = { if = { limit = { NOT = { has_variable = ywc_shu_delib_appeal_opened } has_variable = ywc_shu_delib_signed } set_variable = { name = ywc_shu_delib_appeal_opened value = 1 } ywc_shu_delib_signed_handoff = yes } set_variable = { name = ywc_v03_shu_inline_live_deliberation_appeal_execution value = 1 } }
+    on_fail = { ywc_shu_delib_close_withdrawn = yes remove_variable = ywc_v03_shu_inline_live_deliberation_appeal_execution }
+    on_monthly_pulse = { effect = { ywc_v03_shu_inline_prepare = yes
+    ywc_shu_delib_track_review = yes
+    if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1124 var:ywc_shu_delib_pending_event = 1124   OR = { ywc_v03_shu_inline_turn_44 = yes } } if = { limit = { ywc_v03_shu_inline_turn_44 = yes } ywc_v03_shu_inline_reserve_44 = yes }   trigger_event = { id = ywc_shu.1124 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1125 var:ywc_shu_delib_pending_event = 1125 OR = { has_variable = ywc_shu_delib_review_mature has_variable = ywc_shu_delib_review_interrupted }   OR = { ywc_v03_shu_inline_turn_45 = yes } } if = { limit = { ywc_v03_shu_inline_turn_45 = yes } ywc_v03_shu_inline_reserve_45 = yes }   trigger_event = { id = ywc_shu.1125 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1126 var:ywc_shu_delib_pending_event = 1126   OR = { ywc_v03_shu_inline_turn_46 = yes } } if = { limit = { ywc_v03_shu_inline_turn_46 = yes } ywc_v03_shu_inline_reserve_46 = yes }   trigger_event = { id = ywc_shu.1126 } }
+    else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1127 var:ywc_shu_delib_pending_event = 1127   OR = { ywc_v03_shu_inline_turn_47 = yes } } if = { limit = { ywc_v03_shu_inline_turn_47 = yes } ywc_v03_shu_inline_reserve_47 = yes }   trigger_event = { id = ywc_shu.1127 } }
+    } }
+    complete = { OR = { var:ywc_shu_delib_outcome = 1 var:ywc_shu_delib_outcome = 2 var:ywc_shu_delib_outcome = 3 } }
+    fail = { OR = { has_variable = ywc_shu_delib_withdrawn var:ywc_shu_delib_outcome = 4 } }
+    on_complete = { remove_variable = ywc_v03_shu_inline_live_deliberation_appeal_execution }
+}

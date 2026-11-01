@@ -77,7 +77,26 @@ def _install_real_shu_render(world, outputs):
                     "arc": arc, "proof": proof, "candidate": candidate}
     foundation_sites = sum(len(arc["inline_delivery_adapter"]["branches"])
                            for arc in world.cat["arcs"] if arc["era"] == "foundation")
-    if foundation_sites != 31 or branch_count != 39 or candidate_id != 39:
+    # The renderer above already validates frozen source/immediate pins, exact
+    # owned queues/receipts and public's two-JE four/four partition. Extend the
+    # historical inventory only through that registered selector; unknown or
+    # public-without-province layouts never acquire a count-based fallback.
+    active = inline_adapter._shu_active_arcs(world.cat)
+    layouts = {
+        ("v03_shu_fiscal_register", "v03_shu_service_compact",
+         "v03_shu_port_treasury"): 31,
+        ("v03_shu_fiscal_register", "v03_shu_service_compact",
+         "v03_shu_port_treasury", "v03_shu_provincial_contract"): 39,
+        ("v03_shu_fiscal_register", "v03_shu_service_compact",
+         "v03_shu_port_treasury", "v03_shu_provincial_contract",
+         "v03_shu_public_deliberation"): 47,
+    }
+    expected = layouts.get(tuple(arc["slug"] for arc in active))
+    middle_counts = [len(arc["inline_delivery_adapter"]["branches"])
+                     for arc in active if arc["era"] == "middle"]
+    if (expected is None or foundation_sites != 31
+            or any(count != 8 for count in middle_counts)
+            or branch_count != expected or candidate_id != expected):
         raise AssertionError(("unexpected_shu_source_branch_or_candidate_count",
                               foundation_sites, branch_count, candidate_id))
     world.trace.append({"op": "load_real_rendered_shu_helpers",

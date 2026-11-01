@@ -88,7 +88,7 @@ def live_revenue_world(countries=None):
         state.pop(key, None)
     state.update({"ywc_v03_active_arc_count": 0, "ywc_v03_visible_task_count": 0})
     world = NmgPartnerWorld(countries)
-    arc = world.cat["arcs"][-1]
+    arc = next(a for a in world.cat["arcs"] if a["slug"] == "v03_nmg_autonomy_revenue")
     world.activate_entry(arc, arc["journals"][0]["id"])
     return world, arc
 

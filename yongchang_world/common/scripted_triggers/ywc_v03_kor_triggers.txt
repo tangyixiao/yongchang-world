@@ -1393,3 +1393,715 @@ ywc_kor_revenue_reviewer_office = {
 		AND = { var:ywc_kor_revenue_target = 1 var:ywc_kor_revenue_mode = 2 ywc_kor_revenue_pilot_office_full = yes }
 	}
 }
+
+# M5 KOR court public (v03_kor_court_public, middle, events 1120-1127). The pilot is
+# one currently owned KOR state captured ONCE by object variable at claim, through a
+# saved-scope guard so a later state can never overwrite it. Every office/employment/
+# witness/channel fact is read against that exact saved state via
+# var:ywc_kor_public_pilot_state. No nationwide any_scope_state "ready" stands in for
+# the same pilot.
+ywc_kor_public_open = {
+	has_variable = ywc_v03_kor_v03_kor_court_public_started
+	NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_settled }
+	NOT = { has_variable = ywc_kor_public_outcome }
+}
+
+ywc_kor_public_has_any_owned_state = {
+	any_scope_state = { owner = ROOT }
+}
+
+ywc_kor_public_pilot_owned = {
+	exists = var:ywc_kor_public_pilot_state
+	var:ywc_kor_public_pilot_state = { owner = ROOT }
+}
+
+ywc_kor_public_mode_chosen = {
+	OR = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_mode = 2 var:ywc_kor_public_mode = 3 }
+}
+
+ywc_kor_public_target_chosen = {
+	OR = { var:ywc_kor_public_target = 1 var:ywc_kor_public_target = 2 }
+}
+
+ywc_kor_public_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+# Pilot-scoped current office facts. Only the saved pilot state can satisfy them.
+ywc_kor_public_pilot_office_full = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_office_half = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_office_bounded = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } }
+	}
+}
+
+# New professional witness posts at the saved pilot (academics -> university, or
+# bureaucrats/clerks -> government administration) at full occupancy, no shortage.
+ywc_kor_public_pilot_academic_post = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = academics is_employed = yes workplace ?= { is_building_type = building_university occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_clerk_post_full = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_academic_post_half = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = academics is_employed = yes workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_clerk_post_half = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_turmoil_calm = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = { turmoil <= 0.25 }
+}
+
+ywc_kor_public_pilot_turmoil_bounded = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = { turmoil <= 0.40 }
+}
+
+# In-government interest groups. One type, in government, clout >= .10, approval >= 0.
+ywc_kor_public_ig_intelligentsia = {
+	any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_landowners = {
+	any_interest_group = { is_interest_group_type = ig_landowners is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_rural_folk = {
+	any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_industrialists = {
+	any_interest_group = { is_interest_group_type = ig_industrialists is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_devout = {
+	any_interest_group = { is_interest_group_type = ig_devout is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+# Current political laws. Speech and distribution-of-power keys are the installed
+# base-game law keys; none of these invent a political-rights tax or a new law.
+ywc_kor_public_law_monarchy = {
+	has_law_or_variant = law_type:law_monarchy
+}
+
+ywc_kor_public_law_appointed_bureaucrats = {
+	has_law_or_variant = law_type:law_appointed_bureaucrats
+}
+
+ywc_kor_public_law_autocratic_power = {
+	OR = {
+		has_law_or_variant = law_type:law_autocracy
+		has_law_or_variant = law_type:law_oligarchy
+		has_law_or_variant = law_type:law_technocracy
+	}
+}
+
+ywc_kor_public_law_conservative_power = {
+	OR = {
+		has_law_or_variant = law_type:law_autocracy
+		has_law_or_variant = law_type:law_oligarchy
+	}
+}
+
+ywc_kor_public_law_voting_power = {
+	OR = {
+		has_law_or_variant = law_type:law_wealth_voting
+		has_law_or_variant = law_type:law_census_voting
+		has_law_or_variant = law_type:law_universal_suffrage
+	}
+}
+
+ywc_kor_public_law_court_speech = {
+	OR = {
+		has_law_or_variant = law_type:law_censorship
+		has_law_or_variant = law_type:law_right_of_assembly
+		has_law_or_variant = law_type:law_protected_speech
+	}
+}
+
+ywc_kor_public_law_assembly_speech = {
+	OR = {
+		has_law_or_variant = law_type:law_right_of_assembly
+		has_law_or_variant = law_type:law_protected_speech
+	}
+}
+
+ywc_kor_public_law_conservative_speech = {
+	OR = {
+		has_law_or_variant = law_type:law_outlawed_dissent
+		has_law_or_variant = law_type:law_censorship
+	}
+}
+
+# Mode 1 court-open full policy: monarchy + appointed bureaucrats + autocratic power +
+# court speech, intelligentsia or landowners support, real full office and legitimacy.
+# All full modes honor peace and solvency (is_at_war no, net income >= 0, no default or
+# bankruptcy) as a pure pre-choice current predicate, before any handler exists.
+ywc_kor_public_mode1_full = {
+	ywc_kor_public_law_monarchy = yes
+	ywc_kor_public_law_appointed_bureaucrats = yes
+	ywc_kor_public_law_autocratic_power = yes
+	ywc_kor_public_law_court_speech = yes
+	ywc_kor_public_pilot_office_full = yes
+	bureaucracy >= 0
+	legitimacy >= 30
+	ywc_kor_public_pilot_turmoil_calm = yes
+	is_at_war = no
+	ywc_kor_public_finance_safe = yes
+	OR = { ywc_kor_public_ig_intelligentsia = yes ywc_kor_public_ig_landowners = yes }
+}
+
+# Mode 2 local-delegates full policy: real voting power + assembly speech, rural folk
+# or industrialists support, real office at .5 (or full with the old written-share
+# contract re-read), legitimacy.
+ywc_kor_public_mode2_full = {
+	ywc_kor_public_law_voting_power = yes
+	ywc_kor_public_law_assembly_speech = yes
+	ywc_kor_public_pilot_office_half = yes
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_kor_public_pilot_turmoil_calm = yes
+	is_at_war = no
+	ywc_kor_public_finance_safe = yes
+	OR = { ywc_kor_public_ig_rural_folk = yes ywc_kor_public_ig_industrialists = yes }
+}
+
+# Mode 3 conservative-petition full policy: monarchy + conservative power + conservative
+# speech, landowners or devout support, real office at .5 and authority/legitimacy.
+ywc_kor_public_mode3_full = {
+	ywc_kor_public_law_monarchy = yes
+	ywc_kor_public_law_conservative_power = yes
+	ywc_kor_public_law_conservative_speech = yes
+	ywc_kor_public_pilot_office_half = yes
+	bureaucracy >= 0
+	authority >= 50
+	legitimacy >= 25
+	ywc_kor_public_pilot_turmoil_calm = yes
+	is_at_war = no
+	ywc_kor_public_finance_safe = yes
+	OR = { ywc_kor_public_ig_landowners = yes ywc_kor_public_ig_devout = yes }
+}
+
+# Explicit target 2 finite petition: any current regime/power/speech/tax, no special IG.
+# Requires only the saved pilot, its bounded office, peace, solvency and moderate turmoil.
+ywc_kor_public_target2_finite = {
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_pilot_office_bounded = yes
+	bureaucracy >= 0
+	legitimacy >= 20
+	ywc_kor_public_pilot_turmoil_bounded = yes
+	is_at_war = no
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+	net_fixed_income >= 0
+}
+
+ywc_kor_public_full_conditions = {
+	is_at_war = no
+	OR = {
+		AND = { var:ywc_kor_public_mode = 1 ywc_kor_public_mode1_full = yes }
+		AND = { var:ywc_kor_public_mode = 2 ywc_kor_public_mode2_full = yes }
+		AND = { var:ywc_kor_public_mode = 3 ywc_kor_public_mode3_full = yes }
+	}
+}
+
+# The currently declared target's operating condition for the six-month run.
+ywc_kor_public_selected_current_ready = {
+	ywc_kor_public_open = yes
+	ywc_kor_public_mode_chosen = yes
+	ywc_kor_public_target_chosen = yes
+	ywc_kor_public_finance_safe = yes
+	OR = {
+		AND = { var:ywc_kor_public_target = 1 ywc_kor_public_full_conditions = yes }
+		AND = { var:ywc_kor_public_target = 2 ywc_kor_public_target2_finite = yes }
+	}
+}
+
+# Both real fees must be actually paid with positive amounts before any terminal.
+# Each paid flag must be genuinely 1 (not merely present) and its amount strictly
+# positive; a zeroed flag with a leftover amount is never accepted.
+ywc_kor_public_both_fees_paid = {
+	has_variable = ywc_kor_public_petition_paid
+	var:ywc_kor_public_petition_paid = 1
+	has_variable = ywc_kor_public_petition_paid_amount
+	var:ywc_kor_public_petition_paid_amount > 0
+	has_variable = ywc_kor_public_review_paid
+	var:ywc_kor_public_review_paid = 1
+	has_variable = ywc_kor_public_review_paid_amount
+	var:ywc_kor_public_review_paid_amount > 0
+}
+
+ywc_kor_public_six_months_complete = {
+	ywc_kor_public_both_fees_paid = yes
+	has_variable = ywc_kor_public_review_mature
+	var:ywc_kor_public_review_streak >= 6
+	NOT = { has_variable = ywc_kor_public_review_interrupted }
+}
+
+ywc_kor_public_terminal_full = {
+	ywc_kor_public_open = yes
+	NOT = { has_variable = ywc_kor_public_finite_chosen }
+	is_at_war = no
+	ywc_kor_public_full_conditions = yes
+	ywc_kor_public_finance_safe = yes
+	ywc_kor_public_both_fees_paid = yes
+	ywc_kor_public_six_months_complete = yes
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_historical_identity_complete = yes
+	ywc_kor_public_witness_current_duty = yes
+	ywc_kor_public_channel_current_legal = yes
+	ywc_kor_public_new_opposition_appeared = no
+	ywc_kor_public_new_suppressed_appeared = no
+	ywc_kor_public_adopted_school_source_current = yes
+	ywc_kor_public_adopted_written_shares_current = yes
+}
+
+ywc_kor_public_terminal_finite = {
+	ywc_kor_public_open = yes
+	ywc_kor_public_both_fees_paid = yes
+	ywc_kor_public_six_months_complete = yes
+	has_variable = ywc_kor_public_finite_chosen
+	var:ywc_kor_public_target = 2
+	ywc_kor_public_target2_finite = yes
+	ywc_kor_public_historical_identity_complete = yes
+	ywc_kor_public_witness_current_duty = yes
+	ywc_kor_public_channel_current_legal = yes
+	ywc_kor_public_new_opposition_appeared = no
+	ywc_kor_public_new_suppressed_appeared = no
+}
+
+ywc_kor_public_terminal_setback = {
+	ywc_kor_public_open = yes
+	ywc_kor_public_both_fees_paid = yes
+	ywc_kor_public_six_months_complete = yes
+	ywc_kor_public_historical_identity_complete = yes
+	has_variable = ywc_kor_public_review_mature
+	NOT = { has_variable = ywc_kor_public_review_interrupted }
+	OR = {
+		ywc_kor_public_new_opposition_appeared = yes
+		ywc_kor_public_new_suppressed_appeared = yes
+		NOT = { ywc_kor_public_selected_current_ready = yes }
+		NOT = { ywc_kor_public_witness_current_duty = yes }
+		NOT = { ywc_kor_public_channel_current_legal = yes }
+		NOT = { ywc_kor_public_adopted_school_source_current = yes }
+		NOT = { ywc_kor_public_adopted_written_shares_current = yes }
+	}
+}
+
+ywc_kor_public_withdrawn = {
+	has_variable = ywc_kor_public_outcome
+	var:ywc_kor_public_outcome = 4
+}
+
+# Per-event stage gate. Each event's own last_event receipt (1..8) is written strictly
+# after ywc_v03_mark_major_delivered in the native immediate, and the same receipt is
+# required by every option display/effect guard for that event.
+ywc_kor_public_stage_1120 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1120
+}
+
+ywc_kor_public_at_1120 = {
+	ywc_kor_public_stage_1120 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 1
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1120 }
+}
+
+ywc_kor_public_stage_1121 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1121
+}
+
+ywc_kor_public_at_1121 = {
+	ywc_kor_public_stage_1121 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 2
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1121 }
+}
+
+ywc_kor_public_stage_1122 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1122
+}
+
+ywc_kor_public_at_1122 = {
+	ywc_kor_public_stage_1122 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 3
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1122 }
+}
+
+ywc_kor_public_stage_1123 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1123
+}
+
+ywc_kor_public_at_1123 = {
+	ywc_kor_public_stage_1123 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 4
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1123 }
+}
+
+ywc_kor_public_stage_1124 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1124
+}
+
+ywc_kor_public_at_1124 = {
+	ywc_kor_public_stage_1124 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 5
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1124 }
+}
+
+ywc_kor_public_stage_1125 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1125
+}
+
+ywc_kor_public_at_1125 = {
+	ywc_kor_public_stage_1125 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 6
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1125 }
+}
+
+ywc_kor_public_stage_1126 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1126
+}
+
+ywc_kor_public_at_1126 = {
+	ywc_kor_public_stage_1126 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 7
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1126 }
+}
+
+ywc_kor_public_stage_1127 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1127
+}
+
+ywc_kor_public_at_1127 = {
+	ywc_kor_public_stage_1127 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 8
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1127 }
+}
+
+# Fee pricing: petition (1121) and review (1125) as exact multiples of B.
+# Petition half is only mode3 or target2; the old written-share contract lowers mode2
+# petition from 2B to B (one base), never to half.
+ywc_kor_public_petition_half = {
+	OR = {
+		var:ywc_kor_public_mode = 3
+		var:ywc_kor_public_target = 2
+	}
+}
+
+ywc_kor_public_can_pay_petition = {
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_mode_chosen = yes
+	ywc_kor_public_target_chosen = yes
+	has_variable = ywc_kor_public_budget
+	var:ywc_kor_public_budget >= 100
+	NOT = { has_variable = ywc_kor_public_petition_paid }
+	ywc_kor_public_finance_safe = yes
+	is_at_war = no
+	ywc_kor_public_selected_current_ready = yes
+	OR = {
+		AND = { ywc_kor_public_petition_half = yes gold_reserves >= { value = var:ywc_kor_public_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_public_mode = 1 gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 ywc_kor_public_petition_prior_written_shares = yes gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 NOT = { ywc_kor_public_petition_prior_written_shares = yes } gold_reserves >= { value = var:ywc_kor_public_budget multiply = 2 } }
+	}
+}
+
+# Old written-share provincial revenue contract (mode2 B/B discount). A real settled
+# written-share contract at the same pilot, never a free flag. Every old numeric amount,
+# mode, target, streak and snapshot field is has_variable-guarded before the older
+# predicates read it, so a deleted old field honestly returns false instead of raising.
+ywc_kor_public_petition_prior_written_shares = {
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_outcome
+	var:ywc_v03_kor_v03_kor_provincial_revenue_outcome = 1
+	has_variable = ywc_kor_revenue_outcome
+	var:ywc_kor_revenue_outcome = 1
+	has_variable = ywc_kor_revenue_mode
+	var:ywc_kor_revenue_mode = 1
+	has_variable = ywc_kor_revenue_target
+	var:ywc_kor_revenue_target = 1
+	NOT = { has_variable = ywc_kor_revenue_finite_chosen }
+	NOT = { has_variable = ywc_kor_revenue_withdrawn }
+	has_variable = ywc_kor_revenue_charter_paid
+	has_variable = ywc_kor_revenue_charter_paid_amount
+	var:ywc_kor_revenue_charter_paid_amount > 0
+	has_variable = ywc_kor_revenue_review_paid
+	has_variable = ywc_kor_revenue_review_paid_amount
+	var:ywc_kor_revenue_review_paid_amount > 0
+	has_variable = ywc_kor_revenue_review_mature
+	has_variable = ywc_kor_revenue_review_streak
+	var:ywc_kor_revenue_review_streak >= 6
+	NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+	has_variable = ywc_kor_revenue_pilot_state
+	var:ywc_kor_revenue_pilot_state = var:ywc_kor_public_pilot_state
+	ywc_kor_revenue_pilot_owned = yes
+	has_variable = ywc_kor_revenue_charter_pilot
+	has_variable = ywc_kor_revenue_reviewer_pilot
+	has_variable = ywc_kor_revenue_charter_mode
+	has_variable = ywc_kor_revenue_charter_target
+	has_variable = ywc_kor_revenue_reviewer
+	ywc_kor_revenue_both_snapshots_match = yes
+	ywc_kor_revenue_reviewer_current_duty = yes
+	ywc_kor_revenue_full_conditions = yes
+	ywc_kor_revenue_finance_safe = yes
+}
+
+# Review fee may be billed only after genuine six-month maturity in the same run.
+ywc_kor_public_review_half = {
+	OR = {
+		var:ywc_kor_public_mode = 3
+		var:ywc_kor_public_target = 2
+	}
+}
+
+ywc_kor_public_can_pay_review = {
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_mode_chosen = yes
+	ywc_kor_public_target_chosen = yes
+	has_variable = ywc_kor_public_budget
+	var:ywc_kor_public_budget >= 100
+	has_variable = ywc_kor_public_review_mature
+	var:ywc_kor_public_review_streak >= 6
+	NOT = { has_variable = ywc_kor_public_review_interrupted }
+	has_variable = ywc_kor_public_witness_kind
+	ywc_kor_public_petition_snapshot_match = yes
+	ywc_kor_public_selected_current_ready = yes
+	ywc_kor_public_witness_current_duty = yes
+	ywc_kor_public_channel_current_legal = yes
+	ywc_kor_public_adopted_written_shares_current = yes
+	ywc_kor_public_adopted_school_source_current = yes
+	ywc_kor_public_new_opposition_appeared = no
+	ywc_kor_public_new_suppressed_appeared = no
+	is_at_war = no
+	NOT = { has_variable = ywc_kor_public_review_paid }
+	ywc_kor_public_finance_safe = yes
+	OR = {
+		AND = { ywc_kor_public_review_half = yes gold_reserves >= { value = var:ywc_kor_public_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_public_mode = 1 ywc_kor_public_review_school_discount = yes gold_reserves >= { value = var:ywc_kor_public_budget multiply = 0.75 } }
+		AND = { var:ywc_kor_public_mode = 1 NOT = { ywc_kor_public_review_school_discount = yes } gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 ywc_kor_public_petition_prior_written_shares = yes gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 NOT = { ywc_kor_public_petition_prior_written_shares = yes } gold_reserves >= { value = var:ywc_kor_public_budget multiply = 1.5 } }
+	}
+}
+
+# School joint contract discount for full mode1 review (.75B). Independent of the chosen
+# witness: it rechecks the genuine old paid school coop/office settlement AND the current
+# same-pilot university/office post at the old source's own >=.8 bar. A new witness does
+# not inherit the school witness duty but still gets the contract price when this source
+# is actually valid; no school => B.
+ywc_kor_public_review_school_discount = {
+	ywc_kor_public_pilot_owned = yes
+	OR = {
+		AND = { ywc_kor_revenue_prior_school_coop = yes ywc_kor_public_pilot_academic_post = yes }
+		AND = { ywc_kor_revenue_prior_school_office = yes ywc_kor_public_pilot_clerk_post_full = yes }
+	}
+}
+
+# An adopted school-price source (recorded review_source_school=1 at review payment) must
+# keep its genuine current joint contract. Loss of the old coop/office source or the same
+# pilot university/office post invalidates the adopted responsibility at request/close and
+# interrupts the unpaid run; recovery does not auto-resume.
+ywc_kor_public_adopted_school_source_current = {
+	OR = {
+		NOT = { has_variable = ywc_kor_public_review_source_school }
+		AND = {
+			has_variable = ywc_kor_public_review_source_school
+			var:ywc_kor_public_review_source_school = 1
+			ywc_kor_public_review_school_discount = yes
+		}
+	}
+}
+
+# An adopted written-revenue source (recorded petition_source_written_shares=1 at petition)
+# must keep its genuine current written-share contract through every later node. Loss of
+# the old outcome/fees/maturity/current full conditions/current reviewer at the same pilot
+# invalidates the adopted responsibility; no silent fallback to the full price.
+ywc_kor_public_adopted_written_shares_current = {
+	OR = {
+		NOT = { has_variable = ywc_kor_public_petition_source_written_shares }
+		AND = {
+			has_variable = ywc_kor_public_petition_source_written_shares
+			var:ywc_kor_public_petition_source_written_shares = 1
+			ywc_kor_public_petition_prior_written_shares = yes
+		}
+	}
+}
+
+# Petition snapshot binds the already-earned first-fee identity to the live pilot/mode/
+# target. It is the only snapshot available before 1125 (review pilot/mode/target are
+# not yet written), so pre-sign and review-billing stages use this, never a future field.
+ywc_kor_public_petition_snapshot_match = {
+	has_variable = ywc_kor_public_petition_pilot
+	var:ywc_kor_public_petition_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_petition_mode
+	var:ywc_kor_public_petition_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_petition_target
+	var:ywc_kor_public_petition_target = var:ywc_kor_public_target
+}
+
+# Both snapshots bind the petition AND the actually-paid review identity to the live
+# pilot/mode/target. Only usable after 1125 actually wrote the review snapshot; late
+# request/close (1126/1127) and terminals use this full match.
+ywc_kor_public_both_snapshots_match = {
+	ywc_kor_public_petition_snapshot_match = yes
+	has_variable = ywc_kor_public_review_pilot
+	var:ywc_kor_public_review_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_review_mode
+	var:ywc_kor_public_review_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_review_target
+	var:ywc_kor_public_review_target = var:ywc_kor_public_target
+}
+
+# Full historical identity: every EARNED responsibility snapshot (petition, review,
+# witness, signature, acceptance and handler) must match the live selected mode/target and
+# the original saved StateRef. Consumed only at paid advance/request/close for full and
+# finite, where all snapshots already exist. It is never required at 1123/1124 or the
+# initial 1125 payment, so there is no future/self snapshot dependency. Missing identity
+# is not a current loss and must not fabricate an earned duty.
+ywc_kor_public_historical_identity_complete = {
+	ywc_kor_public_both_snapshots_match = yes
+	has_variable = ywc_kor_public_witness_kind
+	has_variable = ywc_kor_public_witness_pilot
+	var:ywc_kor_public_witness_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_witness_mode
+	var:ywc_kor_public_witness_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_witness_target
+	var:ywc_kor_public_witness_target = var:ywc_kor_public_target
+	has_variable = ywc_kor_public_sign_mode
+	var:ywc_kor_public_sign_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_sign_target
+	var:ywc_kor_public_sign_target = var:ywc_kor_public_target
+	has_variable = ywc_kor_public_sign_pilot
+	var:ywc_kor_public_sign_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_accept_channel
+	has_variable = ywc_kor_public_accept_mode
+	var:ywc_kor_public_accept_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_accept_target
+	var:ywc_kor_public_accept_target = var:ywc_kor_public_target
+	has_variable = ywc_kor_public_accept_pilot
+	var:ywc_kor_public_accept_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_handler
+	has_variable = ywc_kor_public_handler_pilot
+	var:ywc_kor_public_handler_pilot = var:ywc_kor_public_pilot_state
+}
+
+# Witness current duty: the recorded witness kind must still hold its genuinely earned
+# CURRENT qualification at the same pilot. A cached role whose post/source lost its
+# live posts is defunct.
+ywc_kor_public_witness_current_duty = {
+	ywc_kor_public_pilot_owned = yes
+	has_variable = ywc_kor_public_witness_kind
+	has_variable = ywc_kor_public_witness_pilot
+	var:ywc_kor_public_witness_pilot = var:ywc_kor_public_pilot_state
+	OR = {
+		AND = { var:ywc_kor_public_witness_kind = 1 OR = { ywc_kor_public_pilot_academic_post = yes ywc_kor_public_pilot_clerk_post_full = yes } }
+		AND = { var:ywc_kor_public_witness_kind = 2 ywc_kor_revenue_prior_school_coop = yes ywc_kor_public_pilot_academic_post_half = yes }
+		AND = { var:ywc_kor_public_witness_kind = 3 ywc_kor_revenue_prior_school_office = yes ywc_kor_public_pilot_clerk_post_half = yes }
+		AND = { var:ywc_kor_public_witness_kind = 4 ywc_kor_public_pilot_office_half = yes }
+		AND = { var:ywc_kor_public_witness_kind = 5 ywc_kor_public_pilot_office_bounded = yes }
+	}
+}
+
+# Channel current legality by mode and target, bound to the signed/accept snapshot.
+ywc_kor_public_channel_current_legal = {
+	has_variable = ywc_kor_public_accept_channel
+	OR = {
+		AND = { var:ywc_kor_public_accept_channel = 1 ywc_kor_public_law_court_speech = yes ywc_kor_public_witness_current_duty = yes }
+		AND = { var:ywc_kor_public_accept_channel = 2 ywc_kor_public_law_assembly_speech = yes ywc_kor_public_law_voting_power = yes ywc_kor_public_witness_current_duty = yes }
+		AND = { var:ywc_kor_public_accept_channel = 3 ywc_kor_public_law_conservative_speech = yes ywc_kor_public_witness_current_duty = yes }
+		AND = { var:ywc_kor_public_accept_channel = 4 ywc_kor_public_witness_current_duty = yes }
+	}
+}
+
+# Continuity: a NEW out-of-government, clout >= .05, approval < 0 opposition type that was
+# not present in the recorded snapshot (bit still 0) now interrupts the run. This is read
+# by observation, billing and late execution guards; it never changes any IG fact.
+ywc_kor_public_new_opposition_appeared = {
+	OR = {
+		AND = { var:ywc_kor_public_opp_landowners = 0 any_interest_group = { is_interest_group_type = ig_landowners is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_devout = 0 any_interest_group = { is_interest_group_type = ig_devout is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_armed_forces = 0 any_interest_group = { is_interest_group_type = ig_armed_forces is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_intelligentsia = 0 any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_industrialists = 0 any_interest_group = { is_interest_group_type = ig_industrialists is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_rural_folk = 0 any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_petty_bourgeoisie = 0 any_interest_group = { is_interest_group_type = ig_petty_bourgeoisie is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_trade_unions = 0 any_interest_group = { is_interest_group_type = ig_trade_unions is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+	}
+}
+
+# Continuity: a suppressed movement category that did not exist in the recorded snapshot
+# (bit still 0) now appearing interrupts the run. Existential category only.
+ywc_kor_public_new_suppressed_appeared = {
+	AND = {
+		var:ywc_kor_public_suppressed_category = 0
+		ywc_kor_public_suppressed_movement_present = yes
+	}
+}
+
+# A real suppressed political movement already present in the world: same movement is
+# suppressed and radicalism >= .25. This records an existential category only; it never
+# creates, suppresses or legitimizes an underground organization.
+ywc_kor_public_suppressed_movement_present = {
+	any_political_movement = {
+		is_being_suppressed = yes
+		political_movement_radicalism >= 0.25
+	}
+}
