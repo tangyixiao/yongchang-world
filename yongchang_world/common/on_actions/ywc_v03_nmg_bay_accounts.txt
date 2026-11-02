@@ -1,0 +1,20 @@
+﻿on_monthly_pulse_country = { on_actions = { ywc_v03_nmg_bay_accounts_monthly } }
+
+# Separate from the old NMG account callbacks. A borrower continues servicing
+# signed debt after this story closes; the creditor never initiates a transfer.
+ywc_v03_nmg_bay_accounts_monthly = {
+    effect = {
+        if = { limit = { c:NMG ?= this } ywc_nmg_bay_monthly = yes }
+        if = { limit = { has_variable = ywc_nmg_bay_creditor_generation is_country_alive = yes } ywc_nmg_bay_creditor_monthly = yes }
+    }
+}
+
+# Root is the state that changed hands. Never keep this card's benefits there.
+on_state_owner_change = { on_actions = { ywc_v03_nmg_bay_state_owner_changed } }
+ywc_v03_nmg_bay_state_owner_changed = {
+    effect = {
+        remove_modifier = ywc_nmg_bay_public_port
+        remove_modifier = ywc_nmg_bay_supervised_port
+        remove_modifier = ywc_nmg_bay_reduced_port
+    }
+}
