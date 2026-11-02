@@ -16,8 +16,15 @@ EXPECTED_ARCS = {
     "v03_jhg_convoy_capacity",
     "v03_jhg_tribute_autonomy",
 }
+DOCKYARD_ARC = "v03_jhg_dockyard_capital"
 EFFECTS_AST_SHA256 = "136b24e521dfa78709ee29589d3f3d0f5eb8bbb516c445841db3bc64978445ef"
 TRIGGERS_AST_SHA256 = "dd38d0ed9ccd1c553459e2318dad057a27198371294e65d1bca2493c20e4dbc6"
+DOCK_EFFECTS_AST_SHA256 = "ecffd7adf5b9b60ce5ddbe011c2d44ab66629aaca82fdf5a9617c5873f35a01e"
+DOCK_TRIGGERS_AST_SHA256 = "bd2fbd59db68cf8d14d791fef2db73009626760723e3c0b75f34ac4be5967a09"
+DOCK_PHASE_SHA256 = {
+    "ywc_je_v03_jhg_dockyard_open": ("4430ca8fe7fcb9772d0d375f013a271c891858c463c5592e3ac14e4606791e42", "b9776c23b0511646edc26d5a403e3a1c17e51497557923c33d2287322adf3ca7", "eb85bfabeadbdba898c3484f119bdfe2586a62763954ee6cd44030fc1512f6d4"),
+    "ywc_je_v03_jhg_dockyard_review": ("1c33231523229046ad2b7e023f9e8590c7a338fa45d941bd60cc87f9d4fabd60", "b0ef8fa5396caecae091254fe354f1ff607a67f528bccff4da652720fc1ccc51", "eb85bfabeadbdba898c3484f119bdfe2586a62763954ee6cd44030fc1512f6d4"),
+}
 
 
 def _int_tree(value: Any, where: str = "metadata") -> None:
@@ -157,8 +164,9 @@ def validate_jhg_native_helper_source(effects_source: str, triggers_source: str)
     except ModuleNotFoundError:
         from v03_inline_delivery_adapter import parse_block
 
-    for label, source, expected in (("effects", effects_source, EFFECTS_AST_SHA256),
-                                    ("triggers", triggers_source, TRIGGERS_AST_SHA256)):
+    dock_presence = []
+    for label, source, expected, dock_expected in (("effects", effects_source, EFFECTS_AST_SHA256, DOCK_EFFECTS_AST_SHA256),
+                                    ("triggers", triggers_source, TRIGGERS_AST_SHA256, DOCK_TRIGGERS_AST_SHA256)):
         try:
             nodes = parse_block("{\n" + source + "\n}")
         except Exception as exc:
@@ -169,9 +177,16 @@ def validate_jhg_native_helper_source(effects_source: str, triggers_source: str)
         def canonical(node: Any) -> tuple[Any, ...]:
             value = [canonical(child) for child in node.value] if isinstance(node.value, tuple) else node.value
             return node.key, node.op, value
-        digest = hashlib.sha256(repr([canonical(node) for node in nodes]).encode("utf-8")).hexdigest()
+        old = [node for node in nodes if not node.key.startswith("ywc_jhg_dock_")]
+        dock = [node for node in nodes if node.key.startswith("ywc_jhg_dock_")]
+        digest = hashlib.sha256(repr([canonical(node) for node in old]).encode("utf-8")).hexdigest()
         if digest != expected:
             raise ValueError(f"JHG native helper {label} source ABI/AST drift")
+        if dock and hashlib.sha256(repr([canonical(node) for node in dock]).encode("utf-8")).hexdigest() != dock_expected:
+            raise ValueError(f"JHG dockyard helper {label} source ABI/AST drift")
+        dock_presence.append(bool(dock))
+    if any(dock_presence) and not all(dock_presence):
+        raise ValueError("JHG dockyard helper effects and triggers must be supplied together")
 
 
 def _validate_catalog(catalog: dict[str, Any]) -> None:
@@ -188,6 +203,10 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
     selected = [arc for arc in arcs if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(selected) != 3 or {arc.get("slug") for arc in selected} != EXPECTED_ARCS:
         raise ValueError("JHG inline adapter requires exactly its three foundation arcs")
+    dockyard = [arc for arc in arcs if isinstance(arc, dict) and arc.get("slug") == DOCKYARD_ARC]
+    if len(dockyard) > 1 or (dockyard and dockyard[0].get("era") != "expansion"):
+        raise ValueError("JHG dockyard source must be one registered expansion arc")
+    selected += dockyard
     witnesses: set[str] = set()
     all_events: set[str] = set()
     branches_seen: set[tuple[str, int]] = set()
@@ -201,9 +220,18 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
         journals = arc.get("journals")
         events = arc.get("events")
         expected_counts = {"v03_jhg_court_assembly": (2, 8), "v03_jhg_convoy_capacity": (3, 12),
-                           "v03_jhg_tribute_autonomy": (1, 8)}[arc["slug"]]
+            "v03_jhg_tribute_autonomy": (1, 8), DOCKYARD_ARC: (2, 8)}[arc["slug"]]
         if not isinstance(journals, list) or len(journals) != expected_counts[0] or not isinstance(events, list) or len(events) != expected_counts[1]:
             raise ValueError(f"{arc['slug']}: JHG journal/event inventory drift")
+        if arc["slug"] == DOCKYARD_ARC:
+            if [j.get("id") for j in journals] != ["ywc_je_v03_jhg_dockyard_open", "ywc_je_v03_jhg_dockyard_review"]:
+                raise ValueError("JHG dockyard requires its two ordered native phases")
+            if {e.get("id") for e in events} != {f"ywc_jhg.{n}" for n in range(1100, 1108)}:
+                raise ValueError("JHG dockyard requires its eight reserved events")
+            for journal in journals:
+                actual = tuple(hashlib.sha256(journal[field].encode("utf-8")).hexdigest() for field in ("script", "goal", "exit_conditions"))
+                if actual != DOCK_PHASE_SHA256[journal["id"]]:
+                    raise ValueError(f"{journal['id']}: pinned JHG dockyard phase source changed")
         phases = adapter["live_phases"]
         if not isinstance(phases, list) or len(phases) != len(journals):
             raise ValueError(f"{arc['slug']}: every native JE needs one phase witness")
@@ -237,7 +265,16 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
             except ModuleNotFoundError:
                 from v03_inline_delivery_adapter import parse_block
             body = parse_block(immediate)
-            if len(body) != 1 or body[0].key != "ywc_v03_mark_major_delivered" or body[0].op != "=" or body[0].value != "yes":
+            if arc["slug"] == DOCKYARD_ARC:
+                number = int(event_id.rsplit(".", 1)[-1])
+                expected = parse_block("{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_jhg_dock_last_event value = " + str(number) + " } "
+                    "if = { limit = { NOT = { has_variable = ywc_jhg_dock_popup_epoch } } set_variable = { name = ywc_jhg_dock_popup_epoch value = 0 } } "
+                    "change_variable = { name = ywc_jhg_dock_popup_epoch add = 1 } "
+                    "save_scope_value_as = { name = ywc_jhg_dock_popup_epoch value = var:ywc_jhg_dock_popup_epoch } }")
+                valid = _ast_rows(body) == _ast_rows(expected)
+            else:
+                valid = len(body) == 1 and body[0].key == "ywc_v03_mark_major_delivered" and body[0].op == "=" and body[0].value == "yes"
+            if not valid:
                 raise ValueError(f"{event_id}: native immediate layout drift")
         expected_rows = []
         for journal in journals:
@@ -270,15 +307,21 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
                 or type(candidate["value"]) is not int or candidate["mode"] != "exact"
                 or candidate["kind"] not in {"normal", "notice"}):
                 raise ValueError(f"{jid}: malformed JHG queue candidate")
+            if arc["slug"] == DOCKYARD_ARC:
+                number = int(proof["event"].rsplit(".", 1)[-1])
+                expected_journal = journals[0 if number < 1104 else 1]["id"]
+                if (jid != expected_journal or candidate != {"queue": "ywc_jhg_dock_pending_event",
+                        "kind": "normal", "mode": "exact", "value": number}):
+                    raise ValueError(f"{jid}: dockyard sender must own its exact phase and queue")
             binding_identity = (proof["event"], jid, candidate["queue"], candidate["value"])
             if binding_identity in bindings_seen:
                 raise ValueError(f"{jid}: duplicate JHG event/queue binding")
             bindings_seen.add(binding_identity)
             all_sources.append((arc, next(j for j in journals if j["id"] == jid), proof))
-    if len(witnesses) != 6 or len(all_events) != 28 or len(all_sources) != 58:
-        raise ValueError("JHG adapter must bind six phases, 28 events and 58 source senders")
-    if sum(row[2]["candidates"][0]["kind"] == "normal" for row in all_sources) != 52:
-        raise ValueError("JHG adapter must bind 52 normal and six notice senders")
+    if len(witnesses) != 6 + 2 * bool(dockyard) or len(all_events) != 28 + 8 * bool(dockyard) or len(all_sources) != 58 + 8 * bool(dockyard):
+        raise ValueError("JHG adapter native phase, event or sender inventory drift")
+    if sum(row[2]["candidates"][0]["kind"] == "normal" for row in all_sources) != 52 + 8 * bool(dockyard):
+        raise ValueError("JHG adapter normal or notice sender inventory drift")
 
 
 def _ast_rows(nodes: Any) -> list[tuple[Any, ...]]:
@@ -316,6 +359,7 @@ def _render_adapter(catalog: dict[str, Any]) -> dict[str, Any]:
         from v03_inline_delivery_adapter import children, direct_values, parse_block, render_node
     _validate_catalog(catalog)
     arcs = [a for a in catalog["arcs"] if a.get("era") == "foundation"]
+    arcs += [a for a in catalog["arcs"] if a.get("slug") == DOCKYARD_ARC]
     native_queues = {
         candidate["queue"]
         for arc in arcs for journal in arc["journals"]
@@ -350,6 +394,10 @@ def _render_adapter(catalog: dict[str, Any]) -> dict[str, Any]:
                 refs = set(_node_refs((native_branch,)))
                 refs.update(native_queues)
                 for stem in native_stems:
+                    # Dockyard has one real pending queue and no timed notice
+                    # fields; do not synthesize foreign-looking snapshots for it.
+                    if stem == "ywc_jhg_dock":
+                        continue
                     refs.update(stem + suffix for suffix in ("_36_notice", "_notice_delivery_active", "_notice_delivery_12", "_notice_delivery_36", "_12_notice_delivered", "_36_notice_delivered"))
                 rows.append({"id": ident, "arc": arc, "journal": journal, "branch": branch,
                              "candidate": candidate, "event": event,
