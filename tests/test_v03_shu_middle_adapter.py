@@ -82,7 +82,10 @@ class ShuMiddleAdapterTests(unittest.TestCase):
                 except ValueError as error:
                     self.fail(str(error))
                 self.assertEqual(receipt, ("ywc_v03_shu_event_dispatch", event))
-        for event in (1026, 1099, 1108, 1109, 1110):
+        for event in range(1110, 1118):
+            self.assertEqual(_shu_expected_receipt(f"ywc_shu.{event}"),
+                             ("ywc_shu_workshop_last_event", event))
+        for event in (1026, 1099, 1108, 1109, 1118):
             with self.subTest(unimplemented=event), self.assertRaises(ValueError):
                 _shu_expected_receipt(f"ywc_shu.{event}")
 

@@ -247,12 +247,12 @@ class ShuPublicGeneratedAdapter(unittest.TestCase):
         current = current_catalog()
         active = adapter._shu_active_arcs(current)
         previous = json.loads(frozen("data/content/v03/countries/shu.json"))["arcs"]
-        self.assertEqual(active[:-1], previous, "all four old arcs must remain exactly frozen")
-        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, PROVINCE, PUBLIC])
-        self.assertEqual(sum(len(a["journals"]) for a in active[:-1]), 8)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:-1]), 39)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in active[:-1]), 1)
-        arc = active[-1]
+        self.assertEqual(active[:4], previous, "all four old arcs must remain exactly frozen")
+        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, PROVINCE, PUBLIC, "v03_shu_rural_workshop"])
+        self.assertEqual(sum(len(a["journals"]) for a in active[:4]), 8)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:4]), 39)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in active[:4]), 1)
+        arc = active[4]
         self.assertEqual([j["id"] for j in arc["journals"]], list(JES))
         proofs = arc["inline_delivery_adapter"]["branches"]
         self.assertEqual([p["event"] for p in proofs], [f"ywc_shu.{n}" for n in range(1120, 1128)])
@@ -266,7 +266,7 @@ class ShuPublicGeneratedAdapter(unittest.TestCase):
             self.assertEqual(adapter._shu_public_native_receipt(event), (RECEIPT, number))
         adapter.validate_inline_catalog(current)
         rendered = adapter.render_inline_country_adapters(current)
-        self.assertEqual(len(rendered["journal_scripts"]), 10)
+        self.assertEqual(len(rendered["journal_scripts"]), 12)
         self.assertIn("ywc_v03_shu_inline_served_5", rendered["effects"])
         for candidate in range(40, 48):
             self.assertIn(f"ywc_v03_shu_inline_candidate_{candidate} =", rendered["triggers"])
