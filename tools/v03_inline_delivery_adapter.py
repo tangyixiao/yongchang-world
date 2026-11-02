@@ -2991,7 +2991,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             if not is_shu:
                 checks += [f"var:{callback_proof} = 1",f"has_variable = {callback_id}",f"has_variable = {callback_epoch}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {callback_queue}"]
             if (is_dmg or is_nmg
-                    or (is_kor and c["arc"]["slug"] in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG})
+                    or (is_kor and c["arc"]["slug"] == _KOR_WORKSHOPS_SLUG)
+                    or (is_kor and c["arc"]["slug"] in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG})
                     or (is_shu and c["arc"]["slug"] == _SHU_PUBLIC_SLUG)) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
                 checks += [f"has_variable = {c['receipt_variable']}",f"var:{c['receipt_variable']} = {c['receipt_value']}"]
             checks += _nmg_native_postchecks(c, prefix) if is_nmg else []
