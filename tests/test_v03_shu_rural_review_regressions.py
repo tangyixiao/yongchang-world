@@ -64,6 +64,29 @@ def observed_calendar_month(world):
 
 
 class ShuRuralReviewRegressions(unittest.TestCase):
+    def test_each_displayed_popup_is_consumed_by_wait_before_and_after_redelivery(self):
+        actions = {1110: "rural_processing", 1111: "pay_admin", 1112: "new_witness",
+                   1113: "sign_responsibility", 1114: "record_rural_duties", 1115: "pay_survey",
+                   1116: "request_full", 1117: "close_full"}
+        for number, action in actions.items():
+            with self.subTest(stage=number):
+                w = new_world()
+                arc, old = reached(w, number)
+                self.assertTrue(option_legal(w, old, action))
+                choose(w, arc, old, "wait_at_" + str(number))
+                before = snapshot(w)
+                force_option(w, old, action)
+                self.assertEqual(snapshot(w), before)
+                current = deliver(w, arc, number)
+                self.assertIsNot(old, current)
+                self.assertNotEqual(old.popup_value, current.popup_value)
+                self.assertTrue(option_legal(w, current, action))
+                before = snapshot(w)
+                force_option(w, old, action)
+                self.assertEqual(snapshot(w), before)
+                choose(w, arc, current, action)
+                self.assertNotEqual(snapshot(w), before)
+
     def assert_closed(self, world, outcome):
         s = state(world)
         self.assertEqual((s[P + "outcome"], s[L + "outcome"], s[L + "settled"]),

@@ -719,14 +719,14 @@ _SHU_RURAL_SOURCE_HASHES: dict[str, str] = {
     "ywc_je_v03_shu_workshop_yields": "6f030b92cbe61d760f514152bb12333873a882e77e48d44f2778249784ba46d1"
 }
 _SHU_RURAL_IMMEDIATE_HASHES: dict[str, str] = {
-    "ywc_shu.1110": "08819b14cfb91b401bb3820293105e73c1e297ab0f7744d811992b3067a8c2e0",
-    "ywc_shu.1111": "8b1a5e168f643290c58f30d3f2ac71505147ee3403167136e44c9ce10131d02d",
-    "ywc_shu.1112": "133359df2992ddea988d985637069de3a0d27fbdb0cc35bcd8dccd4750abf2d5",
-    "ywc_shu.1113": "18f53f406bd74b28af7821dee1c7965bb798c6d039f04ffdb5c6a45e1eb3c827",
-    "ywc_shu.1114": "306b2a510ffd2cc545b7b7b6aef00c3541f991e26cbbbaa203ae2c263cd90b89",
-    "ywc_shu.1115": "2a6adc97ac2a409a564705a9ebda4ae9ec4e2e9db9c35e7fb8f0a9fc67c92b73",
-    "ywc_shu.1116": "9da40f4a36c1596b8e00c071e3b48085bd007566e41d6dce30e35ac17edb1823",
-    "ywc_shu.1117": "ab445b86cf070bb23a76e72bb087e98259192b8cb927a8f9fdd6da54c350684b"
+    "ywc_shu.1110": "bff1931ab63b6d3dba13713ea67c4a51cd7845a8125fbcc4d784732f0d62629b",
+    "ywc_shu.1111": "a0c3ecdbec71d6e03313b805855b1696edebda58bf97fa665ecc33e70580e944",
+    "ywc_shu.1112": "69b1572ac608c1b83a0eb3dd3692a80a34d00639397abfcfcf14ddaba14c0434",
+    "ywc_shu.1113": "45f8a4b7d4729c02f2081933494ba8aafaf27b6c5a25ae0f8698e36129d5a624",
+    "ywc_shu.1114": "ec07830fe684c53861642d2af241881ea282447012f3b4497c43535318e794dd",
+    "ywc_shu.1115": "e7b3f706a5537c36032e00301be5427897cd7eb1eed972e77906c3ddf03a7d40",
+    "ywc_shu.1116": "cd6e9e45ec063ba619bcd790f0021f4bf836143338ec7279a6bcb857fa935c12",
+    "ywc_shu.1117": "de40be1362d646aeeb0627253a1395d8887d7034bb775e74774e18037f0ef293"
 }
 # Filled only from reviewed authored sources, never from mutable metadata.
 _SHU_MIDDLE_SOURCE_HASHES: dict[str, str] = {
@@ -820,7 +820,11 @@ def _shu_rural_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
     name, value = _shu_expected_receipt(event_id)
     expected = ("{ ywc_v03_mark_major_delivered = yes "
                 f"set_variable = {{ name = ywc_v03_shu_event_dispatch value = {value} }} "
-                f"set_variable = {{ name = {name} value = {value} }} }}")
+                f"set_variable = {{ name = {name} value = {value} }} "
+                "if = { limit = { NOT = { has_variable = ywc_shu_workshop_popup_epoch } } "
+                "set_variable = { name = ywc_shu_workshop_popup_epoch value = 0 } } "
+                "change_variable = { name = ywc_shu_workshop_popup_epoch add = 1 } "
+                "save_scope_value_as = { name = ywc_shu_workshop_popup_epoch value = var:ywc_shu_workshop_popup_epoch } }")
     if tuple(_nqg_node_shape(node) for node in parse_block(event.get("immediate", ""))) != tuple(
             _nqg_node_shape(node) for node in parse_block(expected)):
         raise ValueError(f"{event_id}: unsupported SHU rural native immediate body")

@@ -4,17 +4,61 @@ Imports/construction are gated by root until the StateRef runtime is terminal.
 Business qualification, fees, histories and clocks are always original source ASTs.
 """
 import copy
+from contextlib import contextmanager
 import unittest
 
 from shu_rural_state_runtime import ShuRuralStateWorld, StateRef
 from test_v03_shu_rural_runtime import rural_facts, HOME_PM, RICE
 from test_v03_shu_provincial_contract import (
-    choose, force_option, option_legal, field,
+    choose as _choose, force_option as _force_option, option_legal as _option_legal, field,
 )
 from test_v03_shu_content import shu_monthly_effect
 
 
 SLUG = "v03_shu_rural_workshop"
+POPUP_SCOPE = "ywc_shu_workshop_popup_epoch"
+
+
+class RuralPopup(list):
+    """An independently displayed native event and its saved event scope."""
+    def __init__(self, event, scopes):
+        super().__init__(event)
+        self.popup_value = scopes.get(POPUP_SCOPE)
+
+
+@contextmanager
+def popup_context(world, event):
+    if not isinstance(event, RuralPopup):
+        yield
+        return
+    present = POPUP_SCOPE in world.scopes
+    previous = world.scopes.get(POPUP_SCOPE)
+    if event.popup_value is None:
+        world.scopes.pop(POPUP_SCOPE, None)
+    else:
+        world.scopes[POPUP_SCOPE] = event.popup_value
+    try:
+        yield
+    finally:
+        if present:
+            world.scopes[POPUP_SCOPE] = previous
+        else:
+            world.scopes.pop(POPUP_SCOPE, None)
+
+
+def option_legal(world, event, key):
+    with popup_context(world, event):
+        return _option_legal(world, event, key)
+
+
+def force_option(world, event, key):
+    with popup_context(world, event):
+        return _force_option(world, event, key)
+
+
+def choose(world, arc, event, key):
+    with popup_context(world, event):
+        return _choose(world, arc, event, key)
 P = "ywc_shu_workshop_"
 L = "ywc_v03_shu_v03_shu_rural_workshop_"
 JES = ("ywc_je_v03_shu_workshop_ground", "ywc_je_v03_shu_workshop_yields")
@@ -172,7 +216,7 @@ def deliver(world, arc, number):
                 continue
             assert (tag, actual) == (world.tag, expected), ("unexpected_native_event", actual, expected)
             world.execute(field(event, "immediate"), tag)
-            return event
+            return RuralPopup(event, world.scopes)
         month(world, arc)
     raise AssertionError(("no_actual_event", expected, world.trace[-8:]))
 

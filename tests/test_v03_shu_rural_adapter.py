@@ -45,7 +45,11 @@ def digest(text):
 def immediate(number):
     return ("{ ywc_v03_mark_major_delivered = yes "
             f"set_variable = {{ name = ywc_v03_shu_event_dispatch value = {number} }} "
-            f"set_variable = {{ name = {RECEIPT} value = {number} }} }}")
+            f"set_variable = {{ name = {RECEIPT} value = {number} }} "
+            "if = { limit = { NOT = { has_variable = ywc_shu_workshop_popup_epoch } } "
+            "set_variable = { name = ywc_shu_workshop_popup_epoch value = 0 } } "
+            "change_variable = { name = ywc_shu_workshop_popup_epoch add = 1 } "
+            "save_scope_value_as = { name = ywc_shu_workshop_popup_epoch value = var:ywc_shu_workshop_popup_epoch } }")
 
 
 def synthetic_catalog():
@@ -217,7 +221,7 @@ class RuralAdapterIsolationTests(unittest.TestCase):
             with patch.dict(adapter._SHU_RURAL_SOURCE_HASHES, synthetic_pins(bad["arcs"][-1])[0], clear=True):
                 self.assert_rejected(bad)
 
-    def test_three_native_nodes_require_actual_event_id_and_exact_names_order(self):
+    def test_native_nodes_require_actual_event_id_and_exact_names_order(self):
         catalog = synthetic_catalog()
         self.bind(catalog)
         valid = catalog["arcs"][-1]["events"][0]["immediate"]
@@ -226,6 +230,9 @@ class RuralAdapterIsolationTests(unittest.TestCase):
             valid.replace(RECEIPT, "ywc_shu_delib_last_event"),
             valid.replace("name = ywc_v03_shu_event_dispatch value = 1110", "name = ywc_v03_shu_event_dispatch value = 1"),
             valid.replace("ywc_v03_mark_major_delivered = yes", "ywc_v03_mark_major_delivered = no"),
+            valid.replace("value = var:ywc_shu_workshop_popup_epoch", "value = 1"),
+            valid.replace("name = ywc_shu_workshop_popup_epoch add = 1", "name = ywc_shu_workshop_popup_epoch add = 2"),
+            valid.replace("save_scope_value_as", "save_scope_as"),
             valid[:-1] + " set_variable = { name = extra_node value = 1 } }",
             "{ " + valid[valid.index("set_variable"): -1] + " ywc_v03_mark_major_delivered = yes }",
         )
@@ -332,6 +339,30 @@ def fault_native_receipt(nodes, wrong):
 class RuralActualGeneratedAdapterTests(unittest.TestCase):
     """Run only after root's source/bind/gen gate and business BINDING_READY."""
 
+    def test_generated_callbacks_keep_each_old_popup_inert_after_wait_and_redelivery(self):
+        from test_v03_shu_rural_workshop import (new_world, workshop_arc, RuralPopup,
+                                                 choose, force_option, field, cash)
+        for number, action in ((1110, "rural_processing"), (1111, "pay_admin")):
+            with self.subTest(number=number):
+                world = new_world(); arc = workshop_arc(world.cat)
+                if number == 1111:
+                    opening = capture_actual_event(world, arc, 1110)
+                    world.execute(field(opening, "immediate"), world.tag)
+                    choose(world, arc, RuralPopup(opening, world.scopes), "rural_processing")
+                native = capture_actual_event(world, arc, number)
+                world.execute(field(native, "immediate"), world.tag)
+                old = RuralPopup(native, world.scopes)
+                choose(world, arc, old, "wait_at_" + str(number))
+                newer = capture_actual_event(world, arc, number)
+                world.execute(field(newer, "immediate"), world.tag)
+                current = RuralPopup(newer, world.scopes)
+                before = copy.deepcopy((world.countries, world.treasury, world.active, world.history))
+                force_option(world, old, action)
+                self.assertEqual((world.countries, world.treasury, world.active, world.history), before)
+                self.assertNotEqual(old.popup_value, current.popup_value)
+                choose(world, arc, current, action)
+                self.assertNotEqual((world.countries, world.treasury, world.active, world.history), before)
+
     def test_actual_inventory_pins_generated_outputs_and_all_five_old_arcs(self):
         catalog = current_catalog()
         adapter.validate_inline_catalog(catalog)
@@ -351,7 +382,7 @@ class RuralActualGeneratedAdapterTests(unittest.TestCase):
         for event, proof in zip(arc["events"], proofs):
             number = int(event["id"].rsplit(".", 1)[1])
             self.assertEqual(adapter._shu_rural_native_receipt(event), (RECEIPT, number))
-            self.assertEqual(len(adapter.parse_block(event["immediate"])), 3)
+            self.assertEqual(len(adapter.parse_block(event["immediate"])), 6)
             self.assertEqual(proof["candidates"], [{"queue": QUEUE, "kind": "normal", "mode": "exact", "value": number}])
         rendered = adapter.render_inline_country_adapters(catalog)
         self.assertEqual(sum(map(len, rendered["inline_proofs"].values())), 55)
