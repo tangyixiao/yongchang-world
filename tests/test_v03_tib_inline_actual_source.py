@@ -10,6 +10,7 @@ import copy
 import math
 import unittest
 from tests.clausewitz_harness import PulseWorld, parse
+from tests.actual_source_ast_copy import seed_source_ast_memo
 from tests.test_v03_tib_foundation_lifecycle import TibWorldFacts
 from tests.test_v03_tib_inline_adapter import (_v2_catalog_from_formal_tib_source,
     assert_inline_supported, catalog)
@@ -612,6 +613,7 @@ def copy_actual_world_without_observers(world):
         events=_ScopedDispatchList.__new__(_ScopedDispatchList)
         list.__init__(events)
         memo={id(world):clone,id(world.events):events}
+        seed_source_ast_memo(world,memo)
         clone.__dict__.update(world.__dict__)
         for name,value in world.__dict__.items():
             if name=='events':
