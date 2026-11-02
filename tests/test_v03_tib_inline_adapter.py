@@ -14,10 +14,15 @@ JOURNAL_PATH=ROOT/'yongchang_world/common/journal_entries/ywc_v03_country_tib_jo
 EVENT_PATH=ROOT/'yongchang_world/events/ywc_v03_country_tib_events.txt'
 EFFECTS_PATH=ROOT/'yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt'
 TRIGGERS_PATH=ROOT/'yongchang_world/common/scripted_triggers/ywc_v03_tib_triggers.txt'
-JE_IDS={j["id"] for a in json.loads(CATALOG_PATH.read_text(encoding="utf-8"))["arcs"] for j in a["journals"]}
-ARC_IDS={a["slug"] for a in json.loads(CATALOG_PATH.read_text(encoding="utf-8"))["arcs"]}
+def catalog():
+    # These original contracts audit all three foundation arcs. The revenue
+    # middle arc has its own source-bound and generated-dispatch contracts.
+    data = json.loads(CATALOG_PATH.read_text(encoding='utf-8'))
+    data['arcs'] = [arc for arc in data['arcs'] if arc['era'] == 'foundation']
+    return data
 
-def catalog(): return json.loads(CATALOG_PATH.read_text(encoding='utf-8'))
+JE_IDS={j["id"] for a in catalog()["arcs"] for j in a["journals"]}
+ARC_IDS={a["slug"] for a in catalog()["arcs"]}
 def _native_journals():
     from tools import build_v03_content
     return {k:b for k,_,b in parse(build_v03_content._render_journal_file(catalog(),None))}
@@ -730,7 +735,11 @@ class TibInlineStaticContract(unittest.TestCase):
         cat=catalog()
         native_journals=_builder_defs(build_v03_content._render_journal_file(cat,None))
         native_events=_builder_defs(build_v03_content._render_event_file(cat,ROOT,None))
-        adapter,expected_journals,expected_events=_formal_generated_projection(cat)
+        # Physical generated outputs contain every registered arc. Keep the
+        # legacy assertions below scoped to foundation, but compare the full
+        # on-disk ASTs with a projection of the entire formal catalog.
+        full_catalog=json.loads(CATALOG_PATH.read_text(encoding='utf-8'))
+        adapter,expected_journals,expected_events=_formal_generated_projection(full_catalog)
         actual_journals=_builder_defs(JOURNAL_PATH.read_text(encoding='utf-8-sig'))
         actual_events=_builder_defs(EVENT_PATH.read_text(encoding='utf-8-sig'))
         self.assertEqual({k:(_rows(v) if isinstance(v,tuple) else v) for k,v in actual_journals.items()},
