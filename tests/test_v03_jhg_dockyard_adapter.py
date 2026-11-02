@@ -9,6 +9,17 @@ ROOT=Path(__file__).resolve().parents[1]
 SLUG='v03_jhg_dockyard_capital'
 
 class JhgDockyardSourceBinding(unittest.TestCase):
+ def test_dockyard_middle_is_accepted_by_scheduler_and_release_quota(self):
+  from tools.ywc_v03_check import check_complete_quotas
+  c=json.loads((ROOT/'data/content/v03/countries/jhg.json').read_text(encoding='utf-8-sig'))
+  arc=next(a for a in c['arcs'] if a['slug']==SLUG)
+  self.assertEqual(arc['era'], 'middle')
+  self.assertFalse(any('unrecognized era' in x for x in check_complete_quotas({'country_jhg':c})))
+  render_jhg_inline_country_adapters(c)
+  bad=copy.deepcopy(c); next(a for a in bad['arcs'] if a['slug']==SLUG)['era']='expansion'
+  self.assertTrue(any('unrecognized era' in x for x in check_complete_quotas({'country_jhg':bad})))
+  with self.assertRaises(ValueError): render_jhg_inline_country_adapters(bad)
+
  def test_dockyard_snapshots_capture_real_queue_without_inventing_notice_variables(self):
   c=json.loads((ROOT/'data/content/v03/countries/jhg.json').read_text(encoding='utf-8-sig'))
   result=render_jhg_inline_country_adapters(c)

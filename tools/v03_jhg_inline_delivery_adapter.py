@@ -204,8 +204,8 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
     if len(selected) != 3 or {arc.get("slug") for arc in selected} != EXPECTED_ARCS:
         raise ValueError("JHG inline adapter requires exactly its three foundation arcs")
     dockyard = [arc for arc in arcs if isinstance(arc, dict) and arc.get("slug") == DOCKYARD_ARC]
-    if len(dockyard) > 1 or (dockyard and dockyard[0].get("era") != "expansion"):
-        raise ValueError("JHG dockyard source must be one registered expansion arc")
+    if len(dockyard) > 1 or (dockyard and dockyard[0].get("era") != "middle"):
+        raise ValueError("JHG dockyard source must be one registered middle arc")
     selected += dockyard
     witnesses: set[str] = set()
     all_events: set[str] = set()
