@@ -132,7 +132,7 @@ class TibFoundationTest(unittest.TestCase):
      self.assertEqual([x['id'] for x in a['events']],[f'ywc_tib.{x}' for x in range(lo,lo+n)])
  def test_locked_card_shape_and_bilingual_notes(self):
     self.assertEqual((self.cat['key'],self.cat['layer'],self.cat['runtime_tags']),('country_tib','country',['TIB']))
-    for a in self.cat['arcs']:
+    for a in (a for a in self.cat['arcs'] if a['slug'] in SLUGS):
      self.assertEqual(a['era'],'foundation'); self.assertEqual(a['depends_on'],[]); self.assertGreaterEqual(len(a['outcomes']),4); self.assertGreaterEqual(len(a['legacy_links']),2)
      for e in a['events']:
       self.assertTrue(e['title']['zh'] and e['title']['en']); self.assertTrue(e['desc']['zh'] and e['desc']['en']); self.assertGreaterEqual(len(e['options']),2)
@@ -152,7 +152,7 @@ class TibFoundationTest(unittest.TestCase):
      for e in a['events']:
       self.assertIn(e['id'],alltxt); self.assertIn('ywc_v03_mark_major_delivered = yes',e['immediate']); self.assertIn('ywc_v03_can_deliver_major = yes',e['trigger'])
  def test_entry_journals_use_fixed_slots_and_legacy_continuation(self):
-    for a in self.cat['arcs']:
+    for a in (a for a in self.cat['arcs'] if a['slug'] in SLUGS):
      j=a['journals'][0]['script']
      self.assertGreaterEqual(j.count('var:ywc_v03_active_arc_count < 3'),2); self.assertGreaterEqual(j.count('var:ywc_v03_visible_task_count < 6'),2)
      self.assertIn('change_variable = { name = ywc_v03_active_arc_count add = 1 }',j); self.assertIn('change_variable = { name = ywc_v03_visible_task_count add = 1 }',j)
@@ -350,7 +350,7 @@ class TibFoundationTest(unittest.TestCase):
      self.assertIn('clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }',helper)
 
  def test_journal_phases_resume_without_overwriting_the_queued_node(self):
-    for i,a in enumerate(self.cat['arcs']):
+    for i,a in enumerate(a for a in self.cat['arcs'] if a['slug'] in SLUGS):
      pre=PREFIX[i]
      self.assertIn(f'ywc_tib_{pre}_pending_event',a['journals'][0]['script'])
      if len(a['journals'])>1:
@@ -362,7 +362,7 @@ class TibFoundationTest(unittest.TestCase):
     alltext=json.dumps(self.cat['arcs'],ensure_ascii=False)+'\n'+self.effects
     self.assertNotRegex(alltext,r'\b(?:add_claim|annex|transfer_state)\s*=')
     self.assertNotRegex(alltext,r'activate_law\s*=\s*law_type:law_no_land_ownership|remove_law\s*=')
-    for a in self.cat['arcs']:
+    for a in (a for a in self.cat['arcs'] if a['slug'] in SLUGS):
      self.assertTrue(any('康青' in e['desc']['zh'] or 'neighbor' in e['desc']['en'].lower() for e in a['events']))
 
 

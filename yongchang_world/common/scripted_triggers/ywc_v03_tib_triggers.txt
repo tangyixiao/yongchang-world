@@ -39,3 +39,133 @@ ywc_tib_grain_narrow_ready = { ywc_tib_finance_safe = yes ywc_tib_grain_price_lo
 ywc_tib_grain_route_execution_ready = { OR = { AND = { has_variable = ywc_tib_grain_scope_narrowed ywc_tib_grain_narrow_ready = yes } AND = { var:ywc_tib_grain_route = 1 ywc_tib_grain_ready = yes } AND = { var:ywc_tib_grain_route = 2 ywc_tib_grain_ready = yes } AND = { var:ywc_tib_grain_route = 3 ywc_tib_grain_ready = yes } } }
 ywc_tib_schools_narrow_ready = { ywc_tib_finance_safe = yes ywc_tib_schools_law = yes }
 ywc_tib_schools_route_execution_ready = { OR = { AND = { has_variable = ywc_tib_schools_scope_narrowed ywc_tib_schools_narrow_ready = yes } AND = { var:ywc_tib_schools_route = 1 ywc_tib_schools_ready = yes ywc_tib_has_staffed_university = yes } AND = { var:ywc_tib_schools_route = 2 ywc_tib_schools_ready = yes ywc_tib_has_staffed_admin = yes } AND = { var:ywc_tib_schools_route = 3 ywc_tib_schools_ready = yes } } }
+
+# v03_tib_public_revenue / 《寺产、商税与公共钱粮》 ywc_tib.1120-1129
+ywc_tib_revenue_ready = { ywc_tib_finance_safe = yes NOT = { is_at_war = yes } ywc_tib_revenue_site_available = yes }
+# Earned ledger = the old register arc demonstrably completed successfully:
+# positive outcome 1-3 AND its own settled flag AND NOT a setback/withdraw record.
+ywc_tib_revenue_has_service_ledger = {
+ has_variable = ywc_v03_tib_v03_tib_service_register_started var:ywc_v03_tib_v03_tib_service_register_started = 1
+ has_variable = ywc_v03_tib_v03_tib_service_register_settled var:ywc_v03_tib_v03_tib_service_register_settled = 1
+ has_variable = ywc_tib_register_paid var:ywc_tib_register_paid = 1
+ has_variable = ywc_tib_register_implementation_complete var:ywc_tib_register_implementation_complete = 1
+ has_variable = ywc_tib_register_six_months_complete var:ywc_tib_register_six_months_complete = 1
+ has_variable = ywc_v03_tib_v03_tib_service_register_outcome var:ywc_v03_tib_v03_tib_service_register_outcome >= 1 var:ywc_v03_tib_v03_tib_service_register_outcome <= 3
+ has_variable = ywc_tib_register_route
+ OR = {
+  AND = { var:ywc_tib_register_route = 1 has_variable = ywc_tib_register_route_cost_1 var:ywc_tib_register_route_cost_1 > 0 }
+  AND = { var:ywc_tib_register_route = 2 has_variable = ywc_tib_register_route_cost_2 var:ywc_tib_register_route_cost_2 > 0 }
+  AND = { var:ywc_tib_register_route = 3 has_variable = ywc_tib_register_route_cost_3 var:ywc_tib_register_route_cost_3 > 0 }
+ }
+ NOT = { has_variable = ywc_tib_register_withdrawn }
+ NOT = { has_variable = ywc_tib_register_setback }
+}
+# Earned grain ledger = old grain arc demonstrably completed. This is evidence of
+# a finished policy, NOT an unpaid debt: it reduces verification cost (the office
+# can reuse the audited granary books), it never multiplies costs.
+ywc_tib_revenue_has_grain_ledger = {
+ has_variable = ywc_v03_tib_v03_tib_grain_credit_started var:ywc_v03_tib_v03_tib_grain_credit_started = 1
+ has_variable = ywc_v03_tib_v03_tib_grain_credit_settled var:ywc_v03_tib_v03_tib_grain_credit_settled = 1
+ has_variable = ywc_tib_grain_paid var:ywc_tib_grain_paid = 1
+ has_variable = ywc_tib_grain_implementation_complete var:ywc_tib_grain_implementation_complete = 1
+ has_variable = ywc_tib_grain_six_months_complete var:ywc_tib_grain_six_months_complete = 1
+ has_variable = ywc_v03_tib_v03_tib_grain_credit_outcome var:ywc_v03_tib_v03_tib_grain_credit_outcome >= 1 var:ywc_v03_tib_v03_tib_grain_credit_outcome <= 3
+ has_variable = ywc_tib_grain_route
+ OR = {
+  AND = { var:ywc_tib_grain_route = 1 has_variable = ywc_tib_grain_route_cost_1 var:ywc_tib_grain_route_cost_1 > 0 }
+  AND = { var:ywc_tib_grain_route = 2 has_variable = ywc_tib_grain_route_cost_2 var:ywc_tib_grain_route_cost_2 > 0 }
+  AND = { var:ywc_tib_grain_route = 3 has_variable = ywc_tib_grain_route_cost_3 var:ywc_tib_grain_route_cost_3 > 0 }
+ }
+ NOT = { has_variable = ywc_tib_grain_withdrawn }
+ NOT = { has_variable = ywc_tib_grain_setback }
+}
+ywc_tib_revenue_tax_law_base = { OR = { has_law_or_variant = law_type:law_land_based_taxation has_law_or_variant = law_type:law_per_capita_based_taxation } }
+ywc_tib_revenue_route_1_ready = { ywc_tib_revenue_ready = yes ywc_tib_revenue_pilot_ready = yes ywc_tib_revenue_tax_law_base = yes var:ywc_tib_revenue_pilot = { owner = ROOT radical_fraction = { value > 0.25 pop_type = laborers } } }
+ywc_tib_revenue_route_2_ready = { ywc_tib_revenue_ready = yes ywc_tib_revenue_pilot_ready = yes ywc_tib_revenue_tax_law_base = yes net_fixed_income >= 0 }
+ywc_tib_revenue_route_3_ready = { ywc_tib_revenue_ready = yes ywc_tib_revenue_pilot_ready = yes var:ywc_tib_revenue_pilot = { owner = ROOT market_access >= 0.1 } }
+ywc_tib_revenue_payable_1 = { NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= var:ywc_tib_revenue_route_cost_1 }
+ywc_tib_revenue_payable_2 = { NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= var:ywc_tib_revenue_route_cost_2 }
+ywc_tib_revenue_payable_3 = { NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } gold_reserves >= var:ywc_tib_revenue_route_cost_3 }
+ywc_tib_revenue_recovery_phase = { OR = { AND = { has_journal_entry = ywc_je_v03_tib_revenue_2 var:ywc_tib_revenue_stage = 1 } AND = { has_journal_entry = ywc_je_v03_tib_revenue_3 var:ywc_tib_revenue_stage = 2 } } }
+ywc_tib_revenue_narrow_ready = { ywc_tib_finance_safe = yes NOT = { is_at_war = yes } ywc_tib_revenue_tax_law_base = yes ywc_tib_revenue_pilot_ready = yes }
+ywc_tib_revenue_route_execution_ready = { ywc_tib_revenue_pilot_ready = yes NOT = { is_at_war = yes } OR = { AND = { has_variable = ywc_tib_revenue_scope_narrowed var:ywc_tib_revenue_scope_narrowed = 1 ywc_tib_revenue_narrow_ready = yes } AND = { var:ywc_tib_revenue_route = 1 ywc_tib_revenue_route_1_ready = yes } AND = { var:ywc_tib_revenue_route = 2 ywc_tib_revenue_route_2_ready = yes } AND = { var:ywc_tib_revenue_route = 3 ywc_tib_revenue_route_3_ready = yes } } }
+
+# Receipt + current native phase + own queue for every public-revenue popup.
+ywc_tib_revenue_at_1120 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1120 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_1  NOT = { has_variable = ywc_tib_revenue_paid }
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1120 }
+}
+ywc_tib_revenue_at_1121 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1121 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_1 var:ywc_tib_revenue_stage = 0 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1121 }
+}
+ywc_tib_revenue_at_1122 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1122 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_1 var:ywc_tib_revenue_stage = 0 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1122 }
+}
+ywc_tib_revenue_at_1123 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1123 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_1 var:ywc_tib_revenue_stage = 0 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1123 }
+}
+ywc_tib_revenue_at_1124 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1124 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_2 var:ywc_tib_revenue_stage = 1 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1124 }
+}
+ywc_tib_revenue_at_1125 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1125 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ OR = { has_journal_entry = ywc_je_v03_tib_revenue_1 has_journal_entry = ywc_je_v03_tib_revenue_2 has_journal_entry = ywc_je_v03_tib_revenue_3 } has_variable = ywc_tib_revenue_blocked_started  has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_notice_12_event } var:ywc_tib_revenue_notice_12_event = 1125 }
+}
+ywc_tib_revenue_at_1126 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1126 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ OR = { has_journal_entry = ywc_je_v03_tib_revenue_1 has_journal_entry = ywc_je_v03_tib_revenue_2 has_journal_entry = ywc_je_v03_tib_revenue_3 } has_variable = ywc_tib_revenue_blocked_started  has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_notice_36_event } var:ywc_tib_revenue_notice_36_event = 1126 }
+}
+ywc_tib_revenue_at_1127 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1127 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_3 var:ywc_tib_revenue_stage = 2 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1127 }
+}
+ywc_tib_revenue_at_1128 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1128 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_3 var:ywc_tib_revenue_stage = 2 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1128 }
+}
+ywc_tib_revenue_at_1129 = {
+ has_variable = ywc_v03_tib_v03_tib_public_revenue_started var:ywc_v03_tib_v03_tib_public_revenue_started = 1
+ NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled } NOT = { has_variable = ywc_tib_revenue_withdrawn }
+ has_variable = ywc_tib_revenue_receipt var:ywc_tib_revenue_receipt = 1129 has_variable = ywc_tib_revenue_popup_epoch exists = scope:ywc_tib_revenue_popup_epoch scope:ywc_tib_revenue_popup_epoch = var:ywc_tib_revenue_popup_epoch
+ has_journal_entry = ywc_je_v03_tib_revenue_3 var:ywc_tib_revenue_stage = 2 has_variable = ywc_tib_revenue_paid var:ywc_tib_revenue_paid = 1 NOT = { has_variable = ywc_tib_revenue_implementation_complete }
+ OR = { NOT = { has_variable = ywc_tib_revenue_pending_event } var:ywc_tib_revenue_pending_event = 1129 }
+}
+
+# Capture and revalidate one exact owned state, never a region or replacement.
+ywc_tib_revenue_site_available = { any_scope_state = { owner = ROOT
+ any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+ OR = { market_access >= 0.1 any_scope_pop = { OR = { is_pop_type = farmers is_pop_type = laborers } is_employed = yes workplace ?= { OR = { is_building_type = building_rice_farm is_building_type = building_wheat_farm is_building_type = building_millet_farm } occupancy >= 0.5 building_has_goods_shortage = no } } } } }
+ywc_tib_revenue_pilot_ready = { has_variable = ywc_tib_revenue_pilot exists = var:ywc_tib_revenue_pilot var:ywc_tib_revenue_pilot = { owner = ROOT
+ any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+ OR = { market_access >= 0.1 any_scope_pop = { OR = { is_pop_type = farmers is_pop_type = laborers } is_employed = yes workplace ?= { OR = { is_building_type = building_rice_farm is_building_type = building_wheat_farm is_building_type = building_millet_farm } occupancy >= 0.5 building_has_goods_shortage = no } } } } }
