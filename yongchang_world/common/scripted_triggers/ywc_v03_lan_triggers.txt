@@ -581,3 +581,465 @@ ywc_lan_public_terminal_base = yes NOT = { has_variable = ywc_lan_public_bounded
 ywc_lan_public_terminal_compromise = {
 ywc_lan_public_terminal_base = yes OR = { AND = { has_variable = ywc_lan_public_bounded ywc_lan_public_bounded_conditions = yes } AND = { NOT = { has_variable = ywc_lan_public_bounded } var:ywc_lan_public_mode = 3 ywc_lan_public_shareholder_conditions = yes } }
 }
+
+# LAN beyond-gold (v03_lan_beyond_gold). Append-only; prefix ywc_lan_gold_*.
+# Every check is a live country/pop/building/treasury fact. Nothing here reads
+# a progress score, grants a building, invents a resource or assumes consent.
+
+# A candidate owned state in West Borneo, before the pilot is captured.
+ywc_lan_gold_has_pilot = {
+	any_scope_state = { owner = ROOT state_region = s:STATE_WEST_BORNEO }
+}
+
+ywc_lan_gold_can_pay = {
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+ywc_lan_gold_finance_safe = {
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+	bureaucracy >= 0
+}
+
+# The pilot StateRef is captured once at 1120 and every later check is scoped
+# to that exact object. A different owned West Borneo state (or a re-owned new
+# object) can never silently satisfy these predicates.
+ywc_lan_gold_pilot_captured = {
+	exists = var:ywc_lan_gold_pilot_state
+}
+
+ywc_lan_gold_pilot_owned = {
+	ywc_lan_gold_pilot_captured = yes
+	var:ywc_lan_gold_pilot_state = { owner = ROOT }
+}
+
+# The originally captured state is lost: unset, not owned, or destroyed.
+ywc_lan_gold_pilot_lost = {
+	ywc_lan_gold_open = yes
+	NOT = { ywc_lan_gold_pilot_owned = yes }
+}
+
+# A loss has been observed (the captured pilot is no longer ours) and an honest
+# setback still needs to be delivered to the player. This keeps the journal
+# open until the 1126/1127 setback option is actually chosen.
+ywc_lan_gold_loss_recorded = {
+	ywc_lan_gold_open = yes
+	has_variable = ywc_lan_gold_loss_observed
+}
+
+# The loss is real and current but has not yet been written as the deliverable.
+ywc_lan_gold_loss_pending = {
+	ywc_lan_gold_open = yes
+	ywc_lan_gold_pilot_captured = yes
+	NOT = { ywc_lan_gold_pilot_owned = yes }
+	NOT = { has_variable = ywc_lan_gold_outcome }
+}
+
+# A mine that actually exists in the captured pilot state, at real employment.
+ywc_lan_gold_mine_plus = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_gold_mine
+			level >= 2
+			occupancy >= 0.6
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_lan_gold_mine_sub = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_gold_mine
+			level >= 1
+			occupancy >= 0.4
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+# Labourers who are really employed at a gold mine in the captured pilot state.
+ywc_lan_gold_mine_worker = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_pop = {
+			is_pop_type = laborers
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_gold_mine
+				occupancy >= 0.4
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+# Processing: a food-processing building staffed in the captured pilot state.
+ywc_lan_gold_processing_plus = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_food_industry
+			level >= 1
+			occupancy >= 0.7
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_lan_gold_processing_sub = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_food_industry
+			level >= 1
+			occupancy >= 0.4
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_lan_gold_processing_worker = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_pop = {
+			OR = { is_pop_type = laborers is_pop_type = machinists }
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_food_industry
+				occupancy >= 0.4
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+# Agriculture: a rice farm actually worked in the captured pilot state.
+ywc_lan_gold_farm_plus = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_rice_farm
+			level >= 2
+			occupancy >= 0.6
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_lan_gold_farm_sub = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_rice_farm
+			level >= 1
+			occupancy >= 0.4
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_lan_gold_farmer = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_pop = {
+			is_pop_type = farmers
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_rice_farm
+				occupancy >= 0.4
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+# Staffed public offices in the captured pilot state.
+ywc_lan_gold_office = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_building = {
+			is_building_type = building_government_administration
+			level >= 1
+			occupancy >= 0.5
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_lan_gold_bureaucrat = {
+	ywc_lan_gold_pilot_owned = yes
+	var:ywc_lan_gold_pilot_state = {
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= {
+				is_building_type = building_government_administration
+				occupancy >= 0.5
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+ywc_lan_gold_office_ready = {
+	ywc_lan_gold_office = yes
+	ywc_lan_gold_bureaucrat = yes
+	ywc_lan_gold_finance_safe = yes
+}
+
+# A full responsibility arrangement: a staffed pilot office, or -- because a
+# finished public mandate already leaves a named, staffed public budget office
+# -- that genuine prior fact plus the pilot office itself.
+ywc_lan_gold_responsible_full = {
+	OR = {
+		ywc_lan_gold_office_ready = yes
+		AND = { ywc_lan_gold_source_leverage = yes ywc_lan_gold_office = yes }
+	}
+}
+
+ywc_lan_gold_open = {
+	has_variable = ywc_v03_lan_v03_lan_beyond_gold_started
+	NOT = { has_variable = ywc_v03_lan_v03_lan_beyond_gold_settled }
+	NOT = { has_variable = ywc_lan_gold_outcome }
+}
+
+ywc_lan_gold_stage_1120 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_livelihood var:ywc_lan_gold_stage = 1120
+}
+
+ywc_lan_gold_stage_1121 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_livelihood var:ywc_lan_gold_stage = 1121
+}
+
+ywc_lan_gold_stage_1122 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_livelihood var:ywc_lan_gold_stage = 1122
+}
+
+ywc_lan_gold_stage_1123 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_livelihood var:ywc_lan_gold_stage = 1123
+}
+
+ywc_lan_gold_stage_1124 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_livelihood var:ywc_lan_gold_stage = 1124
+}
+
+ywc_lan_gold_stage_1125 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_share_future var:ywc_lan_gold_stage = 1125
+}
+
+ywc_lan_gold_stage_1126 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_share_future var:ywc_lan_gold_stage = 1126
+}
+
+ywc_lan_gold_stage_1127 = {
+	ywc_lan_gold_open = yes has_journal_entry = ywc_je_v03_lan_gold_share_future var:ywc_lan_gold_stage = 1127
+}
+
+ywc_lan_gold_at_1120 = {
+	ywc_lan_gold_stage_1120 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 1 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1120 }
+}
+
+ywc_lan_gold_at_1121 = {
+	ywc_lan_gold_stage_1121 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 2 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1121 }
+}
+
+ywc_lan_gold_at_1122 = {
+	ywc_lan_gold_stage_1122 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 3 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1122 }
+}
+
+ywc_lan_gold_at_1123 = {
+	ywc_lan_gold_stage_1123 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 4 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1123 }
+}
+
+ywc_lan_gold_at_1124 = {
+	ywc_lan_gold_stage_1124 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 5 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1124 }
+}
+
+ywc_lan_gold_at_1125 = {
+	ywc_lan_gold_stage_1125 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 6 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1125 }
+}
+
+ywc_lan_gold_at_1126 = {
+	ywc_lan_gold_stage_1126 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 7 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1126 }
+}
+
+ywc_lan_gold_at_1127 = {
+	ywc_lan_gold_stage_1127 = yes var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 8 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch OR = { NOT = { has_variable = ywc_lan_gold_pending_event } var:ywc_lan_gold_pending_event = 1127 }
+}
+
+# The sender must claim the pending loss exactly once; the result action is
+# separately gated by the receipt written after the event is actually delivered.
+ywc_lan_gold_seed_rate_half = {
+	OR = { ywc_lan_gold_source_precedent = yes ywc_lan_gold_source_leverage = yes }
+}
+
+ywc_lan_gold_seed_affordable = {
+	has_variable = ywc_lan_gold_seed_unit
+	OR = {
+		AND = { ywc_lan_gold_seed_rate_half = yes gold_reserves >= { value = var:ywc_lan_gold_seed_unit multiply = 0.5 } }
+		AND = { NOT = { ywc_lan_gold_seed_rate_half = yes } gold_reserves >= var:ywc_lan_gold_seed_unit }
+	}
+}
+
+ywc_lan_gold_loss_ready = {
+	ywc_lan_gold_loss_recorded = yes
+	var:ywc_lan_gold_loss_stage = 1126
+	has_variable = ywc_lan_gold_pending_event
+	var:ywc_lan_gold_pending_event = 1126
+}
+
+ywc_lan_gold_at_loss = {
+	ywc_lan_gold_loss_recorded = yes
+	var:ywc_lan_gold_loss_stage = 1126
+	var:ywc_v03_lan_v03_lan_beyond_gold_last_event = 7 has_variable = ywc_lan_gold_popup_epoch exists = scope:ywc_lan_gold_popup_epoch scope:ywc_lan_gold_popup_epoch = var:ywc_lan_gold_popup_epoch
+	NOT = { has_variable = ywc_lan_gold_pending_event }
+}
+
+ywc_lan_gold_route_chosen = {
+	OR = {
+		var:ywc_lan_gold_route = 1
+		var:ywc_lan_gold_route = 2
+		var:ywc_lan_gold_route = 3
+	}
+}
+
+# Strategy-specific live production. Used by the continuous six-month audit and
+# by the settled ends. Each route reads only its own real sector.
+ywc_lan_gold_route_live_plus = {
+	OR = {
+		AND = { var:ywc_lan_gold_route = 1 ywc_lan_gold_processing_plus = yes ywc_lan_gold_processing_worker = yes ywc_lan_gold_mine_sub = yes }
+		AND = { var:ywc_lan_gold_route = 2 ywc_lan_gold_farm_plus = yes ywc_lan_gold_farmer = yes ywc_lan_gold_office = yes }
+		AND = { var:ywc_lan_gold_route = 3 ywc_lan_gold_mine_plus = yes ywc_lan_gold_mine_worker = yes ywc_lan_gold_office_ready = yes }
+	}
+}
+
+ywc_lan_gold_route_live_sub = {
+	OR = {
+		AND = { var:ywc_lan_gold_route = 1 ywc_lan_gold_processing_sub = yes ywc_lan_gold_processing_worker = yes }
+		AND = { var:ywc_lan_gold_route = 2 ywc_lan_gold_farm_sub = yes ywc_lan_gold_farmer = yes }
+		AND = { var:ywc_lan_gold_route = 3 ywc_lan_gold_mine_sub = yes ywc_lan_gold_mine_worker = yes }
+	}
+}
+
+# The live facts a route needs, re-checked at every observation month. The
+# captured pilot must still be owned; its sector predicates are scoped to it.
+ywc_lan_gold_current_conditions = {
+	ywc_lan_gold_pilot_owned = yes
+	ywc_lan_gold_finance_safe = yes
+	ywc_lan_gold_route_chosen = yes
+	is_at_war = no
+	ywc_lan_gold_route_live_sub = yes
+	OR = { has_variable = ywc_lan_gold_bounded ywc_lan_gold_route_live_plus = yes }
+	OR = { NOT = { var:ywc_lan_gold_route = 3 } ywc_lan_gold_office = yes }
+}
+
+ywc_lan_gold_seed_ready = {
+	ywc_lan_gold_open = yes
+	has_variable = ywc_lan_gold_seed_paid var:ywc_lan_gold_seed_paid = 1
+	var:ywc_lan_gold_seed_paid_amount >= 50
+	OR = { NOT = { has_variable = ywc_lan_gold_route } ywc_lan_gold_route_chosen = yes }
+}
+
+ywc_lan_gold_basis_ready = {
+	has_variable = ywc_lan_gold_basis_paid var:ywc_lan_gold_basis_paid = 1
+}
+
+ywc_lan_gold_review_started = {
+	OR = {
+		has_variable = ywc_lan_gold_observation_running
+		has_variable = ywc_lan_gold_observation_done
+		has_variable = ywc_lan_gold_observation_interrupted
+		has_variable = ywc_lan_gold_observation_waiting
+	}
+}
+
+ywc_lan_gold_review_mature = {
+	has_variable = ywc_lan_gold_observation_done
+	var:ywc_lan_gold_observation_done = 1
+	has_variable = ywc_lan_gold_review_streak
+	var:ywc_lan_gold_review_streak >= 6
+	NOT = { has_variable = ywc_lan_gold_observation_interrupted }
+}
+
+ywc_lan_gold_review_interrupted = {
+	has_variable = ywc_lan_gold_observation_interrupted
+}
+
+# The prior-line sources. Only genuine settlement + payment histories count;
+# no other-policy state is disturbed and no prior cash is transferred here.
+ywc_lan_gold_source_leverage = {
+	has_variable = ywc_v03_lan_v03_lan_company_public_started var:ywc_v03_lan_v03_lan_company_public_started = 1
+	has_variable = ywc_v03_lan_v03_lan_company_public_settled var:ywc_v03_lan_v03_lan_company_public_settled = 1
+	has_variable = ywc_v03_lan_v03_lan_company_public_outcome var:ywc_v03_lan_v03_lan_company_public_outcome = 1
+	has_variable = ywc_lan_public_outcome var:ywc_lan_public_outcome = 1
+	has_variable = ywc_lan_public_charter_paid var:ywc_lan_public_charter_paid = 1
+	has_variable = ywc_lan_public_review_paid var:ywc_lan_public_review_paid = 1
+	has_variable = ywc_lan_public_charter_paid_amount var:ywc_lan_public_charter_paid_amount > 0
+	has_variable = ywc_lan_public_review_paid_amount var:ywc_lan_public_review_paid_amount > 0
+	NOT = { has_variable = ywc_lan_public_withdrawn }
+	OR = { var:ywc_lan_public_mode = 1 var:ywc_lan_public_mode = 3 }
+}
+
+ywc_lan_gold_source_precedent = {
+	has_variable = ywc_v03_lan_v03_lan_mine_accounts_started var:ywc_v03_lan_v03_lan_mine_accounts_started = 1
+	has_variable = ywc_v03_lan_v03_lan_mine_accounts_settled var:ywc_v03_lan_v03_lan_mine_accounts_settled = 1
+	var:ywc_v03_lan_v03_lan_mine_accounts_outcome >= 1
+	has_variable = ywc_lan_mine_established var:ywc_lan_mine_established = 1
+	has_variable = ywc_lan_mine_settled var:ywc_lan_mine_settled = 1
+	var:ywc_lan_mine_route = 1
+	has_variable = ywc_lan_mine_filing_fee_paid var:ywc_lan_mine_filing_fee_paid = 1
+	has_variable = ywc_lan_mine_reserve_paid var:ywc_lan_mine_reserve_paid = 1
+	has_variable = ywc_lan_mine_public_share_taken var:ywc_lan_mine_public_share_taken = 1
+	ywc_lan_gold_office = yes
+}
+
+# Three settlement ends are gated on real outcomes, not on scores.
+# ywc_lan_gold_current_conditions already requires any non-bounded route to
+# hold its plus-level sector, so these clauses are explicit documentation of
+# the intent and keep the close honest when a bounded run later reaches plus.
+# Established needs the full (unbounded) route plus its plus-level sector;
+# compromise needs a bounded/narrowed run with its sub-level sector; and a
+# setback is recorded when neither holds.
+ywc_lan_gold_terminal_established = {
+	ywc_lan_gold_pilot_owned = yes
+	ywc_lan_gold_review_mature = yes
+	ywc_lan_gold_seed_ready = yes
+	ywc_lan_gold_basis_ready = yes
+	ywc_lan_gold_current_conditions = yes
+	ywc_lan_gold_route_live_plus = yes
+	has_variable = ywc_lan_gold_responsible_recorded
+	NOT = { has_variable = ywc_lan_gold_bounded }
+	NOT = { has_variable = ywc_lan_gold_setback_recorded }
+	NOT = { ywc_lan_gold_loss_recorded = yes }
+}
+
+ywc_lan_gold_terminal_compromise = {
+	ywc_lan_gold_pilot_owned = yes
+	ywc_lan_gold_review_mature = yes
+	ywc_lan_gold_seed_ready = yes
+	ywc_lan_gold_basis_ready = yes
+	ywc_lan_gold_current_conditions = yes
+	ywc_lan_gold_route_live_sub = yes
+	has_variable = ywc_lan_gold_responsible_recorded
+	OR = { has_variable = ywc_lan_gold_bounded has_variable = ywc_lan_gold_narrowed }
+	NOT = { has_variable = ywc_lan_gold_setback_recorded }
+	NOT = { ywc_lan_gold_loss_recorded = yes }
+}
+
+# A real setback may be recorded either because the captured pilot was lost
+# (so success predicates can never hold and must not dereference it) or because
+# neither success end holds on live facts. This trigger never reads the pilot.
+ywc_lan_gold_terminal_setback = {
+	OR = {
+		ywc_lan_gold_loss_recorded = yes
+		AND = {
+			NOT = { ywc_lan_gold_loss_recorded = yes }
+			NOT = { ywc_lan_gold_terminal_established = yes }
+			NOT = { ywc_lan_gold_terminal_compromise = yes }
+		}
+	}
+}
