@@ -718,6 +718,7 @@ def validate(
         report = audit_modifiers(mod_root, Path(game_root))
         diagnostics.extend(report["unknown_modifier_types"])
         diagnostics.extend(report["undeclared_modifier_references"])
+        diagnostics.extend(report["invalid_add_modifier_arguments"])
 
     # Amendments attach to an *active law* at script level, and the engine
     # ignores a country/group mismatch silently, so the parent law is checked
