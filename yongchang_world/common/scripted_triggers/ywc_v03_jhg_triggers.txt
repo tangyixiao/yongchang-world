@@ -501,3 +501,165 @@ ywc_jhg_escort_contract_partner_intact = {
 		}
 	}
 }
+
+# Dockyard: reuse only genuine paid, completed foundation commitments.
+ywc_jhg_dock_court_source_earned = {
+ has_variable = ywc_jhg_v03_jhg_court_assembly_started var:ywc_jhg_v03_jhg_court_assembly_started = 1
+ has_variable = ywc_jhg_v03_jhg_court_assembly_settled var:ywc_jhg_v03_jhg_court_assembly_settled = 1
+ has_variable = ywc_jhg_v03_jhg_court_assembly_outcome var:ywc_jhg_v03_jhg_court_assembly_outcome >= 1 var:ywc_jhg_v03_jhg_court_assembly_outcome <= 2
+ has_variable = ywc_jhg_court_filing_fee_paid var:ywc_jhg_court_filing_fee_paid = 1
+ has_variable = ywc_jhg_court_filing_fee var:ywc_jhg_court_filing_fee > 0
+ has_variable = ywc_jhg_court_six_months_complete var:ywc_jhg_court_six_months_complete = 1
+}
+ywc_jhg_dock_convoy_source_earned = {
+ has_variable = ywc_jhg_v03_jhg_convoy_capacity_started var:ywc_jhg_v03_jhg_convoy_capacity_started = 1
+ has_variable = ywc_jhg_v03_jhg_convoy_capacity_settled var:ywc_jhg_v03_jhg_convoy_capacity_settled = 1
+ has_variable = ywc_jhg_v03_jhg_convoy_capacity_outcome var:ywc_jhg_v03_jhg_convoy_capacity_outcome >= 1 var:ywc_jhg_v03_jhg_convoy_capacity_outcome <= 2
+ has_variable = ywc_jhg_convoy_filing_fee_paid var:ywc_jhg_convoy_filing_fee_paid = 1
+ has_variable = ywc_jhg_convoy_filing_fee var:ywc_jhg_convoy_filing_fee > 0
+ has_variable = ywc_jhg_convoy_six_months_complete var:ywc_jhg_convoy_six_months_complete = 1
+}
+
+# Current obligations are always evaluated within the originally captured state.
+ywc_jhg_dock_pilot_ready = {
+ has_variable = ywc_jhg_dock_pilot
+ exists = var:ywc_jhg_dock_pilot
+ ROOT.var:ywc_jhg_dock_pilot = { owner = ROOT
+ any_scope_pop = { OR = { is_pop_type = laborers is_pop_type = machinists } is_employed = yes workplace ?= { is_building_type = building_shipyard occupancy >= 0.5 building_has_goods_shortage = no } }
+ any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } }
+}
+
+ywc_jhg_dock_site_available = {
+ any_scope_state = {
+  owner = ROOT
+  any_scope_pop = { OR = { is_pop_type = laborers is_pop_type = machinists } is_employed = yes workplace ?= { is_building_type = building_shipyard occupancy >= 0.5 building_has_goods_shortage = no } }
+  any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+ }
+}
+
+ywc_jhg_dock_at_1100 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 1
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1100
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1100 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_open
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1100 }
+}
+
+ywc_jhg_dock_can_choose_1 = {
+ ywc_jhg_dock_at_1100 = yes
+ NOT = { has_variable = ywc_jhg_dock_paid } NOT = { has_variable = ywc_jhg_dock_paid_amount }
+ has_variable = ywc_jhg_dock_cost_captured var:ywc_jhg_dock_cost_captured = 1
+ has_variable = ywc_jhg_dock_cost_1 var:ywc_jhg_dock_cost_1 > 0
+ gold_reserves >= var:ywc_jhg_dock_cost_1
+ ywc_jhg_finance_safe = yes ywc_jhg_dock_pilot_ready = yes navy_size >= 1
+}
+
+ywc_jhg_dock_can_choose_2 = {
+ ywc_jhg_dock_at_1100 = yes
+ NOT = { has_variable = ywc_jhg_dock_paid } NOT = { has_variable = ywc_jhg_dock_paid_amount }
+ has_variable = ywc_jhg_dock_cost_captured var:ywc_jhg_dock_cost_captured = 1
+ has_variable = ywc_jhg_dock_cost_2 var:ywc_jhg_dock_cost_2 > 0
+ gold_reserves >= var:ywc_jhg_dock_cost_2
+ ywc_jhg_finance_safe = yes ywc_jhg_dock_pilot_ready = yes  OR = { NOT = { has_variable = ywc_jhg_dock_court_applied } AND = { var:ywc_jhg_dock_court_applied = 1 ywc_jhg_dock_court_source_earned = yes } }
+}
+
+ywc_jhg_dock_can_choose_3 = {
+ ywc_jhg_dock_at_1100 = yes
+ NOT = { has_variable = ywc_jhg_dock_paid } NOT = { has_variable = ywc_jhg_dock_paid_amount }
+ has_variable = ywc_jhg_dock_cost_captured var:ywc_jhg_dock_cost_captured = 1
+ has_variable = ywc_jhg_dock_cost_3 var:ywc_jhg_dock_cost_3 > 0
+ gold_reserves >= var:ywc_jhg_dock_cost_3
+ ywc_jhg_finance_safe = yes ywc_jhg_dock_pilot_ready = yes
+}
+
+# A paid duty reads current state and any genuinely adopted historical source.
+ywc_jhg_dock_current_duty = {
+ has_variable = ywc_jhg_dock_route var:ywc_jhg_dock_route >= 1 var:ywc_jhg_dock_route <= 3
+ has_variable = ywc_jhg_dock_paid var:ywc_jhg_dock_paid = 1
+ has_variable = ywc_jhg_dock_paid_amount var:ywc_jhg_dock_paid_amount > 0
+ ywc_jhg_finance_safe = yes ywc_jhg_dock_pilot_ready = yes
+ OR = { NOT = { var:ywc_jhg_dock_route = 1 } navy_size >= 1 }
+ OR = { NOT = { var:ywc_jhg_dock_route = 2 } NOT = { has_variable = ywc_jhg_dock_court_applied } AND = { var:ywc_jhg_dock_court_applied = 1 ywc_jhg_dock_court_source_earned = yes } }
+ OR = { NOT = { has_variable = ywc_jhg_dock_convoy_applied } AND = { var:ywc_jhg_dock_convoy_applied = 1 ywc_jhg_dock_convoy_source_earned = yes } }
+}
+
+ywc_jhg_dock_at_1101 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 1
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1101
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1101 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_open
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1101 }
+}
+
+ywc_jhg_dock_at_1102 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 1
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1102
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1102 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_open
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1102 }
+}
+
+ywc_jhg_dock_at_1103 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 1
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1103
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1103 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_open
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1103 }
+}
+
+ywc_jhg_dock_at_1104 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 2
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1104
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1104 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_review
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1104 }
+}
+
+ywc_jhg_dock_at_1105 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 2
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1105
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1105 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_review
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1105 }
+}
+
+ywc_jhg_dock_at_1106 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 2
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1106
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1106 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_review
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1106 }
+}
+
+ywc_jhg_dock_at_1107 = {
+ has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1
+ NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+ has_variable = ywc_jhg_dock_phase var:ywc_jhg_dock_phase = 2
+ has_variable = ywc_jhg_dock_stage var:ywc_jhg_dock_stage = 1107
+ has_variable = ywc_jhg_dock_last_event var:ywc_jhg_dock_last_event = 1107 has_variable = ywc_jhg_dock_popup_epoch exists = scope:ywc_jhg_dock_popup_epoch scope:ywc_jhg_dock_popup_epoch = var:ywc_jhg_dock_popup_epoch
+ has_journal_entry = ywc_je_v03_jhg_dockyard_review
+ OR = { NOT = { has_variable = ywc_jhg_dock_pending_event } var:ywc_jhg_dock_pending_event = 1107 }
+}
+ywc_jhg_dock_can_advance_1101 = { ywc_jhg_dock_at_1101 = yes ywc_jhg_dock_current_duty = yes }
+ywc_jhg_dock_can_advance_1102 = { ywc_jhg_dock_at_1102 = yes ywc_jhg_dock_current_duty = yes }
+ywc_jhg_dock_can_advance_1103 = { ywc_jhg_dock_at_1103 = yes ywc_jhg_dock_current_duty = yes }
+ywc_jhg_dock_can_advance_1104 = { ywc_jhg_dock_at_1104 = yes ywc_jhg_dock_current_duty = yes }
+ywc_jhg_dock_can_advance_1106 = { ywc_jhg_dock_at_1106 = yes ywc_jhg_dock_current_duty = yes has_variable = ywc_jhg_dock_review_mature var:ywc_jhg_dock_review_mature = 1 has_variable = ywc_jhg_dock_review_streak var:ywc_jhg_dock_review_streak >= 6 NOT = { has_variable = ywc_jhg_dock_review_interrupted } }
+
+ywc_jhg_dock_can_use_old_convoy = { ywc_jhg_dock_at_1104 = yes ywc_jhg_dock_current_duty = yes ywc_jhg_dock_convoy_source_earned = yes NOT = { has_variable = ywc_jhg_dock_convoy_applied } }
+ywc_jhg_dock_can_observe = { ywc_jhg_dock_at_1105 = yes ywc_jhg_dock_current_duty = yes NOT = { has_variable = ywc_jhg_dock_review_running } NOT = { has_variable = ywc_jhg_dock_review_mature } }
+ywc_jhg_dock_can_close = { ywc_jhg_dock_at_1107 = yes ywc_jhg_dock_current_duty = yes has_variable = ywc_jhg_dock_review_mature var:ywc_jhg_dock_review_mature = 1 has_variable = ywc_jhg_dock_review_streak var:ywc_jhg_dock_review_streak >= 6 NOT = { has_variable = ywc_jhg_dock_review_interrupted } }

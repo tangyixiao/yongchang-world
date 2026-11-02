@@ -17,7 +17,12 @@ TRIGGERS_PATH=ROOT/'yongchang_world/common/scripted_triggers/ywc_v03_jhg_trigger
 JE_IDS=set(foundation.JE_IDS)
 ARC_IDS=set(foundation.SLUGS)
 
-def catalog(): return json.loads(CATALOG_PATH.read_text(encoding='utf-8'))
+def catalog():
+    data=json.loads(CATALOG_PATH.read_text(encoding='utf-8'))
+    # Preserve all original foundation cases; expansion senders have their own
+    # source-bound inventory and must not be fed to the old 58-sender fixture.
+    data['arcs']=[arc for arc in data['arcs'] if arc.get('slug') in ARC_IDS]
+    return data
 def _native_journals():
     from tools import build_v03_content
     return {k:b for k,_,b in parse(build_v03_content._render_journal_file(catalog(),None))}
@@ -687,7 +692,12 @@ class JhgInlineStaticContract(unittest.TestCase):
         cat=catalog()
         native_journals=_builder_defs(build_v03_content._render_journal_file(cat,None))
         native_events=_builder_defs(build_v03_content._render_event_file(cat,ROOT,None))
-        adapter,expected_journals,expected_events=_formal_generated_projection(cat)
+        # The shared JHG scheduler now knows the fourth arc, so generated
+        # private snapshots legitimately include its queue. Compare the full
+        # generated source against the full catalog, then retain every original
+        # foundation business-AST comparison below.
+        full_catalog=json.loads(CATALOG_PATH.read_text(encoding='utf-8'))
+        adapter,expected_journals,expected_events=_formal_generated_projection(full_catalog)
         actual_journals=_builder_defs(JOURNAL_PATH.read_text(encoding='utf-8-sig'))
         actual_events=_builder_defs(EVENT_PATH.read_text(encoding='utf-8-sig'))
         self.assertEqual({k:(_rows(v) if isinstance(v,tuple) else v) for k,v in actual_journals.items()},
