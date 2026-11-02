@@ -304,7 +304,11 @@ def _script_condition(world, block, tag):
 
 def catalog():
     with CATALOG_PATH.open(encoding="utf-8") as handle:
-        return json.load(handle)
+        data = json.load(handle)
+    # These cases exercise the original three foundation arcs; later eras have
+    # separate contracts and must not change this baseline test inventory.
+    data["arcs"] = [item for item in data["arcs"] if item.get("slug") in SLUGS]
+    return data
 
 
 def arc(slug):
