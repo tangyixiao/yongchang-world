@@ -183,12 +183,12 @@ class LanInlineAdapterStaticContractTest(unittest.TestCase):
         self.assertEqual(shared, {"ywc_lan.1006", "ywc_lan.1007", "ywc_lan.1016",
                                   "ywc_lan.1017", "ywc_lan.1026", "ywc_lan.1027"})
         self.assertEqual(len(set(native) & set(COUNTS)), 6)
-        self.assertEqual(len(native), 9)
+        self.assertEqual(len(native), 11)
 
     def test_three_arc_v2_per_arc_metadata_binds_all_live_phases_and_sender_spans(self):
         catalog = _catalog()
         foundation = [arc for arc in catalog["arcs"] if arc["era"] == "foundation"]
-        self.assertEqual(len(catalog["arcs"]), 4)
+        self.assertEqual(len(catalog["arcs"]), 5)
         self.assertEqual(len(foundation), 3)
         self.assertEqual({arc["slug"] for arc in foundation}, ARC_SLUGS)
         for arc in foundation:
@@ -237,7 +237,7 @@ class LanInlineAdapterStaticContractTest(unittest.TestCase):
         arcs = catalog["arcs"]
         metadata = [branch for arc in arcs
                     for branch in arc["inline_delivery_adapter"]["branches"]]
-        self.assertEqual(len(metadata), 46)
+        self.assertEqual(len(metadata), 56)
         self.assertEqual(sum(len(arc["inline_delivery_adapter"]["branches"]) for arc in arcs
                              if arc["era"] == "foundation"), 36)
         self.assertTrue(all(row["candidates"] for row in metadata),
@@ -245,7 +245,7 @@ class LanInlineAdapterStaticContractTest(unittest.TestCase):
         self.assertEqual(sum(candidate["kind"] == "notice"
                              for row in metadata for candidate in row["candidates"]), 12)
         self.assertEqual(sum(candidate["kind"] == "normal"
-                             for row in metadata for candidate in row["candidates"]), 34)
+                             for row in metadata for candidate in row["candidates"]), 44)
         notices = [candidate["value"] for row in metadata for candidate in row["candidates"]
                    if candidate["kind"] == "notice"]
         self.assertEqual(notices.count(12), 6)
@@ -267,9 +267,9 @@ class LanInlineAdapterStaticContractTest(unittest.TestCase):
     def test_formal_source_v2_candidate_and_mutant_probes_reach_official_gate(self):
         catalog = _v2_catalog_from_formal_lan_source()
         total = sum(len(arc["inline_delivery_adapter"]["branches"]) for arc in catalog["arcs"])
-        self.assertEqual(total, 46)
+        self.assertEqual(total, 56)
         validate_inline_catalog(catalog)
-        self.assertEqual(len(render_inline_country_adapters(catalog)["event_hooks"]), 34)
+        self.assertEqual(len(render_inline_country_adapters(catalog)["event_hooks"]), 42)
 
         mutants = []
         wrong_queue = copy.deepcopy(catalog)
