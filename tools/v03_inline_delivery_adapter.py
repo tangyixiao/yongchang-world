@@ -545,7 +545,7 @@ def _nmg_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
                 if node.key in {"OR", "XOR", "NOR"}:
                     raise ValueError(f"unsupported NMG queue Boolean/container {node.key}")
                 visit(node.value, negative)
-            elif not negative and node.key.startswith("var:ywc_nmg_") and node.op == "=" and isinstance(node.value, str) and node.value.isdigit() and (node.key.endswith(("_pending", "_notice_pending")) or node.key == "var:ywc_nmg_school_pending_event"):
+            elif not negative and node.key.startswith("var:ywc_nmg_") and node.op == "=" and isinstance(node.value, str) and node.value.isdigit() and (node.key.endswith(("_pending", "_notice_pending")) or node.key in {"var:ywc_nmg_school_pending_event", "var:ywc_nmg_bay_pending_event"}):
                 queue = node.key.removeprefix("var:")
                 found.append({"queue": queue, "kind": "notice" if queue.endswith("_notice_pending") else "normal", "mode": "exact", "value": int(node.value)})
     visit(children(limits[0]))
@@ -569,9 +569,9 @@ def _nmg_queue_exclusions(branch_source: str) -> list[dict[str, Any]]:
                 if node.key in {"OR", "XOR", "NOR"}:
                     raise ValueError(f"unsupported NMG Boolean queue container {node.key}")
                 visit(node.value, neg)
-            elif neg and node.key.startswith("var:ywc_nmg_") and (node.key.endswith(("_pending", "_notice_pending")) or node.key == "var:ywc_nmg_school_pending_event"):
+            elif neg and node.key.startswith("var:ywc_nmg_") and (node.key.endswith(("_pending", "_notice_pending")) or node.key in {"var:ywc_nmg_school_pending_event", "var:ywc_nmg_bay_pending_event"}):
                 out.append({"queue": node.key.removeprefix("var:"), "op": node.op, "mode": "exact", "value": node.value})
-            elif neg and node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_nmg_") and (node.value.endswith(("_pending", "_notice_pending")) or node.value == "ywc_nmg_school_pending_event"):
+            elif neg and node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_nmg_") and (node.value.endswith(("_pending", "_notice_pending")) or node.value in {"ywc_nmg_school_pending_event", "ywc_nmg_bay_pending_event"}):
                 out.append({"queue": node.value, "op": node.op, "mode": "presence"})
     visit(children(limits[0]))
     return out
@@ -1678,6 +1678,7 @@ _NMG_FOUNDATION_SLUGS = (
     "v03_nmg_land_arbitration", "v03_nmg_bilingual_office", "v03_nmg_autonomy_revenue",
 )
 _NMG_SCHOOL_SLUG = "v03_nmg_parish_school"
+_NMG_BAY_SLUG = "v03_nmg_bay_ports"
 
 
 def _nmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1685,11 +1686,55 @@ def _nmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {a.get("slug") for a in foundation} != set(_NMG_FOUNDATION_SLUGS):
         raise ValueError("NMG inline adapter requires its three foundation arcs and six native JEs")
     extra = [a for a in catalog["arcs"] if a not in foundation]
-    if any(not isinstance(a, dict) or a.get("slug") != _NMG_SCHOOL_SLUG or a.get("era") != "middle" for a in extra):
+    if any(not isinstance(a, dict) or a.get("slug") not in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} or a.get("era") != "middle" for a in extra):
         raise ValueError("unregistered NMG inline arc")
-    if len(extra) > 1:
-        raise ValueError("duplicate registered NMG school arc")
-    return [next(a for a in foundation if a["slug"] == slug) for slug in _NMG_FOUNDATION_SLUGS] + extra
+    if len({a["slug"] for a in extra}) != len(extra):
+        raise ValueError("duplicate registered NMG middle arc")
+    return ([next(a for a in foundation if a["slug"] == slug) for slug in _NMG_FOUNDATION_SLUGS]
+            + [a for slug in (_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG) for a in extra if a["slug"] == slug])
+
+
+def _nmg_bay_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_nmg\.110[0-7]", event_id):
+        raise ValueError(f"{event_id}: unsupported NMG bay native event")
+    name = "ywc_v03_nmg_v03_nmg_bay_ports_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1099
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} "
+                "change_variable = { name = ywc_nmg_bay_popup_epoch add = 1 } "
+                "save_scope_value_as = { name = ywc_nmg_bay_popup_epoch value = var:ywc_nmg_bay_popup_epoch } }")
+    if not isinstance(event.get("immediate"), str) or tuple(
+            _nqg_node_shape(node) for node in parse_block(event["immediate"])) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported NMG bay native immediate body")
+    return name, value
+
+
+def _nmg_validate_bay_foreign_reply(event: dict[str, Any]) -> None:
+    """Keep the foreign reply outside major delivery and guard both effects."""
+    def shape(source: str) -> tuple:
+        if not isinstance(source, str):
+            raise ValueError("NMG bay reply requires literal source")
+        return tuple(_nqg_node_shape(node) for node in parse_block(source))
+    if event.get("id") != "ywc_nmg.1108" or event.get("hidden") is True:
+        raise ValueError("NMG bay requires one visible foreign response")
+    if shape(event.get("trigger")) != shape("{ ywc_nmg_bay_reply_current = yes }") or shape(event.get("immediate")) != shape("{}"):
+        raise ValueError("NMG bay foreign response cannot claim major delivery")
+    options = event.get("options")
+    if not isinstance(options, list) or len(options) not in (2, 3):
+        raise ValueError("NMG bay foreign response requires guarded accept and refuse")
+    by_key = {option.get("key"): option for option in options if isinstance(option, dict)}
+    if len(by_key) != len(options) or set(by_key) not in ({"accept_advance", "refuse"}, {"accept_advance", "refuse", "stale"}):
+        raise ValueError("NMG bay foreign response has unexpected options")
+    for key, helper in (("accept_advance", "ywc_nmg_bay_accept_advance"), ("refuse", "ywc_nmg_bay_refuse")):
+        option = by_key[key]
+        if shape(option.get("trigger")) != shape("{ ywc_nmg_bay_reply_current = yes }") or shape(option.get("effect")) != shape(
+                "{ if = { limit = { ywc_nmg_bay_reply_current = yes } " + helper + " = yes } }"):
+            raise ValueError(f"NMG bay {key} must recheck the real reply context")
+    if "stale" in by_key and (shape(by_key["stale"].get("trigger")) != shape("{ NOT = { ywc_nmg_bay_reply_current = yes } }") or
+                              shape(by_key["stale"].get("effect")) != shape("{}")):
+        raise ValueError("NMG bay stale reply must be an invalid-context no-op")
 
 
 def _nmg_school_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -1713,7 +1758,7 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
     arcs = _nmg_active_arcs(catalog)
     witnesses = set()
     total = 0
-    owner_for = {"v03_nmg_land_arbitration": "land", "v03_nmg_bilingual_office": "office", "v03_nmg_autonomy_revenue": "revenue", _NMG_SCHOOL_SLUG: "school"}
+    owner_for = {"v03_nmg_land_arbitration": "land", "v03_nmg_bilingual_office": "office", "v03_nmg_autonomy_revenue": "revenue", _NMG_SCHOOL_SLUG: "school", _NMG_BAY_SLUG: "bay"}
     for arc in arcs:
         ad = arc.get("inline_delivery_adapter")
         if not isinstance(ad, dict) or set(ad) != {"schema", "live_phases", "branches", "direct_adds"} or ad.get("schema") != "v03.foundation_inline_adapter.v2":
@@ -1729,6 +1774,21 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
                 if event.get("hidden") is True:
                     raise ValueError("NMG school player events cannot be hidden")
                 _nmg_school_native_receipt(event)
+        if arc["slug"] == _NMG_BAY_SLUG:
+            if [j.get("id") for j in journals] != ["ywc_je_v03_nmg_bay_charter", "ywc_je_v03_nmg_bay_operations"]:
+                raise ValueError("NMG bay requires its two ordered native phases")
+            for journal in journals:
+                if any(node.key == "add_journal_entry" for node in _walk(parse_block(journal["script"]))):
+                    raise ValueError("NMG bay native JE may not add a hidden direct journal")
+            if len(arc.get("events", [])) != 9 or {e.get("id") for e in arc["events"]} != {f"ywc_nmg.{n}" for n in range(1100, 1109)}:
+                raise ValueError("NMG bay requires eight native events and one foreign response")
+            for event in arc["events"]:
+                if event["id"] == "ywc_nmg.1108":
+                    _nmg_validate_bay_foreign_reply(event)
+                else:
+                    if event.get("hidden") is True:
+                        raise ValueError("NMG bay player events cannot be hidden")
+                    _nmg_bay_native_receipt(event)
         phases = ad.get("live_phases")
         if not isinstance(phases, list) or len(phases) != len(journals): raise ValueError(f"{arc['slug']}: every JE needs a live phase")
         for phase, journal in zip(phases, journals):
@@ -1752,6 +1812,13 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
                 bound = [r for r in records if isinstance(r, dict) and r.get("journal") == journal["id"]]
                 if len(bound) != 4 or {r.get("event") for r in bound} != {f"ywc_nmg.{n}" for n in numbers}:
                     raise ValueError("NMG school native phases must bind their four/four partition")
+        if arc["slug"] == _NMG_BAY_SLUG:
+            if len(records) != 8:
+                raise ValueError("NMG bay requires exactly eight native senders")
+            for journal, numbers in zip(journals, (range(1100, 1104), range(1104, 1108))):
+                bound = [r for r in records if isinstance(r, dict) and r.get("journal") == journal["id"]]
+                if len(bound) != 4 or {r.get("event") for r in bound} != {f"ywc_nmg.{n}" for n in numbers}:
+                    raise ValueError("NMG bay phases must bind their four/four partition")
         event_ids = {e["id"] for e in arc["events"]}
         for proof, (jid, src) in zip(records, actual):
             required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
@@ -1769,7 +1836,9 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
             triggers = [n for n in children(branch_node) if n.key == "trigger_event"]
             if len(matching) != 1 or matching[0].op != "=" or not isinstance(matching[0].value, str) or len(triggers) != 1 or matching[0].start >= triggers[0].start:
                 raise ValueError(f"{jid}: selected queue must be removed exactly once as a literal before its source trigger")
-            expected_queue = "ywc_nmg_school_pending_event" if arc["slug"] == _NMG_SCHOOL_SLUG else f"ywc_nmg_{owner_for[arc['slug']]}_{'notice_pending' if proof['candidates'][0]['kind'] == 'notice' else 'pending'}"
+            expected_queue = ("ywc_nmg_school_pending_event" if arc["slug"] == _NMG_SCHOOL_SLUG else
+                              "ywc_nmg_bay_pending_event" if arc["slug"] == _NMG_BAY_SLUG else
+                              f"ywc_nmg_{owner_for[arc['slug']]}_{'notice_pending' if proof['candidates'][0]['kind'] == 'notice' else 'pending'}")
             if proof["candidates"][0]["queue"] != expected_queue:
                 raise ValueError(f"{jid}: queue owner or class mismatch")
             if proof["candidates"][0]["value"] != int(proof["event"].rsplit(".", 1)[1]): raise ValueError(f"{jid}: queue value does not select source event")
@@ -1777,13 +1846,16 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
             _validate_nmg_native_event(event, owner_for[arc["slug"]])
             total += 1
         if ad["direct_adds"] != _kor_direct_adds(arc): raise ValueError(f"{arc['slug']}: direct-add source binding drift")
-        if arc["slug"] == _NMG_SCHOOL_SLUG and ad["direct_adds"]:
-            raise ValueError("NMG school cannot add unregistered direct JE callers")
-    expected_total = 44 if any(a["slug"] == _NMG_SCHOOL_SLUG for a in arcs) else 36
+        if arc["slug"] in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} and ad["direct_adds"]:
+            raise ValueError("NMG middle arc cannot add unregistered direct JE callers")
+    expected_total = 36 + 8 * sum(a["slug"] in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} for a in arcs)
     if total != expected_total: raise ValueError(f"NMG source binding must cover exactly {expected_total} sender branches")
 
 
 def _validate_nmg_native_event(event: dict[str, Any], owner: str) -> None:
+    if owner == "bay":
+        _nmg_bay_native_receipt(event)
+        return
     if owner == "school":
         _nmg_school_native_receipt(event)
         return
@@ -1811,6 +1883,8 @@ def _validate_nmg_native_event(event: dict[str, Any], owner: str) -> None:
 
 def _nmg_native_receipt(event: dict[str, Any], owner: str) -> tuple[str, int]:
     """Return NMG's one supported last_event receipt from its validated AST."""
+    if owner == "bay":
+        return _nmg_bay_native_receipt(event)
     if owner == "school":
         return _nmg_school_native_receipt(event)
     _validate_nmg_native_event(event, owner)
