@@ -342,6 +342,10 @@ def render_event_script(events: list[dict]) -> str:
     ]
     current_namespace = None
     for event in events:
+        # SHU's three legacy chapters share the country delivery scheduler.
+        # Each generated event owns its own receipt identity.
+        shu_legacy = {f"ywc_shu.{number}": 9 + (number - 100) // 5 * 6 + 1 + (number - 100) % 5 for number in range(100, 115)}
+        legacy_index = shu_legacy.get(event["id"])
         namespace = f"ywc_{event['short']}" if event["kind"] == "national" else "ywc_crisis"
         if namespace != current_namespace:
             current_namespace = namespace
@@ -355,6 +359,12 @@ def render_event_script(events: list[dict]) -> str:
             "    duration = 1",
             '    event_image = { video = "unspecific_politicians_arguing" }',
         ]
+        if legacy_index is not None:
+            epoch = f"ywc_shu_legacy_popup_epoch_{legacy_index}"
+            lines += [
+                f"    trigger = {{ ywc_shu_legacy_dispatch_{legacy_index} = yes ywc_shu_legacy_request_valid_{legacy_index} = yes }}",
+                f"    immediate = {{ if = {{ limit = {{ has_variable = {epoch} exists = scope:{epoch} scope:{epoch} ?= var:{epoch} has_variable = ywc_shu_legacy_request_live_{legacy_index} ywc_shu_legacy_dispatch_{legacy_index} = yes ywc_shu_legacy_request_valid_{legacy_index} = yes }} ywc_shu_legacy_ack_{legacy_index} = yes }} }}",
+            ]
         for index, choice in enumerate(event["choices"]):
             letter = chr(ord("a") + index)
             base = 50 if index == 0 else (30 if index == 1 else 20)
@@ -368,12 +378,18 @@ def render_event_script(events: list[dict]) -> str:
                 *(["        default_option = yes"] if index == 0 else []),
                 f"        ai_chance = {{ base = {base} }}",
             ]
+            if legacy_index is not None:
+                lines += [
+                    f"        if = {{ limit = {{ ywc_shu_legacy_choice_valid_{legacy_index} = yes }}",
+                    f"            ywc_shu_legacy_consume_{legacy_index} = yes",
+                ]
+            indent = "            " if legacy_index is not None else "        "
             if event["kind"] == "national" and not event.get("final"):
                 for effect in national_regular_effect(event, choice, COUNTRIES[event["short"]], index):
-                    lines.append(f"        {effect}")
+                    lines.append(f"{indent}{effect}")
             elif event["kind"] == "national":
                 for effect in final_option_effects(event, index):
-                    lines.append("        " + effect.replace("\n", "\n        "))
+                    lines.append(indent + effect.replace("\n", "\n" + indent))
             else:
                 lines.append(
                     f"        set_variable = {{ name = ywc_campaign_crisis{event['crisis']}_s{event['stage']}_answer value = {index + 1} }}"
@@ -392,6 +408,8 @@ def render_event_script(events: list[dict]) -> str:
                     lines += [
                         f"        if = {{ limit = {{ exists = c:{partner} }} change_relations = {{ country = c:{partner} value = {shift} }} }}"
                     ]
+            if legacy_index is not None:
+                lines.append("        }")
             lines.append("    }")
         lines.append("}")
     return "\n".join(lines) + "\n"

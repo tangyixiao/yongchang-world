@@ -735,7 +735,11 @@ def _adapter_event_immediate(event: dict, adapter: dict | None) -> str:
     guard = " OR = { " + " ".join(f"{name} = yes" for name in guards) + " }"
     body = _inner(original)
     proofs = (adapter or {}).get("inline_proofs", {}).get(event["id"], [])
-    parts = (body, " ".join(proofs), " ".join(f"{name} = yes" for name in hooks))
+    # The SHU legacy scheduler receives its fairness opportunity only after
+    # the source event's real, guarded immediate has run. Keep the existing
+    # adapter callback inventory and callback-last contract unchanged.
+    legacy_shu_delivery = "ywc_shu_legacy_after_v03 = yes" if event["id"].startswith("ywc_shu.") else ""
+    parts = (body, legacy_shu_delivery, " ".join(proofs), " ".join(f"{name} = yes" for name in hooks))
     if ((adapter or {}).get("safe_comment_boundaries")
             or (adapter or {}).get("mgl_safe_comment_boundaries")):
         effects = "\n        ".join(part for part in parts if part)
