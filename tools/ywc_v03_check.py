@@ -35,7 +35,7 @@ CANONICAL_COUNTRY_ERAS = ("foundation", "middle", "late")
 # dropping a known row cannot silently increase release quota counts.
 KNOWN_OPERATIONAL_EVENT_IDS = frozenset({
     "ywc_jhg.1030", "ywc_kor.1030", "ywc_kor.1031", "ywc_kor.1033", "ywc_kor.1034",
-    "ywc_nmg.1030", "ywc_nmg.1032", "ywc_nmg.1033", "ywc_nqg.1028", "ywc_nqg.1030", "ywc_nqg.1031",
+    "ywc_nmg.1030", "ywc_nmg.1032", "ywc_nmg.1033", "ywc_nmg.1108", "ywc_nqg.1028", "ywc_nqg.1030", "ywc_nqg.1031",
 })
 
 
