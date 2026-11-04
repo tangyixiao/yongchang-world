@@ -1095,3 +1095,362 @@ if = { limit = { ywc_lan_public_at_1109 = yes NOT = { ywc_lan_public_terminal_es
 ywc_lan_public_withdraw = {
 if = { limit = { OR = { ywc_lan_public_at_1100 = yes ywc_lan_public_at_1101 = yes ywc_lan_public_at_1102 = yes ywc_lan_public_at_1103 = yes ywc_lan_public_at_1104 = yes ywc_lan_public_at_1105 = yes ywc_lan_public_at_1106 = yes ywc_lan_public_at_1107 = yes ywc_lan_public_at_1108 = yes ywc_lan_public_at_1109 = yes } } set_variable = { name = ywc_lan_public_outcome value = 4 } set_variable = { name = ywc_lan_public_withdrawn value = 1 } ywc_lan_public_release_once = yes }
 }
+
+# ==========================================================================
+# LAN beyond-gold (v03_lan_beyond_gold), 《金砂之外的生计》.
+# Append-only business source; every new helper uses the ywc_lan_gold_ prefix.
+# Claims capacity once, pays from the real treasury, records the exact amount
+# actually deducted, reuses one pilot state, and never invents a building,
+# a resource, foreign money or a foreign partner.
+# ==========================================================================
+
+ywc_lan_gold_claim_arc = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_lan_v03_lan_beyond_gold_started }
+			NOT = { has_variable = ywc_v03_lan_v03_lan_beyond_gold_settled }
+			ywc_lan_gold_has_pilot = yes
+			ywc_v03_has_capacity = yes
+		}
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		ywc_lan_gold_capture_pilot = yes
+		ywc_lan_gold_capture_seed = yes
+		set_variable = { name = ywc_lan_gold_stage value = 1120 }
+		set_variable = { name = ywc_lan_gold_pending_event value = 1120 }
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+		set_variable = { name = ywc_lan_gold_popup_epoch value = 0 }
+		set_variable = { name = ywc_lan_gold_review_streak value = 0 }
+	}
+}
+
+ywc_lan_gold_release_once = {
+	if = {
+		limit = { has_variable = ywc_v03_lan_v03_lan_beyond_gold_started NOT = { has_variable = ywc_v03_lan_v03_lan_beyond_gold_settled } }
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_settled value = 1 }
+		if = { limit = { has_variable = ywc_lan_gold_outcome } set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_outcome value = var:ywc_lan_gold_outcome } }
+		remove_variable = ywc_lan_gold_pending_event
+		remove_variable = ywc_lan_gold_observation_running
+		remove_variable = ywc_lan_gold_observation_ticked
+		remove_variable = ywc_lan_gold_observation_waiting
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+ywc_lan_gold_prepare_queue = {
+	if = {
+		limit = { ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_pending_event } }
+		if = { limit = { var:ywc_lan_gold_stage >= 1120 var:ywc_lan_gold_stage <= 1124 } set_variable = { name = ywc_lan_gold_pending_event value = var:ywc_lan_gold_stage } }
+		else_if = { limit = { var:ywc_lan_gold_stage = 1125 OR = { has_variable = ywc_lan_gold_observation_done has_variable = ywc_lan_gold_observation_interrupted has_variable = ywc_lan_gold_observation_waiting } } set_variable = { name = ywc_lan_gold_pending_event value = 1125 } }
+		else_if = { limit = { var:ywc_lan_gold_stage >= 1126 var:ywc_lan_gold_stage <= 1127 } set_variable = { name = ywc_lan_gold_pending_event value = var:ywc_lan_gold_stage } }
+	}
+}
+
+# Capture the exact pilot StateRef once, at the 1120 decision. Later checks and
+# costs read var:ywc_lan_gold_pilot_state, so a second owned West Borneo state
+# can never silently substitute. No state object is created.
+ywc_lan_gold_capture_pilot = {
+	if = {
+		limit = { ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_pilot_state } }
+		every_scope_state = {
+			limit = { owner = ROOT state_region = s:STATE_WEST_BORNEO }
+			save_scope_as = ywc_lan_gold_pilot_scope
+		}
+		if = { limit = { exists = scope:ywc_lan_gold_pilot_scope } set_variable = { name = ywc_lan_gold_pilot_state value = scope:ywc_lan_gold_pilot_scope } }
+	}
+}
+
+# Seed payment: the project's real preparation envelope. One opening weekly
+# gross income, clamped, captured once; a genuine mine-audit precedent or a
+# finished public mandate cuts this specific first payment in half.
+ywc_lan_gold_capture_seed = {
+	if = {
+		limit = { NOT = { has_variable = ywc_lan_gold_seed_unit } }
+		set_variable = { name = ywc_lan_gold_seed_unit value = yearly_gross_income }
+		change_variable = { name = ywc_lan_gold_seed_unit divide = 52 }
+		clamp_variable = { name = ywc_lan_gold_seed_unit min = 100 max = 1000000000 }
+	}
+}
+
+ywc_lan_gold_seed_due = {
+	ywc_lan_gold_capture_seed = yes
+	set_variable = { name = ywc_lan_gold_seed_due_value value = var:ywc_lan_gold_seed_unit }
+	if = { limit = { ywc_lan_gold_seed_rate_half = yes } change_variable = { name = ywc_lan_gold_seed_due_value multiply = 0.5 } }
+	clamp_variable = { name = ywc_lan_gold_seed_due_value min = 50 max = 1000000000 }
+}
+
+ywc_lan_gold_pay_seed = {
+	if = { limit = { ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_seed_paid } ywc_lan_gold_can_pay = yes ywc_lan_gold_pilot_owned = yes ywc_lan_gold_at_1120 = yes ywc_lan_gold_seed_affordable = yes }
+		ywc_lan_gold_seed_due = yes
+		if = { limit = { gold_reserves >= var:ywc_lan_gold_seed_due_value in_default = no NOT = { has_modifier = declared_bankruptcy } }
+			add_treasury = { value = var:ywc_lan_gold_seed_due_value multiply = -1 }
+			set_variable = { name = ywc_lan_gold_seed_paid value = 1 }
+			set_variable = { name = ywc_lan_gold_seed_paid_amount value = var:ywc_lan_gold_seed_due_value }
+			if = { limit = { ywc_lan_gold_seed_rate_half = yes } set_variable = { name = ywc_lan_gold_seed_source value = 1 } }
+			set_variable = { name = ywc_lan_gold_stage value = 1121 }
+			set_variable = { name = ywc_lan_gold_pending_event value = 1121 }
+			set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+		}
+	}
+}
+
+ywc_lan_gold_choose_route = {
+	if = {
+		limit = { ywc_lan_gold_open = yes has_variable = ywc_lan_gold_seed_paid var:ywc_lan_gold_seed_paid = 1 NOT = { has_variable = ywc_lan_gold_route } has_variable = ywc_lan_gold_route_choice ywc_lan_gold_at_1121 = yes }
+		set_variable = { name = ywc_lan_gold_route value = var:ywc_lan_gold_route_choice }
+		set_variable = { name = ywc_lan_gold_stage value = 1122 }
+		set_variable = { name = ywc_lan_gold_pending_event value = 1122 }
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+	}
+}
+
+# Basis payment: the real second instalment, priced from the same opening
+# envelope. Two genuinely earned prior decisions change this later node:
+#   * a monopoly grounded in the established public mine audit (source_precedent)
+#     draws on audited mine revenue and pays a quarter;
+#   * a finished public mandate (source_leverage) already holds the processing
+#     books and pays three quarters for processing.
+# Absent either fact, the honest full/half rates apply unchanged.
+ywc_lan_gold_basis_rate_calc = {
+	if = { limit = { ywc_lan_gold_source_leverage = yes var:ywc_lan_gold_route = 1 } set_variable = { name = ywc_lan_gold_basis_rate value = 1 } }
+	else_if = { limit = { ywc_lan_gold_source_precedent = yes var:ywc_lan_gold_route = 3 } set_variable = { name = ywc_lan_gold_basis_rate value = 4 } }
+	else_if = { limit = { OR = { var:ywc_lan_gold_route = 2 var:ywc_lan_gold_route = 3 } } set_variable = { name = ywc_lan_gold_basis_rate value = 2 } }
+	else = { set_variable = { name = ywc_lan_gold_basis_rate value = 3 } }
+}
+
+ywc_lan_gold_basis_due = {
+	ywc_lan_gold_capture_seed = yes
+	if = {
+		limit = { NOT = { has_variable = ywc_lan_gold_basis_due_value } }
+		ywc_lan_gold_basis_rate_calc = yes
+		set_variable = { name = ywc_lan_gold_basis_due_value value = var:ywc_lan_gold_seed_unit }
+		if = { limit = { var:ywc_lan_gold_basis_rate = 1 } change_variable = { name = ywc_lan_gold_basis_due_value multiply = 0.75 } }
+		else_if = { limit = { var:ywc_lan_gold_basis_rate = 2 } change_variable = { name = ywc_lan_gold_basis_due_value multiply = 0.5 } }
+		else_if = { limit = { var:ywc_lan_gold_basis_rate = 4 } change_variable = { name = ywc_lan_gold_basis_due_value multiply = 0.25 } }
+		clamp_variable = { name = ywc_lan_gold_basis_due_value min = 50 max = 1000000000 }
+	}
+}
+
+ywc_lan_gold_pay_basis = {
+	if = { limit = { ywc_lan_gold_open = yes has_variable = ywc_lan_gold_seed_paid var:ywc_lan_gold_seed_paid = 1 NOT = { has_variable = ywc_lan_gold_basis_paid } ywc_lan_gold_can_pay = yes ywc_lan_gold_route_chosen = yes ywc_lan_gold_pilot_owned = yes ywc_lan_gold_at_1122 = yes }
+		ywc_lan_gold_basis_due = yes
+		if = { limit = { gold_reserves >= var:ywc_lan_gold_basis_due_value in_default = no NOT = { has_modifier = declared_bankruptcy } }
+			add_treasury = { value = var:ywc_lan_gold_basis_due_value multiply = -1 }
+			set_variable = { name = ywc_lan_gold_basis_paid value = 1 }
+			set_variable = { name = ywc_lan_gold_basis_paid_amount value = var:ywc_lan_gold_basis_due_value }
+			if = { limit = { var:ywc_lan_gold_basis_rate = 1 } set_variable = { name = ywc_lan_gold_basis_source_leverage value = 1 } }
+			else_if = { limit = { var:ywc_lan_gold_basis_rate = 4 } set_variable = { name = ywc_lan_gold_basis_source_precedent value = 1 } }
+			set_variable = { name = ywc_lan_gold_stage value = 1123 }
+			set_variable = { name = ywc_lan_gold_pending_event value = 1123 }
+			set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+		}
+	}
+}
+
+# Responsibility is named on the captured pilot. A staffed office gives a full
+# arrangement; without staff only the current gap can be recorded (bounded).
+# A finished public mandate (source_leverage) already leaves a named, staffed
+# public budget office, so it can carry a full arrangement even when the local
+# bureaucrat count is short -- a second, distinct later benefit of that fact.
+ywc_lan_gold_record_responsible = {
+	if = { limit = { ywc_lan_gold_open = yes has_variable = ywc_lan_gold_basis_paid var:ywc_lan_gold_basis_paid = 1 NOT = { has_variable = ywc_lan_gold_responsible_recorded } ywc_lan_gold_pilot_owned = yes ywc_lan_gold_at_1123 = yes }
+		if = { limit = { ywc_lan_gold_responsible_full = yes } set_variable = { name = ywc_lan_gold_responsible_recorded value = 2 } set_variable = { name = ywc_lan_gold_responsible_tier_full value = 1 } }
+		else_if = { limit = { ywc_lan_gold_office = yes } set_variable = { name = ywc_lan_gold_responsible_recorded value = 1 } }
+		set_variable = { name = ywc_lan_gold_stage value = 1124 }
+		set_variable = { name = ywc_lan_gold_pending_event value = 1124 }
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+	}
+}
+
+# JE2 is script-activated once responsibility is named; its immediate only
+# records an idempotent marker. The audit itself starts from the 1124 option
+# (guarded by at_1124) so the receipt/stage ordering stays honest.
+ywc_lan_gold_open_second_journal_once = {
+	if = { limit = { ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_second_journal_marked } } set_variable = { name = ywc_lan_gold_second_journal_marked value = 1 } }
+}
+
+ywc_lan_gold_mark_bounded = {
+	set_variable = { name = ywc_lan_gold_bounded value = 1 }
+}
+
+# Starts the continuous audit with an explicit one-day gate so the creation
+# month is never counted as a completed observation. A mature observation is
+# never restarted.
+ywc_lan_gold_start_review = {
+	if = {
+		limit = { ywc_lan_gold_open = yes has_variable = ywc_lan_gold_basis_paid var:ywc_lan_gold_basis_paid = 1 has_variable = ywc_lan_gold_responsible_recorded NOT = { has_variable = ywc_lan_gold_observation_done } ywc_lan_gold_at_1124 = yes }
+		remove_variable = ywc_lan_gold_observation_interrupted
+		remove_variable = ywc_lan_gold_observation_done
+		remove_variable = ywc_lan_gold_observation_waiting
+		set_variable = { name = ywc_lan_gold_review_streak value = 0 }
+		set_variable = { name = ywc_lan_gold_review_started value = 1 }
+		set_variable = { name = ywc_lan_gold_observation_running value = 1 }
+		set_variable = { name = ywc_lan_gold_observation_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_lan_gold_stage value = 1125 }
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+		remove_variable = ywc_lan_gold_pending_event
+	}
+}
+
+# Called once per real monthly pulse. The one-day gate consumes itself so that
+# duplicate same-day callbacks cannot count twice. A failing month zeroes the
+# streak, pauses the loop and records an interruption that must be explicitly
+# restarted. Only six consecutive valid months mature the audit.
+ywc_lan_gold_track_review = {
+	if = {
+		limit = { ywc_lan_gold_open = yes var:ywc_lan_gold_stage = 1125 has_variable = ywc_lan_gold_observation_running NOT = { has_variable = ywc_lan_gold_observation_ticked } }
+		set_variable = { name = ywc_lan_gold_observation_ticked value = 1 days = 1 }
+		if = { limit = { ywc_lan_gold_pilot_lost = yes }
+			set_variable = { name = ywc_lan_gold_review_streak value = 0 }
+			remove_variable = ywc_lan_gold_observation_running
+			remove_variable = ywc_lan_gold_observation_done
+			set_variable = { name = ywc_lan_gold_observation_interrupted value = 1 }
+		}
+		else_if = { limit = { NOT = { ywc_lan_gold_current_conditions = yes } }
+			set_variable = { name = ywc_lan_gold_review_streak value = 0 }
+			remove_variable = ywc_lan_gold_observation_running
+			remove_variable = ywc_lan_gold_observation_done
+			set_variable = { name = ywc_lan_gold_observation_interrupted value = 1 }
+		}
+		else_if = { limit = { NOT = { has_variable = ywc_lan_gold_observation_done } }
+			change_variable = { name = ywc_lan_gold_review_streak add = 1 }
+			if = { limit = { var:ywc_lan_gold_review_streak >= 6 } set_variable = { name = ywc_lan_gold_observation_done value = 1 } remove_variable = ywc_lan_gold_observation_running }
+		}
+	}
+}
+
+# Explicit deferral-restart after an interruption: new calendar window, zero.
+ywc_lan_gold_restart_review = {
+	if = { limit = { ywc_lan_gold_at_1125 = yes has_variable = ywc_lan_gold_observation_interrupted NOT = { has_variable = ywc_lan_gold_observation_done } ywc_lan_gold_current_conditions = yes }
+		remove_variable = ywc_lan_gold_observation_interrupted
+		remove_variable = ywc_lan_gold_observation_waiting
+		set_variable = { name = ywc_lan_gold_review_streak value = 0 }
+		set_variable = { name = ywc_lan_gold_observation_running value = 1 }
+		set_variable = { name = ywc_lan_gold_observation_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_v03_lan_v03_lan_beyond_gold_last_event value = 0 }
+		remove_variable = ywc_lan_gold_pending_event
+	}
+}
+
+ywc_lan_gold_clear_stale_queue = {
+	if = {
+		limit = {
+			ywc_lan_gold_open = yes
+			NOT = { has_variable = ywc_lan_gold_observation_done }
+			NOT = { ywc_lan_gold_current_conditions = yes }
+			NOT = { has_variable = ywc_lan_gold_observation_interrupted }
+			NOT = { has_variable = ywc_lan_gold_loss_observed }
+		}
+		remove_variable = ywc_lan_gold_pending_event
+	}
+}
+
+# If the originally captured pilot state is lost, do NOT settle silently. Record
+# the real loss, keep the journal open and queue the honest setback half of 1126
+# so the player actually receives and chooses it. No reward, restoration, new
+# pilot or dereference of the vanished state is attempted. Costs are untouched.
+ywc_lan_gold_handle_pilot_loss = {
+	if = {
+		limit = { ywc_lan_gold_loss_pending = yes NOT = { has_variable = ywc_lan_gold_loss_observed } }
+		set_variable = { name = ywc_lan_gold_loss_observed value = 1 }
+		set_variable = { name = ywc_lan_gold_loss_stage value = 1126 }
+		set_variable = { name = ywc_lan_gold_pending_event value = 1126 }
+	}
+}
+
+# Ends. Established / compromise only when the current facts already satisfy
+# the matching predicate; setback when they do not. Each records a distinct
+# outcome value and releases the arc slot exactly once. Paid amounts stay.
+# A settled established end applies the route's lasting, modest policy outcome:
+# a country-scope modifier and the same modifier to the captured pilot state
+# (whose lower-strata and radicals keys are state-scoped). This is a real
+# tradeoff, not a label. No building, resource or foreign consent is created.
+# Country-scope outcome: applied to ROOT only, country/interest-group keys only,
+# finite 730-day duration.
+ywc_lan_gold_apply_route_benefit = {
+	if = { limit = { var:ywc_lan_gold_route = 1 } add_modifier = { name = ywc_lan_gold_processing_country days = 730 } }
+	else_if = { limit = { var:ywc_lan_gold_route = 2 } add_modifier = { name = ywc_lan_gold_farming_country days = 730 } }
+	else_if = { limit = { var:ywc_lan_gold_route = 3 } add_modifier = { name = ywc_lan_gold_monopoly_country days = 730 } }
+}
+
+# State-scope outcome: applied only to the captured pilot state, state keys only,
+# finite 730-day duration. Never applied to the country and never to any state
+# other than the captured original.
+ywc_lan_gold_apply_route_benefit_pilot = {
+	if = { limit = { ywc_lan_gold_pilot_owned = yes }
+		if = { limit = { var:ywc_lan_gold_route = 1 } var:ywc_lan_gold_pilot_state = { add_modifier = { name = ywc_lan_gold_processing_state days = 730 } } }
+		else_if = { limit = { var:ywc_lan_gold_route = 2 } var:ywc_lan_gold_pilot_state = { add_modifier = { name = ywc_lan_gold_farming_state days = 730 } } }
+		else_if = { limit = { var:ywc_lan_gold_route = 3 } var:ywc_lan_gold_pilot_state = { add_modifier = { name = ywc_lan_gold_monopoly_state days = 730 } } }
+	}
+}
+
+# Established close: requires the actual 1126 (or 1127 receipt via the same
+# stage gate) delivery, the live terminal predicate, and no loss. It never
+# fires from a stale cached option because at_1126/at_1127 are re-read here.
+ywc_lan_gold_close_established = {
+	if = {
+		limit = {
+			ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_outcome }
+			OR = { ywc_lan_gold_at_1126 = yes ywc_lan_gold_at_1127 = yes }
+			ywc_lan_gold_terminal_established = yes
+		}
+		set_variable = { name = ywc_lan_gold_outcome value = 1 }
+		ywc_lan_gold_apply_route_benefit = yes
+		ywc_lan_gold_apply_route_benefit_pilot = yes
+		ywc_lan_gold_release_once = yes
+	}
+}
+
+ywc_lan_gold_close_compromise = {
+	if = {
+		limit = {
+			ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_outcome }
+			OR = { ywc_lan_gold_at_1126 = yes ywc_lan_gold_at_1127 = yes }
+			ywc_lan_gold_terminal_compromise = yes
+		}
+		set_variable = { name = ywc_lan_gold_outcome value = 2 }
+		add_modifier = { name = ywc_lan_gold_compromise_country days = 730 }
+		var:ywc_lan_gold_pilot_state = { add_modifier = { name = ywc_lan_gold_compromise_state days = 730 } }
+		ywc_lan_gold_release_once = yes
+	}
+}
+
+# Setback close: only from a delivered 1126/1127 (or the dedicated loss queue),
+# with the live setback predicate re-read here. The captured pilot is not read.
+ywc_lan_gold_close_setback = {
+	if = {
+		limit = {
+			ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_outcome }
+			OR = { ywc_lan_gold_at_1126 = yes ywc_lan_gold_at_1127 = yes ywc_lan_gold_at_loss = yes }
+			ywc_lan_gold_terminal_setback = yes
+		}
+		set_variable = { name = ywc_lan_gold_outcome value = 3 }
+		set_variable = { name = ywc_lan_gold_setback_recorded value = 1 }
+		ywc_lan_gold_release_once = yes
+	}
+}
+
+# Withdraw is available at every legitimate stage event; it needs the actual
+# matching receipt/stage so a stale cached withdraw cannot close a live route.
+ywc_lan_gold_withdraw = {
+	if = {
+		limit = {
+			ywc_lan_gold_open = yes NOT = { has_variable = ywc_lan_gold_outcome }
+			OR = {
+				ywc_lan_gold_at_1120 = yes ywc_lan_gold_at_1121 = yes ywc_lan_gold_at_1122 = yes
+				ywc_lan_gold_at_1123 = yes ywc_lan_gold_at_1124 = yes ywc_lan_gold_at_1125 = yes
+				ywc_lan_gold_at_1126 = yes ywc_lan_gold_at_1127 = yes ywc_lan_gold_at_loss = yes
+			}
+		}
+		set_variable = { name = ywc_lan_gold_outcome value = 4 }
+		set_variable = { name = ywc_lan_gold_withdrawn value = 1 }
+		ywc_lan_gold_release_once = yes
+	}
+}

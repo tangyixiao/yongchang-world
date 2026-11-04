@@ -244,12 +244,14 @@ class NmgSchoolGeneratedAdapter(unittest.TestCase):
         current = current_catalog()
         active = adapter._nmg_active_arcs(current)
         previous = json.loads(frozen("data/content/v03/countries/nmg.json"))["arcs"]
-        self.assertEqual(active[:-1], previous, "all three old arcs and exact source proofs remain frozen")
-        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, SCHOOL])
-        self.assertEqual(sum(len(a["journals"]) for a in active[:-1]), 6)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:-1]), 36)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in active[:-1]), 0)
-        arc = active[-1]
+        old = active[:len(FOUNDATION)]
+        self.assertEqual(old, previous, "all three old arcs and exact source proofs remain frozen")
+        has_bay = any(a["slug"] == "v03_nmg_bay_ports" for a in active)
+        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, SCHOOL] + (["v03_nmg_bay_ports"] if has_bay else []))
+        self.assertEqual(sum(len(a["journals"]) for a in old), 6)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in old), 36)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in old), 0)
+        arc = next(a for a in active if a["slug"] == SCHOOL)
         self.assertEqual([j["id"] for j in arc["journals"]], list(JES))
         self.assertEqual(arc["inline_delivery_adapter"]["schema"], "v03.foundation_inline_adapter.v2")
         proofs = arc["inline_delivery_adapter"]["branches"]
@@ -264,7 +266,7 @@ class NmgSchoolGeneratedAdapter(unittest.TestCase):
             self.assertEqual(adapter._nmg_native_receipt(event, "school"), (RECEIPT, number - 1109))
         adapter.validate_inline_catalog(current)
         rendered = adapter.render_inline_country_adapters(current)
-        self.assertEqual(len(rendered["journal_scripts"]), 8)
+        self.assertEqual(len(rendered["journal_scripts"]), 10 if has_bay else 8)
         self.assertIn("ywc_v03_nmg_inline_served_4", rendered["effects"])
         for candidate in range(37, 45):
             self.assertIn(f"ywc_v03_nmg_inline_candidate_{candidate} =", rendered["triggers"])

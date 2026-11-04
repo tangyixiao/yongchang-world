@@ -1082,3 +1082,215 @@ ywc_jhg_share_end_partnership = {
 		remove_variable = ywc_jhg_share_term_timer
 	}
 }
+
+# Capture a real state object once; never replace a vanished or lost pilot.
+ywc_jhg_dock_capture_pilot = {
+ if = { limit = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1 NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled } var:ywc_jhg_dock_phase = 1 var:ywc_jhg_dock_stage = 1100 NOT = { has_variable = ywc_jhg_dock_pilot } }
+  every_scope_state = {
+   limit = { owner = ROOT
+ any_scope_pop = { OR = { is_pop_type = laborers is_pop_type = machinists } is_employed = yes workplace ?= { is_building_type = building_shipyard occupancy >= 0.5 building_has_goods_shortage = no } }
+ any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } ROOT = { NOT = { has_variable = ywc_jhg_dock_pilot } } }
+   save_scope_as = ywc_jhg_dock_candidate
+   ROOT = { set_variable = { name = ywc_jhg_dock_pilot value = scope:ywc_jhg_dock_candidate } }
+  }
+ }
+}
+
+# First native journal claims one slot and captures its exact state once.
+ywc_jhg_dock_claim = {
+ if = { limit = {
+  has_variable = ywc_v03_initialized var:ywc_v03_initialized = 1
+  NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_started }
+  NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled }
+  var:ywc_v03_active_arc_count < 3 var:ywc_v03_visible_task_count < 6
+  ywc_jhg_dock_site_available = yes
+ }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_started value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = 1 }
+  change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  set_variable = { name = ywc_jhg_dock_popup_epoch value = 0 }
+  set_variable = { name = ywc_jhg_dock_phase value = 1 }
+  set_variable = { name = ywc_jhg_dock_stage value = 1100 }
+  set_variable = { name = ywc_jhg_dock_pending_event value = 1100 }
+  ywc_jhg_dock_capture_pilot = yes
+  ywc_jhg_dock_capture_cost = yes
+ }
+}
+
+# Public filing budget, captured once; old court work may reduce joint-account administration.
+ywc_jhg_dock_capture_cost = {
+ if = { limit = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_started var:ywc_jhg_v03_jhg_dockyard_capital_started = 1 NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled } var:ywc_jhg_dock_phase = 1 var:ywc_jhg_dock_stage = 1100 var:ywc_jhg_dock_pending_event = 1100 ywc_jhg_dock_pilot_ready = yes NOT = { has_variable = ywc_jhg_dock_paid } NOT = { has_variable = ywc_jhg_dock_cost_captured } }
+  set_variable = { name = ywc_jhg_dock_base value = yearly_gross_income }
+  change_variable = { name = ywc_jhg_dock_base divide = 52 }
+  clamp_variable = { name = ywc_jhg_dock_base min = 100 max = 1000000000 }
+  set_variable = { name = ywc_jhg_dock_cost_1 value = var:ywc_jhg_dock_base } change_variable = { name = ywc_jhg_dock_cost_1 multiply = 2 }
+  set_variable = { name = ywc_jhg_dock_cost_2 value = var:ywc_jhg_dock_base } change_variable = { name = ywc_jhg_dock_cost_2 multiply = 1.5 }
+  set_variable = { name = ywc_jhg_dock_cost_3 value = var:ywc_jhg_dock_base }
+  if = { limit = { ywc_jhg_dock_court_source_earned = yes } set_variable = { name = ywc_jhg_dock_court_applied value = 1 } change_variable = { name = ywc_jhg_dock_cost_2 multiply = 0.75 } }
+  set_variable = { name = ywc_jhg_dock_cost_captured value = 1 }
+ }
+}
+
+ywc_jhg_dock_choose_1 = {
+ if = { limit = { ywc_jhg_dock_can_choose_1 = yes }
+  add_treasury = { value = var:ywc_jhg_dock_cost_1 multiply = -1 }
+  set_variable = { name = ywc_jhg_dock_paid value = 1 }
+  set_variable = { name = ywc_jhg_dock_paid_amount value = var:ywc_jhg_dock_cost_1 }
+  set_variable = { name = ywc_jhg_dock_route value = 1 }
+  set_variable = { name = ywc_jhg_dock_stage value = 1101 }
+  set_variable = { name = ywc_jhg_dock_pending_event value = 1101 }
+ }
+}
+
+ywc_jhg_dock_choose_2 = {
+ if = { limit = { ywc_jhg_dock_can_choose_2 = yes }
+  add_treasury = { value = var:ywc_jhg_dock_cost_2 multiply = -1 }
+  set_variable = { name = ywc_jhg_dock_paid value = 1 }
+  set_variable = { name = ywc_jhg_dock_paid_amount value = var:ywc_jhg_dock_cost_2 }
+  set_variable = { name = ywc_jhg_dock_route value = 2 }
+  set_variable = { name = ywc_jhg_dock_stage value = 1101 }
+  set_variable = { name = ywc_jhg_dock_pending_event value = 1101 }
+ }
+}
+
+ywc_jhg_dock_choose_3 = {
+ if = { limit = { ywc_jhg_dock_can_choose_3 = yes }
+  add_treasury = { value = var:ywc_jhg_dock_cost_3 multiply = -1 }
+  set_variable = { name = ywc_jhg_dock_paid value = 1 }
+  set_variable = { name = ywc_jhg_dock_paid_amount value = var:ywc_jhg_dock_cost_3 }
+  set_variable = { name = ywc_jhg_dock_route value = 3 }
+  set_variable = { name = ywc_jhg_dock_stage value = 1101 }
+  set_variable = { name = ywc_jhg_dock_pending_event value = 1101 }
+ }
+}
+
+ywc_jhg_dock_advance_1101 = {
+ if = { limit = { ywc_jhg_dock_can_advance_1101 = yes }  set_variable = { name = ywc_jhg_dock_stage value = 1102 } set_variable = { name = ywc_jhg_dock_pending_event value = 1102 } }
+}
+
+ywc_jhg_dock_advance_1102 = {
+ if = { limit = { ywc_jhg_dock_can_advance_1102 = yes }  set_variable = { name = ywc_jhg_dock_stage value = 1103 } set_variable = { name = ywc_jhg_dock_pending_event value = 1103 } }
+}
+
+ywc_jhg_dock_advance_1103 = {
+ if = { limit = { ywc_jhg_dock_can_advance_1103 = yes } set_variable = { name = ywc_jhg_dock_phase value = 2 } set_variable = { name = ywc_jhg_dock_stage value = 1104 } set_variable = { name = ywc_jhg_dock_pending_event value = 1104 } }
+}
+
+ywc_jhg_dock_advance_1104 = {
+ if = { limit = { ywc_jhg_dock_can_advance_1104 = yes }  set_variable = { name = ywc_jhg_dock_stage value = 1105 } set_variable = { name = ywc_jhg_dock_pending_event value = 1105 } }
+}
+
+ywc_jhg_dock_advance_1106 = {
+ if = { limit = { ywc_jhg_dock_can_advance_1106 = yes }  set_variable = { name = ywc_jhg_dock_stage value = 1107 } set_variable = { name = ywc_jhg_dock_pending_event value = 1107 } }
+}
+
+ywc_jhg_dock_use_old_convoy = {
+ if = { limit = { ywc_jhg_dock_can_use_old_convoy = yes } set_variable = { name = ywc_jhg_dock_convoy_applied value = 1 } set_variable = { name = ywc_jhg_dock_stage value = 1105 } set_variable = { name = ywc_jhg_dock_pending_event value = 1105 } }
+}
+ywc_jhg_dock_start_observation = {
+ if = { limit = { ywc_jhg_dock_can_observe = yes }
+  set_variable = { name = ywc_jhg_dock_review_running value = 1 }
+  set_variable = { name = ywc_jhg_dock_review_streak value = 0 }
+  set_variable = { name = ywc_jhg_dock_review_month value = ywc_nmg_current_calendar_month }
+  remove_variable = ywc_jhg_dock_review_interrupted
+  remove_variable = ywc_jhg_dock_last_event
+  remove_variable = ywc_jhg_dock_pending_event
+ }
+}
+ywc_jhg_dock_track_observation = {
+ if = { limit = { var:ywc_jhg_dock_phase = 2 var:ywc_jhg_dock_stage = 1105 has_variable = ywc_jhg_dock_review_running NOT = { has_variable = ywc_jhg_v03_jhg_dockyard_capital_settled } }
+  if = { limit = { OR = { NOT = { ywc_jhg_dock_current_duty = yes } NOT = { has_variable = ywc_jhg_dock_review_month } NOT = { has_variable = ywc_jhg_dock_review_streak } NOT = { var:ywc_jhg_dock_review_running = 1 } } }
+   set_variable = { name = ywc_jhg_dock_review_streak value = 0 } set_variable = { name = ywc_jhg_dock_review_interrupted value = 1 }
+   remove_variable = ywc_jhg_dock_review_running remove_variable = ywc_jhg_dock_review_mature set_variable = { name = ywc_jhg_dock_pending_event value = 1105 }
+  }
+  else_if = { limit = { NOT = { var:ywc_jhg_dock_review_month = ywc_nmg_current_calendar_month } }
+   set_variable = { name = ywc_jhg_dock_review_month value = ywc_nmg_current_calendar_month }
+   change_variable = { name = ywc_jhg_dock_review_streak add = 1 }
+   if = { limit = { var:ywc_jhg_dock_review_streak >= 6 } set_variable = { name = ywc_jhg_dock_review_mature value = 1 } remove_variable = ywc_jhg_dock_review_running set_variable = { name = ywc_jhg_dock_stage value = 1106 } set_variable = { name = ywc_jhg_dock_pending_event value = 1106 } }
+  }
+ }
+}
+
+ywc_jhg_dock_wait_1100 = { if = { limit = { ywc_jhg_dock_at_1100 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1100 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1100 = {
+ if = { limit = { ywc_jhg_dock_at_1100 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1101 = { if = { limit = { ywc_jhg_dock_at_1101 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1101 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1101 = {
+ if = { limit = { ywc_jhg_dock_at_1101 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1102 = { if = { limit = { ywc_jhg_dock_at_1102 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1102 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1102 = {
+ if = { limit = { ywc_jhg_dock_at_1102 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1103 = { if = { limit = { ywc_jhg_dock_at_1103 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1103 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1103 = {
+ if = { limit = { ywc_jhg_dock_at_1103 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1104 = { if = { limit = { ywc_jhg_dock_at_1104 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1104 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1104 = {
+ if = { limit = { ywc_jhg_dock_at_1104 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1105 = { if = { limit = { ywc_jhg_dock_at_1105 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1105 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1105 = {
+ if = { limit = { ywc_jhg_dock_at_1105 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1106 = { if = { limit = { ywc_jhg_dock_at_1106 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1106 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1106 = {
+ if = { limit = { ywc_jhg_dock_at_1106 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_wait_1107 = { if = { limit = { ywc_jhg_dock_at_1107 = yes } set_variable = { name = ywc_jhg_dock_pending_event value = 1107 } remove_variable = ywc_jhg_dock_last_event } }
+ywc_jhg_dock_withdraw_1107 = {
+ if = { limit = { ywc_jhg_dock_at_1107 = yes }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = 4 } set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 } set_variable = { name = ywc_jhg_dock_withdrawn value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event remove_variable = ywc_jhg_dock_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}
+
+ywc_jhg_dock_close = {
+ if = { limit = { ywc_jhg_dock_can_close = yes }
+  if = { limit = { var:ywc_jhg_dock_route = 1 } ROOT.var:ywc_jhg_dock_pilot = { add_modifier = { name = ywc_jhg_dock_state_royal days = 730 } } add_modifier = { name = ywc_jhg_dock_royal_politics days = 730 } }
+  else_if = { limit = { var:ywc_jhg_dock_route = 2 } ROOT.var:ywc_jhg_dock_pilot = { add_modifier = { name = ywc_jhg_dock_state_joint days = 730 } } add_modifier = { name = ywc_jhg_dock_joint_politics days = 730 } }
+  else_if = { limit = { var:ywc_jhg_dock_route = 3 } ROOT.var:ywc_jhg_dock_pilot = { add_modifier = { name = ywc_jhg_dock_state_merchant days = 730 } } add_modifier = { name = ywc_jhg_dock_merchant_politics days = 730 } }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_outcome value = var:ywc_jhg_dock_route }
+  set_variable = { name = ywc_jhg_v03_jhg_dockyard_capital_settled value = 1 }
+  remove_variable = ywc_jhg_dock_pending_event
+  change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ }
+}

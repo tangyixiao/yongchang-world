@@ -16,8 +16,8 @@ EXPECTED_ARCS = {
     "v03_tib_service_register",
     "v03_tib_shared_schools",
 }
-EFFECTS_AST_SHA256 = 'c9b718033ba43f7bbc337bdbc35a568b426fa445817cbe7f0c064c63666ce760'
-TRIGGERS_AST_SHA256 = 'd1232cce1f1c6f465a1b2c69edf6626d42aeecd57dfcdfe8c311baa0ef2784ee'
+EFFECTS_AST_SHA256 = '4fe384c4376b78fc21b47c8c9c5151419ce593fe71f4bf12971ae3b9ae2377d5'
+TRIGGERS_AST_SHA256 = 'f150f94dfbb4fccf8ba7b7a7e98a4523fae604f3930982bd35891e08af98f363'
 
 
 def _int_tree(value: Any, where: str = "metadata") -> None:
@@ -163,6 +163,9 @@ def validate_tib_native_helper_source(effects_source: str, triggers_source: str)
 JOURNAL_SHA256 = {'ywc_je_v03_tib_register_1': {'script': '1978b77d613dc4db4474bfdb3599393a607a2b94ca83c1d6f3e0e0b312ad3625', 'goal': '4ef08f0ae32db5ceb30ceece9256dc80ca88d988ccdd8d2fe21f2f04adc45baa', 'exit_conditions': '7db78b51e033fbe84b4c3c072f21db685ef7dd8b5260c65e7880812fef5343d6'}, 'ywc_je_v03_tib_register_2': {'script': '713a520603fe496303979464ffdaf650edb634dd03b6ac5a2f4c55551774cec1', 'goal': '37f0f6a065d10748e8b4607163ff09f8507d84c82ef300c1bba1891411e558bb', 'exit_conditions': '7db78b51e033fbe84b4c3c072f21db685ef7dd8b5260c65e7880812fef5343d6'}, 'ywc_je_v03_tib_register_3': {'script': 'a3c32814ecb67651a41d1afca3e7c7a3404e2486c95a3b55d8d21637e6b63e9d', 'goal': '431b11265476a7efa84ad66fa6926bb73dca2b63d77349c15fca38309c31f7c8', 'exit_conditions': '7db78b51e033fbe84b4c3c072f21db685ef7dd8b5260c65e7880812fef5343d6'}, 'ywc_je_v03_tib_grain_1': {'script': '6eb67a1ecbb1d2d946cc9756bd735996dba624c1b02fdf48a85faaa0193b4c23', 'goal': '48d111ec5e2130b4ab212b8bb0b2870a9701a11cf42783b514408d669ead09f9', 'exit_conditions': '273e44896c922c5999963ee7fa15d4b2a0ac14bb88427444dc889a54718aa933'}, 'ywc_je_v03_tib_grain_2': {'script': '089af2edf648d94f4654d3187b87e37016169c47a3229c1f104aba219adbdc8e', 'goal': 'b9b72b4a7ffa706e285f8d2b582dc01e1f8eb15b0b80b0dbd06716cbb4923543', 'exit_conditions': '273e44896c922c5999963ee7fa15d4b2a0ac14bb88427444dc889a54718aa933'}, 'ywc_je_v03_tib_schools_1': {'script': '606ccf73b63b6fab3e5086cf954bb30bf62a3815804c25a7381e3589437438ff', 'goal': '0e828351b7abfbb868926d6b3277216c7b22f539bffeafa0adbaadb7dfc8a9e5', 'exit_conditions': '0158d7599683c6649838a78d483c843178bae9c1fc9eb53503a54c8be6fd406a'}}
 
 
+# Pinned from the three authored revenue journals at integration.
+JOURNAL_SHA256.update({'ywc_je_v03_tib_revenue_1': {'script': 'cb4ed501582f478c8232e05f9380dfdf994548666f76fec25212e5620842f9c4', 'goal': '676d9bbbff18e3a3e2aba16461a8f079700293c5d862388e0cae48c94fa1dc5a', 'exit_conditions': '73915c3cc468fd095418e4fa4cae662cd54ede0cd5bc887ef9d179e41b40fd5f'}, 'ywc_je_v03_tib_revenue_2': {'script': '3d460db9a45f83ea1009142d08c3c4f8c14d65c88e04dbf9d250766a0685682f', 'goal': '4d113aa6b1cbcc963fe0aa38071daeac9bf7bf7de232775790968c6f7292b54c', 'exit_conditions': '73915c3cc468fd095418e4fa4cae662cd54ede0cd5bc887ef9d179e41b40fd5f'}, 'ywc_je_v03_tib_revenue_3': {'script': 'bac95133e978fc2805e3328522d7233f9ce9e36701caca42956252dc0416f41b', 'goal': 'b9e65d327ab5cfce08e03049bedc92f5c6b98d012ef7ff6438b473b5ef297274', 'exit_conditions': '73915c3cc468fd095418e4fa4cae662cd54ede0cd5bc887ef9d179e41b40fd5f'}})
+
 def _validate_catalog(catalog: dict[str, Any]) -> None:
     try:
         from tools.v03_inline_delivery_adapter import _kor_direct_adds
@@ -172,12 +175,16 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
     if not isinstance(catalog, dict) or catalog.get("key") != "country_tib":
         raise ValueError("TIB inline adapter requires the TIB catalog")
     arcs = catalog.get("arcs")
-    if (not isinstance(arcs, list) or len(arcs) != 3
+    if (not isinstance(arcs, list) or len(arcs) not in (3, 4)
             or any(not isinstance(arc, dict) or type(arc.get("slug")) is not str for arc in arcs)):
-        raise ValueError("TIB inline adapter requires three well-formed foundation arcs")
-    selected = [arc for arc in arcs if isinstance(arc, dict) and arc.get("era") == "foundation"]
-    if len(selected) != 3 or {arc.get("slug") for arc in selected} != EXPECTED_ARCS:
-        raise ValueError("TIB inline adapter requires exactly its three foundation arcs")
+        raise ValueError("TIB inline adapter requires its registered arcs")
+    foundation = [arc for arc in arcs if arc.get("era") == "foundation"]
+    middle = [arc for arc in arcs if arc.get("era") == "middle"]
+    if (len(foundation) != 3 or {arc.get("slug") for arc in foundation} != EXPECTED_ARCS
+            or (middle and (len(middle) != 1 or middle[0].get("slug") != "v03_tib_public_revenue"))
+            or len(foundation) + len(middle) != len(arcs)):
+        raise ValueError("TIB inline adapter requires exactly its registered sources")
+    selected = foundation + middle
     witnesses: set[str] = set()
     all_events: set[str] = set()
     branches_seen: set[tuple[str, int]] = set()
@@ -190,7 +197,7 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
         journals = arc.get("journals")
         events = arc.get("events")
         expected_counts = {"v03_tib_grain_credit": (2, 8), "v03_tib_service_register": (3, 10),
-                           "v03_tib_shared_schools": (1, 6)}[arc["slug"]]
+                           "v03_tib_shared_schools": (1, 6), "v03_tib_public_revenue": (3, 10)}[arc["slug"]]
         if not isinstance(journals, list) or len(journals) != expected_counts[0] or not isinstance(events, list) or len(events) != expected_counts[1]:
             raise ValueError(f"{arc['slug']}: TIB journal/event inventory drift")
         phases = adapter["live_phases"]
@@ -236,11 +243,19 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
             except ModuleNotFoundError:
                 from v03_inline_delivery_adapter import parse_block
             trigger = parse_block(event.get("trigger", ""))
-            expected_trigger = parse_block("{ c:TIB ?= this ywc_v03_can_deliver_major = yes }")
-            if _ast_rows(trigger) != _ast_rows(expected_trigger):
+            base_trigger = "c:TIB ?= this ywc_v03_can_deliver_major = yes"
+            revenue = arc["slug"] == "v03_tib_public_revenue"
+            number = int(event_id.rsplit(".", 1)[1])
+            if revenue and number not in (1125, 1126):
+                base_trigger += " has_variable = ywc_v03_tib_v03_tib_public_revenue_started NOT = { has_variable = ywc_v03_tib_v03_tib_public_revenue_settled }"
+            if _ast_rows(trigger) != _ast_rows(parse_block("{ " + base_trigger + " }")):
                 raise ValueError(f"{event_id}: native trigger layout drift")
-            body = parse_block(immediate)
-            if len(body) != 1 or body[0].key != "ywc_v03_mark_major_delivered" or body[0].op != "=" or body[0].value != "yes":
+            expected_immediate = "ywc_v03_mark_major_delivered = yes"
+            if revenue:
+                if not 1120 <= number <= 1129:
+                    raise ValueError(f"{event_id}: unowned revenue event")
+                expected_immediate += f" ywc_tib_revenue_stamp_{number} = yes"
+            if _ast_rows(parse_block(immediate)) != _ast_rows(parse_block("{ " + expected_immediate + " }")):
                 raise ValueError(f"{event_id}: native immediate layout drift")
         expected_rows = []
         for journal in journals:
@@ -276,10 +291,11 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
             if proof["event"] not in {event["id"] for event in events}:
                 raise ValueError(f"{jid}: unowned TIB event binding")
             all_sources.append((arc, next(j for j in journals if j["id"] == jid), proof))
-    if len(witnesses) != 6 or len(all_events) != 24 or len(all_sources) != 58:
-        raise ValueError("TIB adapter must bind six phases, 24 events and 58 source senders")
-    if sum(row[2]["candidates"][0]["kind"] == "normal" for row in all_sources) != 40:
-        raise ValueError("TIB adapter must bind 40 normal and eighteen notice senders")
+    expected_inventory = (9, 34, 76, 52) if middle else (6, 24, 58, 40)
+    actual_inventory = (len(witnesses), len(all_events), len(all_sources),
+                        sum(row[2]["candidates"][0]["kind"] == "normal" for row in all_sources))
+    if actual_inventory != expected_inventory:
+        raise ValueError("TIB adapter source sender inventory drift")
 
 
 def _ast_rows(nodes: Any) -> list[tuple[Any, ...]]:
@@ -322,7 +338,7 @@ def _render_adapter(catalog: dict[str, Any]) -> dict[str, Any]:
     except ModuleNotFoundError:
         from v03_inline_delivery_adapter import children, direct_values, parse_block, render_node
     _validate_catalog(catalog)
-    arcs = [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"]
+    arcs = [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"] + [arc for arc in catalog["arcs"] if arc.get("slug") == "v03_tib_public_revenue"]
     rows = []
     live = {phase["journal"]: phase["live_witness"] for arc in arcs
             for phase in arc["inline_delivery_adapter"]["live_phases"]}
@@ -338,7 +354,7 @@ def _render_adapter(catalog: dict[str, Any]) -> dict[str, Any]:
     native_names = sorted(native_names)
     # The authored senders read/write all nine queues and three last-delivered
     # markers. Freeze their presence and scalar value after the full native pre.
-    if len(native_names) != 12:
+    if len(native_names) != (16 if len(arcs) == 4 else 12):
         raise ValueError("TIB native queue/marker snapshot inventory drift")
     reservation = PREFIX + "_reservation"
     epoch = PREFIX + "_reservation_epoch"

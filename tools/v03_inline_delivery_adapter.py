@@ -373,7 +373,7 @@ def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
             if negative:
                 continue
             if node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_") and node.value.endswith(("_pending_event", "_notice_event")):
-                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_public_pending_event", node.value):
+                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_(public|gold)_pending_event", node.value):
                     raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.value}")
                 continue
             if not node.key.startswith("var:ywc_lan_"):
@@ -381,7 +381,7 @@ def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
                     raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.key}")
                 continue
             queue = node.key.removeprefix("var:")
-            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_public_pending_event", queue)
+            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_(public|gold)_pending_event", queue)
             if not match:
                 raise ValueError(f"LAN sender contains an unknown queue predicate: {queue}")
             if node.op != "=" or not isinstance(node.value, str) or not node.value.isdigit():
@@ -545,7 +545,7 @@ def _nmg_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
                 if node.key in {"OR", "XOR", "NOR"}:
                     raise ValueError(f"unsupported NMG queue Boolean/container {node.key}")
                 visit(node.value, negative)
-            elif not negative and node.key.startswith("var:ywc_nmg_") and node.op == "=" and isinstance(node.value, str) and node.value.isdigit() and (node.key.endswith(("_pending", "_notice_pending")) or node.key == "var:ywc_nmg_school_pending_event"):
+            elif not negative and node.key.startswith("var:ywc_nmg_") and node.op == "=" and isinstance(node.value, str) and node.value.isdigit() and (node.key.endswith(("_pending", "_notice_pending")) or node.key in {"var:ywc_nmg_school_pending_event", "var:ywc_nmg_bay_pending_event"}):
                 queue = node.key.removeprefix("var:")
                 found.append({"queue": queue, "kind": "notice" if queue.endswith("_notice_pending") else "normal", "mode": "exact", "value": int(node.value)})
     visit(children(limits[0]))
@@ -569,9 +569,9 @@ def _nmg_queue_exclusions(branch_source: str) -> list[dict[str, Any]]:
                 if node.key in {"OR", "XOR", "NOR"}:
                     raise ValueError(f"unsupported NMG Boolean queue container {node.key}")
                 visit(node.value, neg)
-            elif neg and node.key.startswith("var:ywc_nmg_") and (node.key.endswith(("_pending", "_notice_pending")) or node.key == "var:ywc_nmg_school_pending_event"):
+            elif neg and node.key.startswith("var:ywc_nmg_") and (node.key.endswith(("_pending", "_notice_pending")) or node.key in {"var:ywc_nmg_school_pending_event", "var:ywc_nmg_bay_pending_event"}):
                 out.append({"queue": node.key.removeprefix("var:"), "op": node.op, "mode": "exact", "value": node.value})
-            elif neg and node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_nmg_") and (node.value.endswith(("_pending", "_notice_pending")) or node.value == "ywc_nmg_school_pending_event"):
+            elif neg and node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_nmg_") and (node.value.endswith(("_pending", "_notice_pending")) or node.value in {"ywc_nmg_school_pending_event", "ywc_nmg_bay_pending_event"}):
                 out.append({"queue": node.value, "op": node.op, "mode": "presence"})
     visit(children(limits[0]))
     return out
@@ -711,6 +711,23 @@ _SHU_FOUNDATION_SLUGS = (
 )
 _SHU_MIDDLE_SLUG = "v03_shu_provincial_contract"
 _SHU_PUBLIC_SLUG = "v03_shu_public_deliberation"
+_SHU_RURAL_SLUG = "v03_shu_rural_workshop"
+# Production pins must be bound from reviewed actual source after writer termination.
+# Empty maps intentionally reject every rural catalog, even self-consistent metadata.
+_SHU_RURAL_SOURCE_HASHES: dict[str, str] = {
+    "ywc_je_v03_shu_workshop_ground": "851a6acb0c77069439b2e04c0e679fa95c0289a58fe02602251bf7cc7e46bd0e",
+    "ywc_je_v03_shu_workshop_yields": "6f030b92cbe61d760f514152bb12333873a882e77e48d44f2778249784ba46d1"
+}
+_SHU_RURAL_IMMEDIATE_HASHES: dict[str, str] = {
+    "ywc_shu.1110": "bff1931ab63b6d3dba13713ea67c4a51cd7845a8125fbcc4d784732f0d62629b",
+    "ywc_shu.1111": "a0c3ecdbec71d6e03313b805855b1696edebda58bf97fa665ecc33e70580e944",
+    "ywc_shu.1112": "69b1572ac608c1b83a0eb3dd3692a80a34d00639397abfcfcf14ddaba14c0434",
+    "ywc_shu.1113": "45f8a4b7d4729c02f2081933494ba8aafaf27b6c5a25ae0f8698e36129d5a624",
+    "ywc_shu.1114": "ec07830fe684c53861642d2af241881ea282447012f3b4497c43535318e794dd",
+    "ywc_shu.1115": "e7b3f706a5537c36032e00301be5427897cd7eb1eed972e77906c3ddf03a7d40",
+    "ywc_shu.1116": "cd6e9e45ec063ba619bcd790f0021f4bf836143338ec7279a6bcb857fa935c12",
+    "ywc_shu.1117": "de40be1362d646aeeb0627253a1395d8887d7034bb775e74774e18037f0ef293"
+}
 # Filled only from reviewed authored sources, never from mutable metadata.
 _SHU_MIDDLE_SOURCE_HASHES: dict[str, str] = {
     "ywc_je_v03_shu_provincial_charter": "31ada106f54d24b24fbf0f569759cfb7aa00ee1b7fc70bdb9e2ef0d74b6cc057",
@@ -751,7 +768,7 @@ def _shu_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
     middle = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG} or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG, _SHU_RURAL_SLUG} or arc.get("era") != "middle":
             slug = arc.get("slug") if isinstance(arc, dict) else None
             raise ValueError(f"unregistered SHU inline arc: {slug}")
         if arc["slug"] in middle:
@@ -759,10 +776,12 @@ def _shu_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
         middle[arc["slug"]] = arc
     if _SHU_PUBLIC_SLUG in middle and _SHU_MIDDLE_SLUG not in middle:
         raise ValueError("SHU public registration must preserve the provincial-contract sources")
+    if _SHU_RURAL_SLUG in middle and not {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG} <= middle.keys():
+        raise ValueError("SHU rural registration must preserve all five accepted SHU arcs")
     # Append registered middle sites after the original 31 in fixed order.
     return [next(arc for arc in foundation if arc["slug"] == slug)
             for slug in _SHU_FOUNDATION_SLUGS] + [middle[slug] for slug in
-                (_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG) if slug in middle]
+                (_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG, _SHU_RURAL_SLUG) if slug in middle]
 
 
 def _shu_public_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -781,6 +800,8 @@ def _shu_public_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
 
 
 def _shu_expected_receipt(event_id: str) -> tuple[str, int]:
+    if isinstance(event_id, str) and re.fullmatch(r"ywc_shu\.111[0-7]", event_id):
+        return "ywc_shu_workshop_last_event", int(event_id.rsplit(".", 1)[1])
     if isinstance(event_id, str) and re.fullmatch(r"ywc_shu\.112[0-7]", event_id):
         return "ywc_shu_delib_last_event", int(event_id.rsplit(".", 1)[1])
     match = re.fullmatch(r"ywc_shu\.(10(?:0[0-9]|1[0-9]|2[0-5])|110[0-7])", event_id)
@@ -790,6 +811,24 @@ def _shu_expected_receipt(event_id: str) -> tuple[str, int]:
     if number <= 1009:
         return "ywc_v03_shu_v03_shu_fiscal_register_last_event", number - 999
     return "ywc_v03_shu_event_dispatch", number
+
+
+def _shu_rural_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_shu\.111[0-7]", event_id):
+        raise ValueError(f"{event_id}: unsupported SHU rural native event")
+    name, value = _shu_expected_receipt(event_id)
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = ywc_v03_shu_event_dispatch value = {value} }} "
+                f"set_variable = {{ name = {name} value = {value} }} "
+                "if = { limit = { NOT = { has_variable = ywc_shu_workshop_popup_epoch } } "
+                "set_variable = { name = ywc_shu_workshop_popup_epoch value = 0 } } "
+                "change_variable = { name = ywc_shu_workshop_popup_epoch add = 1 } "
+                "save_scope_value_as = { name = ywc_shu_workshop_popup_epoch value = var:ywc_shu_workshop_popup_epoch } }")
+    if tuple(_nqg_node_shape(node) for node in parse_block(event.get("immediate", ""))) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported SHU rural native immediate body")
+    return name, value
 
 
 def _shu_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
@@ -842,10 +881,13 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
     active = _shu_active_arcs(catalog)
     has_middle = any(arc["slug"] == _SHU_MIDDLE_SLUG for arc in active)
     has_public = any(arc["slug"] == _SHU_PUBLIC_SLUG for arc in active)
+    has_rural = any(arc["slug"] == _SHU_RURAL_SLUG for arc in active)
     source_hashes = {**_SHU_SOURCE_HASHES, **(_SHU_MIDDLE_SOURCE_HASHES if has_middle else {}),
-                     **(_SHU_PUBLIC_SOURCE_HASHES if has_public else {})}
+                     **(_SHU_PUBLIC_SOURCE_HASHES if has_public else {}),
+                     **(_SHU_RURAL_SOURCE_HASHES if has_rural else {})}
     immediate_hashes = {**_SHU_IMMEDIATE_HASHES, **(_SHU_MIDDLE_IMMEDIATE_HASHES if has_middle else {}),
-                        **(_SHU_PUBLIC_IMMEDIATE_HASHES if has_public else {})}
+                        **(_SHU_PUBLIC_IMMEDIATE_HASHES if has_public else {}),
+                        **(_SHU_RURAL_IMMEDIATE_HASHES if has_rural else {})}
     witnesses: set[str] = set()
     queues_by_arc: dict[str, set[str]] = {}
     queue_owners: dict[str, str] = {}
@@ -865,6 +907,12 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
             if len(arc.get("events", [])) != 8 or {event.get("id") for event in arc["events"]} != {
                     f"ywc_shu.{n}" for n in range(1120, 1128)}:
                 raise ValueError("SHU public requires its eight native events")
+        if arc["slug"] == _SHU_RURAL_SLUG:
+            if [j.get("id") for j in journals] != ["ywc_je_v03_shu_workshop_ground", "ywc_je_v03_shu_workshop_yields"]:
+                raise ValueError("SHU rural requires its two ordered native phases")
+            if len(arc.get("events", [])) != 8 or {event.get("id") for event in arc["events"]} != {
+                    f"ywc_shu.{n}" for n in range(1110, 1118)}:
+                raise ValueError("SHU rural requires its eight native events")
         phases = adapter["live_phases"]
         if not isinstance(phases, list) or len(phases) != len(journals):
             raise ValueError(f"{arc['slug']}: every native JE needs a phase witness")
@@ -892,6 +940,8 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}/{event_id}: frozen native immediate source changed")
             if arc["slug"] == _SHU_PUBLIC_SLUG:
                 _shu_public_native_receipt(event)
+            if arc["slug"] == _SHU_RURAL_SLUG:
+                _shu_rural_native_receipt(event)
             immediate_nodes = parse_block(immediate)
             major_calls = [i for i, node in enumerate(immediate_nodes) if node.key == "ywc_v03_mark_major_delivered" and node.op == "=" and node.value == "yes"]
             receipts = [(i, node) for i, node in enumerate(immediate_nodes) if node.key == "set_variable" and isinstance(node.value, tuple) and len(direct_values(children(node), "name")) == 1 and direct_values(children(node), "name")[0].value == receipt_name]
@@ -913,6 +963,13 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
                 bound = [proof for proof in records if isinstance(proof, dict) and proof.get("journal") == journal["id"]]
                 if len(bound) != 4 or {proof.get("event") for proof in bound} != {f"ywc_shu.{n}" for n in numbers}:
                     raise ValueError("SHU public native phases must bind their four/four partition")
+        if arc["slug"] == _SHU_RURAL_SLUG:
+            if len(records) != 8:
+                raise ValueError("SHU rural requires eight native sender sites")
+            for journal, numbers in zip(journals, (range(1110, 1114), range(1114, 1118))):
+                bound = [proof for proof in records if isinstance(proof, dict) and proof.get("journal") == journal["id"]]
+                if len(bound) != 4 or {proof.get("event") for proof in bound} != {f"ywc_shu.{n}" for n in numbers}:
+                    raise ValueError("SHU rural native phases must bind their four/four partition")
         event_ids = {event["id"] for event in arc["events"]}
         for proof, (jid, source) in zip(records, actual):
             total_sites += 1
@@ -955,6 +1012,10 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
                     "queue": "ywc_shu_delib_pending_event", "kind": "normal", "mode": "exact",
                     "value": int(proof["event"].rsplit(".", 1)[1])}]:
                 raise ValueError("SHU public sender must own its exact native event queue")
+            if arc["slug"] == _SHU_RURAL_SLUG and proof["candidates"] != [{
+                    "queue": "ywc_shu_workshop_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(proof["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("SHU rural sender must own its exact native event queue")
             # Bind every pre-trigger transaction operation (queue removal, auxiliary cleanup and claim).
             script = next(j["script"] for j in journals if j["id"] == jid)
             native = _branch_node(script, source)[0]
@@ -974,7 +1035,7 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
         if direct_adds != _kor_direct_adds(arc):
             raise ValueError(f"{arc['slug']}: direct-add source inventory drift")
         observed_direct_adds.extend(direct_adds)
-    expected_sites = 31 + (8 if has_middle else 0) + (8 if has_public else 0)
+    expected_sites = 31 + (8 if has_middle else 0) + (8 if has_public else 0) + (8 if has_rural else 0)
     if total_sites != expected_sites:
         raise ValueError(f"SHU adapter requires exactly {expected_sites} native sender sites")
     required_ids = {f"ywc_shu.{n}" for n in range(1000, 1026)}
@@ -982,6 +1043,8 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
         required_ids |= {f"ywc_shu.{n}" for n in range(1100, 1108)}
     if has_public:
         required_ids |= {f"ywc_shu.{n}" for n in range(1120, 1128)}
+    if has_rural:
+        required_ids |= {f"ywc_shu.{n}" for n in range(1110, 1118)}
     if expected_event_ids != required_ids:
         raise ValueError(f"SHU adapter requires exactly its {len(required_ids)} native events")
     if set(immediate_hashes) != expected_event_ids:
@@ -1007,6 +1070,26 @@ _LAN_FOUNDATION_SLUGS = (
     "v03_lan_mine_accounts", "v03_lan_river_compacts", "v03_lan_work_accident_fund",
 )
 _LAN_COMPANY_SLUG = "v03_lan_company_public"
+_LAN_GOLD_SLUG = "v03_lan_beyond_gold"
+_LAN_GOLD_JOURNAL_HASHES = {
+    "ywc_je_v03_lan_gold_livelihood": (
+        "d94050b70ff2e95f26887eb2c73fe81bd1c842b94199bd5411bf2390eac3ff5d",
+        "56b4b2e4d82b24157bf395723d41fbf78e62f128cf96af95b42904d0750d8451",
+        "cb7160799f7a0ec3e630e905e6810bcb97f0bf4c848d87dd17f620447de9e66b"),
+    "ywc_je_v03_lan_gold_share_future": (
+        "a58e5206cdee831f24a3cb5824776e26ce486705c5afa8e99d4fb2fde4119f25",
+        "cfb646d5582fcbf10af966ebfb661a719e3cce0c305e0b69ec614567d6493f08",
+        "cb7160799f7a0ec3e630e905e6810bcb97f0bf4c848d87dd17f620447de9e66b"),
+}
+
+
+def _lan_tracked_sender_state(stem: str) -> list[str]:
+    names = [f"ywc_lan_{stem}_notice_current", f"ywc_lan_{stem}_notice12_sent",
+             f"ywc_lan_{stem}_notice36_sent", f"ywc_lan_{stem}_pending_event",
+             f"ywc_lan_{stem}_notice_event"]
+    if stem == "gold":
+        names.append("ywc_lan_gold_observation_waiting")
+    return names
 
 
 def _lan_native_receipt(event: dict[str, Any]) -> tuple[str | None, int | None]:
@@ -1020,6 +1103,13 @@ def _lan_native_receipt(event: dict[str, Any]) -> tuple[str | None, int | None]:
         value = int(event_id.rsplit(".", 1)[1]) - 1099
         expected = ("{ ywc_v03_mark_major_delivered = yes "
                     f"set_variable = {{ name = {receipt} value = {value} }} }}")
+    elif re.fullmatch(r"ywc_lan\.112[0-7]", event_id):
+        receipt = "ywc_v03_lan_v03_lan_beyond_gold_last_event"
+        value = int(event_id.rsplit(".", 1)[1]) - 1119
+        expected = ("{ ywc_v03_mark_major_delivered = yes "
+                    f"set_variable = {{ name = {receipt} value = {value} }} "
+                    "change_variable = { name = ywc_lan_gold_popup_epoch add = 1 } "
+                    "save_scope_value_as = { name = ywc_lan_gold_popup_epoch value = var:ywc_lan_gold_popup_epoch } }")
     else:
         raise ValueError(f"{event_id}: unregistered LAN native receipt")
     actual = parse_block(event.get("immediate", ""))
@@ -1035,14 +1125,19 @@ def _lan_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_LAN_FOUNDATION_SLUGS):
         raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    registered = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") != _LAN_COMPANY_SLUG or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_LAN_COMPANY_SLUG, _LAN_GOLD_SLUG} or arc.get("era") != "middle":
             slug = arc.get("slug") if isinstance(arc, dict) else None
             raise ValueError(f"unregistered LAN inline arc: {slug}")
-    if len(extra) > 1:
-        raise ValueError("LAN inline adapter permits one registered company-public arc")
+        if arc["slug"] in registered:
+            raise ValueError(f"duplicate LAN inline arc: {arc['slug']}")
+        registered[arc["slug"]] = arc
+    if _LAN_GOLD_SLUG in registered and _LAN_COMPANY_SLUG not in registered:
+        raise ValueError("LAN beyond-gold requires the registered company-public arc")
     return [next(arc for arc in foundation if arc["slug"] == slug)
-            for slug in _LAN_FOUNDATION_SLUGS] + extra
+            for slug in _LAN_FOUNDATION_SLUGS] + [registered[slug] for slug in
+                (_LAN_COMPANY_SLUG, _LAN_GOLD_SLUG) if slug in registered]
 
 
 def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
@@ -1053,17 +1148,20 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
     active = _lan_active_arcs(catalog)
     if {a.get("slug") for a in active[:3]} != expected_slugs:
         raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
-    has_company = len(active) == 4
+    has_company = any(arc["slug"] == _LAN_COMPANY_SLUG for arc in active)
+    has_gold = any(arc["slug"] == _LAN_GOLD_SLUG for arc in active)
     counts = {"ywc_je_v03_lan_mine_ledger": 7, "ywc_je_v03_lan_mine_settlement": 5,
               "ywc_je_v03_lan_river_compacts": 8, "ywc_je_v03_lan_river_settlement": 4,
               "ywc_je_v03_lan_accident_fund": 7, "ywc_je_v03_lan_fund_settlement": 5,
               "ywc_je_v03_lan_public_mandate": 4, "ywc_je_v03_lan_public_budget": 4,
-              "ywc_je_v03_lan_public_succession": 2}
+              "ywc_je_v03_lan_public_succession": 2,
+              "ywc_je_v03_lan_gold_livelihood": 6, "ywc_je_v03_lan_gold_share_future": 4}
     all_events: set[str] = set()
     witnesses: set[str] = set()
     modes = {"normal": 0, "notice12": 0, "notice36": 0}
     for arc in active:
         is_company = arc["slug"] == _LAN_COMPANY_SLUG
+        is_gold = arc["slug"] == _LAN_GOLD_SLUG
         adapter = arc.get("inline_delivery_adapter")
         if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches", "direct_adds"} or adapter.get("schema") != "v03.foundation_inline_adapter.v2":
             raise ValueError(f"{arc['slug']}: LAN requires strict v2 inline metadata")
@@ -1074,6 +1172,15 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                 "ywc_je_v03_lan_public_mandate", "ywc_je_v03_lan_public_budget",
                 "ywc_je_v03_lan_public_succession"]:
             raise ValueError("LAN public card requires its three ordered native phases")
+        if is_gold and [journal.get("id") for journal in journals] != [
+                "ywc_je_v03_lan_gold_livelihood", "ywc_je_v03_lan_gold_share_future"]:
+            raise ValueError("LAN beyond-gold requires its two ordered native phases")
+        if is_gold:
+            for journal in journals:
+                actual = tuple(hashlib.sha256(journal[field].encode()).hexdigest()
+                               for field in ("script", "goal", "exit_conditions"))
+                if actual != _LAN_GOLD_JOURNAL_HASHES[journal["id"]]:
+                    raise ValueError(f"{journal['id']}: frozen LAN beyond-gold source drift")
         phases = adapter["live_phases"]
         if not isinstance(phases, list) or len(phases) != len(journals):
             raise ValueError(f"{arc['slug']}: every source JE needs one live phase")
@@ -1095,7 +1202,7 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             raise ValueError(f"{arc['slug']}: all LAN sender sites must be bound")
         event_ids = {e.get("id") for e in arc.get("events", []) if isinstance(e, dict)}
         expected_base={"v03_lan_mine_accounts":1000,"v03_lan_river_compacts":1010,"v03_lan_work_accident_fund":1020,
-                       _LAN_COMPANY_SLUG:1100}[arc["slug"]]
+                       _LAN_COMPANY_SLUG:1100, _LAN_GOLD_SLUG:1120}[arc["slug"]]
         if event_ids != {f"ywc_lan.{n}" for n in range(expected_base,expected_base+(10 if is_company else 8))}:
             raise ValueError(f"{arc['slug']}: LAN native event inventory drift")
         all_events |= event_ids
@@ -1109,14 +1216,14 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             if proof["event"] not in event_ids:
                 raise ValueError(f"{arc['slug']}/{jid}: LAN sender event is not owned by its arc")
             cand = proof["candidates"][0]
-            stem = re.match(r"ywc_lan_(mine|river|fund|public)_", cand["queue"])
+            stem = re.match(r"ywc_lan_(mine|river|fund|public|gold)_", cand["queue"])
             expected_stem = {"v03_lan_mine_accounts": "mine", "v03_lan_river_compacts": "river",
-                             "v03_lan_work_accident_fund": "fund", _LAN_COMPANY_SLUG: "public"}[arc["slug"]]
+                             "v03_lan_work_accident_fund": "fund", _LAN_COMPANY_SLUG: "public", _LAN_GOLD_SLUG: "gold"}[arc["slug"]]
             if not stem or stem.group(1) != expected_stem or cand["mode"] != "exact":
                 raise ValueError(f"{arc['slug']}/{jid}: LAN queue is not exact and arc-owned")
             if cand["kind"] == "notice":
-                if is_company:
-                    raise ValueError("LAN public card has only its ten normal event queues")
+                if is_company or is_gold:
+                    raise ValueError("LAN middle cards have only normal event queues")
                 if cand["queue"] != f"ywc_lan_{expected_stem}_notice_event" or cand["value"] not in {12, 36}:
                     raise ValueError(f"{arc['slug']}/{jid}: malformed LAN notice queue")
                 modes[f"notice{cand['value']}"] += 1
@@ -1128,11 +1235,16 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             node = _branch_node(script, source)[0]
             ops = [n for n in children(node) if n.key not in {"limit", "trigger_event"}]
             expected_ops = (["remove_variable"] if cand["kind"] == "normal" else ["remove_variable", "set_variable", "set_variable"])
+            if is_gold and proof["event"] == "ywc_lan.1125":
+                expected_ops = ["remove_variable", "remove_variable"]
             if [n.key for n in ops] != expected_ops:
                 raise ValueError(f"{arc['slug']}/{jid}: unsupported LAN native pre-trigger operations")
             first_fields = children(ops[0]) if isinstance(ops[0].value, tuple) else ()
             if ops[0].op != "=" or len(first_fields) != 0 or ops[0].value != cand["queue"]:
                 raise ValueError(f"{arc['slug']}/{jid}: LAN sender must remove only its selected queue")
+            if is_gold and proof["event"] == "ywc_lan.1125":
+                if ops[1].op != "=" or ops[1].value != "ywc_lan_gold_observation_waiting":
+                    raise ValueError("LAN beyond-gold review sender must consume its exact waiting flag")
             if cand["kind"] == "notice":
                 values = []
                 for n in ops[1:]:
@@ -1158,6 +1270,16 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError("LAN public card native phase sender inventory drift")
             for event in arc["events"]:
                 _lan_native_receipt(event)
+        if is_gold:
+            expected_sites = {
+                "ywc_je_v03_lan_gold_livelihood": ["ywc_lan.1126", "ywc_lan.1120", "ywc_lan.1121", "ywc_lan.1122", "ywc_lan.1123", "ywc_lan.1124"],
+                "ywc_je_v03_lan_gold_share_future": ["ywc_lan.1126", "ywc_lan.1125", "ywc_lan.1126", "ywc_lan.1127"],
+            }
+            for journal in journals:
+                if [row["event"] for jid, row in expected if jid == journal["id"]] != expected_sites[journal["id"]]:
+                    raise ValueError("LAN beyond-gold native sender order or phase drift")
+            for event in arc["events"]:
+                _lan_native_receipt(event)
         for event in arc.get("events", []):
             if not isinstance(event, dict) or not re.fullmatch(r"ywc_lan\.(100[0-7]|101[0-7]|102[0-7])", event.get("id", "")):
                 continue
@@ -1166,7 +1288,7 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}/{event['id']}: LAN native trigger drift")
             if event.get("immediate") != "{ ywc_v03_mark_major_delivered = yes }":
                 raise ValueError(f"{arc['slug']}/{event['id']}: LAN native immediate must remain the pinned complete body")
-    if modes != {"normal": 34 if has_company else 24, "notice12": 6, "notice36": 6}:
+    if modes != {"normal": 24 + (10 if has_company else 0) + (10 if has_gold else 0), "notice12": 6, "notice36": 6}:
         raise ValueError(f"LAN sender class inventory drift: {modes}")
 
 
@@ -1615,6 +1737,7 @@ _NMG_FOUNDATION_SLUGS = (
     "v03_nmg_land_arbitration", "v03_nmg_bilingual_office", "v03_nmg_autonomy_revenue",
 )
 _NMG_SCHOOL_SLUG = "v03_nmg_parish_school"
+_NMG_BAY_SLUG = "v03_nmg_bay_ports"
 
 
 def _nmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1622,11 +1745,55 @@ def _nmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {a.get("slug") for a in foundation} != set(_NMG_FOUNDATION_SLUGS):
         raise ValueError("NMG inline adapter requires its three foundation arcs and six native JEs")
     extra = [a for a in catalog["arcs"] if a not in foundation]
-    if any(not isinstance(a, dict) or a.get("slug") != _NMG_SCHOOL_SLUG or a.get("era") != "middle" for a in extra):
+    if any(not isinstance(a, dict) or a.get("slug") not in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} or a.get("era") != "middle" for a in extra):
         raise ValueError("unregistered NMG inline arc")
-    if len(extra) > 1:
-        raise ValueError("duplicate registered NMG school arc")
-    return [next(a for a in foundation if a["slug"] == slug) for slug in _NMG_FOUNDATION_SLUGS] + extra
+    if len({a["slug"] for a in extra}) != len(extra):
+        raise ValueError("duplicate registered NMG middle arc")
+    return ([next(a for a in foundation if a["slug"] == slug) for slug in _NMG_FOUNDATION_SLUGS]
+            + [a for slug in (_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG) for a in extra if a["slug"] == slug])
+
+
+def _nmg_bay_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_nmg\.110[0-7]", event_id):
+        raise ValueError(f"{event_id}: unsupported NMG bay native event")
+    name = "ywc_v03_nmg_v03_nmg_bay_ports_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1099
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} "
+                "change_variable = { name = ywc_nmg_bay_popup_epoch add = 1 } "
+                "save_scope_value_as = { name = ywc_nmg_bay_popup_epoch value = var:ywc_nmg_bay_popup_epoch } }")
+    if not isinstance(event.get("immediate"), str) or tuple(
+            _nqg_node_shape(node) for node in parse_block(event["immediate"])) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported NMG bay native immediate body")
+    return name, value
+
+
+def _nmg_validate_bay_foreign_reply(event: dict[str, Any]) -> None:
+    """Keep the foreign reply outside major delivery and guard both effects."""
+    def shape(source: str) -> tuple:
+        if not isinstance(source, str):
+            raise ValueError("NMG bay reply requires literal source")
+        return tuple(_nqg_node_shape(node) for node in parse_block(source))
+    if event.get("id") != "ywc_nmg.1108" or event.get("hidden") is True:
+        raise ValueError("NMG bay requires one visible foreign response")
+    if shape(event.get("trigger")) != shape("{ ywc_nmg_bay_reply_current = yes }") or shape(event.get("immediate")) != shape("{}"):
+        raise ValueError("NMG bay foreign response cannot claim major delivery")
+    options = event.get("options")
+    if not isinstance(options, list) or len(options) not in (2, 3):
+        raise ValueError("NMG bay foreign response requires guarded accept and refuse")
+    by_key = {option.get("key"): option for option in options if isinstance(option, dict)}
+    if len(by_key) != len(options) or set(by_key) not in ({"accept_advance", "refuse"}, {"accept_advance", "refuse", "stale"}):
+        raise ValueError("NMG bay foreign response has unexpected options")
+    for key, helper in (("accept_advance", "ywc_nmg_bay_accept_advance"), ("refuse", "ywc_nmg_bay_refuse")):
+        option = by_key[key]
+        if shape(option.get("trigger")) != shape("{ ywc_nmg_bay_reply_current = yes }") or shape(option.get("effect")) != shape(
+                "{ if = { limit = { ywc_nmg_bay_reply_current = yes } " + helper + " = yes } }"):
+            raise ValueError(f"NMG bay {key} must recheck the real reply context")
+    if "stale" in by_key and (shape(by_key["stale"].get("trigger")) != shape("{ NOT = { ywc_nmg_bay_reply_current = yes } }") or
+                              shape(by_key["stale"].get("effect")) != shape("{}")):
+        raise ValueError("NMG bay stale reply must be an invalid-context no-op")
 
 
 def _nmg_school_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -1650,7 +1817,7 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
     arcs = _nmg_active_arcs(catalog)
     witnesses = set()
     total = 0
-    owner_for = {"v03_nmg_land_arbitration": "land", "v03_nmg_bilingual_office": "office", "v03_nmg_autonomy_revenue": "revenue", _NMG_SCHOOL_SLUG: "school"}
+    owner_for = {"v03_nmg_land_arbitration": "land", "v03_nmg_bilingual_office": "office", "v03_nmg_autonomy_revenue": "revenue", _NMG_SCHOOL_SLUG: "school", _NMG_BAY_SLUG: "bay"}
     for arc in arcs:
         ad = arc.get("inline_delivery_adapter")
         if not isinstance(ad, dict) or set(ad) != {"schema", "live_phases", "branches", "direct_adds"} or ad.get("schema") != "v03.foundation_inline_adapter.v2":
@@ -1666,6 +1833,21 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
                 if event.get("hidden") is True:
                     raise ValueError("NMG school player events cannot be hidden")
                 _nmg_school_native_receipt(event)
+        if arc["slug"] == _NMG_BAY_SLUG:
+            if [j.get("id") for j in journals] != ["ywc_je_v03_nmg_bay_charter", "ywc_je_v03_nmg_bay_operations"]:
+                raise ValueError("NMG bay requires its two ordered native phases")
+            for journal in journals:
+                if any(node.key == "add_journal_entry" for node in _walk(parse_block(journal["script"]))):
+                    raise ValueError("NMG bay native JE may not add a hidden direct journal")
+            if len(arc.get("events", [])) != 9 or {e.get("id") for e in arc["events"]} != {f"ywc_nmg.{n}" for n in range(1100, 1109)}:
+                raise ValueError("NMG bay requires eight native events and one foreign response")
+            for event in arc["events"]:
+                if event["id"] == "ywc_nmg.1108":
+                    _nmg_validate_bay_foreign_reply(event)
+                else:
+                    if event.get("hidden") is True:
+                        raise ValueError("NMG bay player events cannot be hidden")
+                    _nmg_bay_native_receipt(event)
         phases = ad.get("live_phases")
         if not isinstance(phases, list) or len(phases) != len(journals): raise ValueError(f"{arc['slug']}: every JE needs a live phase")
         for phase, journal in zip(phases, journals):
@@ -1689,6 +1871,13 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
                 bound = [r for r in records if isinstance(r, dict) and r.get("journal") == journal["id"]]
                 if len(bound) != 4 or {r.get("event") for r in bound} != {f"ywc_nmg.{n}" for n in numbers}:
                     raise ValueError("NMG school native phases must bind their four/four partition")
+        if arc["slug"] == _NMG_BAY_SLUG:
+            if len(records) != 8:
+                raise ValueError("NMG bay requires exactly eight native senders")
+            for journal, numbers in zip(journals, (range(1100, 1104), range(1104, 1108))):
+                bound = [r for r in records if isinstance(r, dict) and r.get("journal") == journal["id"]]
+                if len(bound) != 4 or {r.get("event") for r in bound} != {f"ywc_nmg.{n}" for n in numbers}:
+                    raise ValueError("NMG bay phases must bind their four/four partition")
         event_ids = {e["id"] for e in arc["events"]}
         for proof, (jid, src) in zip(records, actual):
             required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
@@ -1706,7 +1895,9 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
             triggers = [n for n in children(branch_node) if n.key == "trigger_event"]
             if len(matching) != 1 or matching[0].op != "=" or not isinstance(matching[0].value, str) or len(triggers) != 1 or matching[0].start >= triggers[0].start:
                 raise ValueError(f"{jid}: selected queue must be removed exactly once as a literal before its source trigger")
-            expected_queue = "ywc_nmg_school_pending_event" if arc["slug"] == _NMG_SCHOOL_SLUG else f"ywc_nmg_{owner_for[arc['slug']]}_{'notice_pending' if proof['candidates'][0]['kind'] == 'notice' else 'pending'}"
+            expected_queue = ("ywc_nmg_school_pending_event" if arc["slug"] == _NMG_SCHOOL_SLUG else
+                              "ywc_nmg_bay_pending_event" if arc["slug"] == _NMG_BAY_SLUG else
+                              f"ywc_nmg_{owner_for[arc['slug']]}_{'notice_pending' if proof['candidates'][0]['kind'] == 'notice' else 'pending'}")
             if proof["candidates"][0]["queue"] != expected_queue:
                 raise ValueError(f"{jid}: queue owner or class mismatch")
             if proof["candidates"][0]["value"] != int(proof["event"].rsplit(".", 1)[1]): raise ValueError(f"{jid}: queue value does not select source event")
@@ -1714,13 +1905,16 @@ def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
             _validate_nmg_native_event(event, owner_for[arc["slug"]])
             total += 1
         if ad["direct_adds"] != _kor_direct_adds(arc): raise ValueError(f"{arc['slug']}: direct-add source binding drift")
-        if arc["slug"] == _NMG_SCHOOL_SLUG and ad["direct_adds"]:
-            raise ValueError("NMG school cannot add unregistered direct JE callers")
-    expected_total = 44 if any(a["slug"] == _NMG_SCHOOL_SLUG for a in arcs) else 36
+        if arc["slug"] in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} and ad["direct_adds"]:
+            raise ValueError("NMG middle arc cannot add unregistered direct JE callers")
+    expected_total = 36 + 8 * sum(a["slug"] in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} for a in arcs)
     if total != expected_total: raise ValueError(f"NMG source binding must cover exactly {expected_total} sender branches")
 
 
 def _validate_nmg_native_event(event: dict[str, Any], owner: str) -> None:
+    if owner == "bay":
+        _nmg_bay_native_receipt(event)
+        return
     if owner == "school":
         _nmg_school_native_receipt(event)
         return
@@ -1748,6 +1942,8 @@ def _validate_nmg_native_event(event: dict[str, Any], owner: str) -> None:
 
 def _nmg_native_receipt(event: dict[str, Any], owner: str) -> tuple[str, int]:
     """Return NMG's one supported last_event receipt from its validated AST."""
+    if owner == "bay":
+        return _nmg_bay_native_receipt(event)
     if owner == "school":
         return _nmg_school_native_receipt(event)
     _validate_nmg_native_event(event, owner)
@@ -1784,6 +1980,7 @@ _KOR_FOUNDATION_SLUGS = (
 )
 _KOR_REVENUE_SLUG = "v03_kor_provincial_revenue"
 _KOR_COURT_PUBLIC_SLUG = "v03_kor_court_public"
+_KOR_WORKSHOPS_SLUG = "v03_kor_workshops_credit"
 
 
 def _kor_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1794,16 +1991,18 @@ def _kor_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
     middle = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG} or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG} or arc.get("era") != "middle":
             raise ValueError("unregistered KOR inline arc")
         if arc["slug"] in middle:
             raise ValueError("duplicate registered KOR middle arc")
         middle[arc["slug"]] = arc
     if _KOR_COURT_PUBLIC_SLUG in middle and _KOR_REVENUE_SLUG not in middle:
         raise ValueError("KOR court public registration must preserve the revenue sources")
+    if _KOR_WORKSHOPS_SLUG in middle and not {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG} <= middle.keys():
+        raise ValueError("KOR workshops registration must preserve both existing middle arcs")
     return [next(arc for arc in foundation if arc["slug"] == slug)
             for slug in _KOR_FOUNDATION_SLUGS] + [middle[slug] for slug in
-                (_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG) if slug in middle]
+                (_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG) if slug in middle]
 
 
 def _kor_revenue_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -1832,6 +2031,23 @@ def _kor_court_public_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
     if tuple(_nqg_node_shape(node) for node in parse_block(event.get("immediate", ""))) != tuple(
             _nqg_node_shape(node) for node in parse_block(expected)):
         raise ValueError(f"{event_id}: unsupported KOR court public native immediate body")
+    return name, value
+
+
+def _kor_workshops_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
+    event_id = event.get("id", "")
+    if not isinstance(event_id, str) or not re.fullmatch(r"ywc_kor\.111[0-7]", event_id):
+        raise ValueError(f"{event_id}: unregistered KOR workshop native event")
+    name = "ywc_v03_kor_v03_kor_workshops_credit_last_event"
+    value = int(event_id.rsplit(".", 1)[1]) - 1109
+    expected = ("{ ywc_v03_mark_major_delivered = yes "
+                f"set_variable = {{ name = {name} value = {value} }} "
+                "if = { limit = { NOT = { has_variable = ywc_kor_workshops_popup_epoch } } set_variable = { name = ywc_kor_workshops_popup_epoch value = 0 } } "
+                "change_variable = { name = ywc_kor_workshops_popup_epoch add = 1 } "
+                "save_scope_value_as = { name = ywc_kor_workshops_popup_epoch value = var:ywc_kor_workshops_popup_epoch } }")
+    if tuple(_nqg_node_shape(node) for node in parse_block(event.get("immediate", ""))) != tuple(
+            _nqg_node_shape(node) for node in parse_block(expected)):
+        raise ValueError(f"{event_id}: unsupported KOR workshop native immediate body")
     return name, value
 
 
@@ -1906,6 +2122,24 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                 if event.get("hidden") in (True, "yes"):
                     raise ValueError("KOR court public events must be visible native events")
                 _kor_court_public_native_receipt(event)
+        if arc["slug"] == _KOR_WORKSHOPS_SLUG:
+            phases_expected = {"ywc_je_v03_kor_workshops_program": set(range(1110, 1114)),
+                               "ywc_je_v03_kor_workshops_review": set(range(1114, 1118))}
+            if [journal.get("id") for journal in journals] != list(phases_expected):
+                raise ValueError("KOR workshops require two ordered phases")
+            if len(arc.get("events", [])) != 8 or {e.get("id") for e in arc["events"]} != {f"ywc_kor.{n}" for n in range(1110, 1118)} or len(records) != 8:
+                raise ValueError("KOR workshops require eight native events and senders")
+            for jid, numbers in phases_expected.items():
+                bound = [proof for proof in records if isinstance(proof, dict) and proof.get("journal") == jid]
+                if len(bound) != 4 or {proof.get("event") for proof in bound} != {f"ywc_kor.{n}" for n in numbers}:
+                    raise ValueError("KOR workshop phase partition changed")
+            for event in arc["events"]:
+                if event.get("hidden") in (True, "yes"):
+                    raise ValueError("KOR workshop events must be visible")
+                _kor_workshops_native_receipt(event)
+            if any(node.key in {"add_journal_entry", "remove_journal_entry"}
+                   for journal in journals for node in _walk(parse_block(journal["script"]))):
+                raise ValueError("KOR workshop journals cannot add or remove journal entries directly")
         for proof, (jid, source) in zip(records, actual):
             required = {"journal", "branch_index", "statement_ordinal", "chain_index", "branch_kind", "event", "branch_sha256", "limit_sha256", "chain_prior", "chain_sha256", "candidates", "queue_exclusions"}
             if not isinstance(proof, dict) or set(proof) != required:
@@ -1945,6 +2179,10 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                     "queue": "ywc_kor_public_pending_event", "kind": "normal", "mode": "exact",
                     "value": int(proof["event"].rsplit(".", 1)[1])}]:
                 raise ValueError("KOR court public sender must own its exact native event queue")
+            if arc["slug"] == _KOR_WORKSHOPS_SLUG and candidates != [{
+                    "queue": "ywc_kor_workshops_pending_event", "kind": "normal", "mode": "exact",
+                    "value": int(proof["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("KOR workshop sender must own its exact native event queue")
             for prior in proof["chain_prior"]:
                 if not isinstance(prior, dict) or set(prior) != {"ordinal", "sha256", "limit_sha256", "limit_source"} or type(prior.get("ordinal")) is not int or not isinstance(prior.get("limit_source"), str):
                     raise ValueError(f"{arc['slug']}/{jid}: invalid prior predicate record")
@@ -1966,8 +2204,8 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}: direct-add source hashes are malformed")
         if direct_adds != _kor_direct_adds(arc):
             raise ValueError(f"{arc['slug']}: source direct-add callers drift or are incomplete")
-        if arc["slug"] == _KOR_COURT_PUBLIC_SLUG and direct_adds:
-            raise ValueError("KOR court public must not add direct journal callers")
+        if arc["slug"] in {_KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG} and direct_adds:
+            raise ValueError("KOR middle arc must not add direct journal callers")
         for record in direct_adds:
             target = next((journal for journal in arc["journals"] if journal["id"] == record["journal"]), None)
             if target is None:
@@ -2482,6 +2720,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     receipt_variable, receipt_value = _kor_revenue_native_receipt(event)
                 elif is_kor and arc["slug"] == _KOR_COURT_PUBLIC_SLUG:
                     receipt_variable, receipt_value = _kor_court_public_native_receipt(event)
+                elif is_kor and arc["slug"] == _KOR_WORKSHOPS_SLUG:
+                    receipt_variable, receipt_value = _kor_workshops_native_receipt(event)
                 elif is_shu:
                     receipt_variable, receipt_value = _shu_expected_receipt(event["id"])
                     native_receipt = re.search(rf"name\s*=\s*{re.escape(receipt_variable)}\s+value\s*=\s*([0-9]+)", event["immediate"])
@@ -2624,8 +2864,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 dispatch_checks.append("NOT = { " + _limit_inner_source(prior["limit_source"]) + " }")
             dispatch_checks.append(f"NOT = {{ var:{served[slug]} = var:{roundv} }}")
             dispatch_checks.extend(eligibility_terms[2:])
-            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            tracked=_lan_tracked_sender_state(stem)
             for name in dict.fromkeys(tracked):
+                if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                    dispatch_checks.append(f"NOT = {{ has_variable = {name} }}")
+                    continue
                 if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
                     expected_post=str(q["value"]) if name.endswith("notice_current") else "1"
                     dispatch_checks += [f"has_variable = {name}",f"var:{name} = {expected_post}"]
@@ -2723,7 +2966,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 stem=qvar.split("_")[2]
                 names += [f"{prefix}_rollback_armed_{ident}", f"{prefix}_body_completed_{ident}", f"{prefix}_body_completed_epoch_{ident}"]
                 names += [f"{prefix}_snapshot_complete_{ident}"]
-                tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                tracked=_lan_tracked_sender_state(stem)
                 names += [_queue_snapshot_name(ident,state,suffix,prefix) for state in tracked for suffix in ("present","value")]
             if is_shu and ident == 2:
                 names.extend([f"{prefix}_aux_waiting_present_2", f"{prefix}_aux_waiting_value_2"])
@@ -2764,6 +3007,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     owned=f"has_variable = {pv} has_variable = {vv} OR = {{ AND = {{ var:{pv} = 1 has_variable = {name} var:{name} = {post} }} AND = {{ var:{pv} = 0 var:{vv} = 0 has_variable = {name} var:{name} = {post} }} }}"
                     restore=f"if = {{ limit = {{ var:{pv} = 1 }} set_variable = {{ name = {name} value = var:{vv} }} }} if = {{ limit = {{ var:{pv} = 0 var:{vv} = 0 }} remove_variable = {name} }}"
                     rollback.append(f"if = {{ limit = {{ has_variable = {prefix}_snapshot_complete_{ident} var:{prefix}_snapshot_complete_{ident} = 1 has_variable = {armed} var:{armed} = 1 NOT = {{ has_variable = {completed} }} {owned} }} {restore} }}")
+            if stem == "gold" and c["event"]["id"] == "ywc_lan.1125":
+                name = "ywc_lan_gold_observation_waiting"
+                pv = _queue_snapshot_name(ident, name, "present", prefix)
+                vv = _queue_snapshot_name(ident, name, "value", prefix)
+                rollback.append(
+                    f"if = {{ limit = {{ has_variable = {prefix}_snapshot_complete_{ident} "
+                    f"var:{prefix}_snapshot_complete_{ident} = 1 has_variable = {armed} var:{armed} = 1 "
+                    f"NOT = {{ has_variable = {completed} }} has_variable = {pv} var:{pv} = 1 "
+                    f"has_variable = {vv} NOT = {{ has_variable = {name} }} }} "
+                    f"set_variable = {{ name = {name} value = var:{vv} }} }}")
             clear=" ".join(f"remove_variable = {x}" for x in ephemeral_by_candidate[ident]); base=f"var:{reservation} = {ident}"; roll=" ".join(rollback)
             prep.append(f"    if = {{ limit = {{ {base} NOT = {{ has_variable = {timer} }} }} {roll} remove_variable = {reservation} {clear} }}")
             prep.append(f"    if = {{ limit = {{ {base} has_variable = {timer} NOT = {{ {dispatch(c)} = yes }} }} {roll} remove_variable = {reservation} remove_variable = {timer} {clear} }}")
@@ -2894,11 +3147,12 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                         f"set_variable = {{ name = {f['partner_available']} value = 1 }} }}"]
         if is_lan:
             stem=qvar.split("_")[2]
-            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            tracked=_lan_tracked_sender_state(stem)
             for name in dict.fromkeys(tracked):
                 pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
                 capture += [f"    set_variable = {{ name = {pv} value = 0 }}",f"    set_variable = {{ name = {vv} value = 0 }}",f"    if = {{ limit = {{ has_variable = {name} }} set_variable = {{ name = {pv} value = 1 }} set_variable = {{ name = {vv} value = var:{name} }} }}"]
-            if q["kind"] == "notice": capture += [f"    set_variable = {{ name = {prefix}_rollback_armed_{ident} value = 1 }}"]
+            if q["kind"] == "notice" or (stem == "gold" and c["event"]["id"] == "ywc_lan.1125"):
+                capture += [f"    set_variable = {{ name = {prefix}_rollback_armed_{ident} value = 1 }}"]
             capture += [f"    set_variable = {{ name = {prefix}_snapshot_complete_{ident} value = 1 }}"]
             capture += [f"    remove_variable = {prefix}_body_completed_{ident}",f"    remove_variable = {prefix}_body_completed_epoch_{ident}"]
         elif is_nqg:
@@ -2947,8 +3201,9 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             if not is_shu:
                 checks += [f"var:{callback_proof} = 1",f"has_variable = {callback_id}",f"has_variable = {callback_epoch}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {callback_queue}"]
             if (is_dmg or is_nmg
+                    or (is_kor and c["arc"]["slug"] == _KOR_WORKSHOPS_SLUG)
                     or (is_kor and c["arc"]["slug"] in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG})
-                    or (is_shu and c["arc"]["slug"] == _SHU_PUBLIC_SLUG)) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
+                    or (is_shu and c["arc"]["slug"] in {_SHU_PUBLIC_SLUG, _SHU_RURAL_SLUG})) and c.get("receipt_variable") and type(c.get("receipt_value")) is int:
                 checks += [f"has_variable = {c['receipt_variable']}",f"var:{c['receipt_variable']} = {c['receipt_value']}"]
             checks += _nmg_native_postchecks(c, prefix) if is_nmg else []
             if is_nmg:
@@ -3012,8 +3267,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                        "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
         if is_lan:
             stem=qvar.split("_")[2]
-            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            tracked=_lan_tracked_sender_state(stem)
             for name in dict.fromkeys(tracked):
+                if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                    checks.append(f"NOT = {{ has_variable = {name} }}")
+                    continue
                 if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
                     post=str(q["value"]) if name.endswith("notice_current") else "1"
                     checks += [f"has_variable = {name}",f"var:{name} = {post}"]
@@ -3074,8 +3332,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             if is_lan:
                 callback_guard += [f"has_variable = {prefix}_body_completed_{ident}",f"var:{prefix}_body_completed_{ident} = 1",f"has_variable = {prefix}_body_completed_epoch_{ident}",f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
                 stem=qvar.split("_")[2]
-                tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                tracked=_lan_tracked_sender_state(stem)
                 for name in dict.fromkeys(tracked):
+                    if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                        callback_guard.append(f"NOT = {{ has_variable = {name} }}")
+                        continue
                     if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
                         post=str(q["value"]) if name.endswith("notice_current") else "1"
                         callback_guard += [f"has_variable = {name}",f"var:{name} = {post}"]
@@ -3276,8 +3537,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                                "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
                 if is_lan:
                     stem=qvar.split("_")[2]; queue=c["queue"]
-                    tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                    tracked=_lan_tracked_sender_state(stem)
                     for name in dict.fromkeys(tracked):
+                        if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                            checks.append(f"NOT = {{ has_variable = {name} }}")
+                            continue
                         if queue["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{queue['value']}_sent"}:
                             post=str(queue["value"]) if name.endswith("notice_current") else "1"
                             checks += [f"has_variable = {name}",f"var:{name} = {post}"]

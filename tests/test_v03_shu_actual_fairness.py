@@ -90,6 +90,9 @@ def _install_real_shu_render(world, outputs):
         ("v03_shu_fiscal_register", "v03_shu_service_compact",
          "v03_shu_port_treasury", "v03_shu_provincial_contract",
          "v03_shu_public_deliberation"): 47,
+        ("v03_shu_fiscal_register", "v03_shu_service_compact",
+         "v03_shu_port_treasury", "v03_shu_provincial_contract",
+         "v03_shu_public_deliberation", "v03_shu_rural_workshop"): 55,
     }
     expected = layouts.get(tuple(arc["slug"] for arc in active))
     middle_counts = [len(arc["inline_delivery_adapter"]["branches"])

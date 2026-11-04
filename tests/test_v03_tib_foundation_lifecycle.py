@@ -473,7 +473,9 @@ class TibStrictLifecycleTest(unittest.TestCase):
 
     def test_three_real_shown_possible_arcs_create_independent_active_queues(self):
         world = self.world("register", 1, 10000)
-        arc_list = list(CATALOG["arcs"])
+        # This fixture exercises the three foundation arcs; middle content has
+        # its own typed StateRef and generated-delivery lifecycle tests.
+        arc_list = [self.arcs[slug] for slug in PREFIX]
         for arc in arc_list:
             first = self.journals[arc["journals"][0]["id"]]
             world.assert_true(field(first, "is_shown_when_inactive"), "TIB", (arc["slug"], "shown"))
@@ -487,7 +489,7 @@ class TibStrictLifecycleTest(unittest.TestCase):
         self.assertNotIn("ywc_v03_major_event_cooldown", state)
 
     def test_real_entry_withdrawal_preserves_legacy_values_and_releases_slots(self):
-        for arc in CATALOG["arcs"]:
+        for arc in (self.arcs[slug] for slug in PREFIX):
             pre = PREFIX[arc["slug"]]
             for legacy in (None, 1, 2, 3, 4):
                 with self.subTest(arc=arc["slug"], legacy=legacy):
@@ -511,7 +513,7 @@ class TibStrictLifecycleTest(unittest.TestCase):
                     self.assertEqual(world.history["TIB"][arc["journals"][0]["id"]], "failed")
 
     def test_fee_failure_at_stale_popup_retries_without_charge_and_paid_replay_is_idempotent(self):
-        for arc in CATALOG["arcs"]:
+        for arc in (self.arcs[slug] for slug in PREFIX):
             pre = PREFIX[arc["slug"]]
             with self.subTest(arc=arc["slug"]):
                 world = self.world(pre, 1, 5000)
@@ -540,7 +542,7 @@ class TibStrictLifecycleTest(unittest.TestCase):
         notice_ids = {"register": (1005, 1006, 1009),
                       "grain": (1014, 1015, 1017),
                       "schools": (1023, 1024, 1025)}
-        for arc in CATALOG["arcs"]:
+        for arc in (self.arcs[slug] for slug in PREFIX):
             pre = PREFIX[arc["slug"]]
             notice12_number, notice36_number, final_number = notice_ids[pre]
             with self.subTest(arc=arc["slug"]):

@@ -307,7 +307,11 @@ class PulseWorld:
             elif key == "trigger_event":
                 self.events.append((tag, dict((name, value) for name, _, value in body)["id"]))
             elif key == "add_modifier":
-                self.modifiers.append((tag, dict((name, value) for name, _, value in body)))
+                fields = dict((name, value) for name, _, value in body)
+                if "modifier" in fields or "name" not in fields:
+                    raise ValueError("add_modifier requires the native name field")
+                fields["modifier"] = fields["name"]  # internal representation
+                self.modifiers.append((tag, fields))
             elif key == "remove_modifier":
                 self.modifiers = [(modifier_tag, fields) for modifier_tag, fields in self.modifiers
                                   if modifier_tag != tag or fields.get("modifier") != body]
