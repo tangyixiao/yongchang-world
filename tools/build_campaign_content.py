@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Build the 180-event campaign script and localization from the committed catalog.
 
 ``data/content/large_campaign_event_catalog.json`` is the single implementation
@@ -382,7 +382,7 @@ def render_event_script(events: list[dict]) -> str:
             epoch = f"ywc_shu_legacy_popup_epoch_{legacy_index}"
             lines += [
                 f"    trigger = {{ ywc_shu_legacy_dispatch_{legacy_index} = yes ywc_shu_legacy_request_valid_{legacy_index} = yes }}",
-                f"    immediate = {{ if = {{ limit = {{ has_variable = {epoch} exists = scope:{epoch} scope:{epoch} ?= var:{epoch} has_variable = ywc_shu_legacy_request_live_{legacy_index} ywc_shu_legacy_dispatch_{legacy_index} = yes ywc_shu_legacy_request_valid_{legacy_index} = yes }} ywc_shu_legacy_ack_{legacy_index} = yes }} }}",
+                f"    immediate = {{ if = {{ limit = {{ has_variable = {epoch} has_variable = ywc_shu_legacy_request_live_{legacy_index} ywc_shu_legacy_dispatch_{legacy_index} = yes ywc_shu_legacy_request_valid_{legacy_index} = yes }} ywc_shu_legacy_ack_{legacy_index} = yes }} }}",
             ]
         for index, choice in enumerate(event["choices"]):
             letter = chr(ord("a") + index)

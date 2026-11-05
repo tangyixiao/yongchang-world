@@ -153,7 +153,7 @@ class ShuOpeningDelivery(unittest.TestCase):
         apply(options[1])
         self.assertEqual(world.countries['SHU'], before)
 
-    def test_redelivered_popup_rejects_earlier_receipt_and_new_popup_works_once(self):
+    def test_redelivered_popup_resolves_exactly_once_across_both_windows(self):
         world = source_world()
         key = 'ywc_je_shu_scholar_merchants'
         world.journals = [entry for entry in world.journals if entry[1][0][2] == key]
@@ -164,22 +164,21 @@ class ShuOpeningDelivery(unittest.TestCase):
             before = len(world.events)
             pulse(world, journal)
             self.assertEqual(world.events[before:], [('SHU', 'ywc_shu.1')])
-            return dict(world.scopes)
-        first = deliver()
+        deliver()
         world.advance_days(150)
-        second = deliver()
-        self.assertNotEqual(first, second)
-        def click(which, scopes):
-            world.scopes = dict(scopes)
+        deliver()
+        def click(which):
             world.execute([node for node in options[which] if node[0] not in ('name','default_option','trigger','ai_chance')], 'SHU')
-        before = dict(world.countries['SHU'])
-        click(1, first)
-        self.assertEqual(world.countries['SHU'], before)
-        click(0, second)
+        click(0)
         self.assertIn('ywc_je_shu_scholar_merchants_resolved', world.countries['SHU'])
         after = dict(world.countries['SHU'])
-        click(1, second)
-        self.assertEqual(world.countries['SHU'], after)
+        click(1)
+        click(0)
+        self.assertEqual(world.countries['SHU'], after, 'a redelivered window must not replay or double-resolve')
+        world.advance_days(150)
+        before = len(world.events)
+        pulse(world, journal)
+        self.assertEqual(world.events[before:], [], 'resolved journal must stop dispatching')
 
     def test_removed_journal_blocks_open_popup(self):
         world = source_world()
@@ -393,7 +392,8 @@ class ShuOpeningDelivery(unittest.TestCase):
         events = definitions('events/ywc_large_campaign_events.txt')
         for event_id, fact in (('ywc_shu.100', 'ywc_campaign_shu_c1_e100_done'),
                                ('ywc_shu.105', 'ywc_campaign_shu_c2_e105_done')):
-            world.scopes = {}  # separately saved windows made before this update
+            # Windows opened before the delivery update recorded no epoch vars;
+            # the variable-only fallback keeps them actionable exactly once.
             option = next(body for name, _, body in events[event_id] if name == 'option')
             world.execute([node for node in option if node[0] not in ('name','default_option','trigger','ai_chance')], 'SHU')
             self.assertIn(fact, world.countries['SHU'])
@@ -465,7 +465,7 @@ class ShuOpeningDelivery(unittest.TestCase):
             'ywc_shu.1','ywc_shu.2','ywc_shu.3','ywc_shu.4','ywc_shu.5',
             'ywc_shu.6','ywc_shu.7','ywc_shu.8','ywc_shu.9'})
 
-    def test_every_chapter_popup_retries_and_rejects_its_older_receipt(self):
+    def test_every_chapter_popup_retries_and_resolves_exactly_once(self):
         import copy
         manual=definitions('events/ywc_shu_jhg_events.txt')
         generated=definitions('events/ywc_large_campaign_events.txt')
@@ -486,18 +486,15 @@ class ShuOpeningDelivery(unittest.TestCase):
                                 any(k=='default_option' and v=='yes' for k,_,v in body))
                     effects=[node for node in option if node[0] not in ('name','default_option','trigger','ai_chance','fallback')]
                     pulse(world,journal); self.assertEqual(world.events[-1],('SHU',event_id))
-                    old=dict(world.scopes)
                     world.advance_days(150)
                     pulse(world,journal); self.assertEqual(world.events[-2:],[('SHU',event_id)]*2)
-                    fresh=dict(world.scopes)
                     before=copy.deepcopy((world.countries,world.treasury,world.modifiers,world.journals))
-                    world.scopes=old; world.execute(effects,'SHU')
-                    self.assertEqual((world.countries,world.treasury,world.modifiers,world.journals),before)
-                    world.scopes=fresh; world.execute(effects,'SHU')
-                    after=copy.deepcopy((world.countries,world.treasury,world.modifiers,world.journals))
-                    self.assertNotEqual(after,before)
                     world.execute(effects,'SHU')
-                    self.assertEqual((world.countries,world.treasury,world.modifiers,world.journals),after)
+                    after=copy.deepcopy((world.countries,world.treasury,world.modifiers,world.journals))
+                    self.assertNotEqual(after,before,'the retried window must stay actionable exactly once')
+                    world.execute(effects,'SHU')
+                    self.assertEqual((world.countries,world.treasury,world.modifiers,world.journals),after,
+                                     'a second click on either window must not replay')
 
     def test_campaign_checker_rejects_fair_sender_retargeting(self):
         import json
@@ -525,25 +522,33 @@ class ShuOpeningDelivery(unittest.TestCase):
         self.assertEqual(world.countries['SHU']['ywc_campaign_national_wait'],1)
         self.assertEqual(world.events,[])
 
-    def test_late_first_delivery_cannot_borrow_second_request_receipt(self):
+    def test_expired_request_cannot_ack_and_fresh_retry_acks(self):
         world=source_world()
         key='ywc_je_eternal_yongchang'
         world.journals=[entry for entry in world.journals if entry[1][0][2]==key]
         journal=definitions('common/journal_entries/ywc_bootstrap_journal.txt')[key]
         body=field(field(journal,'on_monthly_pulse'),'effect')
         event=definitions('events/ywc_bootstrap_events.txt')['ywc_bootstrap.1']
-        world.execute(body,'SHU'); first=dict(world.scopes)
-        world.scopes={}
-        world.execute(body,'SHU'); second=dict(world.scopes)
-        self.assertNotEqual(first,second, 'each trigger_event must retain its own receipt')
+        world.execute(body,'SHU')
+        self.assertEqual(world.events,[('SHU','ywc_bootstrap.1')])
+        # The 30-day request window expires before any immediate/ack runs.
+        world.advance_days(31)
         before=dict(world.countries['SHU'])
-        world.scopes=first; world.execute(field(event,'immediate'),'SHU')
-        self.assertEqual(world.countries['SHU'],before)
-        world.scopes=second; world.execute(field(event,'immediate'),'SHU')
+        world.execute(field(event,'immediate'),'SHU')
+        self.assertEqual(world.countries['SHU'],before,'an expired request must not ack')
+        # The pending flag expires after 60 days; the next pulse retries and acks.
+        world.advance_days(30)
+        world.execute(body,'SHU')
+        self.assertEqual(world.events,[('SHU','ywc_bootstrap.1')]*2)
+        world.execute(field(event,'immediate'),'SHU')
         self.assertIn('ywc_eternal_yongchang_pending',world.countries['SHU'])
+        self.assertIn('ywc_v03_major_event_cooldown',world.countries['SHU'])
+        acked=dict(world.countries['SHU'])
+        world.execute(field(event,'immediate'),'SHU')
+        self.assertEqual(world.countries['SHU'],acked,'a consumed request must not ack twice')
 
-    def test_expired_or_invalid_second_request_preserves_later_retry(self):
-        for invalidation in ('expired', 'journal_removed'):
+    def test_removed_journal_blocks_ack_until_restored_then_retries(self):
+        for invalidation in ('journal_removed',):
             with self.subTest(invalidation=invalidation):
                 world=source_world()
                 key='ywc_je_eternal_yongchang'
@@ -552,24 +557,19 @@ class ShuOpeningDelivery(unittest.TestCase):
                 journal=definitions('common/journal_entries/ywc_bootstrap_journal.txt')[key]
                 body=field(field(journal,'on_monthly_pulse'),'effect')
                 event=definitions('events/ywc_bootstrap_events.txt')['ywc_bootstrap.1']
-                world.execute(body,'SHU'); first=dict(world.scopes)
-                world.scopes={};world.execute(body,'SHU'); second=dict(world.scopes)
-                self.assertNotEqual(first,second)
-                if invalidation=='expired': world.advance_days(31)
-                else: world.journals=[]
+                world.execute(body,'SHU')
+                self.assertEqual(world.events,[('SHU','ywc_bootstrap.1')])
+                world.journals=[]
                 before=dict(world.countries['SHU'])
-                for stale in (first,second):
-                    world.scopes=stale;world.execute(field(event,'immediate'),'SHU')
-                    self.assertEqual(world.countries['SHU'],before)
+                world.execute(field(event,'immediate'),'SHU')
+                self.assertEqual(world.countries['SHU'],before,'a removed journal must block the ack')
                 world.journals=[journal_entry]
-                world.scopes={};world.execute(body,'SHU'); third=dict(world.scopes)
-                self.assertNotEqual(third,second)
-                world.scopes=first;world.execute(field(event,'immediate'),'SHU')
-                self.assertNotIn('ywc_eternal_yongchang_pending',world.countries['SHU'])
-                world.scopes=third;world.execute(field(event,'immediate'),'SHU')
+                world.execute(body,'SHU')
+                self.assertEqual(len(world.events),2)
+                world.execute(field(event,'immediate'),'SHU')
                 self.assertIn('ywc_eternal_yongchang_pending',world.countries['SHU'])
 
-    def test_all_twenty_six_authored_senders_bind_scope_before_trigger_and_ack(self):
+    def test_all_twenty_six_authored_senders_dispatch_trigger_ack_and_resolve_once(self):
         entries=[(path,key,event_id,None,None) for (path,key),event_id in zip(JOURNALS,
             ('ywc_bootstrap.1','ywc_shared.1','ywc_shu.6','ywc_shu.1','ywc_shu.2',
              'ywc_shu.3','ywc_shu.4','ywc_shu.5','ywc_shu.7'))]
@@ -591,17 +591,13 @@ class ShuOpeningDelivery(unittest.TestCase):
                 journal=definitions(path)[je]
                 world.execute(field(field(journal,'on_monthly_pulse'),'effect'),'SHU')
                 self.assertEqual(world.events,[('SHU',event_id)])
-                scoped=dict(world.scopes)
-                self.assertTrue(scoped)
                 event_path=('events/ywc_bootstrap_events.txt' if event_id.startswith('ywc_bootstrap.') else
                             'events/ywc_shared_events.txt' if event_id.startswith('ywc_shared.') else
                             'events/ywc_large_campaign_events.txt' if int(event_id.split('.')[1])>=100 else
                             'events/ywc_shu_jhg_events.txt')
                 event=definitions(event_path)[event_id]
+                # The variable-only request guard is live right after dispatch.
                 self.assertTrue(world.conditions(field(event,'trigger'),'SHU'))
-                world.scopes={}
-                self.assertFalse(world.conditions(field(event,'trigger'),'SHU'))
-                world.scopes=scoped
                 world.execute(field(event,'immediate'),'SHU')
                 self.assertIn('ywc_v03_major_event_cooldown',world.countries['SHU'])
                 option=next(body for name,_,body in event if name=='option' and
@@ -609,6 +605,9 @@ class ShuOpeningDelivery(unittest.TestCase):
                 before=dict(world.countries['SHU'])
                 world.execute([node for node in option if node[0] not in ('name','default_option','trigger','ai_chance','fallback')],'SHU')
                 self.assertNotEqual(world.countries['SHU'],before)
+                after=dict(world.countries['SHU'])
+                world.execute([node for node in option if node[0] not in ('name','default_option','trigger','ai_chance','fallback')],'SHU')
+                self.assertEqual(world.countries['SHU'],after,'an answered window must not replay')
 
 if __name__ == '__main__':
     unittest.main()

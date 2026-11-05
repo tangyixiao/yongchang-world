@@ -48,9 +48,15 @@ def render():
         # Bootstrap's pending flag is set by actual dispatch; unlike candidacy,
         # it must remain valid while its own window is open.
         eligibility = ("is_country_alive = yes has_journal_entry = ywc_je_eternal_yongchang NOT = { has_variable = ywc_eternal_yongchang_resolved }" if index == 1 else f"ywc_shu_legacy_candidate_{index} = yes")
-        old_window = f"AND = {{ NOT = {{ exists = scope:{epoch} }} NOT = {{ has_variable = {epoch} }} }}"
-        request = f"OR = {{ AND = {{ exists = scope:{epoch} has_variable = {epoch} scope:{epoch} ?= var:{epoch} has_variable = ywc_shu_legacy_request_live_{index} }} {old_window} }}"
-        choice = f"OR = {{ AND = {{ exists = scope:{epoch} has_variable = {epoch} scope:{epoch} ?= var:{epoch} has_variable = ywc_shu_legacy_delivered_epoch_{index} var:ywc_shu_legacy_delivered_epoch_{index} ?= scope:{epoch} }} {old_window} }}"
+        # Variable-only guards: correctness must not depend on numeric scopes
+        # saved by save_scope_value_as being inherited across trigger_event,
+        # which vanilla 1.13.11 scripts never rely on and the engine does not
+        # document. A live request is (epoch recorded AND request window live);
+        # the pre-delivery fallback (no epoch recorded) keeps non-dispatch
+        # legacy paths working exactly as before.
+        old_window = f"NOT = {{ has_variable = {epoch} }}"
+        request = f"OR = {{ AND = {{ has_variable = {epoch} has_variable = ywc_shu_legacy_request_live_{index} }} {old_window} }}"
+        choice = f"OR = {{ AND = {{ has_variable = {epoch} has_variable = ywc_shu_legacy_delivered_epoch_{index} var:ywc_shu_legacy_delivered_epoch_{index} ?= var:{epoch} }} {old_window} }}"
         request_guard = f"AND = {{ {eligibility} {request} }}"
         choice_guard = f"AND = {{ {eligibility} {choice} }}"
         if index == 2:
@@ -73,9 +79,9 @@ def render():
             phase = f"ywc_shu_legacy_chapter_base_{chapter} = yes {stage}"
             out.append(f"ywc_shu_legacy_phase_{index} = {{ {phase} }}\n")
             out.append(f"ywc_shu_legacy_dispatch_{index} = {{ ywc_shu_legacy_turn_{slot} = yes ywc_shu_legacy_phase_{index} = yes }}\n")
-            old_window = f"AND = {{ NOT = {{ exists = scope:{epoch} }} NOT = {{ has_variable = {epoch} }} }}"
-            request = f"OR = {{ AND = {{ exists = scope:{epoch} has_variable = {epoch} scope:{epoch} ?= var:{epoch} has_variable = ywc_shu_legacy_request_live_{index} }} {old_window} }}"
-            choice = f"OR = {{ AND = {{ exists = scope:{epoch} has_variable = {epoch} scope:{epoch} ?= var:{epoch} has_variable = ywc_shu_legacy_delivered_epoch_{index} var:ywc_shu_legacy_delivered_epoch_{index} ?= scope:{epoch} }} {old_window} }}"
+            old_window = f"NOT = {{ has_variable = {epoch} }}"
+            request = f"OR = {{ AND = {{ has_variable = {epoch} has_variable = ywc_shu_legacy_request_live_{index} }} {old_window} }}"
+            choice = f"OR = {{ AND = {{ has_variable = {epoch} has_variable = ywc_shu_legacy_delivered_epoch_{index} var:ywc_shu_legacy_delivered_epoch_{index} ?= var:{epoch} }} {old_window} }}"
             out.append(f"ywc_shu_legacy_request_valid_{index} = {{ ywc_shu_legacy_phase_{index} = yes {request} }}\n")
             out.append(f"ywc_shu_legacy_choice_valid_{index} = {{ ywc_shu_legacy_phase_{index} = yes {choice} }}\n")
     return ''.join(out)
