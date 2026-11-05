@@ -138,6 +138,7 @@ def _declaration_namespace(path: Path) -> str:
         "coat_of_arms",
         "character_templates",
         "on_actions",
+        "media_aliases",
     ):
         if namespace in parts:
             return namespace
@@ -160,6 +161,7 @@ def _is_localization_bearing(path: Path) -> bool:
             "scripted_effects",
             "scripted_triggers",
             "script_values",
+            "media_aliases",
         }
     )
 

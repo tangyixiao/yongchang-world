@@ -30,6 +30,25 @@ LOC_CN_PATH = Path("yongchang_world/localization/simp_chinese/ywc_large_campaign
 
 NATIONAL_WAIT_MONTHS = 4
 DIALOGUE_COOLDOWN_MONTHS = 3
+# The three chapter themes overlap in individual events, so map each SHU
+# event by subject instead of assigning one image to the entire chapter.
+SHU_EVENT_IMAGES = {
+    "ywc_shu.100": "ywc_shu_opening",
+    "ywc_shu.101": "ywc_shu_opening",
+    "ywc_shu.102": "ywc_shu_frontier",
+    "ywc_shu.103": "ywc_shu_customs",
+    "ywc_shu.104": "ywc_shu_opening",
+    "ywc_shu.105": "ywc_shu_customs",
+    "ywc_shu.106": "ywc_shu_customs",
+    "ywc_shu.107": "ywc_shu_customs",
+    "ywc_shu.108": "ywc_shu_customs",
+    "ywc_shu.109": "ywc_shu_customs",
+    "ywc_shu.110": "ywc_shu_opening",
+    "ywc_shu.111": "ywc_shu_frontier",
+    "ywc_shu.112": "ywc_shu_frontier",
+    "ywc_shu.113": "ywc_shu_opening",
+    "ywc_shu.114": "ywc_shu_frontier",
+}
 CHOICE_MODIFIERS = {
     "bold": ("ywc_campaign_commitment", 24),
     "cautious": ("ywc_campaign_local_compromise", 24),
@@ -357,7 +376,7 @@ def render_event_script(events: list[dict]) -> str:
             f"    title = {event['id']}.t",
             f"    desc = {event['id']}.d",
             "    duration = 1",
-            '    event_image = { video = "unspecific_politicians_arguing" }',
+            f'    event_image = {{ video = "{SHU_EVENT_IMAGES.get(event["id"], "unspecific_politicians_arguing")}" }}',
         ]
         if legacy_index is not None:
             epoch = f"ywc_shu_legacy_popup_epoch_{legacy_index}"

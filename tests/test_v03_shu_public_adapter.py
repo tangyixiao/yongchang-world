@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from tools import v03_inline_delivery_adapter as adapter
+from tests.shu_legacy_baseline import with_engine_modifier_fix
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "8222a4cb1164c0d60ed5208044168c55b4e91650"
@@ -247,7 +248,8 @@ class ShuPublicGeneratedAdapter(unittest.TestCase):
         current = current_catalog()
         active = adapter._shu_active_arcs(current)
         previous = json.loads(frozen("data/content/v03/countries/shu.json"))["arcs"]
-        self.assertEqual(active[:4], previous, "all four old arcs must remain exactly frozen")
+        self.assertEqual(active[:4], with_engine_modifier_fix(previous),
+                         "all four old arcs must remain frozen except the accepted 1004 syntax fix")
         self.assertEqual([a["slug"] for a in active], [*FOUNDATION, PROVINCE, PUBLIC, "v03_shu_rural_workshop"])
         self.assertEqual(sum(len(a["journals"]) for a in active[:4]), 8)
         self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:4]), 39)
