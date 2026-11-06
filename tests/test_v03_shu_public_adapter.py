@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from tools import v03_inline_delivery_adapter as adapter
+from tests.shu_legacy_baseline import with_engine_modifier_fix
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "8222a4cb1164c0d60ed5208044168c55b4e91650"
@@ -116,17 +117,25 @@ class ShuPublicIsolatedAdapter(unittest.TestCase):
                 adapter._shu_public_native_receipt({"id": bad, "immediate": "{}"})
 
     def test_selector_appends_after_all_four_old_arcs_and_rejects_unknown_or_missing_middle(self):
-        arcs = [{"slug": slug, "era": "foundation"} for slug in FOUNDATION]
-        arcs += [{"slug": slug, "era": "middle"} for slug in (PROVINCE, PUBLIC)]
+        def site(slug, era):
+            """A registered adapter arc keeps its inline metadata."""
+            return {"slug": slug, "era": era, "inline_delivery_adapter": {}}
+
+        arcs = [site(slug, "foundation") for slug in FOUNDATION]
+        arcs += [site(slug, "middle") for slug in (PROVINCE, PUBLIC)]
         for order in (arcs, list(reversed(arcs))):
             try:
                 selected = adapter._shu_active_arcs({"arcs": order})
             except ValueError as exc:
                 self.fail(f"the registered public arc must be selected: {exc}")
             self.assertEqual([a["slug"] for a in selected], [*FOUNDATION, PROVINCE, PUBLIC])
-        bad_inputs = (arcs + [arcs[-1]], arcs + [{"slug": "v03_shu_unknown", "era": "middle"}],
+        late = [{"slug": "v03_shu_welfare_granary", "era": "late"}]
+        self.assertEqual([a["slug"] for a in adapter._shu_active_arcs({"arcs": arcs + late})],
+                         [*FOUNDATION, PROVINCE, PUBLIC],
+                         "plain later-era arcs schedule themselves and stay out of the adapter")
+        bad_inputs = (arcs + [arcs[-1]], arcs + [site("v03_shu_unknown", "middle")],
                       [a for a in arcs if a["slug"] != PROVINCE],
-                      [*arcs[:-1], {"slug": PUBLIC, "era": "late"}])
+                      [*arcs[:-1], site(PUBLIC, "late")])
         for bad in bad_inputs:
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 adapter._shu_active_arcs({"arcs": bad})
@@ -247,7 +256,8 @@ class ShuPublicGeneratedAdapter(unittest.TestCase):
         current = current_catalog()
         active = adapter._shu_active_arcs(current)
         previous = json.loads(frozen("data/content/v03/countries/shu.json"))["arcs"]
-        self.assertEqual(active[:4], previous, "all four old arcs must remain exactly frozen")
+        self.assertEqual(active[:4], with_engine_modifier_fix(previous),
+                         "all four old arcs must remain frozen except the accepted 1004 syntax fix")
         self.assertEqual([a["slug"] for a in active], [*FOUNDATION, PROVINCE, PUBLIC, "v03_shu_rural_workshop"])
         self.assertEqual(sum(len(a["journals"]) for a in active[:4]), 8)
         self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:4]), 39)

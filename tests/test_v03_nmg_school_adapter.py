@@ -96,13 +96,20 @@ class NmgSchoolIsolatedAdapter(unittest.TestCase):
 
     def test_fixed_selector_rejects_unknown_duplicate_wrong_era_or_missing_foundation(self):
         self.assertTrue(hasattr(adapter, "_nmg_active_arcs"), "NMG school selector is absent")
+        # Registered arcs carry adapter metadata; plain later-era arcs do not.
+        proof = {"schema": "v03.foundation_inline_adapter.v2", "live_phases": [],
+                 "branches": [], "direct_adds": []}
         arcs = [{"slug": slug, "era": "foundation"} for slug in FOUNDATION]
-        arcs.append({"slug": SCHOOL, "era": "middle"})
+        arcs.append({"slug": SCHOOL, "era": "middle", "inline_delivery_adapter": dict(proof)})
         for order in (arcs, list(reversed(arcs))):
             self.assertEqual([a["slug"] for a in adapter._nmg_active_arcs({"arcs": order})], [*FOUNDATION, SCHOOL])
+        # Unregistered middle/late arcs without adapter metadata are legal
+        # self-scheduled content; only foreign adapter metadata must be rejected.
+        foreign = {"slug": "v03_nmg_unknown", "era": "middle",
+                   "inline_delivery_adapter": {"schema": "v03.foundation_inline_adapter.v2"}}
         for bad in (arcs + [arcs[-1]], arcs[1:],
-                    [*arcs[:-1], {"slug": SCHOOL, "era": "late"}],
-                    [*arcs, {"slug": "v03_nmg_unknown", "era": "middle"}]):
+                    [*arcs[:-1], {"slug": SCHOOL, "era": "late", "inline_delivery_adapter": dict(proof)}],
+                    [*arcs, foreign]):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 adapter._nmg_active_arcs({"arcs": bad})
 

@@ -16,8 +16,20 @@ EXPECTED_ARCS = {
     "v03_tib_service_register",
     "v03_tib_shared_schools",
 }
-EFFECTS_AST_SHA256 = '4fe384c4376b78fc21b47c8c9c5151419ce593fe71f4bf12971ae3b9ae2377d5'
+EFFECTS_AST_SHA256 = '99ac3f97e8a4aa39318c798611706c2cd755eeaef11bdbc39d10af0fce9bd55a'
 TRIGGERS_AST_SHA256 = 'f150f94dfbb4fccf8ba7b7a7e98a4523fae604f3930982bd35891e08af98f363'
+
+# Later-era cards added for v0.3 are validated separately (see
+# tools.v03_inline_delivery_adapter._plain_arcs); their helpers are excluded
+# from the registered-source digest so the drift guard keeps pinning exactly
+# the inline-adapter-owned helpers.
+PLAIN_CARD_STEMS = (
+    "ywc_tib_stations_",
+    "ywc_tib_kham_",
+    "ywc_tib_advisers_",
+    "ywc_tib_secular_",
+    "ywc_tib_plateau_",
+)
 
 
 def _int_tree(value: Any, where: str = "metadata") -> None:
@@ -155,7 +167,9 @@ def validate_tib_native_helper_source(effects_source: str, triggers_source: str)
         def canonical(node: Any) -> tuple[Any, ...]:
             value = [canonical(child) for child in node.value] if isinstance(node.value, tuple) else node.value
             return node.key, node.op, value
-        digest = hashlib.sha256(repr([canonical(node) for node in nodes]).encode("utf-8")).hexdigest()
+        kept = [node for node in nodes
+                if not any(node.key.startswith(p) for p in PLAIN_CARD_STEMS)]
+        digest = hashlib.sha256(repr([canonical(node) for node in kept]).encode("utf-8")).hexdigest()
         if digest != expected:
             raise ValueError(f"TIB native helper {label} source ABI/AST drift")
 
@@ -175,16 +189,26 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
     if not isinstance(catalog, dict) or catalog.get("key") != "country_tib":
         raise ValueError("TIB inline adapter requires the TIB catalog")
     arcs = catalog.get("arcs")
-    if (not isinstance(arcs, list) or len(arcs) not in (3, 4)
+    if (not isinstance(arcs, list) or len(arcs) < 3
             or any(not isinstance(arc, dict) or type(arc.get("slug")) is not str for arc in arcs)):
         raise ValueError("TIB inline adapter requires its registered arcs")
     foundation = [arc for arc in arcs if arc.get("era") == "foundation"]
     middle = [arc for arc in arcs if arc.get("era") == "middle"]
+    registered_middle = [arc for arc in middle if arc.get("slug") == "v03_tib_public_revenue"]
+    # A catalog that predates the v0.3 middle card still renders: the registered
+    # revenue card is mandatory only once any middle-era arc is present.
     if (len(foundation) != 3 or {arc.get("slug") for arc in foundation} != EXPECTED_ARCS
-            or (middle and (len(middle) != 1 or middle[0].get("slug") != "v03_tib_public_revenue"))
-            or len(foundation) + len(middle) != len(arcs)):
-        raise ValueError("TIB inline adapter requires exactly its registered sources")
-    selected = foundation + middle
+            or (middle and len(registered_middle) != 1)):
+        raise ValueError("TIB inline adapter requires its registered sources")
+    # Later-era arcs authored as plain self-scheduled content carry no adapter
+    # metadata and are invisible to this scheduler; validate them as plain arcs so
+    # the strict inventory contract for the registered sources is unchanged.
+    try:
+        from tools.v03_inline_delivery_adapter import _plain_arcs
+    except ModuleNotFoundError:
+        from v03_inline_delivery_adapter import _plain_arcs
+    _plain_arcs(catalog, foundation + registered_middle, "TIB")
+    selected = foundation + registered_middle
     witnesses: set[str] = set()
     all_events: set[str] = set()
     branches_seen: set[tuple[str, int]] = set()

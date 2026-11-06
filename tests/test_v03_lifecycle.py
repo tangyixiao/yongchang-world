@@ -159,9 +159,12 @@ class V03LifecycleTest(unittest.TestCase):
         startup = STARTUP.read_text(encoding="utf-8-sig")
         decision = MIGRATION.read_text(encoding="utf-8-sig")
         self.assertIn("on_game_started_after_lobby", startup)
-        self.assertIn("c:SHU = this", startup)
-        self.assertIn("c:DMG = this", startup)
-        self.assertIn("c:KOR = this", startup)
+        # Exists-check form: a tag absent from the current world must not raise
+        # "Event target link c returned an unset scope".
+        self.assertIn("c:SHU ?= this", startup)
+        self.assertIn("c:DMG ?= this", startup)
+        self.assertIn("c:KOR ?= this", startup)
+        self.assertNotIn("c:SHU = this", startup)
         self.assertIn("ywc_v03_initialize_country = yes", startup)
         self.assertNotIn("add_journal_entry", startup)
         self.assertIn("NOT = { has_variable = ywc_v03_initialized }", decision)

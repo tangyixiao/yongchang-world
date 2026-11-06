@@ -17,7 +17,18 @@ EXPECTED_ARCS = {
     "v03_jhg_tribute_autonomy",
 }
 DOCKYARD_ARC = "v03_jhg_dockyard_capital"
-EFFECTS_AST_SHA256 = "136b24e521dfa78709ee29589d3f3d0f5eb8bbb516c445841db3bc64978445ef"
+
+# Plain middle/late cards are validated separately (see tools.v03_inline_delivery_adapter
+# _plain_arcs); their helpers are excluded from the registered-source digest so the
+# drift guard keeps pinning exactly the inline-adapter-owned helpers.
+PLAIN_CARD_STEMS = (
+    "ywc_jhg_partners_",
+    "ywc_jhg_credit_",
+    "ywc_jhg_island_",
+    "ywc_jhg_council_",
+    "ywc_jhg_succession_",
+)
+EFFECTS_AST_SHA256 = "23d95ff7812733d6334cd722b1d5aff19f3e63fb4ef5c0428317cb4d988f2de4"
 TRIGGERS_AST_SHA256 = "dd38d0ed9ccd1c553459e2318dad057a27198371294e65d1bca2493c20e4dbc6"
 DOCK_EFFECTS_AST_SHA256 = "ecffd7adf5b9b60ce5ddbe011c2d44ab66629aaca82fdf5a9617c5873f35a01e"
 DOCK_TRIGGERS_AST_SHA256 = "bd2fbd59db68cf8d14d791fef2db73009626760723e3c0b75f34ac4be5967a09"
@@ -177,7 +188,9 @@ def validate_jhg_native_helper_source(effects_source: str, triggers_source: str)
         def canonical(node: Any) -> tuple[Any, ...]:
             value = [canonical(child) for child in node.value] if isinstance(node.value, tuple) else node.value
             return node.key, node.op, value
-        old = [node for node in nodes if not node.key.startswith("ywc_jhg_dock_")]
+        old = [node for node in nodes
+                    if not node.key.startswith("ywc_jhg_dock_")
+                    and not any(node.key.startswith(p) for p in PLAIN_CARD_STEMS)]
         dock = [node for node in nodes if node.key.startswith("ywc_jhg_dock_")]
         digest = hashlib.sha256(repr([canonical(node) for node in old]).encode("utf-8")).hexdigest()
         if digest != expected:
@@ -206,6 +219,14 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
     dockyard = [arc for arc in arcs if isinstance(arc, dict) and arc.get("slug") == DOCKYARD_ARC]
     if len(dockyard) > 1 or (dockyard and dockyard[0].get("era") != "middle"):
         raise ValueError("JHG dockyard source must be one registered middle arc")
+    # Later-era arcs authored as plain self-scheduled content carry no adapter
+    # metadata and are invisible to this scheduler; validate them as plain arcs so
+    # the strict inventory contract for the registered sources is unchanged.
+    try:
+        from tools.v03_inline_delivery_adapter import _plain_arcs
+    except ModuleNotFoundError:
+        from v03_inline_delivery_adapter import _plain_arcs
+    _plain_arcs(catalog, selected + dockyard, "JHG")
     selected += dockyard
     witnesses: set[str] = set()
     all_events: set[str] = set()

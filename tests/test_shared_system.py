@@ -130,7 +130,10 @@ class SharedSystemTest(unittest.TestCase):
         self.assertIn("ywc_je_who_inherits_china =", journal)
         self.assertIn("namespace = ywc_shared", events)
         self.assertIn("ywc_shared.1 =", events)
-        self.assertIn("trigger_event = { id = ywc_shared.1", journal)
+        helper = (ROOT / "yongchang_world/common/scripted_effects/ywc_shu_legacy_delivery_effects.txt").read_text("utf-8-sig")
+        self.assertIn("ywc_shu_legacy_try_shared = yes", journal)
+        self.assertIn("ywc_shu_legacy_try_2 = yes", helper)
+        self.assertEqual(helper.count("trigger_event = { id = ywc_shared.1 }"), 2)
 
     def test_ocean_frontier_decision_changes_shared_maritime_state(self):
         events = EVENTS.read_text("utf-8")

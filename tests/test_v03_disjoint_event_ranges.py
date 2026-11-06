@@ -88,8 +88,10 @@ class V03DisjointEventRangeTests(unittest.TestCase):
                 self.assertEqual(row.pop("additional_ranges"), [{"start": 1030, "end": end}])
         self.assertEqual(foundation, historical["arc_ranges"])
         self.assertEqual(registry["namespace_limits"], historical["namespace_limits"])
-        self.assertEqual(registry["reservations"], historical["reservations"])
-        self.assertEqual(len(registry["arc_ranges"]), 90)
+        self.assertEqual([row for row in registry["reservations"] if row["layer"] == "country"],
+                         historical["reservations"])
+        self.assertEqual(len([row for row in registry["arc_ranges"]
+                              if row["catalog_key"].startswith("country_")]), 90)
 
     def test_malformed_segments_collect_diagnostics(self):
         cases = {

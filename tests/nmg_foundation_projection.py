@@ -23,8 +23,11 @@ JES = ("ywc_je_v03_nmg_parish_school", "ywc_je_v03_nmg_parish_settlement")
 @lru_cache(maxsize=1)
 def _validated_projection(raw):
     current = json.loads(raw.decode("utf-8-sig"))
-    if [a["slug"] for a in current["arcs"]] != [*FOUNDATION, SCHOOL, BAY]:
-        raise AssertionError("legacy NMG projection requires exactly the three foundations, school and bay")
+    # Later-era plain arcs are appended after the registered sources; this legacy
+    # fixture pins only the registered prefix it was written against.
+    slugs = [a["slug"] for a in current["arcs"]]
+    if slugs[:5] != [*FOUNDATION, SCHOOL, BAY]:
+        raise AssertionError("legacy NMG projection requires the three foundations, school and bay first")
     if any(a.get("era") != "foundation" for a in current["arcs"][:3]):
         raise AssertionError("legacy NMG root slugs must retain their foundation era")
     school = current["arcs"][3]

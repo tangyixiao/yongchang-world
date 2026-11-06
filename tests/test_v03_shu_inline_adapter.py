@@ -155,7 +155,10 @@ class ShuInlineAdapterTests(unittest.TestCase):
                 proof_nodes = body[-len(callbacks)-len(proofs):-len(callbacks)]
                 self.assertEqual(len(proof_nodes), len(proofs))
                 self.assertTrue(all(node.key == "if" for node in proof_nodes))
-                self.assertEqual([node_shape(node) for node in source_nodes], [node_shape(node) for node in body[:-len(callbacks)-len(proofs)]])
+                self.assertEqual(
+                    [node_shape(node) for node in source_nodes] + [("ywc_shu_legacy_after_v03", "=", "yes")],
+                    [node_shape(node) for node in body[:-len(callbacks)-len(proofs)]],
+                )
                 for callback in callbacks:
                     generated_callback = names[callback]
                     callback_text = adapter["effects"][generated_callback.start:generated_callback.end]

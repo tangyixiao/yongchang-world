@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 
 from tools import v03_inline_delivery_adapter as adapter
+from tests.shu_legacy_baseline import with_engine_modifier_fix
 
 BASELINE_REF = "39187884b0084fa29e9194507ee59fd1f26a2927"
 COUNTRIES = ("dmg", "jhg", "kor", "lan", "mgl", "nmg", "nqg", "oir", "shu", "tib")
@@ -368,7 +369,7 @@ class RuralActualGeneratedAdapterTests(unittest.TestCase):
         adapter.validate_inline_catalog(catalog)
         active = adapter._shu_active_arcs(catalog)
         old = baseline_catalogs()["shu"]
-        self.assertEqual(active[:-1], old["arcs"])
+        self.assertEqual(active[:-1], with_engine_modifier_fix(old["arcs"]))
         arc = active[-1]
         self.assertEqual(arc["slug"], SLUG)
         self.assertEqual([j["id"] for j in arc["journals"]], list(JOURNALS))

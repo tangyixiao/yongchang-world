@@ -90,8 +90,15 @@ class V03CatalogTests(unittest.TestCase):
 
     def test_load_catalogs_reads_only_manifest_entries(self):
         catalogs = load_catalogs(ROOT)
+        manifest = json.loads((ROOT / "data/content/v03/manifest.json").read_text(encoding="utf-8"))
+        expected = {
+            ("country_" + pathlib.Path(relative).stem)
+            if "/countries/" in relative else pathlib.Path(relative).stem
+            for relative in manifest["catalogs"]
+        }
+        self.assertEqual(set(catalogs), expected)
         self.assertEqual(
-            set(catalogs),
+            {key for key in catalogs if key.startswith("country_")},
             {
                 "country_shu",
                 "country_dmg",
@@ -105,6 +112,7 @@ class V03CatalogTests(unittest.TestCase):
                 "country_tib",
             },
         )
+        self.assertEqual(len(tuple(catalogs)), len(manifest["catalogs"]))
 
     def test_rejects_duplicate_ids_across_catalogs(self):
         first = catalog()

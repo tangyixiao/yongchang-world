@@ -107,21 +107,25 @@ class V03CampaignReservationTests(unittest.TestCase):
         self.assertEqual(seen_extensions, set(expected_extensions))
         self.assertEqual(foundation, before["arc_ranges"])
         self.assertEqual(len(before["arc_ranges"]), 30)
-        self.assertEqual(current["reservations"], before["reservations"])
+        country_reservations = [row for row in current["reservations"] if row["layer"] == "country"]
+        self.assertEqual(country_reservations, before["reservations"])
         self.assertEqual(current["namespace_limits"], before["namespace_limits"])
-        self.assertEqual(len(current["reservations"]), 10)
+        self.assertEqual(len(country_reservations), 10)
 
-        additions = current["arc_ranges"][len(before["arc_ranges"]):]
+        additions = [row for row in current["arc_ranges"][len(before["arc_ranges"]):]
+                     if row["catalog_key"].startswith("country_")]
         expected_rows = markdown_country_reservations()
         self.assertEqual(len(expected_rows), 60)
         self.assertEqual(len({slug for _, _, slug in expected_rows}), 60)
         self.assertEqual(len(additions), 60)
-        self.assertEqual(len({row["slug"] for row in current["arc_ranges"]}), 90)
-        self.assertEqual(len({(row["catalog_key"], row["slug"]) for row in current["arc_ranges"]}), 90)
-        self.assertEqual({row["slug"] for row in current["arc_ranges"]},
+        country_ranges = [row for row in current["arc_ranges"]
+                          if row["catalog_key"].startswith("country_")]
+        self.assertEqual(len({row["slug"] for row in country_ranges}), 90)
+        self.assertEqual(len({(row["catalog_key"], row["slug"]) for row in country_ranges}), 90)
+        self.assertEqual({row["slug"] for row in country_ranges},
                          {row["slug"] for row in before["arc_ranges"]}
                          | {slug for _, _, slug in expected_rows})
-        self.assertEqual(Counter(row["catalog_key"] for row in current["arc_ranges"]),
+        self.assertEqual(Counter(row["catalog_key"] for row in country_ranges),
                          {f"country_{tag.lower()}": 9 for tag in COUNTRY_TAGS})
 
         expected = []
@@ -141,7 +145,8 @@ class V03CampaignReservationTests(unittest.TestCase):
         self.assertEqual(COUNTRY_NAMESPACES["MGL"], "ywc_mng")
         self.assertEqual(COUNTRY_NAMESPACES["NMG"], "ywc_nmg")
 
-        authored = load_catalogs(ROOT)
+        authored = {key: value for key, value in load_catalogs(ROOT).items()
+                    if key.startswith("country_")}
         foundation_arcs = [arc for c in authored.values() for arc in c["arcs"]
                            if arc.get("era") == "foundation"]
         self.assertEqual(len(foundation_arcs), 30)

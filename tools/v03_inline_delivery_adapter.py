@@ -760,20 +760,78 @@ _SHU_PUBLIC_IMMEDIATE_HASHES: dict[str, str] = {
 }
 
 
+def _registered_journal_ids(catalog: dict[str, Any]) -> set[str]:
+    """Journal ids that already belong to an arc with inline adapter metadata."""
+    owned: set[str] = set()
+    for arc in catalog.get("arcs", []):
+        if not isinstance(arc, dict) or "inline_delivery_adapter" not in arc:
+            continue
+        for journal in arc.get("journals") or ():
+            if isinstance(journal, dict) and isinstance(journal.get("id"), str):
+                owned.add(journal["id"])
+    return owned
+
+
+def _plain_arcs(catalog: dict[str, Any], foundation: list[dict[str, Any]],
+                tag: str) -> list[dict[str, Any]]:
+    """Validate and return later-era arcs that schedule their own events.
+
+    A plain arc carries no inline adapter metadata and delivers its events from its own
+    journal entries, exactly like the pre-adapter content. It must not reuse a journal id
+    owned by a registered adapter arc, so a copy of registered content cannot silently
+    bypass the coordinator.
+    """
+    owned = _registered_journal_ids(catalog)
+    plain: list[dict[str, Any]] = []
+    for arc in catalog.get("arcs", []):
+        if arc in foundation or not isinstance(arc, dict) or "inline_delivery_adapter" in arc:
+            continue
+        if arc.get("era") not in {"middle", "late"}:
+            raise ValueError(f"unregistered {tag} inline arc: {arc.get('slug')}")
+        for journal in arc.get("journals") or ():
+            jid = journal.get("id") if isinstance(journal, dict) else None
+            if jid in owned:
+                raise ValueError(
+                    f"unregistered {tag} inline arc: {arc.get('slug')} ({jid} is owned by a registered source)")
+        plain.append(arc)
+    return plain
+
+
+def _split_registered_arcs(catalog: dict[str, Any], foundation: list[dict[str, Any]],
+                           registered: set[str], tag: str) -> tuple[dict[str, dict[str, Any]],
+                                                                     list[dict[str, Any]]]:
+    """Split extra arcs into registered inline sites and plain self-scheduled arcs.
+
+    Later eras (middle/late) may be authored as ordinary arcs that schedule their own
+    events from their journal entries. They carry no ``inline_delivery_adapter`` and are
+    therefore invisible to this scheduler; only registered adapter arcs are validated and
+    rendered here. Arcs that keep adapter metadata must still be explicitly registered,
+    so the strict ownership contract for existing content is unchanged.
+    """
+    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    middle: dict[str, dict[str, Any]] = {}
+    for arc in extra:
+        if not isinstance(arc, dict):
+            raise ValueError(f"unregistered {tag} inline arc: {arc!r}")
+        if "inline_delivery_adapter" not in arc:
+            continue
+        slug = arc.get("slug")
+        if slug not in registered or arc.get("era") != "middle":
+            raise ValueError(f"unregistered {tag} inline arc: {slug}")
+        if slug in middle:
+            raise ValueError(f"duplicate registered {tag} middle arc")
+        middle[slug] = arc
+    return middle, _plain_arcs(catalog, foundation, tag)
+
+
 def _shu_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     foundation = [arc for arc in catalog["arcs"]
                   if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_SHU_FOUNDATION_SLUGS):
         raise ValueError("SHU inline adapter requires exactly its three foundation arcs")
-    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
-    middle = {}
-    for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG, _SHU_RURAL_SLUG} or arc.get("era") != "middle":
-            slug = arc.get("slug") if isinstance(arc, dict) else None
-            raise ValueError(f"unregistered SHU inline arc: {slug}")
-        if arc["slug"] in middle:
-            raise ValueError("duplicate registered SHU middle arc")
-        middle[arc["slug"]] = arc
+    middle, plain = _split_registered_arcs(
+        catalog, foundation,
+        {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG, _SHU_RURAL_SLUG}, "SHU")
     if _SHU_PUBLIC_SLUG in middle and _SHU_MIDDLE_SLUG not in middle:
         raise ValueError("SHU public registration must preserve the provincial-contract sources")
     if _SHU_RURAL_SLUG in middle and not {_SHU_MIDDLE_SLUG, _SHU_PUBLIC_SLUG} <= middle.keys():
@@ -1124,15 +1182,8 @@ def _lan_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
                   if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_LAN_FOUNDATION_SLUGS):
         raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
-    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
-    registered = {}
-    for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_LAN_COMPANY_SLUG, _LAN_GOLD_SLUG} or arc.get("era") != "middle":
-            slug = arc.get("slug") if isinstance(arc, dict) else None
-            raise ValueError(f"unregistered LAN inline arc: {slug}")
-        if arc["slug"] in registered:
-            raise ValueError(f"duplicate LAN inline arc: {arc['slug']}")
-        registered[arc["slug"]] = arc
+    registered, plain = _split_registered_arcs(
+        catalog, foundation, {_LAN_COMPANY_SLUG, _LAN_GOLD_SLUG}, "LAN")
     if _LAN_GOLD_SLUG in registered and _LAN_COMPANY_SLUG not in registered:
         raise ValueError("LAN beyond-gold requires the registered company-public arc")
     return [next(arc for arc in foundation if arc["slug"] == slug)
@@ -1419,6 +1470,7 @@ def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
     arcs = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if catalog.get("key") != "country_mgl" or len(arcs) != 3 or {arc.get("slug") for arc in arcs} != expected_arcs:
         raise ValueError("MGL inline adapter requires exactly its three foundation arcs")
+    _plain_arcs(catalog, arcs, "MGL")
     witnesses: set[str] = set()
     event_ids: set[str] = set()
     event_count = 0
@@ -1484,11 +1536,14 @@ def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
     if total_branches != 66 or event_count != 24 or event_ids != set(_MGL_EVENT_AST_SHA256):
         raise ValueError("MGL native source inventory must contain exactly 66 sender sites and 24 event bodies")
     mobile = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("slug") == "v03_mgl_mobile_offices"]
-    middle = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("era") == "middle"]
-    if not middle and not mobile:
+    # Later-era cards that carry no adapter metadata deliver from their own journals and
+    # are validated as plain arcs; only the registered mobile-offices card is pinned here.
+    plain = [arc for arc in _plain_arcs(catalog, arcs, "MGL")
+             if arc.get("slug") != "v03_mgl_mobile_offices"]
+    if not mobile and not plain:
         return
-    if len(middle) != 1 or len(mobile) != 1 or middle[0] is not mobile[0]:
-        raise ValueError("MGL inline adapter supports only its registered mobile-offices middle card")
+    if len(mobile) != 1:
+        raise ValueError("MGL inline adapter requires its registered mobile-offices middle card")
     arc = mobile[0]
     if len(arc.get("journals", [])) != 1 or len(arc.get("events", [])) != 6:
         raise ValueError("MGL mobile offices requires one middle-era JE and six events")
@@ -1584,15 +1639,8 @@ def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
                   if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_DMG_FOUNDATION_SLUGS):
         raise ValueError("DMG inline adapter requires exactly its three foundation arcs")
-    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
-    middle = {}
-    for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG, _DMG_CROWN_SLUG} or arc.get("era") != "middle":
-            slug = arc.get("slug") if isinstance(arc, dict) else None
-            raise ValueError(f"unregistered DMG inline arc: {slug}")
-        if arc["slug"] in middle:
-            raise ValueError(f"duplicate registered DMG middle arc: {arc['slug']}")
-        middle[arc["slug"]] = arc
+    middle, plain = _split_registered_arcs(
+        catalog, foundation, {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG, _DMG_CROWN_SLUG}, "DMG")
     if _DMG_MARKET_SLUG in middle and _DMG_SCHOOL_SLUG not in middle:
         raise ValueError("DMG market registration must preserve the registered school sources")
     if _DMG_CROWN_SLUG in middle and not {_DMG_SCHOOL_SLUG, _DMG_MARKET_SLUG} <= middle.keys():
@@ -1744,13 +1792,11 @@ def _nmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     foundation = [a for a in catalog["arcs"] if isinstance(a, dict) and a.get("era") == "foundation"]
     if len(foundation) != 3 or {a.get("slug") for a in foundation} != set(_NMG_FOUNDATION_SLUGS):
         raise ValueError("NMG inline adapter requires its three foundation arcs and six native JEs")
-    extra = [a for a in catalog["arcs"] if a not in foundation]
-    if any(not isinstance(a, dict) or a.get("slug") not in {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG} or a.get("era") != "middle" for a in extra):
-        raise ValueError("unregistered NMG inline arc")
-    if len({a["slug"] for a in extra}) != len(extra):
-        raise ValueError("duplicate registered NMG middle arc")
+    registered, plain = _split_registered_arcs(
+        catalog, foundation, {_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG}, "NMG")
     return ([next(a for a in foundation if a["slug"] == slug) for slug in _NMG_FOUNDATION_SLUGS]
-            + [a for slug in (_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG) for a in extra if a["slug"] == slug])
+            + [registered[slug] for slug in (_NMG_SCHOOL_SLUG, _NMG_BAY_SLUG)
+               if slug in registered])
 
 
 def _nmg_bay_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -1988,21 +2034,16 @@ def _kor_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
                   if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_KOR_FOUNDATION_SLUGS):
         raise ValueError("KOR v2 inline adapter requires exactly the three foundation arcs")
-    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
-    middle = {}
-    for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") not in {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG} or arc.get("era") != "middle":
-            raise ValueError("unregistered KOR inline arc")
-        if arc["slug"] in middle:
-            raise ValueError("duplicate registered KOR middle arc")
-        middle[arc["slug"]] = arc
+    middle, plain = _split_registered_arcs(
+        catalog, foundation, {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG}, "KOR")
     if _KOR_COURT_PUBLIC_SLUG in middle and _KOR_REVENUE_SLUG not in middle:
         raise ValueError("KOR court public registration must preserve the revenue sources")
     if _KOR_WORKSHOPS_SLUG in middle and not {_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG} <= middle.keys():
         raise ValueError("KOR workshops registration must preserve both existing middle arcs")
     return [next(arc for arc in foundation if arc["slug"] == slug)
             for slug in _KOR_FOUNDATION_SLUGS] + [middle[slug] for slug in
-                (_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG) if slug in middle]
+                (_KOR_REVENUE_SLUG, _KOR_COURT_PUBLIC_SLUG, _KOR_WORKSHOPS_SLUG)
+                if slug in middle]
 
 
 def _kor_revenue_native_receipt(event: dict[str, Any]) -> tuple[str, int]:
@@ -2220,6 +2261,7 @@ def _validate_nqg_inline_catalog(catalog: dict[str, Any]) -> None:
     active = [arc for arc in catalog.get("arcs", []) if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(active) != 3 or {arc.get("slug") for arc in active} != expected_slugs:
         raise ValueError("NQG inline adapter requires exactly its three foundation arcs")
+    _plain_arcs(catalog, active, "NQG")
     witnesses: set[str] = set()
     queues_by_owner: dict[str, str] = {}
     for arc in active:
@@ -2683,6 +2725,10 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     candidates: list[dict[str, Any]] = []
     source_by_journal: dict[str, dict[str, Any]] = {}
     for arc in arcs:
+        if "inline_delivery_adapter" not in arc:
+            # Plain later-era arcs deliver from their own journals and carry no
+            # adapter metadata; the scheduler only renders registered sites.
+            continue
         ad = arc["inline_delivery_adapter"]
         for phase in ad["live_phases"]:
             journal = next(j for j in arc["journals"] if j["id"] == phase["journal"])
