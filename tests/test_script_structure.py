@@ -333,12 +333,44 @@ class ScriptStructureTest(unittest.TestCase):
             (effects / "two.txt").write_text("ywc_internal_helper = { }\n", encoding="utf-8")
             self.assertEqual(find_duplicate_keys(root), {"ywc_internal_helper"})
 
+    def test_media_aliases_do_not_require_localization_and_keep_their_namespace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            aliases = root / "gfx/media_aliases"
+            events = root / "events"
+            aliases.mkdir(parents=True)
+            events.mkdir(parents=True)
+            (aliases / "first.txt").write_text('ywc_art = { video = "gfx/event_pictures/art.bk2" }', encoding="utf-8")
+            (events / "event.txt").write_text('ywc_art = { type = country_event }', encoding="utf-8")
+            self.assertIn("ywc_art", collect_declared_keys(root))
+            self.assertEqual(find_duplicate_keys(root), set())
+            (events / "event.txt").write_text('ywc_visible = { type = country_event }', encoding="utf-8")
+            self.assertNotIn("ywc_art", collect_declared_keys(root))
+            self.assertIn("ywc_visible", collect_declared_keys(root))
+            (aliases / "second.txt").write_text('ywc_art = { video = "gfx/event_pictures/other.bk2" }', encoding="utf-8")
+            self.assertEqual(find_duplicate_keys(root), {"ywc_art"})
+
     def test_on_action_ids_do_not_require_localization(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / "common/on_actions").mkdir(parents=True)
             (root / "common/on_actions/example.txt").write_text(
                 "ywc_on_action = { effect = {} }\n", encoding="utf-8"
+            )
+            self.assertEqual(collect_declared_keys(root), set())
+
+    def test_script_value_names_are_internal_database_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "common/script_values").mkdir(parents=True)
+            (root / "common/script_values/example.txt").write_text(
+                "ywc_calendar_month = { value = year multiply = 12 add = month }\n",
+                encoding="utf-8",
+            )
+            (root / "common/scripted_effects").mkdir(parents=True)
+            (root / "common/scripted_effects/example.txt").write_text(
+                "ywc_use_month = { set_variable = { name = x value = ywc_calendar_month } }\n",
+                encoding="utf-8",
             )
             self.assertEqual(collect_declared_keys(root), set())
 

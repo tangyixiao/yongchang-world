@@ -26,6 +26,17 @@ def pulse_effect_nodes(journal):
     return effect
 
 
+def shu_monthly_effect():
+    """Follow the actual additive hook to its owned repayment effect."""
+    source = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig"))
+    hook = next(body for key, _, body in source if key == "on_monthly_pulse_country")
+    children = [name for key, _, body in hook if key == "on_actions" for name, _, _ in body]
+    if children.count("ywc_v03_shu_accounts_monthly") != 1:
+        raise AssertionError("the SHU repayment callback must be appended exactly once")
+    child = next(body for key, _, body in source if key == "ywc_v03_shu_accounts_monthly")
+    return next(body for key, _, body in child if key == "effect")
+
+
 def parse_country_effect(script):
     # This review exercises country-card behavior; the cooldown write is owned by shared lifecycle code.
     script = script.replace("ywc_v03_mark_major_delivered = yes", "set_variable = { name = test_major_delivered value = 1 }")
@@ -149,6 +160,9 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertNotIn("ywc_shu_second_audit", local)
         local["ywc_shu_merchant_advance_refused"] = 1
         local_world.run("ywc_shu_record_second_audit")
+        self.assertNotIn("ywc_shu_second_audit", local, "a refusal cannot cancel an accepted advance")
+        local.pop("ywc_shu_merchant_advance")
+        local_world.run("ywc_shu_record_second_audit")
         self.assertEqual(local.get("ywc_shu_second_audit"), 1)
         second_audit = self.effects.split("ywc_shu_record_second_audit = {", 1)[1].split("\nywc_shu_start_settlement_review", 1)[0]
         self.assertLess(second_audit.index("ywc_shu_pay_audit_second_half_once = yes"), second_audit.index("set_variable = { name = ywc_shu_second_audit value = 1 }"))
@@ -231,17 +245,24 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertEqual(state.get("ywc_shu_fiscal_outcome_central_audit"), 1)
 
     def test_merchant_repayment_runs_from_country_monthly_on_action_after_exit(self):
-        action = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig"))
-        callback = next(body for key, _, body in action if key == "on_monthly_pulse_country")
-        effect = next(body for key, _, body in callback if key == "effect")
-        world = PulseWorld(self.effects, {"SHU": {"yearly_gross_income": 52_000, "gold_reserves": 2_000,
-                              "ywc_shu_register_resolved": 1}})
+        effect = shu_monthly_effect()
+        from shu_kor_strict_review_runtime import Strict, facts
+        world = Strict("shu")
+        world.countries["SHU"] = facts()
+        world.countries["SHU"].update({"yearly_gross_income": 52_000, "gold_reserves": 2_000,
+                                      "ywc_v03_shu_v03_shu_fiscal_register_last_event": 6,
+                                      "ywc_shu_v03_pilot_state": 1})
+        world.active["SHU"].append("ywc_je_v03_shu_register_pilot")
         world.run("ywc_shu_accept_merchant_advance")
+        world.active["SHU"].clear()
+        world.countries["SHU"]["ywc_shu_register_resolved"] = 1
         principal = world.countries["SHU"]["ywc_shu_merchant_principal"]
         self.assertAlmostEqual(world.treasury["SHU"], principal)
         for _ in range(11):
+            world.advance_months(1)
             world.execute(effect, "SHU")
         self.assertNotIn("ywc_shu_merchant_advance_repaid", world.countries["SHU"])
+        world.advance_months(1)
         world.execute(effect, "SHU")
         self.assertAlmostEqual(world.treasury["SHU"], 0)
         self.assertEqual(world.countries["SHU"].get("ywc_shu_merchant_advance_repaid"), 1)
@@ -249,9 +270,7 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertAlmostEqual(world.treasury["SHU"], 0)
 
     def test_unpaid_merchant_advance_survives_exit_until_funds_allow_collection(self):
-        action = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_shu_accounts.txt").read_text(encoding="utf-8-sig"))
-        callback = next(body for key, _, body in action if key == "on_monthly_pulse_country")
-        effect = next(body for key, _, body in callback if key == "effect")
+        effect = shu_monthly_effect()
         world = PulseWorld(self.effects, {"SHU": {"gold_reserves": 0, "ywc_shu_arc_abandoned": 1,
                               "ywc_shu_merchant_advance_unpaid": 1, "ywc_shu_merchant_principal": 250,
                               "ywc_shu_merchant_repayment_months": 11}})
@@ -509,7 +528,7 @@ class ShuContentCardTest(unittest.TestCase):
         empty.execute(pulse, "SHU")
         empty.execute(parse_country_effect(e1["immediate"]), "SHU")
         empty.execute(parse(reselect["effect"][1:-1]), "SHU")
-        self.assertEqual(empty_state.get("ywc_shu_pending_event"), 1006)
+        self.assertEqual(empty_state.get("ywc_shu_pending_event"), 1005)
 
         no_candidate = {"test_unsettled": 1, "test_cooldown_clear": 1,
                         "ywc_shu_v03_pilot_state": 1}
@@ -633,7 +652,7 @@ class ShuContentCardTest(unittest.TestCase):
         pulse = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][0]))
         cases = (
             ({"ywc_shu_waiting_for_capacity": 1, "ywc_shu_blocked_36_due": 1, "test_cooldown_clear": 1}, "ywc_shu.1001"),
-            ({"ywc_shu_blocked_12_due": 1, "test_cooldown_clear": 1}, "ywc_shu.1006"),
+            ({"ywc_shu_blocked_12_due": 1, "ywc_shu_blocked_12_notice": 1, "ywc_shu_waiting_for_capacity": 1, "test_cooldown_clear": 1}, "ywc_shu.1006"),
         )
         for state, expected in cases:
             state["test_unsettled"] = 1

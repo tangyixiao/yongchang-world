@@ -45,6 +45,8 @@ DLCA_GATED_FILES = ("12_ip4_script_modifiers.txt", "13_ep2_script_modifiers.txt"
 # re.MULTILINE matters: without it `^` only matches the start of the file and a
 # definition file yields a single name.
 BLOCK_HEADER = re.compile(r"^\s*([a-z][a-z0-9_]*)\s*=\s*\{", re.MULTILINE)
+ADD_MODIFIER_OPEN = re.compile(r"\badd_modifier\s*=\s*\{")
+INVALID_MODIFIER_ARGUMENT = re.compile(r"\bmodifier\s*=")
 MODIFIER_REFERENCE = re.compile(
     r"(?:add_modifier|remove_modifier)\s*=\s*\{[^}]*?name\s*=\s*([A-Za-z0-9_]+)", re.DOTALL
 )
@@ -104,6 +106,64 @@ def _body_keys(body: str) -> list[tuple[str, int]]:
     return keys
 
 
+
+def _mask_strings_and_comments(text: str) -> str:
+    """Mask strings and comments while retaining offsets, newlines and braces in code."""
+    chars = list(text)
+    i = 0
+    while i < len(text):
+        if text[i] == "#":
+            while i < len(text) and text[i] not in "\r\n":
+                chars[i] = " "
+                i += 1
+        elif text[i] == '"':
+            chars[i] = " "
+            i += 1
+            while i < len(text):
+                ch = text[i]
+                if ch not in "\r\n":
+                    chars[i] = " "
+                i += 1
+                if ch == "\\" and i < len(text):
+                    if text[i] not in "\r\n":
+                        chars[i] = " "
+                    i += 1
+                elif ch == '"':
+                    break
+        else:
+            i += 1
+    return "".join(chars)
+
+
+def _invalid_add_modifier_lines(text: str) -> list[int]:
+    """Find modifier= as a top-level field, including bodies with nested blocks."""
+    code = _mask_strings_and_comments(text)
+    lines = []
+    line = 1
+    cursor = 0
+    for match in ADD_MODIFIER_OPEN.finditer(code):
+        line += code.count("\n", cursor, match.start())
+        cursor = match.start()
+        depth = 1
+        outer = []
+        pos = match.end()
+        while pos < len(code):
+            ch = code[pos]
+            pos += 1
+            if ch == "{":
+                depth += 1
+                outer.append(" ")
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+                outer.append(" ")
+            else:
+                outer.append(ch if depth == 1 else " ")
+        if INVALID_MODIFIER_ARGUMENT.search("".join(outer)):
+            lines.append(line)
+    return lines
+
 def audit(mod_root: Path, game_root: Path) -> dict:
     mod_root = Path(mod_root)
     valid, dlc_gated = collect_modifier_types(game_root)
@@ -134,18 +194,24 @@ def audit(mod_root: Path, game_root: Path) -> dict:
                     )
 
     referenced = {}
+    invalid_arguments = []
     for path in sorted(mod_root.rglob("*.txt")):
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8-sig")
         for match in MODIFIER_REFERENCE.finditer(text):
             referenced.setdefault(match.group(1), path)
+        for line in _invalid_add_modifier_lines(text):
+            invalid_arguments.append(
+                f"{path}:{line}: invalid add_modifier argument modifier; use name"
+            )
 
     return {
         "modifier_types": len(valid),
         "checked_keys": checked,
         "static_modifiers": len(declared),
         "unknown_modifier_types": diagnostics,
+        "invalid_add_modifier_arguments": invalid_arguments,
         "dlc_gated_usage": sorted(set(info)),
         "undeclared_modifier_references": [
             f"{path}: add_modifier/remove_modifier references undeclared {name}"
@@ -170,7 +236,8 @@ def main() -> int:
     )
     for item in report["dlc_gated_usage"]:
         print(f"info: {item}")
-    problems = report["unknown_modifier_types"] + report["undeclared_modifier_references"]
+    problems = (report["unknown_modifier_types"] + report["undeclared_modifier_references"]
+                + report["invalid_add_modifier_arguments"])
     for problem in problems:
         print(problem)
     if problems:

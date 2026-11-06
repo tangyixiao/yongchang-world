@@ -16,8 +16,20 @@ EFFECTS_PATH = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_kor_effec
 TRIGGERS_PATH = ROOT / "yongchang_world/common/scripted_triggers/ywc_v03_kor_triggers.txt"
 SHARED_EFFECTS_PATH = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_effects.txt"
 LEGACY_JOURNAL_PATH = ROOT / "yongchang_world/common/journal_entries/ywc_kor.txt"
-EVENT_IDS = [f"ywc_kor.{number}" for number in range(1000, 1010)]
+EVENT_IDS = [f"ywc_kor.{number}" for number in range(1000, 1010)] + [f"ywc_kor.{number}" for number in range(1030, 1036)]
 JE_IDS = ["ywc_je_v03_kor_military_audit", "ywc_je_v03_kor_service_settlement"]
+
+_NATIVE_TRIGGER_DEFS = None
+
+
+def native_trigger_defs():
+    """Parse the shipped native KOR trigger definitions once for honest evaluation."""
+    global _NATIVE_TRIGGER_DEFS
+    if _NATIVE_TRIGGER_DEFS is None:
+        _NATIVE_TRIGGER_DEFS = {
+            key: body for key, _, body in parse(TRIGGERS_PATH.read_text(encoding="utf-8-sig"))
+        }
+    return _NATIVE_TRIGGER_DEFS
 
 
 class KorPulseWorld(PulseWorld):
@@ -31,6 +43,8 @@ class KorPulseWorld(PulseWorld):
             return "ywc_v03_kor_v03_kor_military_accounts_settled" not in self.countries[tag]
         if key in ("ywc_kor_v03_route_execution_ready", "ywc_kor_v03_has_owned_state"):
             return True
+        if key in native_trigger_defs() and value in ("yes", "no"):
+            return self.conditions(native_trigger_defs()[key], tag) == (value == "yes")
         return super().condition(node, tag)
 
 
@@ -62,6 +76,8 @@ class KorEffectWorld(PulseWorld):
             return bool(variables.get("test_provincial_ready", 1))
         if key in ("ywc_kor_v03_limited_execution_ready", "ywc_kor_v03_reduced_execution_ready"):
             return bool(variables.get("test_limited_ready", 1))
+        if key in native_trigger_defs() and value in ("yes", "no"):
+            return self.conditions(native_trigger_defs()[key], tag) == (value == "yes")
         return super().condition(node, tag)
 
 
@@ -85,7 +101,11 @@ class KorMilitaryAccountsTest(unittest.TestCase):
         for event in self.arc["events"]:
             for field in ("title", "desc", "purpose"):
                 self.assertTrue(event[field]["zh"] and event[field]["en"])
-            self.assertGreaterEqual(len(event["options"]), 2)
+            if event.get("hidden", False):
+                self.assertIn(event["id"], {"ywc_kor.1032", "ywc_kor.1035"})
+                self.assertEqual(event["options"], [])
+            else:
+                self.assertGreaterEqual(len(event["options"]), 2)
             for option in event["options"]:
                 for field in ("label", "cost_note", "consequence_note"):
                     self.assertTrue(option[field]["zh"] and option[field]["en"])
@@ -128,7 +148,7 @@ class KorMilitaryAccountsTest(unittest.TestCase):
             ("ywc_kor_choose_provincial_supply", "ywc_kor_provincial_report_right", 2),
             ("ywc_kor_choose_limited_legacy", "ywc_kor_legacy_ceiling", 3),
         ):
-            world = PulseWorld(self.effects, {"KOR": {"yearly_gross_income": 52_000, "net_fixed_income": 0, "gold_reserves": 20_000}})
+            world = PulseWorld(self.effects, {"KOR": {"yearly_gross_income": 52_000, "net_fixed_income": 0, "gold_reserves": 20_000, "army_size": 5}})
             world.run(helper, tag="KOR")
             first_treasury = world.treasury["KOR"]
             world.run(helper, tag="KOR")
@@ -440,7 +460,9 @@ class KorMilitaryAccountsTest(unittest.TestCase):
 
     def test_signed_contracts_remain_bounded_debt_after_arc_release(self):
         action = parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_kor_accounts.txt").read_text(encoding="utf-8-sig"))
-        callback = next(body for key, _, body in action if key == "on_monthly_pulse_country")
+        hook = next(body for key, _, body in action if key == "on_monthly_pulse_country")
+        self.assertIn("ywc_v03_kor_accounts_monthly", [name for key, _, body in hook if key == "on_actions" for name, _, _ in body])
+        callback = next(body for key, _, body in action if key == "ywc_v03_kor_accounts_monthly")
         effect = next(body for key, _, body in callback if key == "effect")
         world = KorEffectWorld(self.effects + "\n" + self.shared_effects, {"KOR": {
             "ywc_v03_initialized": 1,
@@ -597,9 +619,25 @@ class KorMilitaryAccountsTest(unittest.TestCase):
         self.assertIn("NOT = { has_variable = ywc_kor_blocked_36_due }", audit["script"])
         self.assertIn("ywc_v03_can_deliver_major = yes", audit["script"])
         self.assertIn("ywc_v03_can_deliver_major = yes", settlement["script"])
+        major_event_ids = {f"ywc_kor.{number}" for number in range(1000, 1010)} | {"ywc_kor.1031", "ywc_kor.1034"}
         for event in self.arc["events"]:
-            self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"])
-            self.assertIn("ywc_v03_mark_major_delivered = yes", event["immediate"])
+            if event["id"] in major_event_ids:
+                self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"])
+                self.assertIn("ywc_v03_mark_major_delivered = yes", event["immediate"])
+        foreign_event = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1030")
+        self.assertIn("ywc_kor_instructor_offer_matches = yes", foreign_event["trigger"])
+        self.assertNotIn("ywc_v03_can_deliver_major = yes", foreign_event["trigger"])
+        self.assertEqual(foreign_event["immediate"].strip(), "{ }")
+        procurement_quote_event = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1033")
+        self.assertIn("ywc_kor_procurement_quote_matches = yes", procurement_quote_event["trigger"])
+        self.assertNotIn("ywc_v03_can_deliver_major = yes", procurement_quote_event["trigger"])
+        self.assertEqual(procurement_quote_event["immediate"].strip(), "{ }")
+        hidden_event = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1032")
+        self.assertNotIn("ywc_v03_can_deliver_major = yes", hidden_event["trigger"])
+        self.assertNotIn("ywc_v03_mark_major_delivered = yes", hidden_event["immediate"])
+        procurement_endpoint = next(row for row in self.arc["events"] if row["id"] == "ywc_kor.1035")
+        self.assertNotIn("ywc_v03_can_deliver_major = yes", procurement_endpoint["trigger"])
+        self.assertNotIn("ywc_v03_mark_major_delivered = yes", procurement_endpoint["immediate"])
         self.assertEqual(validate_catalogs({"country_kor": self.catalog}), [])
         self.assertIn("effect =", audit["script"])
         self.assertIn("effect =", settlement["script"])

@@ -50,6 +50,50 @@ def write_fixture(root):
 
 
 class V03GeneratorTests(unittest.TestCase):
+    def test_event_images_keep_other_countries_generic_and_match_shu_arcs(self):
+        from tools.build_v03_content import _v03_event_image
+
+        cases = {
+            "v03_shu_fiscal_register": "ywc_shu_opening",
+            "v03_shu_service_compact": "ywc_shu_frontier",
+            "v03_shu_port_treasury": "ywc_shu_customs",
+            "v03_shu_rural_workshop": "ywc_shu_opening",
+        }
+        for slug, expected in cases.items():
+            with self.subTest(slug=slug):
+                self.assertEqual(_v03_event_image({"key": "country_shu"}, {"slug": slug}), expected)
+                self.assertEqual(_v03_event_image({"key": "country_tib"}, {"slug": slug}),
+                                 "unspecific_politicians_arguing")
+
+    def test_hidden_event_renders_country_event_without_options_or_inline(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            write_fixture(root)
+            baseline = render_all(root)
+            value = catalog()
+            event = value["arcs"][0]["events"][0]
+            event["hidden"] = True
+            event["options"] = []
+            path = root / "data/content/v03/countries/shu.json"
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            rendered = render_all(root)
+            event_text = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
+            self.assertIn("ywc_shu.1000 = {", event_text)
+            self.assertIn("hidden = yes", event_text)
+            self.assertIn("type = country_event", event_text)
+            self.assertNotIn("option = {", event_text)
+            for relative, text in baseline.items():
+                if "journal.txt" in str(relative):
+                    self.assertEqual(rendered[relative], text)
+                if "localization" in str(relative):
+                    self.assertIn('ywc_shu.1000.t:0 "测试事件"', rendered[relative])
+                    self.assertIn('ywc_shu.1000.d:0 "测试说明"', rendered[relative])
+                    self.assertNotIn("ywc_shu.1000.continue", rendered[relative])
+            event.pop("hidden")
+            event["options"] = catalog()["arcs"][0]["events"][0]["options"]
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(render_all(root), baseline)
+
     def test_rejects_registry_namespace_limit_expansion(self):
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)
@@ -175,7 +219,7 @@ class V03GeneratorTests(unittest.TestCase):
             path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
             rendered = render_all(root)
             script = next(text for relative, text in rendered.items() if "_events.txt" in str(relative))
-            self.assertIn('event_image = { video = "unspecific_politicians_arguing" }', script)
+            self.assertIn('event_image = { video = "ywc_shu_opening" }', script)
             self.assertIn(
                 "        trigger = {\n"
                 "            has_law = law_type:law_monarchy\n"

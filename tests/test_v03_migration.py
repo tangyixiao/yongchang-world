@@ -15,6 +15,39 @@ COUNTRIES = (
     ("KOR", "kor", "reform", "v03_kor_military_accounts"),
 )
 
+LEGACY_ADMISSION_STATES = {
+    "SHU": {"ywc_campaign_shu_c1_outcome": 2, "ywc_shu_fiscal_cost": -123,
+            "ywc_shu_merchant_advance_unpaid": 1, "ywc_shu_pending_event": 1004,
+            "ywc_shu_service_route": 2},
+    # No country-specific debt variable is defined for JHG in this repo.
+    "JHG": {"ywc_campaign_jhg_c1_outcome": 2, "ywc_jhg_court_capture_cost_base": -234,
+            "ywc_jhg_pending_event": 1004, "ywc_jhg_court_route": 2},
+    "DMG": {"ywc_campaign_dmg_c1_outcome": 2, "ywc_dmg_court_budget_cost": -345,
+            "ywc_dmg_court_inherited_land_debt": 456, "ywc_dmg_court_pending_event": 1004,
+            "ywc_dmg_court_route": 2},
+    # No country-specific debt variable is defined for NQG in this repo.
+    "NQG": {"ywc_campaign_nqg_c1_outcome": 2, "ywc_nqg_hunting_capture_cost_base": -456,
+            "ywc_nqg_hunting_pending": 1004, "ywc_nqg_hunting_route": 2},
+    # No country-specific debt variable is defined for OIR in this repo.
+    "OIR": {"ywc_campaign_oir_c1_outcome": 2, "ywc_oir_weekly_cost": -567,
+            "ywc_oir_pasture_pending_event": 1004, "ywc_oir_pasture_route": 2},
+    "MGL": {"ywc_campaign_mng_c1_outcome": 2, "ywc_mgl_debt_fee": -678,
+            "ywc_mgl_debt_close_value": 789, "ywc_mgl_debt_pending_event": 1014,
+            "ywc_mgl_debt_route": 2},
+    # No country-specific debt variable is defined for TIB in this repo.
+    "TIB": {"ywc_campaign_tib_c1_outcome": 2, "ywc_tib_register_route_cost_1": -789,
+            "ywc_tib_register_pending_event": 1004, "ywc_tib_register_route": 2},
+    "KOR": {"ywc_campaign_kor_c1_outcome": 2, "ywc_kor_capture_cost_base": -891,
+            "ywc_kor_court_trust_debt": 912, "ywc_kor_pending_event": 1004,
+            "ywc_kor_ports_route": 2},
+    "LAN": {"ywc_campaign_lan_c1_outcome": 2, "ywc_lan_fund_filing_fee_paid": 1,
+            "ywc_lan_fund_company_debt": 123, "ywc_lan_pending_event": 1004,
+            "ywc_lan_fund_route": 2},
+    # No country-specific debt variable is defined for NMG in this repo.
+    "NMG": {"ywc_campaign_nmg_c1_outcome": 2, "ywc_nmg_revenue_quota_paid": 1,
+            "ywc_nmg_land_pending": 1004, "ywc_nmg_land_route": 2},
+}
+
 
 def field(nodes, name):
     return next(value for key, _, value in nodes if key == name)
@@ -163,6 +196,64 @@ class V03ForwardMigrationTest(unittest.TestCase):
                     self.assertEqual(state.get(missing), value)
                     for key, existing in original.items():
                         self.assertEqual(state[key], existing)
+
+
+    def test_explicit_legacy_decision_gates_admit_all_ten_runtime_countries(self):
+        supported = ("SHU", "JHG", "DMG", "NQG", "OIR", "MGL", "TIB", "KOR", "LAN", "NMG")
+        for tag in supported:
+            with self.subTest(tag=tag):
+                state = {
+                    "ywc_v03_active_arc_count": 2,
+                    "ywc_v03_visible_task_count": 4,
+                    **LEGACY_ADMISSION_STATES[tag],
+                }
+                preserved = copy.deepcopy(state)
+                world = self.world(tag, state)
+                self.assertTrue(world.conditions(field(self.decision, "is_shown"), tag))
+                self.assertTrue(world.conditions(field(self.decision, "possible"), tag))
+
+                world.execute(field(self.decision, "when_taken"), tag)
+
+                self.assertEqual(state.get("ywc_v03_initialized"), 1)
+                self.assertEqual(state.get("ywc_v03_migration_recorded"), 1)
+                for key, value in preserved.items():
+                    self.assertEqual(state[key], value)
+                self.assertEqual(state["ywc_v03_active_arc_count"], 2)
+                self.assertEqual(state["ywc_v03_visible_task_count"], 4)
+                once_state = copy.deepcopy(state)
+                once_treasury = copy.deepcopy(world.treasury)
+                once_events = copy.deepcopy(world.events)
+                once_journals = copy.deepcopy(world.journals)
+                once_modifiers = copy.deepcopy(world.modifiers)
+                once_month_timers = copy.deepcopy(world.months_until_expiry)
+                once_day_timers = copy.deepcopy(world.days_until_expiry)
+                world.execute(field(self.decision, "when_taken"), tag)
+                self.assertEqual(state, once_state)
+                self.assertEqual(world.treasury, once_treasury)
+                self.assertEqual(world.events, once_events)
+                self.assertEqual(world.journals, once_journals)
+                self.assertEqual(world.modifiers, once_modifiers)
+                self.assertEqual(world.months_until_expiry, once_month_timers)
+                self.assertEqual(world.days_until_expiry, once_day_timers)
+                self.assertFalse(world.conditions(field(self.decision, "is_shown"), tag))
+                self.assertFalse(world.conditions(field(self.decision, "possible"), tag))
+
+    def test_explicit_legacy_decision_gates_reject_unsupported_countries(self):
+        for tag in ("FRA", "MNG", "CHI", "MHG", "RKN"):
+            with self.subTest(tag=tag):
+                world = self.world(tag, {})
+                self.assertFalse(world.conditions(field(self.decision, "is_shown"), tag))
+                self.assertTrue(world.conditions(field(self.decision, "possible"), tag))
+
+    def test_explicit_legacy_decision_is_unavailable_after_initialization_or_recording(self):
+        for state, expected_shown, expected_possible in (
+                ({"ywc_v03_initialized": 1}, False, True),
+                ({"ywc_v03_migration_recorded": 1}, True, False),
+                ({"ywc_v03_initialized": 1, "ywc_v03_migration_recorded": 1}, False, False)):
+            with self.subTest(state=state):
+                world = self.world("JHG", copy.deepcopy(state))
+                self.assertEqual(world.conditions(field(self.decision, "is_shown"), "JHG"), expected_shown)
+                self.assertEqual(world.conditions(field(self.decision, "possible"), "JHG"), expected_possible)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,15 @@ try:
 except ModuleNotFoundError:
     from ywc_check import _without_comments_and_strings
 
+try:
+    from tools.v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
+    from tools.v03_inline_delivery_adapter import validate_inline_catalog, validate_nqg_native_helper_source, validate_lan_native_helper_source, validate_nmg_native_helper_source, validate_mgl_native_helper_source, validate_tib_native_helper_source, render_inline_country_adapters
+    from tools.v03_jhg_inline_delivery_adapter import validate_jhg_native_helper_source
+except ModuleNotFoundError:
+    from v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
+    from v03_inline_delivery_adapter import validate_inline_catalog, validate_nqg_native_helper_source, validate_lan_native_helper_source, validate_nmg_native_helper_source, validate_mgl_native_helper_source, validate_tib_native_helper_source, render_inline_country_adapters
+    from v03_jhg_inline_delivery_adapter import validate_jhg_native_helper_source
+
 
 ROOT = Path(__file__).resolve().parents[1]
 V03_DIR = Path("data/content/v03")
@@ -96,6 +105,9 @@ def _is_output_path(relative: str) -> bool:
     ) or (
         path.parent in {Path("localization/simp_chinese"), Path("localization/english")}
         and re.fullmatch(r"ywc_v03_[a-z0-9_]+_l_(simp_chinese|english)\.yml", name) is not None
+    ) or (
+        path.parent in {Path("common/scripted_effects"), Path("common/scripted_triggers")}
+        and re.fullmatch(r"ywc_v03_delivery_[a-z0-9_]+_(effects|triggers)\.txt", name) is not None
     )
 
 
@@ -183,6 +195,33 @@ def validate_catalogs(catalogs: dict[str, dict]) -> list[str]:
     return validate_catalogs_at(ROOT, catalogs)
 
 
+def _arc_range_segments(item: dict, label: str, errors: list[str]) -> list[tuple[int, int]]:
+    """Parse primary and optional disjoint segments once, retaining diagnostics."""
+    segments = []
+    start, end = item.get("start"), item.get("end")
+    if type(start) is not int or type(end) is not int or start > end:
+        errors.append(f"invalid ID arc range bounds for {label}")
+    else:
+        segments.append((start, end))
+    if "additional_ranges" not in item:
+        return segments
+    additional = item["additional_ranges"]
+    if not isinstance(additional, list) or not additional:
+        errors.append(f"ID arc range additional_ranges must be a non-empty list for {label}")
+        return segments
+    for index, segment in enumerate(additional):
+        where = f"{label}.additional_ranges[{index}]"
+        if not isinstance(segment, dict) or set(segment) != {"start", "end"}:
+            errors.append(f"invalid ID arc range fields for {where}")
+            continue
+        start, end = segment["start"], segment["end"]
+        if type(start) is not int or type(end) is not int or start > end:
+            errors.append(f"invalid ID arc range bounds for {where}")
+            continue
+        segments.append((start, end))
+    return segments
+
+
 def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
     errors: list[str] = []
     try:
@@ -234,31 +273,31 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
         pair = (catalog_key, slug)
         if pair in ranges_by_arc:
             errors.append(f"duplicate ID range for arc {pair[0]}/{pair[1]}")
-        ranges_by_arc[pair] = item
-        if set(item) != {"catalog_key", "slug", "namespace", "start", "end"}:
+        segments = _arc_range_segments(item, f"{pair[0]}/{pair[1]}", errors)
+        ranges_by_arc[pair] = {"namespace": item.get("namespace"), "segments": segments}
+        required = {"catalog_key", "slug", "namespace", "start", "end"}
+        if not required.issubset(item) or set(item) - required - {"additional_ranges"}:
             errors.append(f"invalid ID arc range fields for {pair[0]}/{pair[1]}")
         reservation = reservations_by_key.get(pair[0])
         if reservation is None:
             errors.append(f"ID range has no catalog reservation for {pair[0]}")
             continue
         layer = reservation.get("layer")
-        interval = limits.get(layer, {}) if isinstance(limits, dict) else {}
-        start, end = item.get("start"), item.get("end")
+        interval = NAMESPACE_LIMITS.get(layer)
         namespace = item.get("namespace")
-        if type(start) is not int or type(end) is not int or start > end:
-            errors.append(f"invalid ID arc range bounds for {pair[0]}/{pair[1]}")
-            continue
         if not isinstance(namespace, str):
             errors.append(f"invalid ID arc range namespace for {pair[0]}/{pair[1]}")
             continue
         if namespace != reservation.get("namespace"):
             errors.append(f"ID arc range namespace does not match catalog reservation for {pair[0]}/{pair[1]}")
-        if isinstance(interval, dict) and not (interval.get("start", 0) <= start <= end <= interval.get("end", -1)):
-            errors.append(f"ID arc range outside {layer} namespace bounds for {pair[0]}/{pair[1]}")
-        for old_start, old_end, old_slug in ranges_by_namespace.setdefault(namespace, []):
-            if start <= old_end and old_start <= end:
-                errors.append(f"overlapping ID arc ranges in {namespace}: {old_slug} and {pair[1]}")
-        ranges_by_namespace[namespace].append((start, end, f"{pair[0]}/{pair[1]}"))
+        for index, (start, end) in enumerate(segments):
+            if interval and not (interval[0] <= start <= end <= interval[1]):
+                suffix = " (additional_ranges)" if index or (start, end) != (item.get("start"), item.get("end")) else ""
+                errors.append(f"ID arc range outside {layer} namespace bounds for {pair[0]}/{pair[1]}{suffix}")
+            for old_start, old_end, old_slug in ranges_by_namespace.setdefault(namespace, []):
+                if start <= old_end and old_start <= end:
+                    errors.append(f"overlapping ID arc ranges in {namespace}: {old_slug} and {pair[1]}")
+            ranges_by_namespace[namespace].append((start, end, f"{pair[0]}/{pair[1]}"))
 
     all_ids: dict[str, str] = {}
     all_arcs: dict[str, tuple[str, dict]] = {}
@@ -267,8 +306,54 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
         if not isinstance(catalog, dict):
             errors.append(f"{where} must be an object")
             continue
-        _fields(catalog, {"key", "layer", "runtime_tags", "arcs"}, where, errors)
+        _fields(catalog, {"key", "layer", "runtime_tags", "arcs"}, where, errors, optional={"delivery_adapter"})
         key = catalog.get("key")
+        if any("delivery_adapter" in arc for arc in catalog.get("arcs", [])):
+            if key != "country_oir":
+                errors.append(f"{where}.delivery_adapter is currently enabled only for country_oir")
+            else:
+                try:
+                    validate_catalogue_adapters(catalog)
+                except ValueError as exc:
+                    errors.append(f"{where}.delivery_adapter: {exc}")
+        if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])):
+            if key not in {"country_dmg", "country_kor", "country_nqg", "country_shu", "country_lan", "country_nmg", "country_mgl", "country_jhg", "country_tib"}:
+                errors.append(f"{where}.inline_delivery_adapter is not registered for {key}")
+            else:
+                try:
+                    validate_inline_catalog(catalog)
+                    if key == "country_nqg":
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_nqg_effects.txt")
+                        validate_nqg_native_helper_source(catalog, native_effects.read_text(encoding="utf-8-sig"))
+                    if key == "country_lan":
+                        # Validate LAN's native cooldown helper as a complete AST.
+                        # The adapter separately checks each permitted event/receipt body.
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
+                        validate_lan_native_helper_source(native_effects.read_text(encoding="utf-8"))
+                    if key == "country_nmg":
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
+                        validate_nmg_native_helper_source(native_effects.read_text(encoding="utf-8"))
+                    if key == "country_mgl":
+                        native_triggers = _safe_relative(root, "yongchang_world/common/scripted_triggers/ywc_v03_mgl_triggers.txt")
+                        validate_mgl_native_helper_source(native_triggers.read_text(encoding="utf-8-sig"))
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
+                        validate_nmg_native_helper_source(native_effects.read_text(encoding="utf-8"))
+                    if key == "country_tib":
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt")
+                        native_triggers = _safe_relative(root, "yongchang_world/common/scripted_triggers/ywc_v03_tib_triggers.txt")
+                        validate_tib_native_helper_source(native_effects.read_text(encoding="utf-8-sig"), native_triggers.read_text(encoding="utf-8-sig"))
+                        shared_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
+                        validate_nmg_native_helper_source(shared_effects.read_text(encoding="utf-8-sig"))
+                    if key == "country_jhg":
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_jhg_effects.txt")
+                        native_triggers = _safe_relative(root, "yongchang_world/common/scripted_triggers/ywc_v03_jhg_triggers.txt")
+                        validate_jhg_native_helper_source(native_effects.read_text(encoding="utf-8-sig"), native_triggers.read_text(encoding="utf-8-sig"))
+                        shared_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
+                        validate_nmg_native_helper_source(shared_effects.read_text(encoding="utf-8-sig"))
+                except ValueError as exc:
+                    errors.append(f"{where}.inline_delivery_adapter: {exc}")
+                except OSError as exc:
+                    errors.append(f"{where}.inline_delivery_adapter: cannot read native inline helper source: {exc}")
         layer = catalog.get("layer")
         if key != mapping_key:
             errors.append(f"{where}.key must match its catalog map key")
@@ -293,7 +378,8 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional={"owner"})
+            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor", "country_nqg", "country_shu", "country_lan", "country_nmg", "country_mgl", "country_jhg", "country_tib"} else set())
+            _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional=arc_optional)
             owner = arc_owner(layer, arc, tags)
             if layer == "country":
                 if not isinstance(tags, list) or len(tags) != 1 or owner != (tags[0] if isinstance(tags, list) and len(tags) == 1 else None):
@@ -313,7 +399,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             slot = owner_slot(layer, owner)
             if slot:
                 arc_range = ranges_by_arc.get((key, arc.get("slug")))
-                if arc_range and not (slot[0] <= arc_range.get("start", -1) <= arc_range.get("end", -1) <= slot[1]):
+                if arc_range and any(not (slot[0] <= start <= end <= slot[1]) for start, end in arc_range["segments"]):
                     errors.append(f"ID arc range for {key}/{arc.get('slug')} must stay within fixed {layer} owner {owner} slot {slot}")
             slug = arc.get("slug")
             if not isinstance(slug, str) or re.fullmatch(r"[a-z0-9_]+", slug) is None:
@@ -398,7 +484,10 @@ def _validate_event(value: object, where: str, key: str, slug: str, reservation:
     if not isinstance(value, dict):
         errors.append(f"{where} must be an object")
         return
-    _fields(value, {"id", "title", "desc", "trigger", "immediate", "options", "purpose", "reads", "writes"}, where, errors)
+    _fields(value, {"id", "title", "desc", "trigger", "immediate", "options", "purpose", "reads", "writes"}, where, errors, optional={"hidden"})
+    hidden = value.get("hidden", False)
+    if type(hidden) is not bool:
+        errors.append(f"{where}.hidden must be a boolean")
     identifier = value.get("id")
     _unique_id(identifier, where, all_ids, errors)
     if reservation is None:
@@ -420,9 +509,7 @@ def _validate_event(value: object, where: str, key: str, slug: str, reservation:
             errors.append(f"{where}.id has no explicit arc ID range for {key}/{slug}")
         elif (
             arc_range.get("namespace") != namespace
-            or type(arc_range.get("start")) is not int
-            or type(arc_range.get("end")) is not int
-            or not (arc_range["start"] <= number <= arc_range["end"])
+            or not any(start <= number <= end for start, end in arc_range["segments"])
         ):
             errors.append(f"{where}.id {identifier} outside explicit arc range {key}/{slug}")
     for field in ("title", "desc", "purpose"):
@@ -434,8 +521,8 @@ def _validate_event(value: object, where: str, key: str, slug: str, reservation:
         if not isinstance(entries, list) or any(not isinstance(item, str) or not item for item in entries):
             errors.append(f"{where}.{field} must be a list of non-empty strings")
     options = value.get("options")
-    if not isinstance(options, list) or not options:
-        errors.append(f"{where}.options must contain at least one option")
+    if not isinstance(options, list) or (hidden is True and options) or (hidden is not True and not options):
+        errors.append(f"{where}.options must be empty for hidden events and nonempty for visible events")
         return
     option_keys: set[str] = set()
     for index, option in enumerate(options):
@@ -506,13 +593,52 @@ def _event_namespace(catalog: dict, root: Path) -> str:
     return reservation["namespace"]
 
 
-def _outputs_for(key: str) -> list[Path]:
-    return [
+def _outputs_for(key: str, *, adapter: bool = False) -> list[Path]:
+    paths = [
         Path(f"events/ywc_v03_{key}_events.txt"),
         Path(f"common/journal_entries/ywc_v03_{key}_journal.txt"),
         Path(f"localization/simp_chinese/ywc_v03_{key}_l_simp_chinese.yml"),
         Path(f"localization/english/ywc_v03_{key}_l_english.yml"),
     ]
+    if adapter:
+        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else "nqg" if key == "country_nqg" else "shu" if key == "country_shu" else "lan" if key == "country_lan" else "nmg" if key == "country_nmg" else "mgl" if key == "country_mgl" else "jhg" if key == "country_jhg" else "tib" if key == "country_tib" else None
+        if not country: raise ValueError(f"no registered adapter output namespace for {key}")
+        paths.extend((Path(f"common/scripted_effects/ywc_v03_delivery_{country}_effects.txt"),
+                      Path(f"common/scripted_triggers/ywc_v03_delivery_{country}_triggers.txt")))
+    return paths
+
+
+def _catalog_outputs(catalog: dict) -> list[Path]:
+    return _outputs_for(catalog["key"], adapter=any("delivery_adapter" in arc or "inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])))
+
+
+def _append_to_named_block(block: str, field: str, insertion: str) -> str:
+    match = re.search(rf"(?<![a-z0-9_]){re.escape(field)}\s*=\s*\{{", block)
+    if not match:
+        raise ValueError(f"cannot find {field} block for scheduler hook")
+    start = block.find("{", match.start())
+    depth = 0; quoted = False; escaped = False
+    for i in range(start, len(block)):
+        ch = block[i]
+        if escaped: escaped = False; continue
+        if ch == "\\": escaped = True; continue
+        if ch == '"': quoted = not quoted; continue
+        if not quoted:
+            if ch == "{": depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return block[:i].rstrip() + " " + insertion + " " + block[i:]
+    raise ValueError(f"unbalanced {field} block")
+
+
+def _append_or_add_named_block(block: str, field: str, insertion: str) -> str:
+    if re.search(rf"(?<![a-z0-9_]){re.escape(field)}\s*=\s*\{{", block):
+        return _append_to_named_block(block, field, insertion)
+    value = block.rstrip()
+    if not value.endswith("}"):
+        raise ValueError(f"cannot add {field} to an unbalanced source block")
+    return value[:-1].rstrip() + f" {field} = {{ {insertion} }} " + value[-1:] + ("\n" if block.endswith("\n") else "")
 
 
 def _quote(text: str) -> str:
@@ -530,7 +656,17 @@ def _render_script_assignment(name: str, block: str, indent: str) -> list[str]:
     return lines
 
 
-def _render_event_file(catalog: dict, root: Path) -> str:
+def _v03_event_image(catalog: dict, arc: dict) -> str:
+    """Use Shun artwork only for Shun country events, keeping other catalogs unchanged."""
+    if catalog.get("key") != "country_shu":
+        return "unspecific_politicians_arguing"
+    return {
+        "v03_shu_service_compact": "ywc_shu_frontier",
+        "v03_shu_port_treasury": "ywc_shu_customs",
+    }.get(arc.get("slug"), "ywc_shu_opening")
+
+
+def _render_event_file(catalog: dict, root: Path, adapter: dict | None = None) -> str:
     namespace = _event_namespace(catalog, root)
     lines = [f"# Generated by tools/build_v03_content.py from data/content/v03/{catalog['key']}.json.", "", f"namespace = {namespace}", ""]
     for arc in catalog["arcs"]:
@@ -538,11 +674,23 @@ def _render_event_file(catalog: dict, root: Path) -> str:
             lines.extend([
                 f"{event['id']} = {{",
                 "    type = country_event",
-                '    event_image = { video = "unspecific_politicians_arguing" }',
+            ])
+            if event.get("hidden") is True:
+                if (adapter or {}).get("event_hooks", {}).get(event["id"]) or (adapter or {}).get("ack_hooks", {}).get(event["id"]):
+                    raise ValueError(f"hidden event {event['id']} cannot be an inline major candidate")
+                lines.extend([
+                    "    hidden = yes",
+                    f"    trigger = {event['trigger'].strip()}",
+                    f"    immediate = {event['immediate'].strip()}",
+                ])
+                lines.extend(["}", ""])
+                continue
+            lines.extend([
+                f'    event_image = {{ video = "{_v03_event_image(catalog, arc)}" }}',
                 f"    title = {event['id']}.t",
                 f"    desc = {event['id']}.d",
-                f"    trigger = {event['trigger'].strip()}",
-                f"    immediate = {event['immediate'].strip()}",
+                f"    trigger = {_adapter_event_trigger(event, adapter)}",
+                f"    immediate = {_adapter_event_immediate(event, adapter)}",
             ])
             for option in event["options"]:
                 lines.extend([
@@ -557,27 +705,101 @@ def _render_event_file(catalog: dict, root: Path) -> str:
                     f"{event['id']}.{option['key']}.cost_tooltip }}",
                     "        custom_tooltip = { text = "
                     f"{event['id']}.{option['key']}.consequence_tooltip }}",
-                    f"        { _inner(option['effect']).replace(chr(10), chr(10) + '        ') }",
-                    "    }",
                 ])
+                effect_text = _inner(option['effect']).replace(chr(10), chr(10) + '        ')
+                if effect_text.strip():
+                    lines.append(f"        {effect_text}")
+                lines.append("    }")
             lines.extend(["}", ""])
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _render_journal_file(catalog: dict) -> str:
+def _adapter_event_trigger(event: dict, adapter: dict | None) -> str:
+    original = event["trigger"].strip()
+    hooks = (adapter or {}).get("event_hooks", {}).get(event["id"], [])
+    if not hooks:
+        return original
+    gate = " OR = { " + " ".join(f"{name} = yes" for name in hooks) + " }"
+    body = _inner(original)
+    separator = "\n        " if ((adapter or {}).get("safe_comment_boundaries")
+                                  or (adapter or {}).get("mgl_safe_comment_boundaries")) else " "
+    return "{ AND = { " + body + separator + gate + " } }"
+
+
+def _adapter_event_immediate(event: dict, adapter: dict | None) -> str:
+    original = event["immediate"].strip()
+    hooks = (adapter or {}).get("ack_hooks", {}).get(event["id"], [])
+    guards = (adapter or {}).get("event_hooks", {}).get(event["id"], [])
+    if not hooks:
+        return original
+    if event["id"] not in (adapter or {}).get("guarded_immediate_events", []):
+        # Preserve the original scripted-dispatch renderer contract byte for
+        # byte. Only inline adapters opt into rechecking the event gate around
+        # native immediate effects.
+        return "{ " + " ".join(part for part in (_inner(original), " ".join(f"{name} = yes" for name in hooks)) if part) + " }"
+    if not guards:
+        raise ValueError(f"guarded immediate {event['id']} has no source dispatch guard")
+    # Revalidate the exact source queue/phase at the start of the actual
+    # immediate. Native DMG notice helpers may clear multiple queues, so ACK
+    # itself must use the captured snapshot after this guarded source operation.
+    guard = " OR = { " + " ".join(f"{name} = yes" for name in guards) + " }"
+    body = _inner(original)
+    proofs = (adapter or {}).get("inline_proofs", {}).get(event["id"], [])
+    # The SHU legacy scheduler receives its fairness opportunity only after
+    # the source event's real, guarded immediate has run. Keep the existing
+    # adapter callback inventory and callback-last contract unchanged.
+    legacy_shu_delivery = "ywc_shu_legacy_after_v03 = yes" if event["id"].startswith("ywc_shu.") else ""
+    parts = (body, legacy_shu_delivery, " ".join(proofs), " ".join(f"{name} = yes" for name in hooks))
+    if ((adapter or {}).get("safe_comment_boundaries")
+            or (adapter or {}).get("mgl_safe_comment_boundaries")):
+        effects = "\n        ".join(part for part in parts if part)
+    else:
+        effects = " ".join(part for part in parts if part)
+    return "{ if = { limit = {" + guard + "} " + effects + " } }"
+
+
+def _render_journal_file(catalog: dict, adapter: dict | None = None) -> str:
     lines = [f"# Generated by tools/build_v03_content.py from data/content/v03/{catalog['key']}.json.", ""]
+    live_by_journal = {phase["journal"]: phase["live_witness"] for arc in catalog["arcs"] if adapter and "delivery_adapter" in arc for phase in arc["delivery_adapter"]["live_phases"]}
+    live_by_journal.update((adapter or {}).get("live_witnesses", {}))
+    callers = (adapter or {}).get("journal_calls", {})
     for arc in catalog["arcs"]:
         for journal in arc["journals"]:
             lines.extend([f"{journal['id']} = {{"])
-            body = _inner(journal["script"])
+            script = (adapter or {}).get("journal_scripts", {}).get(journal["id"], journal["script"])
+            witness = live_by_journal.get(journal["id"])
+            add_on_complete = False
+            add_on_fail = False
+            if witness:
+                caller = callers.get(journal["id"])
+                if journal["id"] in callers:
+                    old_dispatch = arc["delivery_adapter"]["source_dispatch_effect"]
+                    if not caller or not re.search(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", script):
+                        raise ValueError(f"adapter cannot bind source dispatcher for {journal['id']}")
+                    script = re.sub(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", f"{caller} = yes", script, count=1)
+                elif journal["id"] not in (adapter or {}).get("journal_scripts", {}):
+                    raise ValueError(f"adapter cannot bind source journal for {journal['id']}")
+                script = _append_or_add_named_block(script, "immediate", f"set_variable = {{ name = {witness} value = 1 }}")
+                if re.search(r"(?<![a-z0-9_])on_fail\s*=\s*\{", script):
+                    script = _append_to_named_block(script, "on_fail", f"remove_variable = {witness}")
+                else:
+                    add_on_fail = True
+                if re.search(r"(?<![a-z0-9_])on_complete\s*=\s*\{", script):
+                    script = _append_to_named_block(script, "on_complete", f"remove_variable = {witness}")
+                else:
+                    add_on_complete = True
+            body = _inner(script)
             if body:
                 lines.extend("    " + line if line.strip() else "" for line in body.splitlines())
             lines.extend([
                 f"    complete = {journal['goal'].strip()}",
                 f"    fail = {journal['exit_conditions'].strip()}",
-                "}",
-                "",
             ])
+            if add_on_fail:
+                lines.append(f"    on_fail = {{ remove_variable = {witness} }}")
+            if add_on_complete:
+                lines.append(f"    on_complete = {{ remove_variable = {witness} }}")
+            lines.extend(["}", ""])
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -614,13 +836,24 @@ def render_all(root: Path) -> dict[Path, str]:
     for key, catalog in catalogs.items():
         if not any(arc["events"] or arc["journals"] for arc in catalog["arcs"]):
             continue
-        paths = _outputs_for(key)
+        has_country_adapter = any("delivery_adapter" in arc for arc in catalog["arcs"])
+        has_inline_adapter = any("inline_delivery_adapter" in arc for arc in catalog["arcs"])
+        adapter = render_country_adapters(catalog) if has_country_adapter else render_inline_country_adapters(catalog) if has_inline_adapter else None
+        paths = _catalog_outputs(catalog)
         rendered = [
-            _render_event_file(catalog, root),
-            _render_journal_file(catalog),
+            _render_event_file(catalog, root, adapter),
+            _render_journal_file(catalog, adapter),
             _render_localization(catalog, "zh"),
             _render_localization(catalog, "en"),
         ]
+        if adapter:
+            if key == "country_oir":
+                rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
+                             "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
+            else:
+                country = "SHU" if key == "country_shu" else "KOR" if key == "country_kor" else "NQG" if key == "country_nqg" else "LAN" if key == "country_lan" else "NMG" if key == "country_nmg" else "MGL" if key == "country_mgl" else "JHG" if key == "country_jhg" else "TIB" if key == "country_tib" else "DMG"
+                rendered += [f"# Generated {country} inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
+                             f"# Generated {country} inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
         outputs.update(zip(paths, rendered))
     return outputs
 
@@ -633,7 +866,7 @@ def check_outputs(root: Path) -> list[str]:
     except ValueError as exc:
         return [str(exc)]
     expected_paths = {path.as_posix() for path in rendered}
-    allowed_paths = {path.as_posix() for key in load_catalogs(root) for path in _outputs_for(key)}
+    allowed_paths = {path.as_posix() for catalog in load_catalogs(root).values() for path in _catalog_outputs(catalog)}
     owned_paths = set(manifest["owned_outputs"])
     errors = [f"manifest.owned_outputs missing catalog path: {path}" for path in sorted(allowed_paths - owned_paths)]
     errors.extend(f"manifest.owned_outputs includes unregistered path: {path}" for path in sorted(owned_paths - allowed_paths))
@@ -667,7 +900,7 @@ def build(root: Path) -> list[str]:
         return [str(exc)]
     owned_paths = set(manifest["owned_outputs"])
     expected_paths = {relative.as_posix() for relative in outputs}
-    allowed_paths = {path.as_posix() for key in load_catalogs(root) for path in _outputs_for(key)}
+    allowed_paths = {path.as_posix() for catalog in load_catalogs(root).values() for path in _catalog_outputs(catalog)}
     if not expected_paths.issubset(owned_paths) or not allowed_paths.issuperset(owned_paths):
         errors = [f"manifest.owned_outputs missing catalog path: {path}" for path in sorted(allowed_paths - owned_paths)]
         errors.extend(f"manifest.owned_outputs includes unregistered path: {path}" for path in sorted(owned_paths - allowed_paths))
