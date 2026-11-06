@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from tools.build_frontier_polity_content import COUNTRY_CONTEXT, MOD, OWNED, live_start_tags, outputs, write_generated_output
+from clausewitz_harness import parse
 
 
 ROOT = pathlib.Path(__file__).parents[1]
@@ -89,7 +90,7 @@ class FrontierPolityContentTest(unittest.TestCase):
             self.assertNotIn("MNG", found)  # MNG is Brazilian Minas Gerais; the logical Mongol start is MGL.
             self.assertIn("MGL", found)
 
-    def test_every_country_event_has_a_vanilla_event_image(self):
+    def test_every_visible_country_event_has_a_vanilla_event_image(self):
         checked = 0
         for path in (MOD / "events").rglob("*.txt"):
             text = path.read_text(encoding="utf-8-sig")
@@ -116,7 +117,10 @@ class FrontierPolityContentTest(unittest.TestCase):
                             end = index + 1
                             break
                 block = text[match.end() - 1:end]
-                if "type = country_event" in block:
+                properties = {key: value for key, _, value in parse(block[1:-1])}
+                # Hidden contract endpoints have no event window. Requiring
+                # artwork there would confuse background protocol with UI.
+                if properties.get("type") == "country_event" and properties.get("hidden") != "yes":
                     checked += 1
                     self.assertRegex(block, r"event_image = \{ video = \"[a-z0-9_]+\" \}", match.group(1))
         self.assertGreater(checked, 0)

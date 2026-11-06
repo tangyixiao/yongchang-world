@@ -1,0 +1,1140 @@
+# NMG foundation scripted triggers. Every gate reads real country state.
+
+ywc_nmg_v03_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	is_at_war = no
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+ywc_nmg_v03_has_owned_state = {
+	any_scope_state = { owner = ROOT }
+}
+
+ywc_nmg_land_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled }
+}
+
+ywc_nmg_office_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled }
+}
+
+ywc_nmg_revenue_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled }
+}
+
+ywc_nmg_land_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_land_fee
+	gold_reserves >= var:ywc_nmg_land_fee
+}
+
+ywc_nmg_office_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_office_fee
+	gold_reserves >= var:ywc_nmg_office_fee
+}
+
+ywc_nmg_revenue_quota_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_revenue_quota
+	gold_reserves >= var:ywc_nmg_revenue_quota
+}
+
+ywc_nmg_land_agriculture_present = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			OR = {
+				is_building_type = building_rye_farm
+				is_building_type = building_wheat_farm
+				is_building_type = building_maize_farm
+			}
+			occupancy >= 0.5
+		}
+	}
+}
+
+ywc_nmg_land_administration_present = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.5
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_nmg_land_written_title = {
+	OR = {
+		has_law_or_variant = law_type:law_commercialized_agriculture
+		has_law_or_variant = law_type:law_tenant_farmers
+		has_law_or_variant = law_type:law_homesteading
+	}
+}
+
+ywc_nmg_land_migration_open = {
+	NOT = { has_law_or_variant = law_type:law_closed_borders }
+}
+
+ywc_nmg_land_mixed_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_land_agriculture_present = yes
+	ywc_nmg_land_administration_present = yes
+}
+
+ywc_nmg_land_unified_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_land_administration_present = yes
+	ywc_nmg_land_written_title = yes
+}
+
+ywc_nmg_land_old_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	NOT = { radical_fraction = { value >= 0.25 } }
+}
+
+
+ywc_nmg_land_selected_target_ready = {
+ OR = {
+  AND = { var:ywc_nmg_land_route = 1 ywc_nmg_land_mixed_ready = yes }
+  AND = { var:ywc_nmg_land_route = 2 ywc_nmg_land_unified_ready = yes }
+  AND = { var:ywc_nmg_land_route = 3 ywc_nmg_land_old_ready = yes }
+ }
+}
+
+ywc_nmg_land_route_ready = {
+	OR = {
+		AND = { var:ywc_nmg_land_route = 1 has_variable = ywc_nmg_land_fee_paid has_variable = ywc_nmg_land_survey_full has_variable = ywc_nmg_land_rule ywc_nmg_land_mixed_ready = yes }
+		AND = { var:ywc_nmg_land_route = 2 has_variable = ywc_nmg_land_fee_paid has_variable = ywc_nmg_land_survey_full has_variable = ywc_nmg_land_reassessed ywc_nmg_land_unified_ready = yes }
+		AND = { var:ywc_nmg_land_route = 3 has_variable = ywc_nmg_land_fee_paid has_variable = ywc_nmg_land_survey_partial has_variable = ywc_nmg_land_hold ywc_nmg_land_old_ready = yes }
+	}
+}
+
+ywc_nmg_office_admin_present = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.5
+		}
+	}
+}
+
+ywc_nmg_office_bilingual_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_office_admin_present = yes
+	literacy_rate >= 0.35
+}
+
+ywc_nmg_office_local_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_office_admin_present = yes
+}
+
+ywc_nmg_office_single_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_office_admin_present = yes
+}
+
+
+ywc_nmg_office_selected_target_ready = {
+ OR = {
+  AND = { var:ywc_nmg_office_route = 1 ywc_nmg_office_bilingual_ready = yes }
+  AND = { var:ywc_nmg_office_route = 2 ywc_nmg_office_local_ready = yes }
+  AND = { var:ywc_nmg_office_route = 3 ywc_nmg_office_single_ready = yes }
+ }
+}
+
+ywc_nmg_office_route_ready = {
+	OR = {
+		AND = { var:ywc_nmg_office_route = 1 has_variable = ywc_nmg_office_fee_paid has_variable = ywc_nmg_office_roster_full has_variable = ywc_nmg_office_schools has_variable = ywc_nmg_office_parish_recorded ywc_nmg_office_bilingual_ready = yes }
+		AND = { var:ywc_nmg_office_route = 2 has_variable = ywc_nmg_office_fee_paid has_variable = ywc_nmg_office_roster_thin has_variable = ywc_nmg_office_parish_recorded ywc_nmg_office_local_ready = yes }
+		AND = { var:ywc_nmg_office_route = 3 has_variable = ywc_nmg_office_fee_paid has_variable = ywc_nmg_office_roster_full has_variable = ywc_nmg_office_borrowed ywc_nmg_office_single_ready = yes }
+	}
+}
+
+ywc_nmg_office_ig_support = {
+	any_interest_group = {
+		is_interest_group_type = ig_intelligentsia
+		ig_approval > 0
+	}
+}
+
+ywc_nmg_office_school_investment = {
+	institution_investment_level = {
+		institution = institution_schools
+		value >= 1
+	}
+}
+
+ywc_nmg_revenue_real_subject = {
+	is_subject = yes
+	is_subject_of = c:MEX
+}
+
+ywc_nmg_revenue_relations_ok = {
+	exists = c:MEX
+	overlord ?= { relations:root >= relations_threshold:poor }
+}
+
+ywc_nmg_revenue_defense_present = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			OR = {
+				is_building_type = building_barrack
+				is_building_type = building_port
+			}
+			occupancy >= 0.5
+		}
+	}
+}
+
+ywc_nmg_revenue_tax_base = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = { occupancy >= 0.5 }
+	}
+}
+
+ywc_nmg_revenue_fixed_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_revenue_tax_base = yes
+	ywc_nmg_revenue_defense_present = yes
+}
+
+ywc_nmg_revenue_joint_ready = {
+	ywc_nmg_revenue_fixed_ready = yes
+	ywc_nmg_jointproject_agreement_current = yes
+}
+
+ywc_nmg_revenue_arrears_ready = {
+	ywc_nmg_revenue_real_subject = yes
+	ywc_nmg_v03_finance_safe = yes
+}
+
+
+ywc_nmg_revenue_selected_target_ready = {
+ OR = {
+  AND = { var:ywc_nmg_revenue_route = 1 ywc_nmg_revenue_fixed_ready = yes ywc_nmg_mexshare_agreement_current = yes }
+  AND = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes }
+  AND = { var:ywc_nmg_revenue_route = 3 ywc_nmg_revenue_arrears_ready = yes }
+  AND = { var:ywc_nmg_revenue_route = 4 ywc_nmg_revenue_fixed_ready = yes }
+ }
+}
+
+ywc_nmg_revenue_route_ready = {
+	OR = {
+		AND = { var:ywc_nmg_revenue_route = 1 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_share var:ywc_nmg_revenue_share = 3 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_fixed_ready = yes ywc_nmg_mexshare_agreement_current = yes }
+		AND = { var:ywc_nmg_revenue_route = 2 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_share var:ywc_nmg_revenue_share = 2 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_joint_ready = yes }
+		AND = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_accept has_variable = ywc_nmg_revenue_arrears_owned has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_arrears_ready = yes }
+		AND = { var:ywc_nmg_revenue_route = 4 has_variable = ywc_nmg_revenue_quota_paid OR = { has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_audit_public } var:ywc_nmg_revenue_share ?= 4 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_fixed_ready = yes }
+	}
+}
+
+# Fixed remittances bind the actual MEX overlord and the exact accepted terms.
+ywc_nmg_mexshare_slot_available = {
+	NOT = { var:ywc_nmg_mexshare_state ?= 1 }
+	NOT = { var:ywc_nmg_mexshare_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_nmg_mexshare_contract_generation }
+		AND = { var:ywc_nmg_mexshare_ended_generation ?= var:ywc_nmg_mexshare_contract_generation has_variable = ywc_nmg_mexshare_paid_total var:ywc_nmg_mexshare_earned_total ?= var:ywc_nmg_mexshare_paid_total }
+	}
+}
+
+ywc_nmg_mexshare_link_intact = {
+	c:NMG ?= this
+	is_country_alive = yes
+	is_subject = yes
+	exists = overlord
+	exists = c:MEX
+	is_subject_of = c:MEX
+	overlord ?= c:MEX
+	c:MEX = { is_country_alive = yes relations:c:NMG >= 0 }
+}
+
+ywc_nmg_mexshare_can_offer = {
+	ywc_nmg_mexshare_link_intact = yes
+	ywc_nmg_revenue_fixed_ready = yes
+	has_variable = ywc_nmg_revenue_quota
+	ywc_nmg_mexshare_slot_available = yes
+}
+
+ywc_nmg_mexshare_offer_matches = {
+	exists = scope:ywc_nmg_mexshare_requester
+	exists = scope:ywc_nmg_mexshare_request_partner
+	scope:ywc_nmg_mexshare_request_partner ?= this
+	scope:ywc_nmg_mexshare_requester ?= c:NMG
+	scope:ywc_nmg_mexshare_requester = {
+		ywc_nmg_mexshare_link_intact = yes
+		var:ywc_nmg_mexshare_partner ?= root
+		var:ywc_nmg_mexshare_state ?= 1
+		has_variable = ywc_nmg_mexshare_request_timer
+		var:ywc_nmg_mexshare_generation ?= scope:ywc_nmg_mexshare_request_generation
+		var:ywc_nmg_mexshare_serial ?= scope:ywc_nmg_mexshare_request_serial
+		var:ywc_nmg_mexshare_quote_serial ?= scope:ywc_nmg_mexshare_request_serial
+		var:ywc_nmg_mexshare_quote_monthly ?= scope:ywc_nmg_mexshare_request_monthly
+		var:ywc_nmg_mexshare_quote_term ?= scope:ywc_nmg_mexshare_request_term
+		var:ywc_nmg_mexshare_quote_right ?= scope:ywc_nmg_mexshare_request_right
+	}
+}
+
+ywc_nmg_mexshare_authorizable = {
+	ywc_nmg_mexshare_offer_matches = yes
+	c:MEX ?= this
+	is_country_alive = yes
+	relations:scope:ywc_nmg_mexshare_requester >= 0
+}
+
+ywc_nmg_mexshare_accepted_current = {
+	ywc_nmg_mexshare_link_intact = yes
+	var:ywc_nmg_mexshare_partner ?= c:MEX
+	var:ywc_nmg_mexshare_state ?= 2
+	has_variable = ywc_nmg_mexshare_request_timer
+	var:ywc_nmg_mexshare_quote_generation ?= var:ywc_nmg_mexshare_generation
+	var:ywc_nmg_mexshare_accept_generation ?= var:ywc_nmg_mexshare_quote_generation
+	var:ywc_nmg_mexshare_accept_serial ?= var:ywc_nmg_mexshare_quote_serial
+	var:ywc_nmg_mexshare_accept_monthly ?= var:ywc_nmg_mexshare_quote_monthly
+	var:ywc_nmg_mexshare_accept_term ?= var:ywc_nmg_mexshare_quote_term
+	var:ywc_nmg_mexshare_accept_right ?= var:ywc_nmg_mexshare_quote_right
+}
+
+ywc_nmg_mexshare_agreement_current = {
+	has_variable = ywc_nmg_mexshare_contract_generation
+	has_variable = ywc_nmg_mexshare_term_timer
+	exists = var:ywc_nmg_mexshare_contract_partner
+	var:ywc_nmg_mexshare_contract_partner ?= c:MEX
+	overlord ?= var:ywc_nmg_mexshare_contract_partner
+	ywc_nmg_mexshare_link_intact = yes
+	NOT = { var:ywc_nmg_mexshare_ended_generation ?= var:ywc_nmg_mexshare_contract_generation }
+	NOT = { var:ywc_nmg_mexshare_creditor_invalid_generation ?= var:ywc_nmg_mexshare_contract_generation }
+	var:ywc_nmg_mexshare_earned_total ?= var:ywc_nmg_mexshare_paid_total
+}
+
+# A joint project has two independently paid expense ledgers. A local marker
+# is never proof that the selected partner accepted or funded the same terms.
+ywc_nmg_jointproject_slot_available = {
+	NOT = { var:ywc_nmg_jointproject_state ?= 1 }
+	NOT = { var:ywc_nmg_jointproject_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_nmg_jointproject_contract_generation }
+		AND = { OR = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation } var:ywc_nmg_jointproject_own_earned_total ?= var:ywc_nmg_jointproject_own_paid_total var:ywc_nmg_jointproject_partner_earned_total ?= var:ywc_nmg_jointproject_partner_paid_total }
+	}
+}
+
+ywc_nmg_jointproject_provider_slot_available = {
+	OR = {
+		NOT = { has_variable = ywc_nmg_jointproject_provider_generation }
+		AND = { OR = { var:ywc_nmg_jointproject_provider_ended_generation ?= var:ywc_nmg_jointproject_provider_generation var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation } var:ywc_nmg_jointproject_provider_earned_total ?= var:ywc_nmg_jointproject_provider_paid_total }
+	}
+}
+
+ywc_nmg_jointproject_mex_eligible = {
+	ywc_nmg_mexshare_link_intact = yes
+	ywc_nmg_revenue_fixed_ready = yes
+	has_variable = ywc_nmg_revenue_quota
+	ywc_nmg_jointproject_slot_available = yes
+	c:MEX = { ywc_nmg_jointproject_provider_slot_available = yes }
+}
+
+ywc_nmg_jointproject_jhg_eligible = {
+	c:NMG ?= this
+	is_country_alive = yes
+	ywc_nmg_revenue_fixed_ready = yes
+	has_variable = ywc_nmg_revenue_quota
+	ywc_nmg_jointproject_slot_available = yes
+	exists = c:JHG
+	c:JHG = { is_country_alive = yes relations:c:NMG >= 0 ywc_nmg_jointproject_provider_slot_available = yes }
+}
+
+ywc_nmg_jointproject_target_current = {
+	OR = {
+		AND = { var:ywc_nmg_jointproject_partner ?= c:MEX ywc_nmg_mexshare_link_intact = yes }
+		AND = { var:ywc_nmg_jointproject_partner ?= c:JHG c:NMG ?= this exists = c:JHG c:JHG = { is_country_alive = yes relations:c:NMG >= 0 } }
+	}
+}
+
+ywc_nmg_jointproject_offer_matches = {
+	exists = scope:ywc_nmg_jointproject_requester
+	exists = scope:ywc_nmg_jointproject_request_partner
+	scope:ywc_nmg_jointproject_request_partner ?= this
+	scope:ywc_nmg_jointproject_requester ?= c:NMG
+	scope:ywc_nmg_jointproject_requester = {
+		ywc_nmg_jointproject_target_current = yes
+		var:ywc_nmg_jointproject_partner ?= root
+		var:ywc_nmg_jointproject_state ?= 1
+		has_variable = ywc_nmg_jointproject_request_timer
+		var:ywc_nmg_jointproject_generation ?= scope:ywc_nmg_jointproject_request_generation
+		var:ywc_nmg_jointproject_serial ?= scope:ywc_nmg_jointproject_request_serial
+		var:ywc_nmg_jointproject_quote_serial ?= scope:ywc_nmg_jointproject_request_serial
+		var:ywc_nmg_jointproject_quote_own ?= scope:ywc_nmg_jointproject_request_own
+		var:ywc_nmg_jointproject_quote_partner ?= scope:ywc_nmg_jointproject_request_partner_amount
+		var:ywc_nmg_jointproject_quote_term ?= scope:ywc_nmg_jointproject_request_term
+		var:ywc_nmg_jointproject_quote_scope ?= scope:ywc_nmg_jointproject_request_scope
+	}
+}
+
+ywc_nmg_jointproject_authorizable = {
+	ywc_nmg_jointproject_offer_matches = yes
+	is_country_alive = yes
+	relations:scope:ywc_nmg_jointproject_requester >= 0
+	ywc_nmg_jointproject_provider_slot_available = yes
+}
+
+ywc_nmg_jointproject_accepted_current = {
+	ywc_nmg_jointproject_target_current = yes
+	var:ywc_nmg_jointproject_state ?= 2
+	has_variable = ywc_nmg_jointproject_request_timer
+	var:ywc_nmg_jointproject_quote_generation ?= var:ywc_nmg_jointproject_generation
+	var:ywc_nmg_jointproject_accept_generation ?= var:ywc_nmg_jointproject_quote_generation
+	var:ywc_nmg_jointproject_accept_serial ?= var:ywc_nmg_jointproject_quote_serial
+	var:ywc_nmg_jointproject_accept_own ?= var:ywc_nmg_jointproject_quote_own
+	var:ywc_nmg_jointproject_accept_partner ?= var:ywc_nmg_jointproject_quote_partner
+	var:ywc_nmg_jointproject_accept_term ?= var:ywc_nmg_jointproject_quote_term
+	var:ywc_nmg_jointproject_accept_scope ?= var:ywc_nmg_jointproject_quote_scope
+	var:ywc_nmg_jointproject_partner = { ywc_nmg_jointproject_provider_slot_available = yes }
+}
+
+ywc_nmg_jointproject_agreement_current = {
+	has_variable = ywc_nmg_jointproject_contract_generation
+	has_variable = ywc_nmg_jointproject_term_timer
+	exists = var:ywc_nmg_jointproject_contract_partner
+	NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation }
+	NOT = { var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation }
+	var:ywc_nmg_jointproject_own_earned_total ?= var:ywc_nmg_jointproject_own_paid_total
+	var:ywc_nmg_jointproject_partner_earned_total ?= var:ywc_nmg_jointproject_partner_paid_total
+	var:ywc_nmg_jointproject_own_last_month ?= ywc_nmg_current_calendar_month
+	var:ywc_nmg_jointproject_contract_partner = {
+		is_country_alive = yes
+		var:ywc_nmg_jointproject_provider_owner ?= c:NMG
+		var:ywc_nmg_jointproject_provider_generation ?= prev.var:ywc_nmg_jointproject_contract_generation
+		NOT = { var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation }
+		var:ywc_nmg_jointproject_provider_earned_total ?= var:ywc_nmg_jointproject_provider_paid_total
+		var:ywc_nmg_jointproject_provider_last_month ?= ywc_nmg_current_calendar_month
+	}
+}
+
+ywc_nmg_partner_renewal_available = {
+	has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started
+	ywc_nmg_revenue_unsettled = yes
+	NOT = { has_variable = ywc_nmg_revenue_withdrawn }
+	has_variable = ywc_nmg_revenue_quota_paid
+	OR = {
+		AND = { var:ywc_nmg_revenue_route ?= 1 ywc_nmg_mexshare_can_offer = yes }
+		AND = { var:ywc_nmg_revenue_route ?= 2 OR = { ywc_nmg_jointproject_mex_eligible = yes ywc_nmg_jointproject_jhg_eligible = yes } }
+	}
+}
+
+ywc_nmg_partner_renewal_menu_current = {
+	c:NMG ?= this
+	exists = scope:ywc_nmg_partner_renewal_owner
+	scope:ywc_nmg_partner_renewal_owner ?= this
+	var:ywc_nmg_partner_renewal_serial ?= scope:ywc_nmg_partner_renewal_serial
+	OR = {
+		AND = { scope:ywc_nmg_partner_renewal_stage ?= 1 NOT = { has_variable = ywc_nmg_revenue_stage2 } NOT = { has_variable = ywc_nmg_revenue_stage3 } }
+		AND = { scope:ywc_nmg_partner_renewal_stage ?= 2 has_variable = ywc_nmg_revenue_stage2 NOT = { has_variable = ywc_nmg_revenue_stage3 } }
+		AND = { scope:ywc_nmg_partner_renewal_stage ?= 3 has_variable = ywc_nmg_revenue_stage3 }
+	}
+	ywc_nmg_partner_renewal_available = yes
+}
+
+# A separately requested market right cannot be inferred from the old fixed-share right.
+ywc_nmg_market_context_ready = {
+ c:NMG ?= this
+ ywc_nmg_mexshare_agreement_current = yes
+ ywc_nmg_v03_finance_safe = yes
+ var:ywc_nmg_mexshare_earned_count >= 1
+ has_variable = ywc_nmg_mexshare_start_month
+ has_variable = ywc_nmg_mexshare_contract_term
+ var:ywc_nmg_mexshare_contract_monthly > 0
+ is_direct_subject_of = c:MEX
+ NOT = { is_diplomatic_play_enemy_of = c:MEX }
+ market ?= c:MEX.market
+ c:MEX = { market.owner ?= this }
+ NOT = { has_diplomatic_pact = { who = c:MEX type = grant_own_market } }
+ NOT = { has_diplomatic_pact = { who = c:MEX type = request_market_control } }
+ NOT = { has_diplomatic_pact = { who = c:MEX type = ywc_nmg_mex_market_control } }
+}
+
+ywc_nmg_market_request_ready = {
+ ywc_nmg_market_context_ready = yes
+ NOT = { var:ywc_nmg_market_request_state ?= 1 }
+ NOT = { has_variable = ywc_nmg_market_request_cooldown }
+}
+
+# ROOT is the actual Mexican recipient. A current contract, recipient,
+# generation, quote, and the same pre-grant market must still match.
+ywc_nmg_market_offer_matches = {
+ c:MEX ?= this
+ is_country_alive = yes
+ exists = scope:ywc_nmg_market_requester
+ exists = scope:ywc_nmg_market_request_partner
+ exists = scope:ywc_nmg_market_request_market
+ scope:ywc_nmg_market_request_partner ?= this
+ scope:ywc_nmg_market_requester ?= c:NMG
+ scope:ywc_nmg_market_request_market ?= c:MEX.market
+ scope:ywc_nmg_market_requester = {
+  ywc_nmg_market_context_ready = yes
+  var:ywc_nmg_market_request_state ?= 1
+  has_variable = ywc_nmg_market_request_timer
+  var:ywc_nmg_market_request_serial ?= scope:ywc_nmg_market_request_serial
+  var:ywc_nmg_market_request_market ?= scope:ywc_nmg_market_request_market
+  var:ywc_nmg_mexshare_contract_generation ?= scope:ywc_nmg_market_contract_generation
+  var:ywc_nmg_mexshare_contract_partner ?= scope:ywc_nmg_market_request_partner
+  var:ywc_nmg_mexshare_contract_monthly ?= scope:ywc_nmg_market_contract_monthly
+  var:ywc_nmg_mexshare_contract_term ?= scope:ywc_nmg_market_contract_term
+  market ?= scope:ywc_nmg_market_request_market
+ }
+}
+
+# Parish school gates. Every threshold reads the real employed pop at its real
+# workplace, the current laws, the live institution investment and one actual
+# governing interest group; no school building, teacher profession or parish
+# fund is invented anywhere in this card.
+ywc_nmg_school_unsettled = {
+	NOT = { has_variable = ywc_v03_nmg_v03_nmg_parish_school_settled }
+}
+
+ywc_nmg_school_pilot_owned = {
+	has_variable = ywc_nmg_school_pilot
+	var:ywc_nmg_school_pilot = { owner = ROOT }
+}
+
+ywc_nmg_school_office_staffed_25 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_office_staffed_5 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_office_staffed_8 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = bureaucrats
+			is_employed = yes
+			workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_academics_5 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = academics
+			is_employed = yes
+			workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_academics_8 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = academics
+			is_employed = yes
+			workplace ?= { is_building_type = building_university occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_clergymen_5 = {
+	ywc_nmg_school_pilot_owned = yes
+	var:ywc_nmg_school_pilot = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = clergymen
+			is_employed = yes
+			workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_nmg_school_ig_civic_support = {
+	OR = {
+		any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+		any_interest_group = { is_interest_group_type = ig_petty_bourgeoisie is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+	}
+}
+
+ywc_nmg_school_ig_devout_support = {
+	any_interest_group = { is_interest_group_type = ig_devout is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_nmg_school_ig_secular_support = {
+	any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_nmg_school_mode1_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	OR = {
+		has_law_or_variant = law_type:law_religious_schools
+		has_law_or_variant = law_type:law_public_schools
+	}
+	has_law_or_variant = law_type:law_freedom_of_conscience
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	legitimacy >= 25
+	ywc_nmg_school_office_staffed_5 = yes
+	ywc_nmg_school_academics_5 = yes
+	ywc_nmg_school_ig_civic_support = yes
+}
+
+ywc_nmg_school_mode2_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	has_law_or_variant = law_type:law_religious_schools
+	OR = {
+		has_law_or_variant = law_type:law_state_religion
+		has_law_or_variant = law_type:law_freedom_of_conscience
+	}
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_nmg_school_office_staffed_5 = yes
+	ywc_nmg_school_clergymen_5 = yes
+	ywc_nmg_school_ig_devout_support = yes
+}
+
+ywc_nmg_school_mode3_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	has_law_or_variant = law_type:law_public_schools
+	has_law_or_variant = law_type:law_total_separation
+	institution_investment_level = { institution = institution_schools value >= 2 }
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	legitimacy >= 25
+	ywc_nmg_school_office_staffed_8 = yes
+	ywc_nmg_school_academics_8 = yes
+	ywc_nmg_school_ig_secular_support = yes
+}
+
+ywc_nmg_school_mode_ready = {
+	OR = {
+		AND = { var:ywc_nmg_school_mode = 1 ywc_nmg_school_mode1_ready = yes }
+		AND = { var:ywc_nmg_school_mode = 2 ywc_nmg_school_mode2_ready = yes }
+		AND = { var:ywc_nmg_school_mode = 3 ywc_nmg_school_mode3_ready = yes }
+	}
+}
+
+ywc_nmg_school_limited_ready = {
+	ywc_nmg_v03_finance_safe = yes
+	ywc_nmg_v03_has_owned_state = yes
+	bureaucracy >= 0
+	legitimacy >= 20
+	ywc_nmg_school_office_staffed_25 = yes
+}
+
+# The genuine old bilingual office completed outcome 3 in full, with every
+# earned record intact, and still meets its current office, school and
+# literacy qualification. A lone roster flag never satisfies this contract.
+ywc_nmg_school_prior_office_current = {
+	ywc_nmg_school_pilot_owned = yes
+	ywc_nmg_school_office_staffed_8 = yes
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	literacy_rate >= 0.4
+}
+
+ywc_nmg_school_prior_bilingual_contract = {
+	has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started
+	has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled
+	var:ywc_v03_nmg_v03_nmg_bilingual_office_outcome = 3
+	has_variable = ywc_nmg_office_established
+	has_variable = ywc_nmg_office_closed
+	var:ywc_nmg_office_route = 1
+	has_variable = ywc_nmg_office_fee_paid
+	var:ywc_nmg_office_fee > 0
+	has_variable = ywc_nmg_office_roster_full
+	has_variable = ywc_nmg_office_schools
+	has_variable = ywc_nmg_office_parish_recorded
+	has_variable = ywc_nmg_office_six_months_complete
+	NOT = { has_variable = ywc_nmg_office_limited_selected }
+	NOT = { has_variable = ywc_nmg_office_withdrawn }
+	ywc_nmg_school_prior_office_current = yes
+}
+
+ywc_nmg_school_teacher_current = {
+	OR = {
+		AND = { var:ywc_nmg_school_teacher_kind = 1 ywc_nmg_school_academics_8 = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 2 ywc_nmg_school_clergymen_5 = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 3 ywc_nmg_school_prior_bilingual_contract = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 4 ywc_nmg_school_office_staffed_25 = yes }
+	}
+}
+
+ywc_nmg_school_duty_ready = {
+	has_variable = ywc_nmg_school_mode
+	has_variable = ywc_nmg_school_target
+	OR = {
+		AND = { var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 ywc_nmg_school_limited_ready = yes }
+		AND = { var:ywc_nmg_school_target = 1 ywc_nmg_school_mode_ready = yes }
+	}
+	ywc_nmg_school_teacher_current = yes
+}
+
+ywc_nmg_school_review_alive = {
+	ywc_nmg_school_pilot_owned = yes
+	ywc_nmg_school_signed_current = yes
+	ywc_nmg_school_duty_snapshot_current = yes
+}
+
+ywc_nmg_school_register_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_school_fee
+	OR = {
+		AND = { var:ywc_nmg_school_mode = 2 OR = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_target = 2 } gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 0.5 } }
+		AND = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 ywc_nmg_school_prior_bilingual_contract = yes gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 0.5 } }
+		AND = { var:ywc_nmg_school_target = 1 OR = { var:ywc_nmg_school_mode = 1 var:ywc_nmg_school_mode = 3 } gold_reserves >= var:ywc_nmg_school_fee }
+	}
+}
+
+ywc_nmg_school_wage_affordable = {
+	ywc_nmg_v03_finance_safe = yes
+	has_variable = ywc_nmg_school_fee
+	OR = {
+		AND = { var:ywc_nmg_school_mode = 2 OR = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_target = 2 } gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 0.5 } }
+		AND = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 3 gold_reserves >= { value = var:ywc_nmg_school_fee multiply = 1.5 } }
+		AND = { var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 gold_reserves >= var:ywc_nmg_school_fee }
+	}
+}
+
+# Stage guards: originating phase, journal, stage, independent receipt ordinal
+# and the own-line pending queue must all match; missing, zero or wrong values
+# can never display or mutate anything.
+ywc_nmg_school_at_1110 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1110
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 1
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1110 }
+}
+
+ywc_nmg_school_at_1111 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1111
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 2
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1111 }
+}
+
+ywc_nmg_school_at_1112 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1112
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 3
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1112 }
+}
+
+ywc_nmg_school_at_1113 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_school
+	var:ywc_nmg_school_phase = 1
+	var:ywc_nmg_school_stage = 1113
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 4
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1113 }
+}
+
+ywc_nmg_school_at_1114 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1114
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 5
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1114 }
+}
+
+ywc_nmg_school_at_1115 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1115
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 6
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1115 }
+}
+
+ywc_nmg_school_at_1116 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1116
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 7
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1116 }
+}
+
+ywc_nmg_school_at_1117 = {
+	has_variable = ywc_v03_nmg_v03_nmg_parish_school_started
+	ywc_nmg_school_unsettled = yes
+	NOT = { has_variable = ywc_nmg_school_withdrawn }
+	has_journal_entry = ywc_je_v03_nmg_parish_settlement
+	var:ywc_nmg_school_phase = 2
+	var:ywc_nmg_school_stage = 1117
+	var:ywc_v03_nmg_v03_nmg_parish_school_last_event = 8
+	OR = { NOT = { has_variable = ywc_nmg_school_pending_event } var:ywc_nmg_school_pending_event = 1117 }
+}
+
+# Earned responsibility snapshots. The teacher choice records its own
+# kind/mode/target/pilot triple, the signature records a second triple and the
+# audit a third; every later node compares all completed triples against the
+# current facts. Missing or zero mode/target never counts as finite and no
+# stage demands a snapshot that a later stage has not written yet.
+ywc_nmg_school_policy_ready = {
+	has_variable = ywc_nmg_school_mode
+	has_variable = ywc_nmg_school_target
+	OR = {
+		AND = { var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 ywc_nmg_school_limited_ready = yes }
+		AND = { var:ywc_nmg_school_target = 1 ywc_nmg_school_mode_ready = yes }
+	}
+}
+
+ywc_nmg_school_teacher_policy_match = {
+	OR = {
+		AND = { var:ywc_nmg_school_teacher_kind = 1 var:ywc_nmg_school_target = 1 OR = { var:ywc_nmg_school_mode = 1 var:ywc_nmg_school_mode = 3 } }
+		AND = { var:ywc_nmg_school_teacher_kind = 2 var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 2 }
+		AND = { var:ywc_nmg_school_teacher_kind = 3 var:ywc_nmg_school_target = 1 var:ywc_nmg_school_mode = 1 ywc_nmg_school_prior_bilingual_contract = yes }
+		AND = { var:ywc_nmg_school_teacher_kind = 4 var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 }
+	}
+}
+
+ywc_nmg_school_teacher_snapshot_current = {
+	has_variable = ywc_nmg_school_teacher_kind
+	has_variable = ywc_nmg_school_teacher_mode
+	has_variable = ywc_nmg_school_teacher_target
+	has_variable = ywc_nmg_school_teacher_pilot
+	var:ywc_nmg_school_teacher_mode ?= var:ywc_nmg_school_mode
+	var:ywc_nmg_school_teacher_target ?= var:ywc_nmg_school_target
+	var:ywc_nmg_school_teacher_pilot ?= var:ywc_nmg_school_pilot
+}
+
+ywc_nmg_school_signature_snapshot_current = {
+	has_variable = ywc_nmg_school_signed_kind
+	has_variable = ywc_nmg_school_signed_mode
+	has_variable = ywc_nmg_school_signed_target
+	has_variable = ywc_nmg_school_signed_pilot
+	var:ywc_nmg_school_signed_kind ?= var:ywc_nmg_school_teacher_kind
+	var:ywc_nmg_school_signed_mode ?= var:ywc_nmg_school_mode
+	var:ywc_nmg_school_signed_target ?= var:ywc_nmg_school_target
+	var:ywc_nmg_school_signed_pilot ?= var:ywc_nmg_school_pilot
+}
+
+ywc_nmg_school_duty_snapshot_current = {
+	has_variable = ywc_nmg_school_duty_kind
+	has_variable = ywc_nmg_school_duty_mode
+	has_variable = ywc_nmg_school_duty_target
+	has_variable = ywc_nmg_school_duty_pilot
+	var:ywc_nmg_school_duty_kind ?= var:ywc_nmg_school_teacher_kind
+	var:ywc_nmg_school_duty_mode ?= var:ywc_nmg_school_mode
+	var:ywc_nmg_school_duty_target ?= var:ywc_nmg_school_target
+	var:ywc_nmg_school_duty_pilot ?= var:ywc_nmg_school_pilot
+}
+
+ywc_nmg_school_signed_current = {
+	ywc_nmg_school_signature_snapshot_current = yes
+	ywc_nmg_school_teacher_snapshot_current = yes
+	ywc_nmg_school_teacher_policy_match = yes
+	OR = {
+		AND = { var:ywc_nmg_school_target = 2 var:ywc_nmg_school_mode = 2 ywc_nmg_school_limited_ready = yes }
+		AND = { var:ywc_nmg_school_target = 1 ywc_nmg_school_mode_ready = yes }
+	}
+	ywc_nmg_school_teacher_current = yes
+}
+
+# Both real bills must still exist as paid flags with positive recorded
+# amounts. Missing or zeroed records fail closed; requests never seed or
+# repair amounts, and legitimate recount/narrow leaves the two values intact.
+ywc_nmg_school_bills_paid_positive = {
+	has_variable = ywc_nmg_school_register_paid
+	has_variable = ywc_nmg_school_register_amount
+	var:ywc_nmg_school_register_amount > 0
+	has_variable = ywc_nmg_school_wage_paid
+	has_variable = ywc_nmg_school_wage_amount
+	var:ywc_nmg_school_wage_amount > 0
+}
+
+# Bay ports only; all private state uses the ywc_nmg_bay_ prefix.
+ywc_nmg_bay_open = { has_variable = ywc_v03_nmg_v03_nmg_bay_ports_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bay_ports_settled } NOT = { has_variable = ywc_nmg_bay_outcome } }
+ywc_nmg_bay_pilot_owned = { exists = var:ywc_nmg_bay_pilot var:ywc_nmg_bay_pilot = { owner = c:NMG } }
+ywc_nmg_bay_common = { ywc_nmg_bay_pilot_owned = yes is_at_war = no NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } bureaucracy >= 0 net_fixed_income >= 0 }
+ywc_nmg_bay_office_25 = { ywc_nmg_bay_pilot_owned = yes var:ywc_nmg_bay_pilot = { any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } } }
+ywc_nmg_bay_office_50 = { ywc_nmg_bay_pilot_owned = yes var:ywc_nmg_bay_pilot = { any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ywc_nmg_bay_port_25 = { ywc_nmg_bay_pilot_owned = yes var:ywc_nmg_bay_pilot = { any_scope_pop = { OR = { is_pop_type = laborers is_pop_type = clerks is_pop_type = bureaucrats } is_employed = yes workplace ?= { is_building_type = building_port occupancy >= 0.25 building_has_goods_shortage = no } } } }
+ywc_nmg_bay_port_50 = { ywc_nmg_bay_pilot_owned = yes var:ywc_nmg_bay_pilot = { any_scope_pop = { OR = { is_pop_type = laborers is_pop_type = clerks is_pop_type = bureaucrats } is_employed = yes workplace ?= { is_building_type = building_port occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ywc_nmg_bay_port_80 = { ywc_nmg_bay_pilot_owned = yes var:ywc_nmg_bay_pilot = { any_scope_pop = { OR = { is_pop_type = laborers is_pop_type = clerks is_pop_type = bureaucrats } is_employed = yes workplace ?= { is_building_type = building_port occupancy >= 0.8 building_has_goods_shortage = no } } } }
+ywc_nmg_bay_public_current = { ywc_nmg_bay_common = yes ywc_nmg_bay_office_50 = yes ywc_nmg_bay_port_80 = yes var:ywc_nmg_bay_pilot = { market_access >= 0.75 } }
+ywc_nmg_bay_lease_current = { ywc_nmg_bay_common = yes ywc_nmg_bay_office_50 = yes ywc_nmg_bay_port_50 = yes var:ywc_nmg_bay_pilot = { market_access >= 0.75 } }
+ywc_nmg_bay_small_current = { ywc_nmg_bay_common = yes ywc_nmg_bay_office_50 = yes ywc_nmg_bay_port_25 = yes var:ywc_nmg_bay_pilot = { market_access >= 0.5 } }
+ywc_nmg_bay_finite_current = { ywc_nmg_bay_common = yes ywc_nmg_bay_office_25 = yes }
+ywc_nmg_bay_selected_current = { OR = { AND = { var:ywc_nmg_bay_mode = 1 var:ywc_nmg_bay_target = 1 ywc_nmg_bay_public_current = yes } AND = { var:ywc_nmg_bay_mode = 2 var:ywc_nmg_bay_target = 1 ywc_nmg_bay_lease_current = yes ywc_nmg_bay_credit_current = yes } AND = { var:ywc_nmg_bay_mode = 3 var:ywc_nmg_bay_target = 1 ywc_nmg_bay_small_current = yes } AND = { var:ywc_nmg_bay_mode = 3 var:ywc_nmg_bay_target = 2 ywc_nmg_bay_finite_current = yes } } }
+
+# Candidate consent is never inferred from being a subject or having a partner.
+ywc_nmg_bay_candidate_current = {
+ c:NMG ?= this is_country_alive = yes exists = scope:ywc_nmg_bay_selected_partner
+ OR = { scope:ywc_nmg_bay_selected_partner ?= c:MEX scope:ywc_nmg_bay_selected_partner ?= c:USA scope:ywc_nmg_bay_selected_partner ?= c:JHG }
+ OR = { is_subject = no AND = { is_subject = yes is_subject_of = scope:ywc_nmg_bay_selected_partner } }
+ scope:ywc_nmg_bay_selected_partner = { is_country_alive = yes relations:c:NMG >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_nmg_bay_creditor_generation } gold_reserves >= { value = prev.var:ywc_nmg_bay_budget multiply = 12 } }
+}
+ywc_nmg_bay_partner_current = {
+ c:NMG ?= this exists = var:ywc_nmg_bay_partner
+ OR = { var:ywc_nmg_bay_partner ?= c:MEX var:ywc_nmg_bay_partner ?= c:USA var:ywc_nmg_bay_partner ?= c:JHG }
+ OR = { is_subject = no AND = { is_subject = yes is_subject_of = var:ywc_nmg_bay_partner } }
+ var:ywc_nmg_bay_partner = { is_country_alive = yes relations:c:NMG >= 0 }
+}
+ywc_nmg_bay_credit_current = { has_variable = ywc_nmg_bay_debt_generation has_variable = ywc_nmg_bay_principal var:ywc_nmg_bay_principal > 0 var:ywc_nmg_bay_disbursed ?= var:ywc_nmg_bay_principal NOT = { has_variable = ywc_nmg_bay_creditor_lost } ywc_nmg_bay_partner_current = yes var:ywc_nmg_bay_partner ?= var:ywc_nmg_bay_creditor ywc_nmg_bay_mirror_current = yes }
+
+ywc_nmg_bay_reply_current = {
+ exists = scope:ywc_nmg_bay_requester exists = scope:ywc_nmg_bay_request_partner
+ scope:ywc_nmg_bay_request_partner ?= this scope:ywc_nmg_bay_requester ?= c:NMG
+ is_country_alive = yes relations:scope:ywc_nmg_bay_requester >= 0
+ NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
+ NOT = { has_variable = ywc_nmg_bay_creditor_generation }
+ scope:ywc_nmg_bay_requester = {
+  is_country_alive = yes ywc_nmg_bay_open = yes ywc_nmg_bay_partner_current = yes ywc_nmg_bay_lease_current = yes
+  var:ywc_nmg_bay_partner ?= root var:ywc_nmg_bay_stage = 1101
+  has_variable = ywc_nmg_bay_request_timer NOT = { has_variable = ywc_nmg_bay_debt_generation }
+  var:ywc_nmg_bay_generation ?= scope:ywc_nmg_bay_request_generation
+  var:ywc_nmg_bay_serial ?= scope:ywc_nmg_bay_request_serial
+  var:ywc_nmg_bay_quote_principal ?= scope:ywc_nmg_bay_request_principal
+  var:ywc_nmg_bay_quote_term ?= scope:ywc_nmg_bay_request_term
+  var:ywc_nmg_bay_quote_scope_kind ?= scope:ywc_nmg_bay_request_scope_kind
+  var:ywc_nmg_bay_mode ?= scope:ywc_nmg_bay_request_mode
+  var:ywc_nmg_bay_target ?= scope:ywc_nmg_bay_request_target
+  var:ywc_nmg_bay_pilot ?= scope:ywc_nmg_bay_request_pilot
+ }
+ scope:ywc_nmg_bay_request_term = 12 scope:ywc_nmg_bay_request_scope_kind = 1 scope:ywc_nmg_bay_request_principal > 0
+ gold_reserves >= scope:ywc_nmg_bay_request_principal
+}
+ywc_nmg_bay_accept_affordable = { ywc_nmg_bay_reply_current = yes gold_reserves >= scope:ywc_nmg_bay_request_principal }
+ywc_nmg_bay_mirror_current = {
+ has_variable = ywc_nmg_bay_debt_generation has_variable = ywc_nmg_bay_debt_pilot exists = var:ywc_nmg_bay_creditor NOT = { has_variable = ywc_nmg_bay_creditor_lost }
+ var:ywc_nmg_bay_creditor = {
+  is_country_alive = yes has_variable = ywc_nmg_bay_creditor_pilot var:ywc_nmg_bay_creditor_borrower ?= c:NMG
+  var:ywc_nmg_bay_creditor_generation ?= prev.var:ywc_nmg_bay_debt_generation
+  var:ywc_nmg_bay_creditor_principal ?= prev.var:ywc_nmg_bay_principal
+  var:ywc_nmg_bay_creditor_disbursed ?= prev.var:ywc_nmg_bay_disbursed
+  var:ywc_nmg_bay_creditor_repaid_total ?= prev.var:ywc_nmg_bay_repaid_total
+  var:ywc_nmg_bay_creditor_offer_serial ?= prev.var:ywc_nmg_bay_debt_offer_serial
+  var:ywc_nmg_bay_creditor_term ?= prev.var:ywc_nmg_bay_debt_term
+  OR = {
+   AND = { exists = var:ywc_nmg_bay_creditor_pilot exists = prev.var:ywc_nmg_bay_debt_pilot var:ywc_nmg_bay_creditor_pilot ?= prev.var:ywc_nmg_bay_debt_pilot }
+   AND = { NOT = { exists = var:ywc_nmg_bay_creditor_pilot } NOT = { exists = prev.var:ywc_nmg_bay_debt_pilot } }
+  }
+  var:ywc_nmg_bay_creditor_mode ?= prev.var:ywc_nmg_bay_debt_mode
+  var:ywc_nmg_bay_creditor_target ?= prev.var:ywc_nmg_bay_debt_target
+  var:ywc_nmg_bay_creditor_scope_kind ?= prev.var:ywc_nmg_bay_debt_scope_kind
+  var:ywc_nmg_bay_creditor_start_month ?= prev.var:ywc_nmg_bay_loan_start_month
+ }
+}
+
+ywc_nmg_bay_mex_current = { exists = c:MEX OR = { is_subject = no AND = { is_subject = yes is_subject_of = c:MEX } } c:MEX = { is_country_alive = yes relations:c:NMG >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_nmg_bay_creditor_generation } gold_reserves >= { value = prev.var:ywc_nmg_bay_budget multiply = 12 } } }
+ywc_nmg_bay_usa_current = { exists = c:USA OR = { is_subject = no AND = { is_subject = yes is_subject_of = c:USA } } c:USA = { is_country_alive = yes relations:c:NMG >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_nmg_bay_creditor_generation } gold_reserves >= { value = prev.var:ywc_nmg_bay_budget multiply = 12 } } }
+ywc_nmg_bay_jhg_current = { exists = c:JHG OR = { is_subject = no AND = { is_subject = yes is_subject_of = c:JHG } } c:JHG = { is_country_alive = yes relations:c:NMG >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_nmg_bay_creditor_generation } gold_reserves >= { value = prev.var:ywc_nmg_bay_budget multiply = 12 } } }
+
+ywc_nmg_bay_historical = {
+ ywc_nmg_bay_first_paid = yes
+ has_variable = ywc_nmg_bay_maintenance_paid var:ywc_nmg_bay_maintenance_paid = 1
+ has_variable = ywc_nmg_bay_maintenance_paid_amount var:ywc_nmg_bay_maintenance_paid_amount > 0
+ has_variable = ywc_nmg_bay_signed var:ywc_nmg_bay_signed = 1 has_variable = ywc_nmg_bay_accepted var:ywc_nmg_bay_accepted = 1
+ var:ywc_nmg_bay_signed_mode ?= var:ywc_nmg_bay_mode var:ywc_nmg_bay_signed_target ?= var:ywc_nmg_bay_target var:ywc_nmg_bay_signed_pilot ?= var:ywc_nmg_bay_pilot
+ var:ywc_nmg_bay_accepted_mode ?= var:ywc_nmg_bay_mode var:ywc_nmg_bay_accepted_target ?= var:ywc_nmg_bay_target var:ywc_nmg_bay_accepted_pilot ?= var:ywc_nmg_bay_pilot
+ has_variable = ywc_nmg_bay_review_mature var:ywc_nmg_bay_review_mature = 1 has_variable = ywc_nmg_bay_review_streak
+ OR = { AND = { var:ywc_nmg_bay_target = 1 var:ywc_nmg_bay_review_streak >= 12 } AND = { var:ywc_nmg_bay_target = 2 var:ywc_nmg_bay_review_streak >= 6 } }
+}
+ywc_nmg_bay_debt_clear = { OR = { NOT = { has_variable = ywc_nmg_bay_debt_generation } AND = { has_variable = ywc_nmg_bay_principal has_variable = ywc_nmg_bay_repaid_total var:ywc_nmg_bay_repaid_total >= var:ywc_nmg_bay_principal } } }
+ywc_nmg_bay_full_ready = { ywc_nmg_bay_historical = yes ywc_nmg_bay_selected_current = yes var:ywc_nmg_bay_target = 1 ywc_nmg_bay_debt_clear = yes }
+ywc_nmg_bay_limited_ready = { ywc_nmg_bay_historical = yes ywc_nmg_bay_selected_current = yes var:ywc_nmg_bay_target = 2 }
+ywc_nmg_bay_setback_ready = { ywc_nmg_bay_historical = yes NOT = { ywc_nmg_bay_selected_current = yes } }
+ywc_nmg_bay_fee_affordable = {
+ has_variable = ywc_nmg_bay_budget var:ywc_nmg_bay_budget > 0 ywc_nmg_bay_selected_current = yes
+ OR = {
+  AND = { var:ywc_nmg_bay_target = 1 OR = { var:ywc_nmg_bay_mode = 1 var:ywc_nmg_bay_mode = 2 } gold_reserves >= var:ywc_nmg_bay_budget }
+  AND = { var:ywc_nmg_bay_target = 1 var:ywc_nmg_bay_mode = 3 gold_reserves >= { value = var:ywc_nmg_bay_budget multiply = 0.5 } }
+  AND = { var:ywc_nmg_bay_target = 2 var:ywc_nmg_bay_mode = 3 gold_reserves >= { value = var:ywc_nmg_bay_budget multiply = 0.25 } }
+ }
+}
+ywc_nmg_bay_first_paid = { has_variable = ywc_nmg_bay_charter_paid var:ywc_nmg_bay_charter_paid = 1 has_variable = ywc_nmg_bay_charter_paid_amount var:ywc_nmg_bay_charter_paid_amount > 0 var:ywc_nmg_bay_charter_mode ?= var:ywc_nmg_bay_mode var:ywc_nmg_bay_charter_target ?= var:ywc_nmg_bay_target var:ywc_nmg_bay_charter_pilot ?= var:ywc_nmg_bay_pilot }
+ywc_nmg_bay_signed_current = { has_variable = ywc_nmg_bay_signed var:ywc_nmg_bay_signed = 1 var:ywc_nmg_bay_signed_mode ?= var:ywc_nmg_bay_mode var:ywc_nmg_bay_signed_target ?= var:ywc_nmg_bay_target var:ywc_nmg_bay_signed_pilot ?= var:ywc_nmg_bay_pilot }
+ywc_nmg_bay_accepted_current = { has_variable = ywc_nmg_bay_accepted var:ywc_nmg_bay_accepted = 1 var:ywc_nmg_bay_accepted_mode ?= var:ywc_nmg_bay_mode var:ywc_nmg_bay_accepted_target ?= var:ywc_nmg_bay_target var:ywc_nmg_bay_accepted_pilot ?= var:ywc_nmg_bay_pilot }
+ywc_nmg_bay_paid_duties = { ywc_nmg_bay_first_paid = yes ywc_nmg_bay_signed_current = yes ywc_nmg_bay_accepted_current = yes has_variable = ywc_nmg_bay_maintenance_paid var:ywc_nmg_bay_maintenance_paid = 1 has_variable = ywc_nmg_bay_maintenance_paid_amount var:ywc_nmg_bay_maintenance_paid_amount > 0 }
+ywc_nmg_bay_narrow_ready = { ywc_nmg_bay_paid_duties = yes ywc_nmg_bay_finite_current = yes }
+ywc_nmg_bay_restart_ready = { has_variable = ywc_nmg_bay_review_interrupted ywc_nmg_bay_paid_duties = yes ywc_nmg_bay_selected_current = yes }
+ywc_nmg_bay_benefit_current = {
+ exists = var:ywc_nmg_bay_benefit_pilot var:ywc_nmg_bay_benefit_pilot ?= var:ywc_nmg_bay_pilot var:ywc_nmg_bay_benefit_mode ?= var:ywc_nmg_bay_mode
+ OR = { AND = { var:ywc_nmg_bay_benefit_mode = 1 ywc_nmg_bay_public_current = yes } AND = { var:ywc_nmg_bay_benefit_mode = 2 ywc_nmg_bay_lease_current = yes } AND = { var:ywc_nmg_bay_benefit_mode = 3 ywc_nmg_bay_small_current = yes } }
+}
+
+ywc_nmg_bay_at_1100 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_charter var:ywc_nmg_bay_phase = 1 var:ywc_nmg_bay_stage = 1100 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 1 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1100 } }
+ywc_nmg_bay_at_1101 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_charter var:ywc_nmg_bay_phase = 1 var:ywc_nmg_bay_stage = 1101 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 2 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1101 } }
+ywc_nmg_bay_at_1102 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_charter var:ywc_nmg_bay_phase = 1 var:ywc_nmg_bay_stage = 1102 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 3 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1102 } }
+ywc_nmg_bay_at_1103 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_charter var:ywc_nmg_bay_phase = 1 var:ywc_nmg_bay_stage = 1103 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 4 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1103 } }
+ywc_nmg_bay_at_1104 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_operations var:ywc_nmg_bay_phase = 2 var:ywc_nmg_bay_stage = 1104 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 5 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1104 } }
+ywc_nmg_bay_at_1105 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_operations var:ywc_nmg_bay_phase = 2 var:ywc_nmg_bay_stage = 1105 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 6 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1105 } }
+ywc_nmg_bay_at_1106 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_operations var:ywc_nmg_bay_phase = 2 var:ywc_nmg_bay_stage = 1106 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 7 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1106 } }
+ywc_nmg_bay_at_1107 = { ywc_nmg_bay_open = yes has_variable = ywc_nmg_bay_popup_epoch exists = scope:ywc_nmg_bay_popup_epoch scope:ywc_nmg_bay_popup_epoch = var:ywc_nmg_bay_popup_epoch has_journal_entry = ywc_je_v03_nmg_bay_operations var:ywc_nmg_bay_phase = 2 var:ywc_nmg_bay_stage = 1107 var:ywc_v03_nmg_v03_nmg_bay_ports_last_event = 8 OR = { NOT = { has_variable = ywc_nmg_bay_pending_event } var:ywc_nmg_bay_pending_event = 1107 } }
+# --- v03_nmg_coastal_guard (middle) ---
+ywc_nmg_coastal_open = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } NOT = { has_variable = ywc_nmg_coastal_outcome } }
+ywc_nmg_coastal_finance_safe = { bureaucracy >= 0 net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
+ywc_nmg_coastal_best_state = { any_scope_state = { owner = ROOT any_scope_building = { OR = { is_building_type = building_port is_building_type = building_trade_center } occupancy >= 0.3 } } }
+ywc_nmg_coastal_mode1_current = { var:ywc_nmg_coastal_mode = 1 }
+ywc_nmg_coastal_mode2_current = { var:ywc_nmg_coastal_mode = 2 }
+ywc_nmg_coastal_mode3_current = { var:ywc_nmg_coastal_mode = 3 }
+ywc_nmg_coastal_current_broken = { OR = { is_at_war = yes NOT = { ywc_nmg_coastal_finance_safe = yes } NOT = { ywc_nmg_coastal_best_state = yes } } }
+ywc_nmg_coastal_full_terminal = { has_variable = ywc_nmg_coastal_charter_written has_variable = ywc_nmg_coastal_hall_paid has_variable = ywc_nmg_coastal_review_mature NOT = { has_variable = ywc_nmg_coastal_review_interrupted } }
+ywc_nmg_coastal_limited_terminal = { OR = { has_variable = ywc_nmg_coastal_charter_written has_variable = ywc_nmg_coastal_hall_paid } NOT = { has_variable = ywc_nmg_coastal_review_mature } }
+ywc_nmg_coastal_setback_available = { NOT = { has_variable = ywc_nmg_coastal_charter_written } NOT = { has_variable = ywc_nmg_coastal_hall_paid } }
+ywc_nmg_coastal_close_full_ready = { ywc_nmg_coastal_at_1127 = yes ywc_nmg_coastal_full_terminal = yes }
+ywc_nmg_coastal_close_limited_ready = { ywc_nmg_coastal_at_1127 = yes ywc_nmg_coastal_limited_terminal = yes }
+ywc_nmg_coastal_close_setback_ready = { ywc_nmg_coastal_at_1127 = yes ywc_nmg_coastal_setback_available = yes }
+ywc_nmg_coastal_stage_1120 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1120 }
+ywc_nmg_coastal_at_1120 = { ywc_nmg_coastal_stage_1120 = yes }
+ywc_nmg_coastal_stage_1121 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1121 }
+ywc_nmg_coastal_at_1121 = { ywc_nmg_coastal_stage_1121 = yes }
+ywc_nmg_coastal_stage_1122 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1122 }
+ywc_nmg_coastal_at_1122 = { ywc_nmg_coastal_stage_1122 = yes }
+ywc_nmg_coastal_stage_1123 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1123 }
+ywc_nmg_coastal_at_1123 = { ywc_nmg_coastal_stage_1123 = yes }
+ywc_nmg_coastal_stage_1124 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1124 }
+ywc_nmg_coastal_at_1124 = { ywc_nmg_coastal_stage_1124 = yes }
+ywc_nmg_coastal_stage_1125 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1125 }
+ywc_nmg_coastal_at_1125 = { ywc_nmg_coastal_stage_1125 = yes }
+ywc_nmg_coastal_stage_1126 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1126 }
+ywc_nmg_coastal_at_1126 = { ywc_nmg_coastal_stage_1126 = yes }
+ywc_nmg_coastal_stage_1127 = { ywc_nmg_coastal_open = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge var:ywc_nmg_coastal_stage = 1127 }
+ywc_nmg_coastal_at_1127 = { ywc_nmg_coastal_stage_1127 = yes }
+# --- v03_nmg_resident_representation (late) ---
+ywc_nmg_resident_open = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } NOT = { has_variable = ywc_nmg_resident_outcome } }
+ywc_nmg_resident_finance_safe = { bureaucracy >= 0 net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
+ywc_nmg_resident_best_state = { any_scope_state = { owner = ROOT any_scope_building = { OR = { is_building_type = building_port is_building_type = building_trade_center } occupancy >= 0.3 } } }
+ywc_nmg_resident_mode1_current = { var:ywc_nmg_resident_mode = 1 }
+ywc_nmg_resident_mode2_current = { var:ywc_nmg_resident_mode = 2 }
+ywc_nmg_resident_mode3_current = { var:ywc_nmg_resident_mode = 3 }
+ywc_nmg_resident_current_broken = { OR = { is_at_war = yes NOT = { ywc_nmg_resident_finance_safe = yes } NOT = { ywc_nmg_resident_best_state = yes } } }
+ywc_nmg_resident_full_terminal = { has_variable = ywc_nmg_resident_charter_written has_variable = ywc_nmg_resident_hall_paid has_variable = ywc_nmg_resident_review_mature NOT = { has_variable = ywc_nmg_resident_review_interrupted } }
+ywc_nmg_resident_limited_terminal = { OR = { has_variable = ywc_nmg_resident_charter_written has_variable = ywc_nmg_resident_hall_paid } NOT = { has_variable = ywc_nmg_resident_review_mature } }
+ywc_nmg_resident_setback_available = { NOT = { has_variable = ywc_nmg_resident_charter_written } NOT = { has_variable = ywc_nmg_resident_hall_paid } }
+ywc_nmg_resident_close_full_ready = { ywc_nmg_resident_at_1209 = yes ywc_nmg_resident_full_terminal = yes }
+ywc_nmg_resident_close_limited_ready = { ywc_nmg_resident_at_1209 = yes ywc_nmg_resident_limited_terminal = yes }
+ywc_nmg_resident_close_setback_ready = { ywc_nmg_resident_at_1209 = yes ywc_nmg_resident_setback_available = yes }
+ywc_nmg_resident_stage_1200 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1200 }
+ywc_nmg_resident_at_1200 = { ywc_nmg_resident_stage_1200 = yes }
+ywc_nmg_resident_stage_1201 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1201 }
+ywc_nmg_resident_at_1201 = { ywc_nmg_resident_stage_1201 = yes }
+ywc_nmg_resident_stage_1202 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1202 }
+ywc_nmg_resident_at_1202 = { ywc_nmg_resident_stage_1202 = yes }
+ywc_nmg_resident_stage_1203 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1203 }
+ywc_nmg_resident_at_1203 = { ywc_nmg_resident_stage_1203 = yes }
+ywc_nmg_resident_stage_1204 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1204 }
+ywc_nmg_resident_at_1204 = { ywc_nmg_resident_stage_1204 = yes }
+ywc_nmg_resident_stage_1205 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1205 }
+ywc_nmg_resident_at_1205 = { ywc_nmg_resident_stage_1205 = yes }
+ywc_nmg_resident_stage_1206 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1206 }
+ywc_nmg_resident_at_1206 = { ywc_nmg_resident_stage_1206 = yes }
+ywc_nmg_resident_stage_1207 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1207 }
+ywc_nmg_resident_at_1207 = { ywc_nmg_resident_stage_1207 = yes }
+ywc_nmg_resident_stage_1208 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1208 }
+ywc_nmg_resident_at_1208 = { ywc_nmg_resident_stage_1208 = yes }
+ywc_nmg_resident_stage_1209 = { ywc_nmg_resident_open = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate var:ywc_nmg_resident_stage = 1209 }
+ywc_nmg_resident_at_1209 = { ywc_nmg_resident_stage_1209 = yes }
+# --- v03_nmg_neutrality_trade (late) ---
+ywc_nmg_neutral_open = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } NOT = { has_variable = ywc_nmg_neutral_outcome } }
+ywc_nmg_neutral_finance_safe = { bureaucracy >= 0 net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
+ywc_nmg_neutral_best_state = { any_scope_state = { owner = ROOT any_scope_building = { OR = { is_building_type = building_port is_building_type = building_trade_center } occupancy >= 0.3 } } }
+ywc_nmg_neutral_mode1_current = { var:ywc_nmg_neutral_mode = 1 }
+ywc_nmg_neutral_mode2_current = { var:ywc_nmg_neutral_mode = 2 }
+ywc_nmg_neutral_mode3_current = { var:ywc_nmg_neutral_mode = 3 }
+ywc_nmg_neutral_current_broken = { OR = { is_at_war = yes NOT = { ywc_nmg_neutral_finance_safe = yes } NOT = { ywc_nmg_neutral_best_state = yes } } }
+ywc_nmg_neutral_full_terminal = { has_variable = ywc_nmg_neutral_charter_written has_variable = ywc_nmg_neutral_hall_paid has_variable = ywc_nmg_neutral_review_mature NOT = { has_variable = ywc_nmg_neutral_review_interrupted } }
+ywc_nmg_neutral_limited_terminal = { OR = { has_variable = ywc_nmg_neutral_charter_written has_variable = ywc_nmg_neutral_hall_paid } NOT = { has_variable = ywc_nmg_neutral_review_mature } }
+ywc_nmg_neutral_setback_available = { NOT = { has_variable = ywc_nmg_neutral_charter_written } NOT = { has_variable = ywc_nmg_neutral_hall_paid } }
+ywc_nmg_neutral_close_full_ready = { ywc_nmg_neutral_at_1217 = yes ywc_nmg_neutral_full_terminal = yes }
+ywc_nmg_neutral_close_limited_ready = { ywc_nmg_neutral_at_1217 = yes ywc_nmg_neutral_limited_terminal = yes }
+ywc_nmg_neutral_close_setback_ready = { ywc_nmg_neutral_at_1217 = yes ywc_nmg_neutral_setback_available = yes }
+ywc_nmg_neutral_stage_1210 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1210 }
+ywc_nmg_neutral_at_1210 = { ywc_nmg_neutral_stage_1210 = yes }
+ywc_nmg_neutral_stage_1211 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1211 }
+ywc_nmg_neutral_at_1211 = { ywc_nmg_neutral_stage_1211 = yes }
+ywc_nmg_neutral_stage_1212 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1212 }
+ywc_nmg_neutral_at_1212 = { ywc_nmg_neutral_stage_1212 = yes }
+ywc_nmg_neutral_stage_1213 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1213 }
+ywc_nmg_neutral_at_1213 = { ywc_nmg_neutral_stage_1213 = yes }
+ywc_nmg_neutral_stage_1214 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1214 }
+ywc_nmg_neutral_at_1214 = { ywc_nmg_neutral_stage_1214 = yes }
+ywc_nmg_neutral_stage_1215 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1215 }
+ywc_nmg_neutral_at_1215 = { ywc_nmg_neutral_stage_1215 = yes }
+ywc_nmg_neutral_stage_1216 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1216 }
+ywc_nmg_neutral_at_1216 = { ywc_nmg_neutral_stage_1216 = yes }
+ywc_nmg_neutral_stage_1217 = { ywc_nmg_neutral_open = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter var:ywc_nmg_neutral_stage = 1217 }
+ywc_nmg_neutral_at_1217 = { ywc_nmg_neutral_stage_1217 = yes }
+# --- v03_nmg_autonomy_successors (late) ---
+ywc_nmg_succ_open = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } NOT = { has_variable = ywc_nmg_succ_outcome } }
+ywc_nmg_succ_finance_safe = { bureaucracy >= 0 net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
+ywc_nmg_succ_best_state = { any_scope_state = { owner = ROOT any_scope_building = { OR = { is_building_type = building_port is_building_type = building_trade_center } occupancy >= 0.3 } } }
+ywc_nmg_succ_mode1_current = { var:ywc_nmg_succ_mode = 1 }
+ywc_nmg_succ_mode2_current = { var:ywc_nmg_succ_mode = 2 }
+ywc_nmg_succ_mode3_current = { var:ywc_nmg_succ_mode = 3 }
+ywc_nmg_succ_current_broken = { OR = { is_at_war = yes NOT = { ywc_nmg_succ_finance_safe = yes } NOT = { ywc_nmg_succ_best_state = yes } } }
+ywc_nmg_succ_full_terminal = { has_variable = ywc_nmg_succ_charter_written has_variable = ywc_nmg_succ_hall_paid has_variable = ywc_nmg_succ_review_mature NOT = { has_variable = ywc_nmg_succ_review_interrupted } }
+ywc_nmg_succ_limited_terminal = { OR = { has_variable = ywc_nmg_succ_charter_written has_variable = ywc_nmg_succ_hall_paid } NOT = { has_variable = ywc_nmg_succ_review_mature } }
+ywc_nmg_succ_setback_available = { NOT = { has_variable = ywc_nmg_succ_charter_written } NOT = { has_variable = ywc_nmg_succ_hall_paid } }
+ywc_nmg_succ_close_full_ready = { ywc_nmg_succ_at_1227 = yes ywc_nmg_succ_full_terminal = yes }
+ywc_nmg_succ_close_limited_ready = { ywc_nmg_succ_at_1227 = yes ywc_nmg_succ_limited_terminal = yes }
+ywc_nmg_succ_close_setback_ready = { ywc_nmg_succ_at_1227 = yes ywc_nmg_succ_setback_available = yes }
+ywc_nmg_succ_stage_1220 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1220 }
+ywc_nmg_succ_at_1220 = { ywc_nmg_succ_stage_1220 = yes }
+ywc_nmg_succ_stage_1221 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1221 }
+ywc_nmg_succ_at_1221 = { ywc_nmg_succ_stage_1221 = yes }
+ywc_nmg_succ_stage_1222 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1222 }
+ywc_nmg_succ_at_1222 = { ywc_nmg_succ_stage_1222 = yes }
+ywc_nmg_succ_stage_1223 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1223 }
+ywc_nmg_succ_at_1223 = { ywc_nmg_succ_stage_1223 = yes }
+ywc_nmg_succ_stage_1224 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1224 }
+ywc_nmg_succ_at_1224 = { ywc_nmg_succ_stage_1224 = yes }
+ywc_nmg_succ_stage_1225 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1225 }
+ywc_nmg_succ_at_1225 = { ywc_nmg_succ_stage_1225 = yes }
+ywc_nmg_succ_stage_1226 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1226 }
+ywc_nmg_succ_at_1226 = { ywc_nmg_succ_stage_1226 = yes }
+ywc_nmg_succ_stage_1227 = { ywc_nmg_succ_open = yes has_journal_entry = ywc_je_v03_nmg_succ_charter var:ywc_nmg_succ_stage = 1227 }
+ywc_nmg_succ_at_1227 = { ywc_nmg_succ_stage_1227 = yes }

@@ -16,7 +16,7 @@ except ModuleNotFoundError:  # Running this file directly puts ``tools`` on sys.
 
 SCRIPT_SUFFIXES = {".txt", ".gui", ".asset", ".gfx", ".mod"}
 LOCALIZATION_SUFFIXES = {".yml", ".yaml"}
-DECLARED_KEY = re.compile(r"^(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2})\s*=")
+DECLARED_KEY = re.compile(r"(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2})\s*=")
 LOCALIZATION_KEY = re.compile(r"^\s*(ywc_[A-Za-z0-9_]+|[A-Z][A-Z0-9]{2}(?:_[A-Za-z0-9_]+)?)\s*:")
 ROUTE_COOLDOWN_OR_PATTERNS = (
     re.compile(
@@ -106,10 +106,24 @@ def _declared_key_occurrences(root: Path) -> dict[str, list[tuple[Path, int]]]:
     occurrences: dict[str, list[tuple[Path, int]]] = defaultdict(list)
     for path in _script_files(root):
         text = path.read_text(encoding="utf-8-sig")
-        for line_number, line in enumerate(text.splitlines(), 1):
-            match = DECLARED_KEY.match(line)
-            if match:
-                occurrences[match.group(1)].append((path, line_number))
+        cleaned = _without_comments_and_strings(text)
+        depth = 0
+        line_number = 1
+        previous = 0
+        for token in re.finditer(r"[{}]|[^\s{}=]+|=", cleaned):
+            # Stripping preserves offsets but blanks newlines inside strings.
+            # Count source newlines so diagnostics still identify the real line.
+            line_number += text.count("\n", previous, token.start())
+            previous = token.start()
+            value = token.group()
+            if value == "{":
+                depth += 1
+            elif value == "}":
+                depth -= 1
+            elif depth == 0:
+                match = DECLARED_KEY.match(cleaned, token.start())
+                if match:
+                    occurrences[match.group(1)].append((path, line_number))
     return dict(occurrences)
 
 
@@ -124,6 +138,7 @@ def _declaration_namespace(path: Path) -> str:
         "coat_of_arms",
         "character_templates",
         "on_actions",
+        "media_aliases",
     ):
         if namespace in parts:
             return namespace
@@ -143,6 +158,10 @@ def _is_localization_bearing(path: Path) -> bool:
             "coat_of_arms",
             "character_templates",
             "on_actions",
+            "scripted_effects",
+            "scripted_triggers",
+            "script_values",
+            "media_aliases",
         }
     )
 
@@ -171,7 +190,11 @@ def find_duplicate_keys(root: Path) -> set[str]:
     grouped: dict[tuple[str, str], list[tuple[Path, int]]] = defaultdict(list)
     for key, occurrences in _declared_key_occurrences(Path(root)).items():
         for path, line in occurrences:
-            grouped[(_declaration_namespace(path), key)].append((path, line))
+            namespace = _declaration_namespace(path)
+            # On-actions may be split across files. Their effect/trigger
+            # singletons are checked by _on_action_hook_diagnostics instead.
+            if namespace != "on_actions":
+                grouped[(namespace, key)].append((path, line))
     return {key for (_namespace, key), occurrences in grouped.items() if len(occurrences) > 1}
 
 
@@ -455,52 +478,172 @@ def _flavor_contract_diagnostics(mod_root: Path) -> list[str]:
     return diagnostics
 
 
-ON_ACTION_BLOCK = re.compile(r"^\s*([a-z][a-z0-9_]*)\s*=\s*\{", re.MULTILINE)
-ON_ACTIONS_LIST = re.compile(r"on_actions\s*=\s*\{([^}]*)\}")
+_ON_ACTION_NAMED_BLOCK = re.compile(r"([a-z][a-z0-9_]*)\s*=\s*\{")
 
 
-def _on_action_hook_diagnostics(mod_root: Path, game_root: Path) -> list[str]:
-    """Attached hooks must exist in vanilla; called on_actions must be declared.
+def _top_level_on_action_blocks(text: str) -> list[tuple[str, str]]:
+    """Return only directly nested named blocks, ignoring strings and comments.
 
-    A misspelled hook name is silent in game: the mod's startup wiring simply
-    never runs. Vanilla's ``common/on_actions`` is the authoritative hook list.
+    The on-action merge rules apply to a definition's own effect/trigger, not
+    to a similarly named block nested inside that effect.
+    """
+    cleaned = _without_comments_and_strings(text)
+    result: list[tuple[str, str]] = []
+    position = 0
+    while position < len(cleaned):
+        match = _ON_ACTION_NAMED_BLOCK.match(cleaned, position)
+        if match is None:
+            position += 1
+            continue
+        depth = 1
+        end = match.end()
+        while end < len(cleaned) and depth:
+            if cleaned[end] == "{":
+                depth += 1
+            elif cleaned[end] == "}":
+                depth -= 1
+            end += 1
+        if depth:
+            break  # The general brace validator reports the malformed file.
+        result.append((match.group(1), cleaned[match.end():end - 1]))
+        position = end
+    return result
+
+
+def _on_action_list_members(text: str) -> list[str]:
+    """Read bare members, excluding delay assignments and their nested values."""
+    cleaned = _without_comments_and_strings(text)
+    members: list[str] = []
+    depth = 0
+    index = 0
+    while index < len(cleaned):
+        char = cleaned[index]
+        if char == "{":
+            depth += 1
+            index += 1
+        elif char == "}":
+            depth -= 1
+            index += 1
+        elif depth == 0 and (char.isalpha() or char == "_"):
+            end = index + 1
+            while end < len(cleaned) and (cleaned[end].isalnum() or cleaned[end] == "_"):
+                end += 1
+            cursor = end
+            while cursor < len(cleaned) and cleaned[cursor].isspace():
+                cursor += 1
+            if cursor == len(cleaned) or cleaned[cursor] != "=":
+                members.append(cleaned[index:end])
+            index = end
+        else:
+            index += 1
+    return members
+
+
+def _only_top_level_text(text: str) -> str:
+    """Blank nested blocks so scalar fields are read only at their own level."""
+    output: list[str] = []
+    depth = 0
+    for char in text:
+        if char == "{":
+            depth += 1
+            output.append(" ")
+        elif char == "}":
+            depth -= 1
+            output.append(" ")
+        else:
+            output.append(char if depth == 0 else " ")
+    return "".join(output)
+
+
+def _script_triggered_actions(mod_root: Path) -> set[str]:
+    """Find direct trigger_event on_action arguments throughout mod scripts."""
+    called: set[str] = set()
+    pattern = re.compile(r"(?<![a-zA-Z0-9_])trigger_event\s*=\s*\{")
+    argument = re.compile(r"\bon_action\s*=\s*([a-z][a-z0-9_]*)\b")
+    for path in _script_files(mod_root):
+        text = _without_comments_and_strings(path.read_text(encoding="utf-8-sig"))
+        for match in pattern.finditer(text):
+            depth = 1
+            end = match.end()
+            while end < len(text) and depth:
+                if text[end] == "{":
+                    depth += 1
+                elif text[end] == "}":
+                    depth -= 1
+                end += 1
+            if depth == 0:
+                called.update(argument.findall(_only_top_level_text(text[match.end():end - 1])))
+    return called
+
+
+def _on_action_hook_diagnostics(mod_root: Path, game_root: Path | None) -> list[str]:
+    """Check singleton conflicts and, with a game root, hook references.
+
+    A misspelled hook name is silent in game. Vanilla's ``common/on_actions``
+    is the available vocabulary for hooks when a game root is supplied.
     """
 
     directory = Path(mod_root) / "common/on_actions"
-    vanilla_directory = Path(game_root) / "common/on_actions"
-    if not directory.is_dir() or not vanilla_directory.is_dir():
+    if not directory.is_dir():
         return []
+    vanilla_directory = Path(game_root) / "common/on_actions" if game_root is not None else None
+    has_vanilla = vanilla_directory is not None and vanilla_directory.is_dir()
 
     vanilla_names: set[str] = set()
-    for path in sorted(vanilla_directory.glob("*.txt")):
-        vanilla_names |= {
-            match.group(1)
-            for match in ON_ACTION_BLOCK.finditer(path.read_text(encoding="utf-8-sig"))
-        }
+    vanilla_singletons: dict[tuple[str, str], int] = defaultdict(int)
+    vanilla_paths = sorted(vanilla_directory.glob("*.txt")) if has_vanilla else []
+    for path in vanilla_paths:
+        vanilla_text = path.read_text(encoding="utf-8-sig")
+        vanilla_blocks = _top_level_on_action_blocks(vanilla_text)
+        vanilla_names.update(name for name, _ in vanilla_blocks)
+        for name, body in vanilla_blocks:
+            for child, _ in _top_level_on_action_blocks(body):
+                if child in ("effect", "trigger"):
+                    vanilla_singletons[(name, child)] += 1
 
     declared: set[str] = set()
-    called: set[str] = set()
-    texts: dict[Path, str] = {}
+    called = _script_triggered_actions(Path(mod_root)) if has_vanilla else set()
+    mod_singletons: dict[tuple[str, str], list[Path]] = defaultdict(list)
     for path in sorted(directory.rglob("*.txt")):
         text = path.read_text(encoding="utf-8-sig")
-        texts[path] = text
-        declared |= {match.group(1) for match in ON_ACTION_BLOCK.finditer(text)}
-        for block in ON_ACTIONS_LIST.findall(text):
-            called |= set(re.findall(r"[a-z][a-z0-9_]*", block))
+        blocks = _top_level_on_action_blocks(text)
+        declared.update(name for name, _ in blocks)
+        for name, body in blocks:
+            top_level = _only_top_level_text(body)
+            called.update(re.findall(r"\bfallback\s*=\s*([a-z][a-z0-9_]*)\b", top_level))
+            for child, child_body in _top_level_on_action_blocks(body):
+                if child in ("effect", "trigger"):
+                    mod_singletons[(name, child)].append(path)
+                elif child in ("on_actions", "first_valid_on_action"):
+                    called.update(_on_action_list_members(child_body))
+                elif child == "random_on_actions":
+                    called.update(re.findall(r"\b\d+\s*=\s*([a-z][a-z0-9_]*)\b", _only_top_level_text(child_body)))
 
     diagnostics: list[str] = []
-    for present in sorted(declared):
-        if present not in vanilla_names and present not in called:
+    for (name, child), paths in sorted(mod_singletons.items()):
+        if len(paths) > 1 or vanilla_singletons.get((name, child), 0):
+            locations = ", ".join(str(path) for path in paths)
             diagnostics.append(
-                f"{directory}:1: on_action {present} is neither a vanilla hook nor called by any on_actions list"
+                f"{directory}:1: on_action {name} conflict: {child} block is already defined "
+                f"in vanilla or multiple mod declarations ({locations})"
             )
-    for name in sorted(called):
-        if name not in declared and name not in vanilla_names:
-            diagnostics.append(f"{directory}:1: on_action {name} is not declared")
+    if has_vanilla:
+        for present in sorted(declared):
+            if present not in vanilla_names and present not in called:
+                diagnostics.append(
+                    f"{directory}:1: on_action {present} is neither a vanilla hook nor called by an on_action or trigger_event"
+                )
+        for name in sorted(called):
+            if name not in declared and name not in vanilla_names:
+                diagnostics.append(f"{directory}:1: on_action {name} is not declared")
     return diagnostics
 
 
-def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
+def validate(
+    mod_root: Path,
+    game_root: Path | None = None,
+    require_complete: bool = False,
+) -> list[str]:
     mod_root = Path(mod_root)
     diagnostics: list[str] = []
     if not mod_root.is_dir():
@@ -522,7 +665,9 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
         all_occurrences = _declared_key_occurrences(mod_root)[key]
         by_namespace: dict[str, list[tuple[Path, int]]] = defaultdict(list)
         for path, line in all_occurrences:
-            by_namespace[_declaration_namespace(path)].append((path, line))
+            namespace = _declaration_namespace(path)
+            if namespace != "on_actions":
+                by_namespace[namespace].append((path, line))
         occurrences = next(
             locations for locations in by_namespace.values() if len(locations) > 1
         )
@@ -543,16 +688,28 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
         diagnostics.append(f"{game_root}:1: game root does not exist")
 
     repository_root = mod_root.parent
+    v03_manifest = repository_root / "data/content/v03/manifest.json"
+    if v03_manifest.is_file():
+        try:
+            from tools.ywc_v03_check import check_root as check_v03_root
+        except ModuleNotFoundError:  # Running this file directly puts ``tools`` on sys.path.
+            from ywc_v03_check import check_root as check_v03_root
+        diagnostics.extend(
+            f"{repository_root}:1: v0.3 validation failed: {error}"
+            for error in check_v03_root(repository_root, require_complete=require_complete)
+        )
+    elif require_complete:
+        diagnostics.append(f"{v03_manifest}:1: required v0.3 manifest does not exist")
+
     if (repository_root / "data/scenario/tag_registry.json").is_file():
         try:
             diagnostics.extend(audit_repository_tags(repository_root))
         except (OSError, ValueError, KeyError) as error:
             diagnostics.append(f"{repository_root}:1: scenario tag audit failed: {error}")
 
-    # Hook and modifier vocabularies both come from the installed game, so
-    # these two checks only run when a game root is supplied.
-    if game_root is not None and (Path(game_root) / "common/on_actions").is_dir():
-        diagnostics.extend(_on_action_hook_diagnostics(mod_root, Path(game_root)))
+    # Mod-internal on-action conflicts can be checked without a game root;
+    # hook references and modifier vocabulary also use the installed game.
+    diagnostics.extend(_on_action_hook_diagnostics(mod_root, game_root))
 
     if game_root is not None and (Path(game_root) / "common/modifier_type_definitions").is_dir():
         try:
@@ -563,6 +720,7 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
         report = audit_modifiers(mod_root, Path(game_root))
         diagnostics.extend(report["unknown_modifier_types"])
         diagnostics.extend(report["undeclared_modifier_references"])
+        diagnostics.extend(report["invalid_add_modifier_arguments"])
 
     # Amendments attach to an *active law* at script level, and the engine
     # ignores a country/group mismatch silently, so the parent law is checked
@@ -602,12 +760,17 @@ def validate(mod_root: Path, game_root: Path | None = None) -> list[str]:
     return diagnostics
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mod-root", type=Path, required=True)
     parser.add_argument("--game-root", type=Path)
-    args = parser.parse_args()
-    diagnostics = validate(args.mod_root, args.game_root)
+    parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="also enforce the full v0.3 release quotas",
+    )
+    args = parser.parse_args(argv)
+    diagnostics = validate(args.mod_root, args.game_root, require_complete=args.require_complete)
     for diagnostic in diagnostics:
         print(diagnostic)
     return 1 if diagnostics else 0

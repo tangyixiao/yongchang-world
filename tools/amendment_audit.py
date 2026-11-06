@@ -53,7 +53,14 @@ MODIFIER_BLOCK = re.compile(
 )
 INTEREST_GROUP_TYPE = re.compile(r"is_interest_group_type\s*=\s*([a-z0-9_]+)")
 POSSIBLE_BLOCK = re.compile(r"possible\s*=\s*\{([^}]*)\}")
-POSSIBLE_TAG = re.compile(r"\bthis\s*=\s*c:([A-Z0-9]{3})")
+# Both spellings name a country: the historical ``this = c:TAG`` form and the
+# exists-check ``c:TAG ?= this`` form vanilla itself uses in amendments
+# (``c:AUS ?= this``).  A tag absent from the current world makes the plain
+# comparison raise "Event target link c returned an unset scope", so the
+# exists-check spelling is the one to prefer in new content.
+POSSIBLE_TAG = re.compile(
+    r"\bthis\s*=\s*c:([A-Z0-9]{3})|\bc:([A-Z0-9]{3})\s*\?=\s*this"
+)
 LOCALIZATION_KEY = re.compile(r"^\s*(amendment_[a-z0-9_]+)\s*:", re.MULTILINE)
 
 
@@ -259,11 +266,12 @@ def audit(mod_root: Path, game_root: Path | None = None) -> dict:
         if possible is None:
             diagnostics.append(f"{path}:{line}: {name} has no possible block")
         else:
-            found = POSSIBLE_TAG.findall(possible.group(1))
+            matches = POSSIBLE_TAG.findall(possible.group(1))
+            found = [first or second for first, second in matches]
             if not found:
                 diagnostics.append(
                     f"{path}:{line}: {name} possible block names no country "
-                    "(expected this = c:TAG)"
+                    "(expected this = c:TAG or c:TAG ?= this)"
                 )
             for tag in found:
                 if have_game and tags and tag not in tags:
