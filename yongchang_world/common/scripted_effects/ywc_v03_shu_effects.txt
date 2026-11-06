@@ -1,4 +1,4 @@
-﻿# v0.3 SHU fiscal register. Long-lived variables represent actual public commitments,
+# v0.3 SHU fiscal register. Long-lived variables represent actual public commitments,
 # not a substitute for laws, employment, supply, treasury or diplomatic state.
 
 ywc_shu_open_register_once = {
@@ -1525,5 +1525,486 @@ if = { limit = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_started NOT =
  clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
  clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
  remove_variable = ywc_shu_workshop_pending_event
+}
+}
+
+# Yield a delivery opportunity to eligible legacy SHU journals.
+ywc_shu_legacy_after_v03 = { if = { limit = { c:SHU ?= this OR = { has_journal_entry = ywc_je_eternal_yongchang has_journal_entry = ywc_je_who_inherits_china has_journal_entry = ywc_je_yongchang_century has_journal_entry = ywc_je_shu_scholar_merchants has_journal_entry = ywc_je_shu_blackwater_frontier has_journal_entry = ywc_je_shu_opium_question has_journal_entry = ywc_route_shu_bureaucratic_integration has_journal_entry = ywc_route_shu_customs_reform has_journal_entry = ywc_je_flavor_shu_court_1 has_journal_entry = ywc_je_flavor_shu_court_2 has_journal_entry = ywc_je_flavor_shu_court_3 } } set_variable = { name = ywc_shu_v03_delivery_backoff value = 1 days = 150 } } }
+
+ywc_v03_claim_arc_shu_v03_shu_welfare_granary = {
+ ywc_v03_initialize_country = yes
+ if = { limit = {
+  NOT = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_started }
+  NOT = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_settled }
+  var:ywc_v03_active_arc_count < 3
+  var:ywc_v03_visible_task_count < 6 }
+  set_variable = { name = ywc_v03_shu_v03_shu_welfare_granary_started value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = 1 }
+  change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  ywc_shu_granary_capture_cost_base = yes
+ }
+}
+
+# One-week revenue snapshot (yearly_gross_income / 52), clamped. This is the
+# standing state provision the granary line can actually draw down; it is never
+# factory capital.
+ywc_shu_granary_capture_cost_base = {
+if = { limit = { NOT = { has_variable = ywc_shu_granary_cost_captured } }
+ set_variable = { name = ywc_shu_granary_cost value = yearly_gross_income }
+ change_variable = { name = ywc_shu_granary_cost divide = 52 }
+ clamp_variable = { name = ywc_shu_granary_cost min = 100 max = 1000000000 }
+ set_variable = { name = ywc_shu_granary_cost_captured value = 1 }
+}
+}
+
+ywc_shu_granary_open_once = {
+if = { limit = { ywc_shu_v03_granary_open = yes NOT = { has_variable = ywc_shu_granary_stage } }
+ set_variable = { name = ywc_shu_granary_stage value = 1200 }
+ set_variable = { name = ywc_shu_granary_phase value = 1 }
+ set_variable = { name = ywc_shu_granary_pending_event value = 1200 }
+}
+if = { limit = { ywc_shu_v03_granary_open = yes NOT = { has_variable = ywc_shu_granary_pilot } }
+ every_scope_state = {
+  limit = { owner = ROOT ROOT = { NOT = { has_variable = ywc_shu_granary_pilot } } }
+  ROOT = { set_variable = { name = ywc_shu_granary_pilot value = PREV } }
+ }
+}
+}
+
+# A real purchase only when the actual reserve allows it; the stale flag is
+# removed after each use so every option re-checks affordability.
+ywc_shu_granary_buy_grain_once = {
+if = { limit = { ywc_shu_v03_granary_open = yes NOT = { has_variable = ywc_shu_granary_bought_used } }
+ set_variable = { name = ywc_shu_granary_bought_used value = 1 days = 1 }
+ if = { limit = { gold_reserves >= { value = var:ywc_shu_granary_cost multiply = 0.5 } }
+  add_treasury = { value = var:ywc_shu_granary_cost multiply = -0.5 }
+  set_variable = { name = ywc_shu_granary_purchased value = 1 }
+ }
+ remove_variable = ywc_shu_granary_bought_used
+}
+}
+
+# Real hiring: only when an employed administration job pool exists in the
+# pilot state can clerks actually be added to it.
+ywc_shu_granary_hire_clerks_once = {
+if = { limit = { ywc_shu_v03_granary_open = yes NOT = { has_variable = ywc_shu_granary_hired_used } }
+ set_variable = { name = ywc_shu_granary_hired_used value = 1 days = 1 }
+ if = { limit = { ywc_shu_v03_granary_pilot_admin = yes }
+  random_scope_state = {
+   limit = { state_region = var:ywc_shu_granary_pilot owner = ROOT }
+   add_building_workers = { building = building_government_administration workers = 2000 }
+  }
+  set_variable = { name = ywc_shu_granary_hired value = 1 }
+ }
+ remove_variable = ywc_shu_granary_hired_used
+}
+}
+
+ywc_shu_granary_enact_relief_once = {
+if = { limit = { ywc_shu_v03_granary_open = yes NOT = { has_variable = ywc_shu_granary_relief_used } }
+ set_variable = { name = ywc_shu_granary_relief_used value = 1 days = 1 }
+ if = { limit = { NOT = { has_law = law_type:law_poor_laws } }
+  add_enact_modifier = ywc_granary_relief_push
+ }
+ set_variable = { name = ywc_shu_granary_relief_reform value = 1 }
+ remove_variable = ywc_shu_granary_relief_used
+}
+}
+
+# Six real calendar months of verified provisioning, interrupted by any real
+# duty loss. Same scalar calendar as the workshop observation.
+ywc_shu_granary_start_review = {
+if = { limit = { ywc_shu_v03_granary_open = yes }
+ set_variable = { name = ywc_shu_granary_review_running value = 1 }
+ set_variable = { name = ywc_shu_granary_review_streak value = 0 }
+ set_variable = { name = ywc_shu_granary_review_ticked value = 1 days = 1 }
+ set_variable = { name = ywc_shu_granary_review_month value = ywc_nmg_current_calendar_month }
+ remove_variable = ywc_shu_granary_review_mature
+ remove_variable = ywc_shu_granary_review_interrupted
+}
+}
+
+ywc_shu_granary_track_review = {
+if = { limit = { ywc_shu_v03_granary_open = yes var:ywc_shu_granary_stage = 1205 has_variable = ywc_shu_granary_review_running }
+ if = { limit = { ywc_shu_v03_granary_current_broken = yes }
+  set_variable = { name = ywc_shu_granary_review_streak value = 0 }
+  remove_variable = ywc_shu_granary_review_mature
+  remove_variable = ywc_shu_granary_review_running
+  set_variable = { name = ywc_shu_granary_review_interrupted value = 1 }
+ }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_granary_review_ticked } }
+  set_variable = { name = ywc_shu_granary_review_ticked value = 1 days = 1 }
+  if = { limit = { NOT = { has_variable = ywc_shu_granary_review_month } }
+   set_variable = { name = ywc_shu_granary_review_month value = ywc_nmg_current_calendar_month }
+  }
+  if = { limit = { NOT = { has_variable = ywc_shu_granary_review_mature } NOT = { var:ywc_shu_granary_review_month = ywc_nmg_current_calendar_month } }
+   set_variable = { name = ywc_shu_granary_review_month value = ywc_nmg_current_calendar_month }
+   change_variable = { name = ywc_shu_granary_review_streak add = 1 }
+   if = { limit = { var:ywc_shu_granary_review_streak >= 6 }
+    set_variable = { name = ywc_shu_granary_review_mature value = 1 }
+    remove_variable = ywc_shu_granary_review_running
+   }
+  }
+ }
+}
+}
+
+ywc_shu_granary_close_full = {
+if = { limit = { ywc_shu_v03_granary_close_full_ready = yes }
+ set_variable = { name = ywc_shu_granary_outcome value = 1 }
+ ywc_v03_release_arc_shu_v03_shu_welfare_granary = yes
+}
+}
+
+ywc_shu_granary_close_limited = {
+if = { limit = { ywc_shu_v03_granary_close_limited_ready = yes }
+ set_variable = { name = ywc_shu_granary_outcome value = 2 }
+ ywc_v03_release_arc_shu_v03_shu_welfare_granary = yes
+}
+}
+
+ywc_shu_granary_close_setback = {
+if = { limit = { ywc_shu_v03_granary_close_setback_ready = yes }
+ set_variable = { name = ywc_shu_granary_outcome value = 3 }
+ ywc_v03_release_arc_shu_v03_shu_welfare_granary = yes
+}
+}
+
+ywc_v03_release_arc_shu_v03_shu_welfare_granary = {
+if = { limit = {
+ has_variable = ywc_v03_shu_v03_shu_welfare_granary_started
+ NOT = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_settled }
+ has_variable = ywc_shu_granary_outcome
+ var:ywc_shu_granary_outcome > 0 }
+ set_variable = { name = ywc_v03_shu_v03_shu_welfare_granary_outcome value = var:ywc_shu_granary_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_welfare_granary_settled value = 1 }
+ remove_variable = ywc_shu_granary_pending_event
+ remove_variable = ywc_shu_granary_review_running
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+}
+}
+
+ywc_shu_granary_close_withdrawn = {
+if = { limit = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_started NOT = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_settled } }
+ set_variable = { name = ywc_shu_granary_withdrawn value = 1 }
+ if = { limit = { NOT = { has_variable = ywc_shu_granary_outcome } } set_variable = { name = ywc_shu_granary_outcome value = 4 } }
+ set_variable = { name = ywc_v03_shu_v03_shu_welfare_granary_outcome value = var:ywc_shu_granary_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_welfare_granary_settled value = 1 }
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ remove_variable = ywc_shu_granary_pending_event
+}
+}
+
+ywc_v03_claim_arc_shu_v03_shu_commonwealth_obligations = {
+ ywc_v03_initialize_country = yes
+ if = { limit = {
+  NOT = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_started }
+  NOT = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_settled }
+  var:ywc_v03_active_arc_count < 3
+  var:ywc_v03_visible_task_count < 6 }
+  set_variable = { name = ywc_v03_shu_v03_shu_commonwealth_obligations_started value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = 1 }
+  change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  ywc_shu_oblig_capture_cost_base = yes
+ }
+}
+
+ywc_shu_oblig_capture_cost_base = {
+if = { limit = { NOT = { has_variable = ywc_shu_oblig_cost_captured } }
+ set_variable = { name = ywc_shu_oblig_cost value = yearly_gross_income }
+ change_variable = { name = ywc_shu_oblig_cost divide = 52 }
+ clamp_variable = { name = ywc_shu_oblig_cost min = 100 max = 1000000000 }
+ set_variable = { name = ywc_shu_oblig_cost_captured value = 1 }
+}
+}
+
+ywc_shu_oblig_open_once = {
+if = { limit = { ywc_shu_v03_oblig_open = yes NOT = { has_variable = ywc_shu_oblig_stage } }
+ set_variable = { name = ywc_shu_oblig_stage value = 1210 }
+ set_variable = { name = ywc_shu_oblig_phase value = 1 }
+ set_variable = { name = ywc_shu_oblig_pending_event value = 1210 }
+}
+}
+
+# A real subsidy instalment: paid only if the reserve actually holds it.
+ywc_shu_oblig_pay_subsidy_once = {
+if = { limit = { ywc_shu_v03_oblig_open = yes NOT = { has_variable = ywc_shu_oblig_paid_used } }
+ set_variable = { name = ywc_shu_oblig_paid_used value = 1 days = 1 }
+ if = { limit = { gold_reserves >= { value = var:ywc_shu_oblig_cost multiply = 0.5 } net_fixed_income >= 0 }
+  add_treasury = { value = var:ywc_shu_oblig_cost multiply = -0.5 }
+  set_variable = { name = ywc_shu_oblig_paid value = 1 }
+ }
+ remove_variable = ywc_shu_oblig_paid_used
+}
+}
+
+# Census of which connected partners actually exist and how they answer.
+ywc_shu_oblig_count_partners_once = {
+if = { limit = { ywc_shu_v03_oblig_open = yes NOT = { has_variable = ywc_shu_oblig_counted } }
+ set_variable = { name = ywc_shu_oblig_counted value = 1 }
+ set_variable = { name = ywc_shu_oblig_partners value = 0 }
+ if = { limit = { exists = c:JHG c:JHG = { is_country_alive = yes } } change_variable = { name = ywc_shu_oblig_partners add = 1 } }
+ if = { limit = { exists = c:KOR c:KOR = { is_country_alive = yes } } change_variable = { name = ywc_shu_oblig_partners add = 1 } }
+ if = { limit = { exists = c:DMG c:DMG = { is_country_alive = yes } } change_variable = { name = ywc_shu_oblig_partners add = 1 } }
+ if = { limit = { exists = c:MGL c:MGL = { is_country_alive = yes } } change_variable = { name = ywc_shu_oblig_partners add = 1 } }
+}
+}
+
+ywc_shu_oblig_enact_treaty_once = {
+if = { limit = { ywc_shu_v03_oblig_open = yes NOT = { has_variable = ywc_shu_oblig_treaty_used } }
+ set_variable = { name = ywc_shu_oblig_treaty_used value = 1 days = 1 }
+ set_variable = { name = ywc_shu_oblig_treaty value = 1 }
+ remove_variable = ywc_shu_oblig_treaty_used
+}
+}
+
+# Twelve real calendar months of unchanged terms, broken by any duty loss.
+ywc_shu_oblig_start_review = {
+if = { limit = { ywc_shu_v03_oblig_open = yes }
+ set_variable = { name = ywc_shu_oblig_review_running value = 1 }
+ set_variable = { name = ywc_shu_oblig_review_streak value = 0 }
+ set_variable = { name = ywc_shu_oblig_review_ticked value = 1 days = 1 }
+ set_variable = { name = ywc_shu_oblig_review_month value = ywc_nmg_current_calendar_month }
+ remove_variable = ywc_shu_oblig_review_mature
+ remove_variable = ywc_shu_oblig_review_interrupted
+}
+}
+
+ywc_shu_oblig_track_review = {
+if = { limit = { ywc_shu_v03_oblig_open = yes var:ywc_shu_oblig_stage = 1215 has_variable = ywc_shu_oblig_review_running }
+ if = { limit = { ywc_shu_v03_oblig_current_broken = yes }
+  set_variable = { name = ywc_shu_oblig_review_streak value = 0 }
+  remove_variable = ywc_shu_oblig_review_mature
+  remove_variable = ywc_shu_oblig_review_running
+  set_variable = { name = ywc_shu_oblig_review_interrupted value = 1 }
+ }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_oblig_review_ticked } }
+  set_variable = { name = ywc_shu_oblig_review_ticked value = 1 days = 1 }
+  if = { limit = { NOT = { has_variable = ywc_shu_oblig_review_month } }
+   set_variable = { name = ywc_shu_oblig_review_month value = ywc_nmg_current_calendar_month }
+  }
+  if = { limit = { NOT = { has_variable = ywc_shu_oblig_review_mature } NOT = { var:ywc_shu_oblig_review_month = ywc_nmg_current_calendar_month } }
+   set_variable = { name = ywc_shu_oblig_review_month value = ywc_nmg_current_calendar_month }
+   change_variable = { name = ywc_shu_oblig_review_streak add = 1 }
+   if = { limit = { var:ywc_shu_oblig_review_streak >= 12 }
+    set_variable = { name = ywc_shu_oblig_review_mature value = 1 }
+    remove_variable = ywc_shu_oblig_review_running
+   }
+  }
+ }
+}
+}
+
+ywc_shu_oblig_close_full = {
+if = { limit = { ywc_shu_v03_oblig_close_full_ready = yes }
+ set_variable = { name = ywc_shu_oblig_outcome value = 1 }
+ ywc_v03_release_arc_shu_v03_shu_commonwealth_obligations = yes
+}
+}
+
+ywc_shu_oblig_close_limited = {
+if = { limit = { ywc_shu_v03_oblig_close_limited_ready = yes }
+ set_variable = { name = ywc_shu_oblig_outcome value = 2 }
+ ywc_v03_release_arc_shu_v03_shu_commonwealth_obligations = yes
+}
+}
+
+ywc_shu_oblig_close_setback = {
+if = { limit = { ywc_shu_v03_oblig_close_setback_ready = yes }
+ set_variable = { name = ywc_shu_oblig_outcome value = 3 }
+ ywc_v03_release_arc_shu_v03_shu_commonwealth_obligations = yes
+}
+}
+
+ywc_v03_release_arc_shu_v03_shu_commonwealth_obligations = {
+if = { limit = {
+ has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_started
+ NOT = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_settled }
+ has_variable = ywc_shu_oblig_outcome
+ var:ywc_shu_oblig_outcome > 0 }
+ set_variable = { name = ywc_v03_shu_v03_shu_commonwealth_obligations_outcome value = var:ywc_shu_oblig_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_commonwealth_obligations_settled value = 1 }
+ remove_variable = ywc_shu_oblig_pending_event
+ remove_variable = ywc_shu_oblig_review_running
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+}
+}
+
+ywc_shu_oblig_close_withdrawn = {
+if = { limit = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_started NOT = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_settled } }
+ set_variable = { name = ywc_shu_oblig_withdrawn value = 1 }
+ if = { limit = { NOT = { has_variable = ywc_shu_oblig_outcome } } set_variable = { name = ywc_shu_oblig_outcome value = 4 } }
+ set_variable = { name = ywc_v03_shu_v03_shu_commonwealth_obligations_outcome value = var:ywc_shu_oblig_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_commonwealth_obligations_settled value = 1 }
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ remove_variable = ywc_shu_oblig_pending_event
+}
+}
+
+ywc_v03_claim_arc_shu_v03_shu_state_resilience = {
+ ywc_v03_initialize_country = yes
+ if = { limit = {
+  NOT = { has_variable = ywc_v03_shu_v03_shu_state_resilience_started }
+  NOT = { has_variable = ywc_v03_shu_v03_shu_state_resilience_settled }
+  var:ywc_v03_active_arc_count < 3
+  var:ywc_v03_visible_task_count < 6 }
+  set_variable = { name = ywc_v03_shu_v03_shu_state_resilience_started value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = 1 }
+  change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  ywc_shu_resil_capture_cost_base = yes
+ }
+}
+
+ywc_shu_resil_capture_cost_base = {
+if = { limit = { NOT = { has_variable = ywc_shu_resil_cost_captured } }
+ set_variable = { name = ywc_shu_resil_cost value = yearly_gross_income }
+ change_variable = { name = ywc_shu_resil_cost divide = 52 }
+ clamp_variable = { name = ywc_shu_resil_cost min = 100 max = 1000000000 }
+ set_variable = { name = ywc_shu_resil_cost_captured value = 1 }
+}
+}
+
+ywc_shu_resil_open_once = {
+if = { limit = { ywc_shu_v03_resil_open = yes NOT = { has_variable = ywc_shu_resil_stage } }
+ set_variable = { name = ywc_shu_resil_stage value = 1220 }
+ set_variable = { name = ywc_shu_resil_phase value = 1 }
+ set_variable = { name = ywc_shu_resil_pending_event value = 1220 }
+}
+# Ledger reconciliation of the eight earlier arcs, exactly as their shared
+# outcome variables stand right now.
+if = { limit = { ywc_shu_v03_resil_open = yes NOT = { has_variable = ywc_shu_resil_ledgered } }
+ set_variable = { name = ywc_shu_resil_ledgered value = 1 }
+ set_variable = { name = ywc_shu_resil_score value = 0 }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_fiscal_register_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_service_compact_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_service_compact_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_port_treasury_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_port_treasury_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_provincial_contract_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_provincial_contract_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_rural_workshop_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_public_deliberation_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_welfare_granary_outcome } }
+ if = { limit = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_outcome } change_variable = { name = ywc_shu_resil_score add = var:ywc_v03_shu_v03_shu_commonwealth_obligations_outcome } }
+}
+}
+
+# Real emergency funding: drawn only if the reserve actually holds it, and the
+# real debt book is read at the same moment.
+ywc_shu_resil_fund_emergency_once = {
+if = { limit = { ywc_shu_v03_resil_open = yes NOT = { has_variable = ywc_shu_resil_funded_used } }
+ set_variable = { name = ywc_shu_resil_funded_used value = 1 days = 1 }
+ if = { limit = { gold_reserves >= { value = var:ywc_shu_resil_cost multiply = 0.5 } }
+  add_treasury = { value = var:ywc_shu_resil_cost multiply = -0.5 }
+  set_variable = { name = ywc_shu_resil_funded value = 1 }
+ }
+ if = { limit = { in_default = yes } set_variable = { name = ywc_shu_resil_default_seen value = 1 } }
+ remove_variable = ywc_shu_resil_funded_used
+}
+}
+
+ywc_shu_resil_enact_emergency_once = {
+if = { limit = { ywc_shu_v03_resil_open = yes NOT = { has_variable = ywc_shu_resil_enacted_used } }
+ set_variable = { name = ywc_shu_resil_enacted_used value = 1 days = 1 }
+ set_variable = { name = ywc_shu_resil_enacted value = 1 }
+ remove_variable = ywc_shu_resil_enacted_used
+}
+}
+
+# Four real calendar months of standing readiness.
+ywc_shu_resil_start_review = {
+if = { limit = { ywc_shu_v03_resil_open = yes }
+ set_variable = { name = ywc_shu_resil_review_running value = 1 }
+ set_variable = { name = ywc_shu_resil_review_streak value = 0 }
+ set_variable = { name = ywc_shu_resil_review_ticked value = 1 days = 1 }
+ set_variable = { name = ywc_shu_resil_review_month value = ywc_nmg_current_calendar_month }
+ remove_variable = ywc_shu_resil_review_mature
+ remove_variable = ywc_shu_resil_review_interrupted
+}
+}
+
+ywc_shu_resil_track_review = {
+if = { limit = { ywc_shu_v03_resil_open = yes var:ywc_shu_resil_stage = 1223 has_variable = ywc_shu_resil_review_running }
+ if = { limit = { ywc_shu_v03_resil_current_broken = yes }
+  set_variable = { name = ywc_shu_resil_review_streak value = 0 }
+  remove_variable = ywc_shu_resil_review_mature
+  remove_variable = ywc_shu_resil_review_running
+  set_variable = { name = ywc_shu_resil_review_interrupted value = 1 }
+ }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_resil_review_ticked } }
+  set_variable = { name = ywc_shu_resil_review_ticked value = 1 days = 1 }
+  if = { limit = { NOT = { has_variable = ywc_shu_resil_review_month } }
+   set_variable = { name = ywc_shu_resil_review_month value = ywc_nmg_current_calendar_month }
+  }
+  if = { limit = { NOT = { has_variable = ywc_shu_resil_review_mature } NOT = { var:ywc_shu_resil_review_month = ywc_nmg_current_calendar_month } }
+   set_variable = { name = ywc_shu_resil_review_month value = ywc_nmg_current_calendar_month }
+   change_variable = { name = ywc_shu_resil_review_streak add = 1 }
+   if = { limit = { var:ywc_shu_resil_review_streak >= 4 }
+    set_variable = { name = ywc_shu_resil_review_mature value = 1 }
+    remove_variable = ywc_shu_resil_review_running
+   }
+  }
+ }
+}
+}
+
+ywc_shu_resil_close_full = {
+if = { limit = { ywc_shu_v03_resil_close_full_ready = yes }
+ set_variable = { name = ywc_shu_resil_outcome value = 1 }
+ ywc_v03_release_arc_shu_v03_shu_state_resilience = yes
+}
+}
+
+ywc_shu_resil_close_limited = {
+if = { limit = { ywc_shu_v03_resil_close_limited_ready = yes }
+ set_variable = { name = ywc_shu_resil_outcome value = 2 }
+ ywc_v03_release_arc_shu_v03_shu_state_resilience = yes
+}
+}
+
+ywc_shu_resil_close_setback = {
+if = { limit = { ywc_shu_v03_resil_close_setback_ready = yes }
+ set_variable = { name = ywc_shu_resil_outcome value = 3 }
+ ywc_v03_release_arc_shu_v03_shu_state_resilience = yes
+}
+}
+
+ywc_v03_release_arc_shu_v03_shu_state_resilience = {
+if = { limit = {
+ has_variable = ywc_v03_shu_v03_shu_state_resilience_started
+ NOT = { has_variable = ywc_v03_shu_v03_shu_state_resilience_settled }
+ has_variable = ywc_shu_resil_outcome
+ var:ywc_shu_resil_outcome > 0 }
+ set_variable = { name = ywc_v03_shu_v03_shu_state_resilience_outcome value = var:ywc_shu_resil_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_state_resilience_settled value = 1 }
+ remove_variable = ywc_shu_resil_pending_event
+ remove_variable = ywc_shu_resil_review_running
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+}
+}
+
+ywc_shu_resil_close_withdrawn = {
+if = { limit = { has_variable = ywc_v03_shu_v03_shu_state_resilience_started NOT = { has_variable = ywc_v03_shu_v03_shu_state_resilience_settled } }
+ set_variable = { name = ywc_shu_resil_withdrawn value = 1 }
+ if = { limit = { NOT = { has_variable = ywc_shu_resil_outcome } } set_variable = { name = ywc_shu_resil_outcome value = 4 } }
+ set_variable = { name = ywc_v03_shu_v03_shu_state_resilience_outcome value = var:ywc_shu_resil_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_state_resilience_settled value = 1 }
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ remove_variable = ywc_shu_resil_pending_event
 }
 }

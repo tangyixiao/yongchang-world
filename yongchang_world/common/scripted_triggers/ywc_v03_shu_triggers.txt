@@ -1,4 +1,4 @@
-﻿# Local v0.3 SHU trigger vocabulary, limited to vanilla-supported country/state scopes.
+# Local v0.3 SHU trigger vocabulary, limited to vanilla-supported country/state scopes.
 ywc_shu_v03_has_pilot_state = {
 	OR = {
 		AND = { var:ywc_shu_v03_pilot_state = 1 any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN } }
@@ -2150,4 +2150,405 @@ ywc_shu_v03_workshop_fees_current = yes
 ywc_shu_v03_workshop_identity_earned = yes
 ywc_shu_v03_workshop_common_current = yes
 OR = { ywc_shu_v03_workshop_at_1116 = yes ywc_shu_v03_workshop_at_1117 = yes }
+}
+
+ywc_shu_v03_granary_open = {
+has_variable = ywc_v03_shu_v03_shu_welfare_granary_started
+NOT = { has_variable = ywc_v03_shu_v03_shu_welfare_granary_settled }
+NOT = { has_variable = ywc_shu_granary_outcome }
+NOT = { has_variable = ywc_shu_granary_withdrawn }
+}
+
+ywc_shu_v03_granary_phase1 = { var:ywc_shu_granary_phase = 1 }
+ywc_shu_v03_granary_phase2 = { var:ywc_shu_granary_phase = 2 }
+
+ywc_shu_v03_granary_at_1200 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1200 }
+ywc_shu_v03_granary_at_1201 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1201 }
+ywc_shu_v03_granary_at_1202 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1202 }
+ywc_shu_v03_granary_at_1203 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1203 }
+ywc_shu_v03_granary_at_1204 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1204 }
+ywc_shu_v03_granary_at_1205 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1205 }
+ywc_shu_v03_granary_at_1206 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1206 }
+ywc_shu_v03_granary_at_1207 = { has_variable = ywc_shu_granary_stage var:ywc_shu_granary_stage = 1207 }
+
+ywc_shu_v03_granary_finance_safe = {
+NOT = { in_default = yes }
+NOT = { has_modifier = declared_bankruptcy }
+gold_reserves >= 0
+}
+
+ywc_shu_v03_granary_pilot_owned = {
+has_variable = ywc_shu_granary_pilot
+any_scope_state = { state_region = var:ywc_shu_granary_pilot owner = ROOT }
+}
+
+# The pilot state must keep a real administration site and its workers.
+ywc_shu_v03_granary_pilot_admin = {
+has_variable = ywc_shu_granary_pilot
+any_scope_state = {
+ state_region = var:ywc_shu_granary_pilot
+ owner = ROOT
+ any_scope_building = { is_building_type = building_government_administration level >= 1 }
+}
+}
+
+# Mode 1 granary network: grain bought in, food industries staffed.
+ywc_shu_v03_granary_mode1_current = {
+var:ywc_shu_granary_mode = 1
+has_variable = ywc_shu_granary_purchased
+market ?= { mg:grain = { market_goods_price < base_price } }
+}
+
+ywc_shu_v03_granary_mode1_full = { var:ywc_shu_granary_mode = 1 }
+
+# Mode 2 statutory relief: real poor-law enactment under way or settled.
+ywc_shu_v03_granary_mode2_current = {
+var:ywc_shu_granary_mode = 2
+OR = {
+ has_variable = ywc_shu_granary_relief_reform
+ has_law = law_type:law_poor_laws
+}
+}
+
+ywc_shu_v03_granary_mode2_full = { var:ywc_shu_granary_mode = 2 }
+
+# Mode 3 austerity: standing provisions shed, treasury actually held.
+ywc_shu_v03_granary_mode3_current = {
+var:ywc_shu_granary_mode = 3
+NOT = { has_variable = ywc_shu_granary_purchased }
+NOT = { has_variable = ywc_shu_granary_relief_reform }
+gold_reserves >= 100
+}
+
+ywc_shu_v03_granary_mode3_full = { var:ywc_shu_granary_mode = 3 }
+
+ywc_shu_v03_granary_mode_current = {
+OR = {
+ AND = { var:ywc_shu_granary_mode = 1 ywc_shu_v03_granary_mode1_current = yes }
+ AND = { var:ywc_shu_granary_mode = 2 ywc_shu_v03_granary_mode2_current = yes }
+ AND = { var:ywc_shu_granary_mode = 3 ywc_shu_v03_granary_mode3_current = yes }
+}
+}
+
+ywc_shu_v03_granary_target_current = {
+OR = {
+ var:ywc_shu_granary_target = 1
+ var:ywc_shu_granary_target = 2
+ var:ywc_shu_granary_target = 3
+}
+}
+
+ywc_shu_v03_granary_full_terminal = {
+has_variable = ywc_shu_granary_mode
+var:ywc_shu_granary_mode = 1
+has_variable = ywc_shu_granary_target
+var:ywc_shu_granary_target = 1
+has_variable = ywc_shu_granary_hired
+}
+
+ywc_shu_v03_granary_limited_terminal = {
+has_variable = ywc_shu_granary_mode
+var:ywc_shu_granary_mode = 2
+has_variable = ywc_shu_granary_target
+var:ywc_shu_granary_target = 2
+}
+
+ywc_shu_v03_granary_setback_available = {
+has_variable = ywc_shu_granary_review_mature
+var:ywc_shu_granary_review_mature = 1
+var:ywc_shu_granary_review_streak >= 6
+NOT = { has_variable = ywc_shu_granary_review_interrupted }
+}
+
+ywc_shu_v03_granary_current_broken = {
+OR = {
+ is_at_war = yes
+ NOT = { ywc_shu_v03_granary_finance_safe = yes }
+ NOT = { ywc_shu_v03_granary_pilot_owned = yes }
+ NOT = { ywc_shu_v03_granary_target_current = yes }
+ NOT = { ywc_shu_v03_granary_mode_current = yes }
+}
+}
+
+ywc_shu_v03_granary_close_full_ready = {
+ywc_shu_v03_granary_at_1207 = yes
+ywc_shu_v03_granary_full_terminal = yes
+NOT = { has_variable = ywc_shu_granary_outcome }
+ywc_shu_v03_granary_finance_safe = yes
+ywc_shu_v03_granary_pilot_owned = yes
+}
+
+ywc_shu_v03_granary_close_limited_ready = {
+ywc_shu_v03_granary_at_1207 = yes
+ywc_shu_v03_granary_limited_terminal = yes
+NOT = { has_variable = ywc_shu_granary_outcome }
+ywc_shu_v03_granary_pilot_owned = yes
+}
+
+ywc_shu_v03_granary_close_setback_ready = {
+ywc_shu_v03_granary_at_1207 = yes
+ywc_shu_v03_granary_setback_available = yes
+NOT = { has_variable = ywc_shu_granary_outcome }
+NOT = { ywc_shu_v03_granary_mode_current = yes }
+}
+
+ywc_shu_v03_oblig_open = {
+has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_started
+NOT = { has_variable = ywc_v03_shu_v03_shu_commonwealth_obligations_settled }
+NOT = { has_variable = ywc_shu_oblig_outcome }
+NOT = { has_variable = ywc_shu_oblig_withdrawn }
+}
+
+ywc_shu_v03_oblig_phase1 = { var:ywc_shu_oblig_phase = 1 }
+ywc_shu_v03_oblig_phase2 = { var:ywc_shu_oblig_phase = 2 }
+
+ywc_shu_v03_oblig_at_1210 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1210 }
+ywc_shu_v03_oblig_at_1211 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1211 }
+ywc_shu_v03_oblig_at_1212 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1212 }
+ywc_shu_v03_oblig_at_1213 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1213 }
+ywc_shu_v03_oblig_at_1214 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1214 }
+ywc_shu_v03_oblig_at_1215 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1215 }
+ywc_shu_v03_oblig_at_1216 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1216 }
+ywc_shu_v03_oblig_at_1217 = { has_variable = ywc_shu_oblig_stage var:ywc_shu_oblig_stage = 1217 }
+
+ywc_shu_v03_oblig_finance_safe = {
+NOT = { in_default = yes }
+NOT = { has_modifier = declared_bankruptcy }
+gold_reserves >= 0
+}
+
+# At least two of the four connected partners still exist; the order has a
+# real counterparty to negotiate with.
+ywc_shu_v03_oblig_partners_exist = {
+has_variable = ywc_shu_oblig_partners
+var:ywc_shu_oblig_partners >= 2
+}
+
+# Mode 1 bounded suzerainty: real subject partners or defence pacts exist and
+# the subsidy is actually funded.
+ywc_shu_v03_oblig_mode1_current = {
+var:ywc_shu_oblig_mode = 1
+OR = {
+ any_country = { is_subject_of = ROOT }
+ any_country = { has_diplomatic_pact = { who = ROOT pact = defensive_pact } }
+}
+has_variable = ywc_shu_oblig_paid
+}
+
+ywc_shu_v03_oblig_mode1_full = { var:ywc_shu_oblig_mode = 1 }
+
+# Mode 2 equal cooperation: treaty signed, no subsidy dependence.
+ywc_shu_v03_oblig_mode2_current = {
+var:ywc_shu_oblig_mode = 2
+has_variable = ywc_shu_oblig_treaty
+NOT = { has_variable = ywc_shu_oblig_paid }
+}
+
+ywc_shu_v03_oblig_mode2_full = { var:ywc_shu_oblig_mode = 2 }
+
+# Mode 3 scaled-down commitments: reserve actually held, subsidy lapsed.
+ywc_shu_v03_oblig_mode3_current = {
+var:ywc_shu_oblig_mode = 3
+NOT = { has_variable = ywc_shu_oblig_paid }
+gold_reserves >= 100
+}
+
+ywc_shu_v03_oblig_mode3_full = { var:ywc_shu_oblig_mode = 3 }
+
+ywc_shu_v03_oblig_mode_current = {
+OR = {
+ AND = { var:ywc_shu_oblig_mode = 1 ywc_shu_v03_oblig_mode1_current = yes }
+ AND = { var:ywc_shu_oblig_mode = 2 ywc_shu_v03_oblig_mode2_current = yes }
+ AND = { var:ywc_shu_oblig_mode = 3 ywc_shu_v03_oblig_mode3_current = yes }
+}
+}
+
+ywc_shu_v03_oblig_target_current = {
+OR = {
+ var:ywc_shu_oblig_target = 1
+ var:ywc_shu_oblig_target = 2
+ var:ywc_shu_oblig_target = 3
+}
+}
+
+ywc_shu_v03_oblig_full_terminal = {
+has_variable = ywc_shu_oblig_mode
+var:ywc_shu_oblig_mode = 1
+has_variable = ywc_shu_oblig_target
+var:ywc_shu_oblig_target = 1
+ywc_shu_v03_oblig_partners_exist = yes
+}
+
+ywc_shu_v03_oblig_limited_terminal = {
+has_variable = ywc_shu_oblig_mode
+var:ywc_shu_oblig_mode = 2
+has_variable = ywc_shu_oblig_target
+var:ywc_shu_oblig_target = 2
+}
+
+ywc_shu_v03_oblig_setback_available = {
+has_variable = ywc_shu_oblig_review_mature
+var:ywc_shu_oblig_review_mature = 1
+var:ywc_shu_oblig_review_streak >= 12
+NOT = { has_variable = ywc_shu_oblig_review_interrupted }
+}
+
+ywc_shu_v03_oblig_current_broken = {
+OR = {
+ is_at_war = yes
+ NOT = { ywc_shu_v03_oblig_finance_safe = yes }
+ NOT = { ywc_shu_v03_oblig_target_current = yes }
+ NOT = { ywc_shu_v03_oblig_mode_current = yes }
+ NOT = { ywc_shu_v03_oblig_partners_exist = yes }
+}
+}
+
+ywc_shu_v03_oblig_close_full_ready = {
+ywc_shu_v03_oblig_at_1217 = yes
+ywc_shu_v03_oblig_full_terminal = yes
+NOT = { has_variable = ywc_shu_oblig_outcome }
+ywc_shu_v03_oblig_finance_safe = yes
+}
+
+ywc_shu_v03_oblig_close_limited_ready = {
+ywc_shu_v03_oblig_at_1217 = yes
+ywc_shu_v03_oblig_limited_terminal = yes
+NOT = { has_variable = ywc_shu_oblig_outcome }
+}
+
+ywc_shu_v03_oblig_close_setback_ready = {
+ywc_shu_v03_oblig_at_1217 = yes
+ywc_shu_v03_oblig_setback_available = yes
+NOT = { has_variable = ywc_shu_oblig_outcome }
+NOT = { ywc_shu_v03_oblig_mode_current = yes }
+}
+
+ywc_shu_v03_resil_open = {
+has_variable = ywc_v03_shu_v03_shu_state_resilience_started
+NOT = { has_variable = ywc_v03_shu_v03_shu_state_resilience_settled }
+NOT = { has_variable = ywc_shu_resil_outcome }
+NOT = { has_variable = ywc_shu_resil_withdrawn }
+}
+
+ywc_shu_v03_resil_phase1 = { var:ywc_shu_resil_phase = 1 }
+ywc_shu_v03_resil_phase2 = { var:ywc_shu_resil_phase = 2 }
+
+ywc_shu_v03_resil_at_1220 = { has_variable = ywc_shu_resil_stage var:ywc_shu_resil_stage = 1220 }
+ywc_shu_v03_resil_at_1221 = { has_variable = ywc_shu_resil_stage var:ywc_shu_resil_stage = 1221 }
+ywc_shu_v03_resil_at_1222 = { has_variable = ywc_shu_resil_stage var:ywc_shu_resil_stage = 1222 }
+ywc_shu_v03_resil_at_1223 = { has_variable = ywc_shu_resil_stage var:ywc_shu_resil_stage = 1223 }
+ywc_shu_v03_resil_at_1224 = { has_variable = ywc_shu_resil_stage var:ywc_shu_resil_stage = 1224 }
+ywc_shu_v03_resil_at_1225 = { has_variable = ywc_shu_resil_stage var:ywc_shu_resil_stage = 1225 }
+
+ywc_shu_v03_resil_finance_safe = {
+NOT = { in_default = yes }
+NOT = { has_modifier = declared_bankruptcy }
+gold_reserves >= 0
+}
+
+# Mode 1 lawful emergency authority: enacted charter plus funded reserve.
+ywc_shu_v03_resil_mode1_current = {
+var:ywc_shu_resil_mode = 1
+has_variable = ywc_shu_resil_enacted
+has_variable = ywc_shu_resil_funded
+}
+
+ywc_shu_v03_resil_mode1_full = { var:ywc_shu_resil_mode = 1 }
+
+# Mode 2 shared local burden: administration keeps real staff; emergency
+# money is NOT the state's alone.
+ywc_shu_v03_resil_mode2_current = {
+var:ywc_shu_resil_mode = 2
+has_variable = ywc_shu_resil_funded
+ywc_shu_v03_resil_admin_breadth = yes
+NOT = { has_variable = ywc_shu_resil_enacted }
+}
+
+ywc_shu_v03_resil_mode2_full = { var:ywc_shu_resil_mode = 2 }
+
+# Mode 3 conservative retrenchment: reserve held, no new instruments.
+ywc_shu_v03_resil_mode3_current = {
+var:ywc_shu_resil_mode = 3
+NOT = { has_variable = ywc_shu_resil_funded }
+NOT = { has_variable = ywc_shu_resil_enacted }
+gold_reserves >= 100
+}
+
+ywc_shu_v03_resil_mode3_full = { var:ywc_shu_resil_mode = 3 }
+
+ywc_shu_v03_resil_mode_current = {
+OR = {
+ AND = { var:ywc_shu_resil_mode = 1 ywc_shu_v03_resil_mode1_current = yes }
+ AND = { var:ywc_shu_resil_mode = 2 ywc_shu_v03_resil_mode2_current = yes }
+ AND = { var:ywc_shu_resil_mode = 3 ywc_shu_v03_resil_mode3_current = yes }
+}
+}
+
+ywc_shu_v03_resil_admin_breadth = {
+bureaucracy >= 50
+}
+
+# The earlier order holds at least four settled positive outcomes.
+ywc_shu_v03_resil_score_ok = {
+has_variable = ywc_shu_resil_score
+var:ywc_shu_resil_score >= 4
+}
+
+ywc_shu_v03_resil_target_current = {
+OR = {
+ var:ywc_shu_resil_target = 1
+ var:ywc_shu_resil_target = 2
+ var:ywc_shu_resil_target = 3
+}
+}
+
+ywc_shu_v03_resil_full_terminal = {
+has_variable = ywc_shu_resil_mode
+var:ywc_shu_resil_mode = 1
+has_variable = ywc_shu_resil_target
+var:ywc_shu_resil_target = 1
+ywc_shu_v03_resil_score_ok = yes
+}
+
+ywc_shu_v03_resil_limited_terminal = {
+has_variable = ywc_shu_resil_mode
+var:ywc_shu_resil_mode = 2
+has_variable = ywc_shu_resil_target
+var:ywc_shu_resil_target = 2
+}
+
+ywc_shu_v03_resil_setback_available = {
+has_variable = ywc_shu_resil_review_mature
+var:ywc_shu_resil_review_mature = 1
+var:ywc_shu_resil_review_streak >= 4
+NOT = { has_variable = ywc_shu_resil_review_interrupted }
+}
+
+ywc_shu_v03_resil_current_broken = {
+OR = {
+ is_at_war = yes
+ NOT = { ywc_shu_v03_resil_finance_safe = yes }
+ NOT = { ywc_shu_v03_resil_target_current = yes }
+ NOT = { ywc_shu_v03_resil_mode_current = yes }
+}
+}
+
+ywc_shu_v03_resil_close_full_ready = {
+ywc_shu_v03_resil_at_1225 = yes
+ywc_shu_v03_resil_full_terminal = yes
+NOT = { has_variable = ywc_shu_resil_outcome }
+ywc_shu_v03_resil_finance_safe = yes
+}
+
+ywc_shu_v03_resil_close_limited_ready = {
+ywc_shu_v03_resil_at_1225 = yes
+ywc_shu_v03_resil_limited_terminal = yes
+NOT = { has_variable = ywc_shu_resil_outcome }
+}
+
+ywc_shu_v03_resil_close_setback_ready = {
+ywc_shu_v03_resil_at_1225 = yes
+ywc_shu_v03_resil_setback_available = yes
+NOT = { has_variable = ywc_shu_resil_outcome }
+NOT = { ywc_shu_v03_resil_mode_current = yes }
 }

@@ -6833,6 +6833,2465 @@
           }
         ]
       }
+    },
+    {
+      "slug": "v03_dmg_city_countryside",
+      "era": "late",
+      "participants": [
+        "马尼拉港商（议席与市籍）",
+        "内陆士绅（田亩与旧契）",
+        "谘议局书办（清丈与册籍）",
+        "原州港务官吏（税基与署务）",
+        "耕农与雇工（负担与生计）"
+      ],
+      "depends_on": [
+        "v03_dmg_common_subjects"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_dmg_city_countryside_charter",
+          "title": {
+            "zh": " JE——港坊与田亩的章制",
+            "en": " JE: Charter of Port and Field"
+          },
+          "desc": {
+            "zh": "从清丈到人手，把港市与内陆的分账变成可核查的公务。",
+            "en": "From survey to staffing: turn the port-inland split into an auditable public charge."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } ywc_dmg_city_finance_safe = yes } immediate = { ywc_v03_claim_arc_dmg_v03_dmg_v03_dmg_city_countryside = yes ywc_dmg_city_open_once = yes } on_fail = { ywc_dmg_city_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_dmg_city_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1200 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1200 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1201 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1201 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1202 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1202 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1203 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1203 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1204 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1204 } } } } }",
+          "goal": "{ has_variable = ywc_dmg_city_phase NOT = { has_variable = ywc_dmg_city_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_dmg_city_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_dmg_city_countryside_review",
+          "title": {
+            "zh": " JE——半年观察",
+            "en": " JE: The Half-Year Inspection"
+          },
+          "desc": {
+            "zh": "六个月的观察以真实月份计，战事或赖账会使之中断。",
+            "en": "Six real calendar months of review; war or default breaks it."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_dmg_city_phase var:ywc_dmg_city_phase = 2 NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } NOT = { has_journal_entry = ywc_je_v03_dmg_city_countryside_review } } possible = { c:DMG ?= this has_variable = ywc_dmg_city_phase var:ywc_dmg_city_phase = 2 NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } } immediate = { ywc_dmg_city_review_opened_once = yes } on_fail = { ywc_dmg_city_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_dmg_city_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1205 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1205 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1206 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1206 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_city_pending_event = 1207 } remove_variable = ywc_dmg_city_pending_event trigger_event = { id = ywc_dmg.1207 } } } } }",
+          "goal": "{ OR = { var:ywc_dmg_city_outcome = 1 var:ywc_dmg_city_outcome = 2 var:ywc_dmg_city_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_dmg_city_withdrawn var:ywc_dmg_city_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_dmg.1200",
+          "title": {
+            "zh": "港口与田亩的两本账",
+            "en": "Two Ledgers: Port and Field"
+          },
+          "desc": {
+            "zh": "马尼拉港市的商税连年上涨，内陆各省却仍按田亩纳粮。谘议局要求把两本账合成一部章制。",
+            "en": "Port customs in Manila climb year by year while inland provinces still tithe by field. The council demands one charter for both ledgers."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_charter NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1200 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1200 } set_variable = { name = ywc_dmg_city_last_event value = 1200 } }",
+          "options": [
+            {
+              "key": "port_weighted",
+              "label": {
+                "zh": "按商税定议席",
+                "en": "Weight seats by customs"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1200 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1201 } set_variable = { name = ywc_dmg_city_pending_event value = 1201 } } set_variable = { name = ywc_dmg_city_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先章制后费项；后续实付按半周收入计。",
+                "en": "Charter first, costs later; each later step pays half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "港市得势，内陆各省在谘议局声音变小。",
+                "en": "The port gains weight; inland provinces lose voice in the council."
+              }
+            },
+            {
+              "key": "field_weighted",
+              "label": {
+                "zh": "按田亩定议席",
+                "en": "Weight seats by land"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1200 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1201 } set_variable = { name = ywc_dmg_city_pending_event value = 1201 } } set_variable = { name = ywc_dmg_city_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先章制后费项。",
+                "en": "Same order: charter first, costs later."
+              },
+              "consequence_note": {
+                "zh": "内陆得势，港商扬言减市面以自保。",
+                "en": "Inland gains; port merchants threaten to shrink their markets."
+              }
+            },
+            {
+              "key": "dual_rolls",
+              "label": {
+                "zh": "两册分立",
+                "en": "Keep two rolls"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1200 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1201 } set_variable = { name = ywc_dmg_city_pending_event value = 1201 } } set_variable = { name = ywc_dmg_city_mode value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先章制后费项。",
+                "en": "Same order: charter first, costs later."
+              },
+              "consequence_note": {
+                "zh": "两册并立，争端推迟但不消失。",
+                "en": "Two rolls coexist; the quarrel is deferred, not settled."
+              }
+            },
+            {
+              "key": "wait_at_1200",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1200 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两本账仍各记各的。",
+                "en": "Defers one turn; the two ledgers stay separate."
+              }
+            },
+            {
+              "key": "withdraw_at_1200",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1200 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读当前港贸收入、城市就业与土地法，定议席口径；三条路共用一张地图。",
+            "en": "Reads customs income, urban employment and land law to set the seat rule; all three roads share one map."
+          },
+          "reads": [
+            "market_access",
+            "standard_of_living",
+            "net_fixed_income",
+            "ywc_dmg_city_finance_safe"
+          ],
+          "writes": [
+            "ywc_dmg_city_mode",
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1201",
+          "title": {
+            "zh": "港坊丈量的第一笔钱",
+            "en": "The Ward Survey's First Coin"
+          },
+          "desc": {
+            "zh": "章制要落地，先得把港坊人户与铺面清丈成册。书办报了价，库房等着批。",
+            "en": "A charter needs a census of port wards and shopfronts. The clerks name a price and the treasury waits."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_charter NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1201 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1201 } set_variable = { name = ywc_dmg_city_last_event value = 1201 } }",
+          "options": [
+            {
+              "key": "state_survey",
+              "label": {
+                "zh": "官办清丈",
+                "en": "A state survey"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1201 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1202 } set_variable = { name = ywc_dmg_city_pending_event value = 1202 } } ywc_dmg_city_pay_press_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入，库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "人户铺面入册，章制有了底册。",
+                "en": "Wards enter the rolls; the charter gains its base ledger."
+              },
+              "trigger": "{ ywc_dmg_city_at_1201 = yes ywc_dmg_city_finance_safe = yes }"
+            },
+            {
+              "key": "ward_self_report",
+              "label": {
+                "zh": "坊董自报",
+                "en": "Ward elders self-report"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1201 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1202 } set_variable = { name = ywc_dmg_city_pending_event value = 1202 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不直接出钱，但册子可信度打折。",
+                "en": "No direct outlay, but the rolls carry a discount on trust."
+              },
+              "consequence_note": {
+                "zh": "册子快成，漏口也多。",
+                "en": "Fast rolls, generous omissions."
+              }
+            },
+            {
+              "key": "wait_at_1201",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1201 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，册子仍缺。",
+                "en": "Defers one turn; the rolls stay thin."
+              }
+            },
+            {
+              "key": "withdraw_at_1201",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1201 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记，决定钱是否真的动；不见钱不动册。",
+            "en": "Reads finances and prior payment flags to decide whether the coin actually moves."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_dmg_city_press_paid"
+          ],
+          "writes": [
+            "ywc_dmg_city_press_paid",
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1202",
+          "title": {
+            "zh": "田亩上的旧契",
+            "en": "Old Deeds on the Land"
+          },
+          "desc": {
+            "zh": "章制要动土地税，旧契主人抬出祖例。新册与旧契摆上同一张案。",
+            "en": "The charter touches land tax; deed-holders cite ancestral precedent. New rolls and old deeds share one desk."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_charter NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1202 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1202 } set_variable = { name = ywc_dmg_city_last_event value = 1202 } }",
+          "options": [
+            {
+              "key": "tax_new_rolls",
+              "label": {
+                "zh": "依新册计税",
+                "en": "Tax by the new rolls"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1202 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1203 } set_variable = { name = ywc_dmg_city_pending_event value = 1203 } } ywc_dmg_city_classic_print_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入，库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "旧契让位于新册，士绅与港商各自记下一笔。",
+                "en": "Deeds yield to rolls; gentry and merchants each keep score."
+              },
+              "trigger": "{ ywc_dmg_city_at_1202 = yes ywc_dmg_city_finance_safe = yes }"
+            },
+            {
+              "key": "honor_old_deeds",
+              "label": {
+                "zh": "仍认旧契",
+                "en": "Honor the old deeds"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1202 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1203 } set_variable = { name = ywc_dmg_city_pending_event value = 1203 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不出钱，税基照旧。",
+                "en": "No outlay; the tax base stays as it was."
+              },
+              "consequence_note": {
+                "zh": "港市觉得吃亏，内陆松一口气。",
+                "en": "The port feels shortchanged; inland breathes easier."
+              }
+            },
+            {
+              "key": "wait_at_1202",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1202 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两案并悬。",
+                "en": "Defers one turn; both cases stay pending."
+              }
+            },
+            {
+              "key": "withdraw_at_1202",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1202 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 mode 与付费标记决定走向；不凭空改土地法条。",
+            "en": "Reads the chosen mode and payment flags; no land statute changes by decree."
+          },
+          "reads": [
+            "ywc_dmg_city_mode",
+            "ywc_dmg_city_press_paid",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_dmg_city_classic_paid",
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1203",
+          "title": {
+            "zh": "港坊署里的人手",
+            "en": "Hands for the Ward Offices"
+          },
+          "desc": {
+            "zh": "册子成了，署里却没人。科甲出身不肯去港坊，识字账房又进不了官署。",
+            "en": "The rolls are done but the offices are empty. Examination men refuse the wards; literate clerks cannot enter the bureaus."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_charter NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1203 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1203 } set_variable = { name = ywc_dmg_city_last_event value = 1203 } }",
+          "options": [
+            {
+              "key": "hire_ward_clerks",
+              "label": {
+                "zh": "实授港坊书办",
+                "en": "Fund real ward clerks"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1203 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1204 } set_variable = { name = ywc_dmg_city_pending_event value = 1204 } } ywc_dmg_city_pay_classroom_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并在城市中心添雇员；无款不生效。",
+                "en": "Pays half a weekly income and adds urban-center staff; inactive without funds."
+              },
+              "consequence_note": {
+                "zh": "港坊有了实任书办，章制开始咬合。",
+                "en": "Ward clerks take post; the charter begins to bite."
+              },
+              "trigger": "{ ywc_dmg_city_at_1203 = yes ywc_dmg_city_finance_safe = yes }"
+            },
+            {
+              "key": "borrow_port_hands",
+              "label": {
+                "zh": "借调港商账房",
+                "en": "Borrow merchant clerks"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1203 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1204 } set_variable = { name = ywc_dmg_city_pending_event value = 1204 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不发俸，账目随人情起落。",
+                "en": "No salary paid; the books rise and fall with goodwill."
+              },
+              "consequence_note": {
+                "zh": "省了俸银，添了人情账。",
+                "en": "Salaries saved, favors owed."
+              }
+            },
+            {
+              "key": "wait_at_1203",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1203 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，案头仍空。",
+                "en": "Defers one turn; the desks stay empty."
+              }
+            },
+            {
+              "key": "withdraw_at_1203",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1203 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读建筑雇员与库房能否实付，再给员额；不见钱不给编。",
+            "en": "Reads building staffing and finances before any hire is paid; no phantom posts."
+          },
+          "reads": [
+            "bureaucracy",
+            "occupancy",
+            "gold_reserves",
+            "ywc_dmg_city_classroom_paid"
+          ],
+          "writes": [
+            "ywc_dmg_city_classroom_paid",
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1204",
+          "title": {
+            "zh": "半年之期的头一册",
+            "en": "The Half-Year's First Ledger"
+          },
+          "desc": {
+            "zh": "新册发到港坊，是增赋还是便商，要过满半年才看得出。",
+            "en": "The new rolls reach the wards. Only half a year will tell whether they burden or ease trade."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_charter NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1204 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1204 } set_variable = { name = ywc_dmg_city_last_event value = 1204 } set_variable = { name = ywc_dmg_city_phase value = 2 } ywc_dmg_city_start_review = yes }",
+          "options": [
+            {
+              "key": "open_review",
+              "label": {
+                "zh": "开半年之期",
+                "en": "Open the inspection"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1204 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1205 } set_variable = { name = ywc_dmg_city_pending_event value = 1205 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，观察按真实历月推进。",
+                "en": "No expense; the review advances by real calendar months."
+              },
+              "consequence_note": {
+                "zh": "六个月不逢战事与赖账，观察即成熟。",
+                "en": "Six unbroken months without war or default mature the inspection."
+              }
+            },
+            {
+              "key": "wait_at_1204",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1204 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，观察未始。",
+                "en": "Defers one turn; the review has not begun."
+              }
+            },
+            {
+              "key": "withdraw_at_1204",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1204 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接章制与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands the line from charter to review; the phase-2 pulse counts real calendar months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_dmg_city_phase",
+            "ywc_dmg_city_review_running",
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1205",
+          "title": {
+            "zh": "谘议局的头一本账",
+            "en": "The Council's First Ledger"
+          },
+          "desc": {
+            "zh": "谘议局交来头本账：港坊添了几成铺面，内陆欠了几成粮。",
+            "en": "The council delivers its first ledger: how many shopfronts the port gained, how much grain the inland owes."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1205 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1205 } set_variable = { name = ywc_dmg_city_last_event value = 1205 } }",
+          "options": [
+            {
+              "key": "extend_review",
+              "label": {
+                "zh": "续观察",
+                "en": "Continue the inspection"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1205 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1206 } set_variable = { name = ywc_dmg_city_pending_event value = 1206 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察继续，直至满期或被战事打断。",
+                "en": "The review continues until six months pass or it breaks."
+              }
+            },
+            {
+              "key": "wait_at_1205",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1205 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，账册再厚一点。",
+                "en": "Defers one turn; the ledger thickens."
+              }
+            },
+            {
+              "key": "withdraw_at_1205",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1205 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review 状态；续观察不花钱，中断会清零 streak。",
+            "en": "Reads only review state; continuing costs nothing, interruption clears the streak."
+          },
+          "reads": [
+            "ywc_dmg_city_review_streak",
+            "ywc_dmg_city_review_mature",
+            "ywc_dmg_city_review_interrupted"
+          ],
+          "writes": [
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1206",
+          "title": {
+            "zh": "士绅与港商的回话",
+            "en": "The Gentry and the Merchants Reply"
+          },
+          "desc": {
+            "zh": "两份陈情同日递进：士绅要保旧例，港商要扩市籍。朝堂分作两半。",
+            "en": "Two petitions arrive together: the gentry defend precedent, the merchants seek market rolls. The court splits in two."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1206 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1206 } set_variable = { name = ywc_dmg_city_last_event value = 1206 } }",
+          "options": [
+            {
+              "key": "stand_firm",
+              "label": {
+                "zh": "照章而行",
+                "en": "Hold the charter"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1206 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1207 } set_variable = { name = ywc_dmg_city_pending_event value = 1207 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "章制站稳，失意一方的怨气落在合法性上。",
+                "en": "The charter stands; the losing side's anger lands on legitimacy."
+              }
+            },
+            {
+              "key": "buy_peace",
+              "label": {
+                "zh": "各给一点名分",
+                "en": "Buy peace with titles"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1206 = yes NOT = { has_variable = ywc_dmg_city_outcome } } set_variable = { name = ywc_dmg_city_stage value = 1207 } set_variable = { name = ywc_dmg_city_pending_event value = 1207 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另出钱，俸给循旧例。",
+                "en": "No separate outlay; stipends follow the old scale."
+              },
+              "consequence_note": {
+                "zh": "两边都得了名分，账还是那本账。",
+                "en": "Both sides gain titles; the ledger stays the ledger."
+              }
+            },
+            {
+              "key": "wait_at_1206",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1206 = yes } set_variable = { name = ywc_dmg_city_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两份陈情都不批。",
+                "en": "Defers one turn; both petitions stay unanswered."
+              }
+            },
+            {
+              "key": "withdraw_at_1206",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1206 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读集团与合法性权衡两条路；不由敕令改法。",
+            "en": "Reads interest groups and legitimacy to weigh two roads; no law is changed by decree."
+          },
+          "reads": [
+            "ig_clout",
+            "ig_approval",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_dmg_city_stage",
+            "ywc_dmg_city_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1207",
+          "title": {
+            "zh": "两本账的归结",
+            "en": "The Two Ledgers Conclude"
+          },
+          "desc": {
+            "zh": "半年的账摆在案上。合、分、还是不成，笔下今日定。",
+            "en": "Half a year of ledgers lies on the desk. Merge, separate, or fail: the brush must fall today."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_city_countryside_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } var:ywc_dmg_city_stage = 1207 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1207 } set_variable = { name = ywc_dmg_city_last_event value = 1207 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：章制可行",
+                "en": "Report: the charter holds"
+              },
+              "effect": "{ ywc_dmg_city_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured six-month review and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured review."
+              },
+              "trigger": "{ ywc_dmg_city_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：两册并行",
+                "en": "Report: two rolls coexist"
+              },
+              "effect": "{ ywc_dmg_city_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_dmg_city_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：章制搁浅",
+                "en": "Report: the charter failed"
+              },
+              "effect": "{ ywc_dmg_city_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_dmg_city_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1207",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_city_at_1207 = yes } ywc_dmg_city_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to an already-written outcome."
+          },
+          "reads": [
+            "ywc_dmg_city_review_mature",
+            "ywc_dmg_city_review_interrupted",
+            "ywc_dmg_city_finance_safe"
+          ],
+          "writes": [
+            "ywc_dmg_city_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:章制合账，港市与内陆按同一册计税定席，清丈与书办实授有据",
+        "limited:两册并行，港坊自记市籍而内陆照旧纳粮，章制只得一半",
+        "setback:章制搁浅，旧契与旧例未动，已付清丈各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_dmg_common_subjects：1000–1009 确立的共同臣民资格影响 1206 士绅与港商回话的分半与 1207 各门的可信度，回读其 outcome 变量。",
+        "v03_dmg_representative_crown：1110–1119 已立的谘议局影响 1205/1206 的账册来源与集团权重，同一谘议局两处引用不重复立机构。"
+      ]
+    },
+    {
+      "slug": "v03_dmg_luzon_security",
+      "era": "late",
+      "participants": [
+        "北吕宋驻军营官（欠饷与调遣）",
+        "省议会与民团头人（省款与补械）",
+        "边务署书办（章程与册籍）",
+        "山民与边地村落（卡口与生计）",
+        "原州兵部官吏（军制与账目）"
+      ],
+      "depends_on": [
+        "v03_dmg_luzon_border_market"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_dmg_border_levy",
+          "title": {
+            "zh": " JE——北吕宋的守土章程",
+            "en": " JE: The Northern Border Charter"
+          },
+          "desc": {
+            "zh": "从定责到设署，把北吕宋的守土变成可核查的公务。",
+            "en": "From duty to office: turn northern Luzon's defense into an auditable public charge."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } ywc_dmg_luzon_sec_finance_safe = yes } immediate = { ywc_v03_claim_arc_dmg_v03_dmg_v03_dmg_luzon_security = yes ywc_dmg_luzon_sec_open_once = yes } on_fail = { ywc_dmg_luzon_sec_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_dmg_luzon_sec_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1210 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1210 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1211 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1211 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1212 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1212 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1213 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1213 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1214 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1214 } } } } }",
+          "goal": "{ has_variable = ywc_dmg_luzon_sec_phase NOT = { has_variable = ywc_dmg_luzon_sec_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_dmg_luzon_sec_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_dmg_border_review",
+          "title": {
+            "zh": " JE——半年边察",
+            "en": " JE: The Half-Year Watch"
+          },
+          "desc": {
+            "zh": "六个月的观察以真实月份计，战事或赖账会使之中断。",
+            "en": "Six real calendar months of watch; war or default breaks it."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_dmg_luzon_sec_phase var:ywc_dmg_luzon_sec_phase = 2 NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } NOT = { has_journal_entry = ywc_je_v03_dmg_border_review } } possible = { c:DMG ?= this has_variable = ywc_dmg_luzon_sec_phase var:ywc_dmg_luzon_sec_phase = 2 NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } } immediate = { ywc_dmg_luzon_sec_review_opened_once = yes } on_fail = { ywc_dmg_luzon_sec_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_dmg_luzon_sec_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1215 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1215 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1216 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1216 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_luzon_sec_pending_event = 1217 } remove_variable = ywc_dmg_luzon_sec_pending_event trigger_event = { id = ywc_dmg.1217 } } } } }",
+          "goal": "{ OR = { var:ywc_dmg_luzon_sec_outcome = 1 var:ywc_dmg_luzon_sec_outcome = 2 var:ywc_dmg_luzon_sec_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_dmg_luzon_sec_withdrawn var:ywc_dmg_luzon_sec_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_dmg.1210",
+          "title": {
+            "zh": "北吕宋的守土之问",
+            "en": "Who Holds Northern Luzon"
+          },
+          "desc": {
+            "zh": "北吕宋的驿道常被山民袭扰，驻军欠饷、民团缺械。第一问：守土之责归谁，饷从何出。",
+            "en": "Raids strike the northern roads. The garrison is unpaid, the militias unarmed. First question: who holds the land, and on whose coin."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_levy NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1210 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1210 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1210 } }",
+          "options": [
+            {
+              "key": "standing_garrison",
+              "label": {
+                "zh": "常备驻军",
+                "en": "A standing garrison"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1210 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1211 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1211 } } set_variable = { name = ywc_dmg_luzon_sec_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先定责后费项；后续实付按半周收入计。",
+                "en": "Duty first, costs later; each later step pays half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "朝廷担饷，内地省份觉得钱花在了别人的山口。",
+                "en": "The crown pays; inland provinces call it coin spent on another's passes."
+              }
+            },
+            {
+              "key": "provincial_militia",
+              "label": {
+                "zh": "省款民团",
+                "en": "Provincial militia"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1210 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1211 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1211 } } set_variable = { name = ywc_dmg_luzon_sec_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先定责后费项。",
+                "en": "Same order: duty first, costs later."
+              },
+              "consequence_note": {
+                "zh": "省里出钱出人，调遣却要看省议会脸色。",
+                "en": "Provinces pay and man it; command bends to their assemblies."
+              }
+            },
+            {
+              "key": "border_charter",
+              "label": {
+                "zh": "边地章程",
+                "en": "A border charter"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1210 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1211 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1211 } } set_variable = { name = ywc_dmg_luzon_sec_mode value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先定责后费项。",
+                "en": "Same order: duty first, costs later."
+              },
+              "consequence_note": {
+                "zh": "章程划定各自岗位，但纸面章程要人手才立得住。",
+                "en": "A charter allots posts; paper holds only where hands stand behind it."
+              }
+            },
+            {
+              "key": "wait_at_1210",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1210 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，山口仍无人守。",
+                "en": "Defers one turn; the passes stay unheld."
+              }
+            },
+            {
+              "key": "withdraw_at_1210",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1210 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读当前军力、驻军就业与邻境关系，定守土口径；三条路共用一张地图。",
+            "en": "Reads army size, barracks employment and frontier relations to set the duty rule; all three roads share one map."
+          },
+          "reads": [
+            "army_size",
+            "is_at_war",
+            "net_fixed_income",
+            "ywc_dmg_luzon_sec_finance_safe"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_mode",
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1211",
+          "title": {
+            "zh": "欠饷与缺械",
+            "en": "Back Pay and Short Arms"
+          },
+          "desc": {
+            "zh": "驻军营官报了欠饷的数目，民团头人报了缺械的名册。两份单子同一日到。",
+            "en": "The garrison reports its arrears; the militia reports its missing arms. Both lists arrive the same day."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_levy NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1211 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1211 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1211 } }",
+          "options": [
+            {
+              "key": "pay_garrison",
+              "label": {
+                "zh": "补发驻军欠饷",
+                "en": "Pay the garrison's arrears"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1211 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1212 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1212 } } ywc_dmg_luzon_sec_pay_mission_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入，库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "欠饷清了，营里重新点得起名。",
+                "en": "Arrears cleared; the barracks can muster again."
+              },
+              "trigger": "{ ywc_dmg_luzon_sec_at_1211 = yes ywc_dmg_luzon_sec_finance_safe = yes }"
+            },
+            {
+              "key": "arm_militia",
+              "label": {
+                "zh": "给民团补械",
+                "en": "Arm the militia instead"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1211 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1212 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1212 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不直接出饷，械从省库走。",
+                "en": "No direct pay; arms move on provincial coin."
+              },
+              "consequence_note": {
+                "zh": "民团得械，驻军记下了这笔账。",
+                "en": "The militia arms itself; the garrison keeps a grudge ledger."
+              }
+            },
+            {
+              "key": "wait_at_1211",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1211 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两份单子都压着。",
+                "en": "Defers one turn; both lists stay on the pile."
+              }
+            },
+            {
+              "key": "withdraw_at_1211",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1211 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记，决定钱是否真的动；不见饷不点兵。",
+            "en": "Reads finances and prior payment flags to decide whether the coin actually moves; no muster without pay."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_dmg_luzon_sec_mission_paid"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_mission_paid",
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1212",
+          "title": {
+            "zh": "驿道与山口",
+            "en": "Roads and Passes"
+          },
+          "desc": {
+            "zh": "守土的章程绕不开路：哪条驿道修、哪座山口设卡，每一条都是钱和人。",
+            "en": "Any charter comes down to roads: which to mend, which pass to post. Each is coin and men."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_levy NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1212 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1212 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1212 } }",
+          "options": [
+            {
+              "key": "mend_main_road",
+              "label": {
+                "zh": "先修主驿道",
+                "en": "Mend the main road first"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1212 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1213 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1213 } } ywc_dmg_luzon_sec_pay_port_office_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添道路雇员；库房不足时选项失效。",
+                "en": "Pays half a weekly income and adds road staff; inactive without funds."
+              },
+              "consequence_note": {
+                "zh": "主道通了，调兵与商旅都省时日。",
+                "en": "The main road opens; troops and traders both save days."
+              },
+              "trigger": "{ ywc_dmg_luzon_sec_at_1212 = yes ywc_dmg_luzon_sec_finance_safe = yes }"
+            },
+            {
+              "key": "post_the_passes",
+              "label": {
+                "zh": "先设卡口",
+                "en": "Post the passes first"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1212 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1213 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1213 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不修路，先用现有兵力设卡。",
+                "en": "No roadwork; post existing troops at the passes."
+              },
+              "consequence_note": {
+                "zh": "卡口立起，走私改道，山民积怨。",
+                "en": "Posts rise; smugglers reroute and mountain resentment grows."
+              }
+            },
+            {
+              "key": "wait_at_1212",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1212 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，路照旧烂，卡照旧空。",
+                "en": "Defers one turn; roads stay broken, posts stay empty."
+              }
+            },
+            {
+              "key": "withdraw_at_1212",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1212 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 mode 与付费标记决定走向；不凭空给出已修好的路。",
+            "en": "Reads the chosen mode and payment flags; no finished road appears by decree."
+          },
+          "reads": [
+            "ywc_dmg_luzon_sec_mode",
+            "ywc_dmg_luzon_sec_mission_paid",
+            "infrastructure"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_office_paid",
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1213",
+          "title": {
+            "zh": "边务署的人手",
+            "en": "Hands for the Border Office"
+          },
+          "desc": {
+            "zh": "章程、饷银、道路都要有人管。边务署该设在省城还是军营，两造又争起来。",
+            "en": "Charter, pay, and roads all need stewards. Whether the border office sits in the provincial capital or the camp reopens the quarrel."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_levy NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1213 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1213 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1213 } }",
+          "options": [
+            {
+              "key": "staff_in_capital",
+              "label": {
+                "zh": "设于省城",
+                "en": "Seat it in the capital"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1213 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1214 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1214 } } ywc_dmg_luzon_sec_pay_port_office_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添官署雇员；无款不生效。",
+                "en": "Pays half a weekly income and adds bureau staff; inactive without funds."
+              },
+              "consequence_note": {
+                "zh": "文官掌署，调兵多一层文牍。",
+                "en": "Civilians chair the office; troop orders gain a paper layer."
+              },
+              "trigger": "{ ywc_dmg_luzon_sec_at_1213 = yes ywc_dmg_luzon_sec_finance_safe = yes }"
+            },
+            {
+              "key": "staff_in_camp",
+              "label": {
+                "zh": "设于军营",
+                "en": "Seat it in the camp"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1213 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1214 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1214 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不添文员，武官兼署。",
+                "en": "No new clerks; the camp commanders double as clerks."
+              },
+              "consequence_note": {
+                "zh": "调遣快了，文官的账房却对不上。",
+                "en": "Orders move fast; the civil books stop reconciling."
+              }
+            },
+            {
+              "key": "wait_at_1213",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1213 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，署印仍悬。",
+                "en": "Defers one turn; the seal stays unhung."
+              }
+            },
+            {
+              "key": "withdraw_at_1213",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1213 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读建筑雇员与库房能否实付，再给员额；不见钱不给编。",
+            "en": "Reads building staffing and finances before any hire is paid; no phantom posts."
+          },
+          "reads": [
+            "bureaucracy",
+            "occupancy",
+            "gold_reserves",
+            "ywc_dmg_luzon_sec_office_paid"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_office_paid",
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1214",
+          "title": {
+            "zh": "半年之备",
+            "en": "The Half-Year Watch"
+          },
+          "desc": {
+            "zh": "章程初立，山口初设。要过满半年，才知道守土的章程是纸还是墙。",
+            "en": "The charter is fresh and the posts are new. Only half a year will tell charter from wallpaper."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_levy NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1214 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1214 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1214 } set_variable = { name = ywc_dmg_luzon_sec_phase value = 2 } ywc_dmg_luzon_sec_start_review = yes }",
+          "options": [
+            {
+              "key": "open_review",
+              "label": {
+                "zh": "开半年之察",
+                "en": "Open the watch"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1214 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1215 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1215 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，观察按真实历月推进。",
+                "en": "No expense; the watch advances by real calendar months."
+              },
+              "consequence_note": {
+                "zh": "六个月不逢战事与赖账，观察即成熟。",
+                "en": "Six unbroken months without war or default mature the watch."
+              }
+            },
+            {
+              "key": "wait_at_1214",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1214 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，观察未始。",
+                "en": "Defers one turn; the watch has not begun."
+              }
+            },
+            {
+              "key": "withdraw_at_1214",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1214 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接章程与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands the line from charter to watch; the phase-2 pulse counts real calendar months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_phase",
+            "ywc_dmg_luzon_sec_review_running",
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1215",
+          "title": {
+            "zh": "边务署的头本册",
+            "en": "The Office's First Ledger"
+          },
+          "desc": {
+            "zh": "边务署交来头本册：几处卡口有人，几处驿道仍断，几桩袭扰未结。",
+            "en": "The office delivers its first ledger: which posts are manned, which roads remain broken, which raids stay open."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1215 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1215 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1215 } }",
+          "options": [
+            {
+              "key": "continue_review",
+              "label": {
+                "zh": "续观察",
+                "en": "Continue the watch"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1215 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1216 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1216 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察继续，直至满期或被战事打断。",
+                "en": "The watch continues until six months pass or it breaks."
+              }
+            },
+            {
+              "key": "wait_at_1215",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1215 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，册子再厚一点。",
+                "en": "Defers one turn; the ledger thickens."
+              }
+            },
+            {
+              "key": "withdraw_at_1215",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1215 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review 状态；续观察不花钱，中断会清零 streak。",
+            "en": "Reads only review state; continuing costs nothing, interruption clears the streak."
+          },
+          "reads": [
+            "ywc_dmg_luzon_sec_review_streak",
+            "ywc_dmg_luzon_sec_review_mature",
+            "ywc_dmg_luzon_sec_review_interrupted"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1216",
+          "title": {
+            "zh": "营官与省会的回话",
+            "en": "The Camp and the Capital Reply"
+          },
+          "desc": {
+            "zh": "营官要足饷，省议会要节流。两份陈情同日递进，边务署夹在中间。",
+            "en": "The camp demands full pay; the assembly demands thrift. Two petitions, one office caught between."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1216 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1216 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1216 } }",
+          "options": [
+            {
+              "key": "uphold_charter",
+              "label": {
+                "zh": "照章而定",
+                "en": "Hold the charter"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1216 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1217 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1217 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "章程站稳，失意一方的怨气落在合法性上。",
+                "en": "The charter stands; the losing side's anger lands on legitimacy."
+              }
+            },
+            {
+              "key": "split_the_difference",
+              "label": {
+                "zh": "各让一步",
+                "en": "Split the difference"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1216 = yes NOT = { has_variable = ywc_dmg_luzon_sec_outcome } } set_variable = { name = ywc_dmg_luzon_sec_stage value = 1217 } set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1217 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另出钱，饷额循旧例折中。",
+                "en": "No separate outlay; pay split per the old scale."
+              },
+              "consequence_note": {
+                "zh": "两边都让了半步，账还是那本账。",
+                "en": "Both sides give half a step; the ledger stays the ledger."
+              }
+            },
+            {
+              "key": "wait_at_1216",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1216 = yes } set_variable = { name = ywc_dmg_luzon_sec_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两份陈情都不批。",
+                "en": "Defers one turn; both petitions stay unanswered."
+              }
+            },
+            {
+              "key": "withdraw_at_1216",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1216 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读集团与合法性权衡两条路；不由敕令改军制。",
+            "en": "Reads interest groups and legitimacy to weigh two roads; no military reform by decree."
+          },
+          "reads": [
+            "ig_clout",
+            "ig_approval",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_stage",
+            "ywc_dmg_luzon_sec_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1217",
+          "title": {
+            "zh": "守土之策的归结",
+            "en": "The Defense Verdict"
+          },
+          "desc": {
+            "zh": "半年的边册摆在案上。成、半成、还是不成，笔下今日定。",
+            "en": "Half a year of border ledgers lies on the desk. Full, half, or failed: the brush must fall today."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_border_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } var:ywc_dmg_luzon_sec_stage = 1217 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1217 } set_variable = { name = ywc_dmg_luzon_sec_last_event value = 1217 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：边务已立",
+                "en": "Report: the border holds"
+              },
+              "effect": "{ ywc_dmg_luzon_sec_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured six-month watch and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured watch."
+              },
+              "trigger": "{ ywc_dmg_luzon_sec_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：勉强支撑",
+                "en": "Report: barely holding"
+              },
+              "effect": "{ ywc_dmg_luzon_sec_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_dmg_luzon_sec_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：边务搁浅",
+                "en": "Report: the border fails"
+              },
+              "effect": "{ ywc_dmg_luzon_sec_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_dmg_luzon_sec_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1217",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_luzon_sec_at_1217 = yes } ywc_dmg_luzon_sec_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to an already-written outcome."
+          },
+          "reads": [
+            "ywc_dmg_luzon_sec_review_mature",
+            "ywc_dmg_luzon_sec_review_interrupted",
+            "ywc_dmg_luzon_sec_finance_safe"
+          ],
+          "writes": [
+            "ywc_dmg_luzon_sec_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:守土章程落地，驻饷道路署务各有着落，边册半年可稽",
+        "limited:章程半立，卡口有人而驿道未修，边册只得一半",
+        "setback:章程搁浅，欠饷与缺械如旧，已付各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_dmg_luzon_border_market：1100–1107 的边境互市影响 1212 道路取舍与 1216 省议会的立场，回读其 outcome 变量。",
+        "v03_dmg_representative_crown：1110–1119 已立的谘议局影响 1215/1216 的账册与集团权重，同一谘议局两处引用不重复立机构。"
+      ]
+    },
+    {
+      "slug": "v03_dmg_generations_compact",
+      "era": "late",
+      "participants": [
+        "港坊学堂学生（名分与门户）",
+        "礼部与谘议局（法条与册籍）",
+        "塾师与书办（名册与抄录）",
+        "第一代签约人（旧约与旧账）",
+        "原州户部官吏（拨款与账目）"
+      ],
+      "depends_on": [
+        "v03_dmg_common_subjects"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_dmg_second_gen_pledge",
+          "title": {
+            "zh": " JE——两代之约",
+            "en": " JE: The Compact of Generations"
+          },
+          "desc": {
+            "zh": "从名册到法条，把第二代人的名分变成可核查的公务。",
+            "en": "From rolls to statute: turn the second generation's status into an auditable public charge."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } ywc_dmg_gener_finance_safe = yes } immediate = { ywc_v03_claim_arc_dmg_v03_dmg_v03_dmg_generations_compact = yes ywc_dmg_gener_open_once = yes } on_fail = { ywc_dmg_gener_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_dmg_gener_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1220 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1220 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1221 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1221 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1222 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1222 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1223 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1223 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1224 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1224 } } } } }",
+          "goal": "{ has_variable = ywc_dmg_gener_phase NOT = { has_variable = ywc_dmg_gener_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_dmg_gener_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_dmg_second_gen_review",
+          "title": {
+            "zh": " JE——四个月回执",
+            "en": " JE: Four Months of Receipts"
+          },
+          "desc": {
+            "zh": "四个月的观察以真实月份计，战事或赖账会使之中断。",
+            "en": "Four real calendar months of review; war or default breaks it."
+          },
+          "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_dmg_gener_phase var:ywc_dmg_gener_phase = 2 NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } NOT = { has_journal_entry = ywc_je_v03_dmg_second_gen_review } } possible = { c:DMG ?= this has_variable = ywc_dmg_gener_phase var:ywc_dmg_gener_phase = 2 NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } } immediate = { ywc_dmg_gener_review_opened_once = yes } on_fail = { ywc_dmg_gener_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_dmg_gener_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1225 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1225 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1226 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1226 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_gener_pending_event = 1227 } remove_variable = ywc_dmg_gener_pending_event trigger_event = { id = ywc_dmg.1227 } } } } }",
+          "goal": "{ OR = { var:ywc_dmg_gener_outcome = 1 var:ywc_dmg_gener_outcome = 2 var:ywc_dmg_gener_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_dmg_gener_withdrawn var:ywc_dmg_gener_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_dmg.1220",
+          "title": {
+            "zh": "第二代人翻开的第一页",
+            "en": "The Second Generation Opens the Book"
+          },
+          "desc": {
+            "zh": "共同臣民资格立了二十年，第一代人的誓词还在，第二代人已在港坊学堂里长大。这一页写什么，要看第一页留了什么。",
+            "en": "The common-subject compact is twenty years old. Its first signatories age; their children grow up in port schools. This page writes what the first left."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_pledge NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1220 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1220 } set_variable = { name = ywc_dmg_gener_last_event value = 1220 } }",
+          "options": [
+            {
+              "key": "full_inheritance",
+              "label": {
+                "zh": "全盘承继",
+                "en": "Inherit in full"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1220 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1221 } set_variable = { name = ywc_dmg_gener_pending_event value = 1221 } } set_variable = { name = ywc_dmg_gener_route value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先立约后费项；后续实付按半周收入计。",
+                "en": "Compact first, costs later; each later step pays half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "第二代人与第一代人同册同名，旧册的欠账也一并承下。",
+                "en": "The second generation enters the same rolls; the first generation's arrears come along."
+              }
+            },
+            {
+              "key": "staged_inheritance",
+              "label": {
+                "zh": "分级承继",
+                "en": "Inherit in stages"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1220 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1221 } set_variable = { name = ywc_dmg_gener_pending_event value = 1221 } } set_variable = { name = ywc_dmg_gener_route value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立约后费项。",
+                "en": "Same order: compact first, costs later."
+              },
+              "consequence_note": {
+                "zh": "先名分后权责，一步一档。",
+                "en": "Status first, duties later; one step, one record."
+              }
+            },
+            {
+              "key": "renew_the_bargain",
+              "label": {
+                "zh": "重订新约",
+                "en": "Renew the bargain"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1220 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1221 } set_variable = { name = ywc_dmg_gener_pending_event value = 1221 } } set_variable = { name = ywc_dmg_gener_route value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立约后费项。",
+                "en": "Same order: compact first, costs later."
+              },
+              "consequence_note": {
+                "zh": "旧约作废重写，二十年的旧账要翻个底朝天。",
+                "en": "The old compact is rewritten; twenty years of accounts are opened."
+              }
+            },
+            {
+              "key": "wait_at_1220",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1220 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，新页仍白。",
+                "en": "Defers one turn; the page stays blank."
+              }
+            },
+            {
+              "key": "withdraw_at_1220",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1220 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读共同臣民旧线的 outcome、当前识字与学校投入，定承继口径；三条路共用一张地图。",
+            "en": "Reads the compact arc's outcome, literacy and school investment to set the inheritance rule; all three roads share one map."
+          },
+          "reads": [
+            "standard_of_living",
+            "literacy",
+            "net_fixed_income",
+            "ywc_dmg_gener_finance_safe"
+          ],
+          "writes": [
+            "ywc_dmg_gener_route",
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1221",
+          "title": {
+            "zh": "学堂名册的价钱",
+            "en": "The Price of School Rolls"
+          },
+          "desc": {
+            "zh": "承继要落到人：港坊与村塾的学童名册要重抄一遍，书办报了价。",
+            "en": "Inheritance means names: the school rolls of port wards and village schools must be recopied. The clerks name a price."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_pledge NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1221 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1221 } set_variable = { name = ywc_dmg_gener_last_event value = 1221 } }",
+          "options": [
+            {
+              "key": "fund_the_rolls",
+              "label": {
+                "zh": "官费重抄",
+                "en": "Fund the recopying"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1221 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1222 } set_variable = { name = ywc_dmg_gener_pending_event value = 1222 } } ywc_dmg_gener_pay_granary_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入，库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "名册入官，承继有了底册。",
+                "en": "Rolls enter the archive; inheritance gains its ledger."
+              },
+              "trigger": "{ ywc_dmg_gener_at_1221 = yes ywc_dmg_gener_finance_safe = yes }"
+            },
+            {
+              "key": "parish_copies",
+              "label": {
+                "zh": "塾师自抄",
+                "en": "Teachers copy their own"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1221 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1222 } set_variable = { name = ywc_dmg_gener_pending_event value = 1222 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不出钱，名册迟而杂。",
+                "en": "No outlay; rolls come late and uneven."
+              },
+              "consequence_note": {
+                "zh": "省了银子，误了名籍。",
+                "en": "Silver saved, names misplaced."
+              }
+            },
+            {
+              "key": "wait_at_1221",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1221 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，名册仍缺。",
+                "en": "Defers one turn; the rolls stay thin."
+              }
+            },
+            {
+              "key": "withdraw_at_1221",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1221 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记，决定钱是否真的动；不见钱不动册。",
+            "en": "Reads finances and prior payment flags to decide whether the coin actually moves."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_dmg_gener_granary_paid"
+          ],
+          "writes": [
+            "ywc_dmg_gener_granary_paid",
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1222",
+          "title": {
+            "zh": "资格入法之争",
+            "en": "The Statute Quarrel"
+          },
+          "desc": {
+            "zh": "把第二代人写进法律，还是只留在册子上。谘议局与礼部各执一端。",
+            "en": "Write the second generation into law, or leave them on paper rolls. Council and Rites Board each hold one end."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_pledge NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1222 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1222 } set_variable = { name = ywc_dmg_gener_last_event value = 1222 } }",
+          "options": [
+            {
+              "key": "write_the_statute",
+              "label": {
+                "zh": "写入法条",
+                "en": "Write the statute"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1222 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1223 } set_variable = { name = ywc_dmg_gener_pending_event value = 1223 } } ywc_dmg_gener_enact_poor_laws_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "借立修案记档，不即时付账；已启修案者不得重复。",
+                "en": "Recorded as an enactment; no immediate outlay. Cannot repeat an enacted measure."
+              },
+              "consequence_note": {
+                "zh": "资格入法，撤销要过整个朝堂。",
+                "en": "Status enters law; undoing it takes the whole court."
+              },
+              "trigger": "{ ywc_dmg_gener_at_1222 = yes }"
+            },
+            {
+              "key": "keep_on_rolls",
+              "label": {
+                "zh": "仍留册上",
+                "en": "Keep it on the rolls"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1222 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1223 } set_variable = { name = ywc_dmg_gener_pending_event value = 1223 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不入法，随时可改。",
+                "en": "No statute; revocable at will."
+              },
+              "consequence_note": {
+                "zh": "册上有名，法上无名，第二代人心里有数。",
+                "en": "Named on rolls, absent from law; the second generation keeps count."
+              }
+            },
+            {
+              "key": "wait_at_1222",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1222 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两案并悬。",
+                "en": "Defers one turn; both cases stay pending."
+              }
+            },
+            {
+              "key": "withdraw_at_1222",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1222 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 route 与既往立法标记决定走向；不凭空改公民法。",
+            "en": "Reads the route and enactment flags; no citizenship law changes by decree."
+          },
+          "reads": [
+            "ywc_dmg_gener_route",
+            "has_law",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_dmg_gener_enacted",
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1223",
+          "title": {
+            "zh": "法条的账单",
+            "en": "The Statute's Bill"
+          },
+          "desc": {
+            "zh": "法条要落地：学堂、名册、书办，样样要钱。户部把账单递了上来。",
+            "en": "A statute needs schoolrooms, rolls, and clerks. The treasury hands up the bill."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_pledge NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1223 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1223 } set_variable = { name = ywc_dmg_gener_last_event value = 1223 } }",
+          "options": [
+            {
+              "key": "fund_the_statute",
+              "label": {
+                "zh": "如数拨付",
+                "en": "Fund it in full"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1223 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1224 } set_variable = { name = ywc_dmg_gener_pending_event value = 1224 } } ywc_dmg_gener_pay_poor_laws_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入；已立修案方可拨付，库房不足时选项失效。",
+                "en": "Pays half a weekly income; requires an enacted measure and covers the bill."
+              },
+              "consequence_note": {
+                "zh": "账清了，法条开始长出衙门。",
+                "en": "The bill is paid; the statute grows offices."
+              },
+              "trigger": "{ ywc_dmg_gener_at_1223 = yes ywc_dmg_gener_finance_safe = yes }"
+            },
+            {
+              "key": "defer_funding",
+              "label": {
+                "zh": "缓拨",
+                "en": "Defer the funding"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1223 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1224 } set_variable = { name = ywc_dmg_gener_pending_event value = 1224 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，法条空转。",
+                "en": "No outlay; the statute idles."
+              },
+              "consequence_note": {
+                "zh": "法在纸上，钱在库外。",
+                "en": "Law on paper, coin outside the vault."
+              }
+            },
+            {
+              "key": "wait_at_1223",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1223 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，账单压着。",
+                "en": "Defers one turn; the bill stays on the pile."
+              }
+            },
+            {
+              "key": "withdraw_at_1223",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1223 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读立法标记与库房能否实付，再动钱；不见钱不生效。",
+            "en": "Reads enactment flags and finances before any coin moves; nothing takes effect unpaid."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_dmg_gener_enacted"
+          ],
+          "writes": [
+            "ywc_dmg_gener_poor_paid",
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1224",
+          "title": {
+            "zh": "承继之期的头一册",
+            "en": "The Compact's First Ledger"
+          },
+          "desc": {
+            "zh": "名册抄了，法条立了。要过满四个月，才知道第二代人领到的是名分还是空纸。",
+            "en": "Rolls copied, statute passed. Four months will tell whether the second generation holds status or paper."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_pledge NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1224 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1224 } set_variable = { name = ywc_dmg_gener_last_event value = 1224 } set_variable = { name = ywc_dmg_gener_phase value = 2 } ywc_dmg_gener_start_review = yes }",
+          "options": [
+            {
+              "key": "open_review",
+              "label": {
+                "zh": "开观察之期",
+                "en": "Open the review"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1224 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1225 } set_variable = { name = ywc_dmg_gener_pending_event value = 1225 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，观察按真实历月推进。",
+                "en": "No expense; the review advances by real calendar months."
+              },
+              "consequence_note": {
+                "zh": "四个月不逢战事与赖账，观察即成熟。",
+                "en": "Four unbroken months without war or default mature the review."
+              }
+            },
+            {
+              "key": "wait_at_1224",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1224 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，观察未始。",
+                "en": "Defers one turn; the review has not begun."
+              }
+            },
+            {
+              "key": "withdraw_at_1224",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1224 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接立法与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands the line from statute to review; the phase-2 pulse counts real calendar months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_dmg_gener_phase",
+            "ywc_dmg_gener_review_running",
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1225",
+          "title": {
+            "zh": "学堂与衙门的回执",
+            "en": "Receipts from Schools and Offices"
+          },
+          "desc": {
+            "zh": "头本回执送到：几处学堂领到了名册，几处衙门还在等法条的细则。",
+            "en": "The first receipts arrive: which schools hold their rolls, which offices still wait for the statute's细则."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1225 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1225 } set_variable = { name = ywc_dmg_gener_last_event value = 1225 } }",
+          "options": [
+            {
+              "key": "continue_review",
+              "label": {
+                "zh": "续观察",
+                "en": "Continue the review"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1225 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1226 } set_variable = { name = ywc_dmg_gener_pending_event value = 1226 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察继续，直至满期或被战事打断。",
+                "en": "The review continues until four months pass or it breaks."
+              }
+            },
+            {
+              "key": "wait_at_1225",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1225 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，回执再厚一点。",
+                "en": "Defers one turn; the receipts thicken."
+              }
+            },
+            {
+              "key": "withdraw_at_1225",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1225 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review 状态；续观察不花钱，中断会清零 streak。",
+            "en": "Reads only review state; continuing costs nothing, interruption clears the streak."
+          },
+          "reads": [
+            "ywc_dmg_gener_review_streak",
+            "ywc_dmg_gener_review_mature",
+            "ywc_dmg_gener_review_interrupted"
+          ],
+          "writes": [
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1226",
+          "title": {
+            "zh": "第二代人自己开口",
+            "en": "The Second Generation Speaks"
+          },
+          "desc": {
+            "zh": "港坊学堂的学生联名递呈：要名分，也要做工与科举的门。朝堂第一次听见他们的声音。",
+            "en": "Port-school students petition together: status, and doors to work and examinations. The court hears them for the first time."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1226 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1226 } set_variable = { name = ywc_dmg_gener_last_event value = 1226 } }",
+          "options": [
+            {
+              "key": "open_the_doors",
+              "label": {
+                "zh": "开门户",
+                "en": "Open the doors"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1226 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1227 } set_variable = { name = ywc_dmg_gener_pending_event value = 1227 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "做工与科举的门开了，旧册的特权薄了一层。",
+                "en": "Work and examination doors open; the old rolls' privilege thins."
+              }
+            },
+            {
+              "key": "hold_the_line",
+              "label": {
+                "zh": "维持旧门",
+                "en": "Hold the old doors"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1226 = yes NOT = { has_variable = ywc_dmg_gener_outcome } } set_variable = { name = ywc_dmg_gener_stage value = 1227 } set_variable = { name = ywc_dmg_gener_pending_event value = 1227 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "门未开，呈文留档，怨气落在合法性上。",
+                "en": "Doors stay shut; the petition is filed and anger lands on legitimacy."
+              }
+            },
+            {
+              "key": "wait_at_1226",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1226 = yes } set_variable = { name = ywc_dmg_gener_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，呈文未批。",
+                "en": "Defers one turn; the petition stays unanswered."
+              }
+            },
+            {
+              "key": "withdraw_at_1226",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1226 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读集团与合法性权衡两条路；不由敕令改科举。",
+            "en": "Reads interest groups and legitimacy to weigh two roads; no examination reform by decree."
+          },
+          "reads": [
+            "ig_clout",
+            "ig_approval",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_dmg_gener_stage",
+            "ywc_dmg_gener_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1227",
+          "title": {
+            "zh": "两代之约的归结",
+            "en": "The Compact Concludes"
+          },
+          "desc": {
+            "zh": "四个月的回执摆在案上。全承、分承、还是搁浅，笔下今日定。",
+            "en": "Four months of receipts lie on the desk. Full inheritance, staged, or stranded: the brush must fall today."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_second_gen_review NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } var:ywc_dmg_gener_stage = 1227 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_event_dispatch value = 1227 } set_variable = { name = ywc_dmg_gener_last_event value = 1227 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：两代同册",
+                "en": "Report: one roll, two generations"
+              },
+              "effect": "{ ywc_dmg_gener_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured four-month review and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured review."
+              },
+              "trigger": "{ ywc_dmg_gener_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：分级承继",
+                "en": "Report: staged inheritance"
+              },
+              "effect": "{ ywc_dmg_gener_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_dmg_gener_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：新约搁浅",
+                "en": "Report: the compact stranded"
+              },
+              "effect": "{ ywc_dmg_gener_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_dmg_gener_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1227",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_dmg_gener_at_1227 = yes } ywc_dmg_gener_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to an already-written outcome."
+          },
+          "reads": [
+            "ywc_dmg_gener_review_mature",
+            "ywc_dmg_gener_review_interrupted",
+            "ywc_dmg_gener_finance_safe"
+          ],
+          "writes": [
+            "ywc_dmg_gener_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:两代同册，法条与学堂名册俱立，做工与科举的门已开",
+        "limited:分级承继，名分先至而门户未全开，回执只得一半",
+        "setback:新约搁浅，法条空转名册迟杂，已付各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_dmg_common_subjects：1000–1009 的共同臣民资格是本线的直接母题，1220 承继口径与 1227 各门可信度回读其 outcome 变量。",
+        "v03_dmg_school_languages：1120–1125 的国语教育影响 1221 学堂名册的底子与 1226 学生的识字底气，同一教育系统两处引用不重复立校。"
+      ]
     }
   ]
 }

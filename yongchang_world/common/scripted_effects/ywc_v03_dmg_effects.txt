@@ -1,4 +1,4 @@
-﻿# Local DMG common-subjects helpers. All one-shot flags are checked before payment or counters change.
+# Local DMG common-subjects helpers. All one-shot flags are checked before payment or counters change.
 ywc_dmg_initialize_v03 = {
 	if = { limit = { NOT = { has_variable = ywc_v03_initialized } } set_variable = { name = ywc_v03_initialized value = 1 } }
 	if = { limit = { NOT = { has_variable = ywc_v03_active_arc_count } } set_variable = { name = ywc_v03_active_arc_count value = 0 } }
@@ -1053,4 +1053,411 @@ if = { limit = { ywc_dmg_crown_at_1119 = yes ywc_dmg_crown_terminal_setback = ye
 
 ywc_dmg_crown_withdraw = {
 if = { limit = { OR = { ywc_dmg_crown_at_1110 = yes ywc_dmg_crown_at_1111 = yes ywc_dmg_crown_at_1112 = yes ywc_dmg_crown_at_1113 = yes ywc_dmg_crown_at_1114 = yes ywc_dmg_crown_at_1115 = yes ywc_dmg_crown_at_1116 = yes ywc_dmg_crown_at_1117 = yes ywc_dmg_crown_at_1118 = yes ywc_dmg_crown_at_1119 = yes } } set_variable = { name = ywc_dmg_crown_outcome value = 4 } set_variable = { name = ywc_dmg_crown_withdrawn value = 1 } ywc_dmg_crown_release_once = yes }
+}
+
+# ---------------------------------------------------------------------------
+# v03_dmg_city_countryside (late, ywc_dmg.1200..1209)
+# Costs captured here are national school and print expenditure: they are
+# never private tuition income. Payment is only recorded when the treasury
+# actually pays, so an unpaid plan never claims an outcome it did not fund.
+# ---------------------------------------------------------------------------
+ywc_v03_claim_arc_dmg_v03_dmg_city_countryside = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_started }
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled }
+		var:ywc_v03_active_arc_count < 3
+		var:ywc_v03_visible_task_count < 6 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_city_countryside_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		ywc_dmg_city_capture_cost_base = yes
+	}
+}
+ywc_dmg_city_capture_cost_base = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_city_cost_captured } }
+		set_variable = { name = ywc_dmg_city_cost value = yearly_gross_income }
+		change_variable = { name = ywc_dmg_city_cost divide = 52 }
+		clamp_variable = { name = ywc_dmg_city_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_dmg_city_cost_captured value = 1 } }
+}
+ywc_dmg_city_review_opened_once = {
+	if = { limit = { ywc_dmg_city_open = yes NOT = { has_variable = ywc_dmg_city_review_opened } }
+		set_variable = { name = ywc_dmg_city_review_opened value = 1 } }
+}
+ywc_dmg_city_open_once = {
+	if = { limit = { ywc_dmg_city_open = yes NOT = { has_variable = ywc_dmg_city_stage } }
+		set_variable = { name = ywc_dmg_city_stage value = 1200 }
+		set_variable = { name = ywc_dmg_city_phase value = 1 }
+		set_variable = { name = ywc_dmg_city_pending_event value = 1200 }
+		set_variable = { name = ywc_dmg_city_last_event value = 0 }
+		set_variable = { name = ywc_dmg_city_review_streak value = 0 }
+	}
+}
+ywc_dmg_city_pay_press_once = {
+	if = { limit = { ywc_dmg_city_open = yes NOT = { has_variable = ywc_dmg_city_press_paid } ywc_dmg_city_finance_safe = yes }
+		ywc_dmg_city_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_city_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_city_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_city_press_paid value = 1 } } }
+}
+ywc_dmg_city_pay_classroom_once = {
+	if = { limit = { ywc_dmg_city_open = yes NOT = { has_variable = ywc_dmg_city_classroom_paid } ywc_dmg_city_finance_safe = yes }
+		ywc_dmg_city_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_city_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_city_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_city_classroom_paid value = 1 }
+			random_scope_state = { limit = { owner = ROOT ywc_dmg_city_best_state = yes }
+				add_building_workers = { building = building_urban_center workers = 1500 } } } }
+}
+ywc_dmg_city_classic_print_once = {
+	if = { limit = { ywc_dmg_city_open = yes NOT = { has_variable = ywc_dmg_city_classic_paid } ywc_dmg_city_finance_safe = yes }
+		ywc_dmg_city_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_city_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_city_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_city_classic_paid value = 1 } } }
+}
+ywc_dmg_city_prepare_queue = {
+	if = { limit = { ywc_dmg_city_open = yes NOT = { has_variable = ywc_dmg_city_queue_written } }
+		set_variable = { name = ywc_dmg_city_queue_written value = 1 } }
+}
+ywc_dmg_city_start_review = {
+	if = { limit = { ywc_dmg_city_open = yes }
+		set_variable = { name = ywc_dmg_city_review_running value = 1 }
+		set_variable = { name = ywc_dmg_city_review_streak value = 0 }
+		set_variable = { name = ywc_dmg_city_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_dmg_city_review_month value = ywc_nmg_current_calendar_month }
+		remove_variable = ywc_dmg_city_review_mature
+		remove_variable = ywc_dmg_city_review_interrupted }
+}
+ywc_dmg_city_track_review = {
+	if = { limit = { ywc_dmg_city_open = yes has_variable = ywc_dmg_city_review_running }
+		if = { limit = { ywc_dmg_city_current_broken = yes }
+			set_variable = { name = ywc_dmg_city_review_streak value = 0 }
+			remove_variable = ywc_dmg_city_review_mature
+			remove_variable = ywc_dmg_city_review_running
+			set_variable = { name = ywc_dmg_city_review_interrupted value = 1 } }
+		else_if = { limit = { NOT = { has_variable = ywc_dmg_city_review_ticked } }
+			set_variable = { name = ywc_dmg_city_review_ticked value = 1 days = 1 }
+			if = { limit = { NOT = { has_variable = ywc_dmg_city_review_month } }
+				set_variable = { name = ywc_dmg_city_review_month value = ywc_nmg_current_calendar_month } }
+			if = { limit = {
+				NOT = { has_variable = ywc_dmg_city_review_mature }
+				NOT = { var:ywc_dmg_city_review_month = ywc_nmg_current_calendar_month } }
+				set_variable = { name = ywc_dmg_city_review_month value = ywc_nmg_current_calendar_month }
+				change_variable = { name = ywc_dmg_city_review_streak add = 1 }
+				if = { limit = { var:ywc_dmg_city_review_streak >= 6 }
+					set_variable = { name = ywc_dmg_city_review_mature value = 1 }
+					remove_variable = ywc_dmg_city_review_running } } } }
+}
+ywc_dmg_city_close_full = {
+	if = { limit = { ywc_dmg_city_close_full_ready = yes }
+		set_variable = { name = ywc_dmg_city_outcome value = 1 }
+		ywc_v03_release_arc_dmg_v03_dmg_city_countryside = yes }
+}
+ywc_dmg_city_close_limited = {
+	if = { limit = { ywc_dmg_city_close_limited_ready = yes }
+		set_variable = { name = ywc_dmg_city_outcome value = 2 }
+		ywc_v03_release_arc_dmg_v03_dmg_city_countryside = yes }
+}
+ywc_dmg_city_close_setback = {
+	if = { limit = { ywc_dmg_city_close_setback_ready = yes }
+		set_variable = { name = ywc_dmg_city_outcome value = 3 }
+		ywc_v03_release_arc_dmg_v03_dmg_city_countryside = yes }
+}
+ywc_v03_release_arc_dmg_v03_dmg_city_countryside = {
+	if = { limit = {
+		has_variable = ywc_v03_dmg_v03_dmg_city_countryside_started
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled }
+		has_variable = ywc_dmg_city_outcome
+		var:ywc_dmg_city_outcome > 0 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_city_countryside_outcome value = var:ywc_dmg_city_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_city_countryside_settled value = 1 }
+		remove_variable = ywc_dmg_city_pending_event
+		remove_variable = ywc_dmg_city_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+ywc_dmg_city_close_withdrawn = {
+	if = { limit = {
+		has_variable = ywc_v03_dmg_v03_dmg_city_countryside_started
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_city_countryside_settled } }
+		set_variable = { name = ywc_dmg_city_withdrawn value = 1 }
+		if = { limit = { NOT = { has_variable = ywc_dmg_city_outcome } }
+			set_variable = { name = ywc_dmg_city_outcome value = 4 } }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_city_countryside_outcome value = var:ywc_dmg_city_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_city_countryside_settled value = 1 }
+		remove_variable = ywc_dmg_city_pending_event
+		remove_variable = ywc_dmg_city_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+# ---------------------------------------------------------------------------
+# v03_dmg_luzon_security (late, ywc_dmg.1210..1219)
+# ---------------------------------------------------------------------------
+ywc_v03_claim_arc_dmg_v03_dmg_luzon_security = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_started }
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled }
+		var:ywc_v03_active_arc_count < 3
+		var:ywc_v03_visible_task_count < 6 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_luzon_security_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		ywc_dmg_luzon_sec_capture_cost_base = yes
+	}
+}
+ywc_dmg_luzon_sec_capture_cost_base = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_luzon_sec_cost_captured } }
+		set_variable = { name = ywc_dmg_luzon_sec_cost value = yearly_gross_income }
+		change_variable = { name = ywc_dmg_luzon_sec_cost divide = 52 }
+		clamp_variable = { name = ywc_dmg_luzon_sec_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_dmg_luzon_sec_cost_captured value = 1 } }
+}
+ywc_dmg_luzon_sec_review_opened_once = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes NOT = { has_variable = ywc_dmg_luzon_sec_review_opened } }
+		set_variable = { name = ywc_dmg_luzon_sec_review_opened value = 1 } }
+}
+ywc_dmg_luzon_sec_open_once = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes NOT = { has_variable = ywc_dmg_luzon_sec_stage } }
+		set_variable = { name = ywc_dmg_luzon_sec_stage value = 1210 }
+		set_variable = { name = ywc_dmg_luzon_sec_phase value = 1 }
+		set_variable = { name = ywc_dmg_luzon_sec_pending_event value = 1210 }
+		set_variable = { name = ywc_dmg_luzon_sec_last_event value = 0 }
+		set_variable = { name = ywc_dmg_luzon_sec_review_streak value = 0 }
+	}
+}
+ywc_dmg_luzon_sec_pay_mission_once = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes NOT = { has_variable = ywc_dmg_luzon_sec_mission_paid } ywc_dmg_luzon_sec_finance_safe = yes }
+		ywc_dmg_luzon_sec_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_luzon_sec_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_luzon_sec_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_luzon_sec_mission_paid value = 1 } } }
+}
+ywc_dmg_luzon_sec_pay_port_office_once = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes NOT = { has_variable = ywc_dmg_luzon_sec_office_paid } ywc_dmg_luzon_sec_finance_safe = yes }
+		ywc_dmg_luzon_sec_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_luzon_sec_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_luzon_sec_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_luzon_sec_office_paid value = 1 }
+			random_scope_state = { limit = { owner = ROOT ywc_dmg_luzon_sec_has_port = yes }
+				add_building_workers = { building = building_port workers = 1000 } } } }
+}
+ywc_dmg_luzon_sec_prepare_queue = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes NOT = { has_variable = ywc_dmg_luzon_sec_queue_written } }
+		set_variable = { name = ywc_dmg_luzon_sec_queue_written value = 1 } }
+}
+ywc_dmg_luzon_sec_start_review = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes }
+		set_variable = { name = ywc_dmg_luzon_sec_review_running value = 1 }
+		set_variable = { name = ywc_dmg_luzon_sec_review_streak value = 0 }
+		set_variable = { name = ywc_dmg_luzon_sec_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_dmg_luzon_sec_review_month value = ywc_nmg_current_calendar_month }
+		remove_variable = ywc_dmg_luzon_sec_review_mature
+		remove_variable = ywc_dmg_luzon_sec_review_interrupted }
+}
+ywc_dmg_luzon_sec_track_review = {
+	if = { limit = { ywc_dmg_luzon_sec_open = yes has_variable = ywc_dmg_luzon_sec_review_running }
+		if = { limit = { ywc_dmg_luzon_sec_current_broken = yes }
+			set_variable = { name = ywc_dmg_luzon_sec_review_streak value = 0 }
+			remove_variable = ywc_dmg_luzon_sec_review_mature
+			remove_variable = ywc_dmg_luzon_sec_review_running
+			set_variable = { name = ywc_dmg_luzon_sec_review_interrupted value = 1 } }
+		else_if = { limit = { NOT = { has_variable = ywc_dmg_luzon_sec_review_ticked } }
+			set_variable = { name = ywc_dmg_luzon_sec_review_ticked value = 1 days = 1 }
+			if = { limit = { NOT = { has_variable = ywc_dmg_luzon_sec_review_month } }
+				set_variable = { name = ywc_dmg_luzon_sec_review_month value = ywc_nmg_current_calendar_month } }
+			if = { limit = {
+				NOT = { has_variable = ywc_dmg_luzon_sec_review_mature }
+				NOT = { var:ywc_dmg_luzon_sec_review_month = ywc_nmg_current_calendar_month } }
+				set_variable = { name = ywc_dmg_luzon_sec_review_month value = ywc_nmg_current_calendar_month }
+				change_variable = { name = ywc_dmg_luzon_sec_review_streak add = 1 }
+				if = { limit = { var:ywc_dmg_luzon_sec_review_streak >= 6 }
+					set_variable = { name = ywc_dmg_luzon_sec_review_mature value = 1 }
+					remove_variable = ywc_dmg_luzon_sec_review_running } } } }
+}
+ywc_dmg_luzon_sec_close_full = {
+	if = { limit = { ywc_dmg_luzon_sec_close_full_ready = yes }
+		set_variable = { name = ywc_dmg_luzon_sec_outcome value = 1 }
+		ywc_v03_release_arc_dmg_v03_dmg_luzon_security = yes }
+}
+ywc_dmg_luzon_sec_close_limited = {
+	if = { limit = { ywc_dmg_luzon_sec_close_limited_ready = yes }
+		set_variable = { name = ywc_dmg_luzon_sec_outcome value = 2 }
+		ywc_v03_release_arc_dmg_v03_dmg_luzon_security = yes }
+}
+ywc_dmg_luzon_sec_close_setback = {
+	if = { limit = { ywc_dmg_luzon_sec_close_setback_ready = yes }
+		set_variable = { name = ywc_dmg_luzon_sec_outcome value = 3 }
+		ywc_v03_release_arc_dmg_v03_dmg_luzon_security = yes }
+}
+ywc_v03_release_arc_dmg_v03_dmg_luzon_security = {
+	if = { limit = {
+		has_variable = ywc_v03_dmg_v03_dmg_luzon_security_started
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled }
+		has_variable = ywc_dmg_luzon_sec_outcome
+		var:ywc_dmg_luzon_sec_outcome > 0 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_luzon_security_outcome value = var:ywc_dmg_luzon_sec_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_luzon_security_settled value = 1 }
+		remove_variable = ywc_dmg_luzon_sec_pending_event
+		remove_variable = ywc_dmg_luzon_sec_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+ywc_dmg_luzon_sec_close_withdrawn = {
+	if = { limit = {
+		has_variable = ywc_v03_dmg_v03_dmg_luzon_security_started
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_luzon_security_settled } }
+		set_variable = { name = ywc_dmg_luzon_sec_withdrawn value = 1 }
+		if = { limit = { NOT = { has_variable = ywc_dmg_luzon_sec_outcome } }
+			set_variable = { name = ywc_dmg_luzon_sec_outcome value = 4 } }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_luzon_security_outcome value = var:ywc_dmg_luzon_sec_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_luzon_security_settled value = 1 }
+		remove_variable = ywc_dmg_luzon_sec_pending_event
+		remove_variable = ywc_dmg_luzon_sec_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+# ---------------------------------------------------------------------------
+# v03_dmg_generations_compact (late, ywc_dmg.1220..1229)
+# ---------------------------------------------------------------------------
+ywc_v03_claim_arc_dmg_v03_dmg_generations_compact = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_started }
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled }
+		var:ywc_v03_active_arc_count < 3
+		var:ywc_v03_visible_task_count < 6 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_generations_compact_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		ywc_dmg_gener_capture_cost_base = yes
+	}
+}
+ywc_dmg_gener_capture_cost_base = {
+	if = { limit = { NOT = { has_variable = ywc_dmg_gener_cost_captured } }
+		set_variable = { name = ywc_dmg_gener_cost value = yearly_gross_income }
+		change_variable = { name = ywc_dmg_gener_cost divide = 52 }
+		clamp_variable = { name = ywc_dmg_gener_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_dmg_gener_cost_captured value = 1 } }
+}
+ywc_dmg_gener_review_opened_once = {
+	if = { limit = { ywc_dmg_gener_open = yes NOT = { has_variable = ywc_dmg_gener_review_opened } }
+		set_variable = { name = ywc_dmg_gener_review_opened value = 1 } }
+}
+ywc_dmg_gener_open_once = {
+	if = { limit = { ywc_dmg_gener_open = yes NOT = { has_variable = ywc_dmg_gener_stage } }
+		set_variable = { name = ywc_dmg_gener_stage value = 1220 }
+		set_variable = { name = ywc_dmg_gener_phase value = 1 }
+		set_variable = { name = ywc_dmg_gener_pending_event value = 1220 }
+		set_variable = { name = ywc_dmg_gener_last_event value = 0 }
+		set_variable = { name = ywc_dmg_gener_review_streak value = 0 }
+	}
+}
+ywc_dmg_gener_pay_granary_once = {
+	if = { limit = { ywc_dmg_gener_open = yes NOT = { has_variable = ywc_dmg_gener_granary_paid } ywc_dmg_gener_finance_safe = yes }
+		ywc_dmg_gener_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_gener_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_gener_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_gener_granary_paid value = 1 } } }
+}
+ywc_dmg_gener_enact_poor_laws_once = {
+	if = { limit = { ywc_dmg_gener_open = yes NOT = { has_variable = ywc_dmg_gener_enacted } NOT = { has_law = law_poor_laws } }
+		add_enact_modifier = ywc_granary_relief_push
+		set_variable = { name = ywc_dmg_gener_enacted value = 1 } }
+}
+ywc_dmg_gener_pay_poor_laws_once = {
+	if = { limit = { ywc_dmg_gener_open = yes has_variable = ywc_dmg_gener_enacted NOT = { has_variable = ywc_dmg_gener_poor_paid } ywc_dmg_gener_finance_safe = yes }
+		ywc_dmg_gener_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_dmg_gener_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_dmg_gener_cost multiply = -0.5 }
+			set_variable = { name = ywc_dmg_gener_poor_paid value = 1 } } }
+}
+ywc_dmg_gener_prepare_queue = {
+	if = { limit = { ywc_dmg_gener_open = yes NOT = { has_variable = ywc_dmg_gener_queue_written } }
+		set_variable = { name = ywc_dmg_gener_queue_written value = 1 } }
+}
+ywc_dmg_gener_start_review = {
+	if = { limit = { ywc_dmg_gener_open = yes }
+		set_variable = { name = ywc_dmg_gener_review_running value = 1 }
+		set_variable = { name = ywc_dmg_gener_review_streak value = 0 }
+		set_variable = { name = ywc_dmg_gener_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_dmg_gener_review_month value = ywc_nmg_current_calendar_month }
+		remove_variable = ywc_dmg_gener_review_mature
+		remove_variable = ywc_dmg_gener_review_interrupted }
+}
+ywc_dmg_gener_track_review = {
+	if = { limit = { ywc_dmg_gener_open = yes has_variable = ywc_dmg_gener_review_running }
+		if = { limit = { ywc_dmg_gener_current_broken = yes }
+			set_variable = { name = ywc_dmg_gener_review_streak value = 0 }
+			remove_variable = ywc_dmg_gener_review_mature
+			remove_variable = ywc_dmg_gener_review_running
+			set_variable = { name = ywc_dmg_gener_review_interrupted value = 1 } }
+		else_if = { limit = { NOT = { has_variable = ywc_dmg_gener_review_ticked } }
+			set_variable = { name = ywc_dmg_gener_review_ticked value = 1 days = 1 }
+			if = { limit = { NOT = { has_variable = ywc_dmg_gener_review_month } }
+				set_variable = { name = ywc_dmg_gener_review_month value = ywc_nmg_current_calendar_month } }
+			if = { limit = {
+				NOT = { has_variable = ywc_dmg_gener_review_mature }
+				NOT = { var:ywc_dmg_gener_review_month = ywc_nmg_current_calendar_month } }
+				set_variable = { name = ywc_dmg_gener_review_month value = ywc_nmg_current_calendar_month }
+				change_variable = { name = ywc_dmg_gener_review_streak add = 1 }
+				if = { limit = { var:ywc_dmg_gener_review_streak >= 4 }
+					set_variable = { name = ywc_dmg_gener_review_mature value = 1 }
+					remove_variable = ywc_dmg_gener_review_running } } } }
+}
+ywc_dmg_gener_close_full = {
+	if = { limit = { ywc_dmg_gener_close_full_ready = yes }
+		set_variable = { name = ywc_dmg_gener_outcome value = 1 }
+		ywc_v03_release_arc_dmg_v03_dmg_generations_compact = yes }
+}
+ywc_dmg_gener_close_limited = {
+	if = { limit = { ywc_dmg_gener_close_limited_ready = yes }
+		set_variable = { name = ywc_dmg_gener_outcome value = 2 }
+		ywc_v03_release_arc_dmg_v03_dmg_generations_compact = yes }
+}
+ywc_dmg_gener_close_setback = {
+	if = { limit = { ywc_dmg_gener_close_setback_ready = yes }
+		set_variable = { name = ywc_dmg_gener_outcome value = 3 }
+		ywc_v03_release_arc_dmg_v03_dmg_generations_compact = yes }
+}
+ywc_v03_release_arc_dmg_v03_dmg_generations_compact = {
+	if = { limit = {
+		has_variable = ywc_v03_dmg_v03_dmg_generations_compact_started
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled }
+		has_variable = ywc_dmg_gener_outcome
+		var:ywc_dmg_gener_outcome > 0 }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_generations_compact_outcome value = var:ywc_dmg_gener_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_generations_compact_settled value = 1 }
+		remove_variable = ywc_dmg_gener_pending_event
+		remove_variable = ywc_dmg_gener_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+ywc_dmg_gener_close_withdrawn = {
+	if = { limit = {
+		has_variable = ywc_v03_dmg_v03_dmg_generations_compact_started
+		NOT = { has_variable = ywc_v03_dmg_v03_dmg_generations_compact_settled } }
+		set_variable = { name = ywc_dmg_gener_withdrawn value = 1 }
+		if = { limit = { NOT = { has_variable = ywc_dmg_gener_outcome } }
+			set_variable = { name = ywc_dmg_gener_outcome value = 4 } }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_generations_compact_outcome value = var:ywc_dmg_gener_outcome }
+		set_variable = { name = ywc_v03_dmg_v03_dmg_generations_compact_settled value = 1 }
+		remove_variable = ywc_dmg_gener_pending_event
+		remove_variable = ywc_dmg_gener_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
 }

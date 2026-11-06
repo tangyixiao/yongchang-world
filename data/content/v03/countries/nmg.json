@@ -7048,6 +7048,3476 @@
         ],
         "direct_adds": []
       }
+    },
+    {
+      "slug": "v03_nmg_coastal_guard",
+      "era": "middle",
+      "participants": [
+        "船主与舵工（欠票与海险）",
+        "商号与账房（执照与赔付）",
+        "王国官署书办（章程与稽核）",
+        "港市储户与钱庄（利率与存款）",
+        "海军与护航官（风讯与航线）"
+      ],
+      "depends_on": [
+        "v03_nmg_bay_ports"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_coastal_pledge",
+          "title": {
+            "zh": " JE——船钞互保",
+            "en": " JE: The Shipowners' Pool"
+          },
+          "desc": {
+            "zh": "从欠票到赔付，把海险背书变成可核查的账目。",
+            "en": "From notes to payout: make sea-risk backing an auditable account."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } } possible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } ywc_nmg_coastal_finance_safe = yes } immediate = { ywc_v03_claim_arc_nmg_v03_jhg_v03_nmg_coastal_guard = yes ywc_nmg_coastal_open_once = yes } on_fail = { ywc_nmg_coastal_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_coastal_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1200 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1200 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1201 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1201 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1202 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1202 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1203 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1203 } } } } }",
+          "goal": "{ has_variable = ywc_nmg_coastal_phase NOT = { has_variable = ywc_nmg_coastal_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_nmg_coastal_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_coastal_review",
+          "title": {
+            "zh": " JE——半年对账",
+            "en": " JE: The Half-Year Reckoning"
+          },
+          "desc": {
+            "zh": "六个月的观察以真实月份计，战事或赖账会使之中断。",
+            "en": "Six real calendar months of review; war or default breaks it."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_nmg_coastal_phase var:ywc_nmg_coastal_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } NOT = { has_journal_entry = ywc_je_v03_nmg_coastal_review } } possible = { c:NMG ?= this has_variable = ywc_nmg_coastal_phase var:ywc_nmg_coastal_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } } immediate = { ywc_nmg_coastal_review_opened_once = yes } on_fail = { ywc_nmg_coastal_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_coastal_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1204 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1204 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1205 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1205 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1206 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1206 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_coastal_pending_event = 1207 } remove_variable = ywc_nmg_coastal_pending_event trigger_event = { id = ywc_nmg.1207 } } } } }",
+          "goal": "{ OR = { var:ywc_nmg_coastal_outcome = 1 var:ywc_nmg_coastal_outcome = 2 var:ywc_nmg_coastal_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_nmg_coastal_withdrawn var:ywc_nmg_coastal_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1120",
+          "title": {
+            "zh": "船主的欠票",
+            "en": "The Shipowners' Notes"
+          },
+          "desc": {
+            "zh": "台风季一过，沉船的欠票在港市流通。谁来给这些纸背书？",
+            "en": "After the typhoon season, notes of sunken hulls circulate. Who stands behind this paper?"
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1120 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1120 } set_variable = { name = ywc_nmg_coastal_last_event value = 1120 } }",
+          "options": [
+            {
+              "key": "official_fund",
+              "label": {
+                "zh": "官方互保基金",
+                "en": "An official mutual fund"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1120 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1121 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1121 } } set_variable = { name = ywc_nmg_coastal_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先立制后费项；后续实付按半周收入计。",
+                "en": "Institution first, costs later; later steps pay half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "国库作保，船主共济，风险归官。",
+                "en": "The treasury backs the pool; risk lands on the state."
+              },
+              "trigger": "{ ywc_nmg_coastal_at_1120 = yes }"
+            },
+            {
+              "key": "private_licenses",
+              "label": {
+                "zh": "私营保险执照",
+                "en": "Private insurance licenses"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1120 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1121 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1121 } } set_variable = { name = ywc_nmg_coastal_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立制后费项。",
+                "en": "Same order: institution first, costs later."
+              },
+              "consequence_note": {
+                "zh": "商号领照经营，官署只管章程。",
+                "en": "Houses take licenses; the office keeps the rules."
+              }
+            },
+            {
+              "key": "state_borrowing",
+              "label": {
+                "zh": "国家直接举债",
+                "en": "The state borrows directly"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1120 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1121 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1121 } } set_variable = { name = ywc_nmg_coastal_mode value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立制后费项。",
+                "en": "Same order: institution first, costs later."
+              },
+              "consequence_note": {
+                "zh": "以国债抚欠票，利息压上后任的账。",
+                "en": "Sovereign debt soothes the notes; interest lands on later books."
+              }
+            },
+            {
+              "key": "wait_at_1200",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1120 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，欠票仍飘。",
+                "en": "Defers one turn; the notes still drift."
+              }
+            },
+            {
+              "key": "withdraw_at_1120",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1120 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读金融区建筑与财政真实定 mode；三条路同图。",
+            "en": "Reads real financial districts and finances to set the mode; three roads, one map."
+          },
+          "reads": [
+            "is_building_type",
+            "in_default",
+            "net_fixed_income",
+            "ywc_nmg_coastal_has_financial"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_mode",
+            "ywc_nmg_coastal_stage",
+            "ywc_nmg_coastal_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1121",
+          "title": {
+            "zh": "互保基金的底银",
+            "en": "Seed Coin for the Fund"
+          },
+          "desc": {
+            "zh": "立了互保，就要有底银。户部把第一笔的账单递了上来。",
+            "en": "A pool needs seed coin. The treasury hands up the first bill."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1121 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1121 } set_variable = { name = ywc_nmg_coastal_last_event value = 1121 } }",
+          "options": [
+            {
+              "key": "pay_the_seed",
+              "label": {
+                "zh": "如数拨付",
+                "en": "Pay the seed"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1121 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1122 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1122 } } ywc_nmg_coastal_pay_fund_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入；库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "底银入库，欠票开始有价。",
+                "en": "Seed paid; the notes gain a price."
+              },
+              "trigger": "{ ywc_nmg_coastal_at_1121 = yes ywc_nmg_coastal_finance_safe = yes }"
+            },
+            {
+              "key": "defer_the_seed",
+              "label": {
+                "zh": "缓拨",
+                "en": "Defer the seed"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1121 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1122 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1122 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，基金空转。",
+                "en": "No outlay; the fund idles."
+              },
+              "consequence_note": {
+                "zh": "纸面上的保，海上的险照旧。",
+                "en": "Insurance on paper; the sea keeps its risks."
+              }
+            },
+            {
+              "key": "wait_at_1201",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1121 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，账单压着。",
+                "en": "Defers one turn; the bill stays on the pile."
+              }
+            },
+            {
+              "key": "withdraw_at_1121",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1121 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记决定钱是否真动；不见钱不立保。",
+            "en": "Reads finances and payment flags before coin moves; no cover without payment."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_coastal_fund_paid"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_fund_paid",
+            "ywc_nmg_coastal_stage",
+            "ywc_nmg_coastal_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1122",
+          "title": {
+            "zh": "执照与章程",
+            "en": "Licenses and Articles"
+          },
+          "desc": {
+            "zh": "走商号之路，就要给执照定章程：赔付、稽核、停业，一一列明。",
+            "en": "The private road needs license articles: payout, audit, suspension, each clause listed."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1122 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1122 } set_variable = { name = ywc_nmg_coastal_last_event value = 1122 } }",
+          "options": [
+            {
+              "key": "charter_the_houses",
+              "label": {
+                "zh": "官署立章",
+                "en": "Charter by the office"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1122 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1123 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1123 } } ywc_nmg_coastal_pay_charter_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添金融区雇工。",
+                "en": "Pays half a weekly income and adds financial-district staff."
+              },
+              "consequence_note": {
+                "zh": "执照有名，赔付有据。",
+                "en": "Licenses named; payouts on record."
+              },
+              "trigger": "{ ywc_nmg_coastal_at_1122 = yes ywc_nmg_coastal_finance_safe = yes }"
+            },
+            {
+              "key": "let_houses_draft",
+              "label": {
+                "zh": "商号自拟",
+                "en": "Houses draft their own"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1122 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1123 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1123 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，章在商号。",
+                "en": "No outlay; articles stay with the houses."
+              },
+              "consequence_note": {
+                "zh": "章不在官，问赔付要走商号的门。",
+                "en": "Articles elsewhere; claims knock on private doors."
+              }
+            },
+            {
+              "key": "wait_at_1202",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1122 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，章程未定。",
+                "en": "Defers one turn; no articles yet."
+              }
+            },
+            {
+              "key": "withdraw_at_1122",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1122 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与付费标记再动钱；执照章程为真实金融就业。",
+            "en": "Reads finances and payment flags before spending; licensing is real financial staff."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_coastal_charter_paid"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_charter_paid",
+            "ywc_nmg_coastal_stage",
+            "ywc_nmg_coastal_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1123",
+          "title": {
+            "zh": "第一笔赔付",
+            "en": "The First Payout"
+          },
+          "desc": {
+            "zh": "霜季第一笔赔付到期：三条沉船的欠票递到柜上。基金与商号都在看。",
+            "en": "The first payout falls due: notes of three lost hulls reach the counter. Fund and houses watch."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_pledge NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1123 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1123 } set_variable = { name = ywc_nmg_coastal_last_event value = 1123 } set_variable = { name = ywc_nmg_coastal_loss_recorded value = 1 } }",
+          "options": [
+            {
+              "key": "honor_the_notes",
+              "label": {
+                "zh": "如约赔付",
+                "en": "Honor the notes"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1123 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1124 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1124 } } set_variable = { name = ywc_nmg_coastal_phase value = 2 } ywc_nmg_coastal_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "赔付走既有底银；观察按真实历月推进。",
+                "en": "Payout draws on the seed; the review advances by real months."
+              },
+              "consequence_note": {
+                "zh": "如约赔付，信用立而库银薄。",
+                "en": "Notes honored; migrant rises as coin falls."
+              },
+              "trigger": "{ ywc_nmg_coastal_at_1123 = yes ywc_nmg_coastal_finance_safe = yes }"
+            },
+            {
+              "key": "haggle_the_payout",
+              "label": {
+                "zh": "折价赔付",
+                "en": "Settle at a discount"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1123 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1124 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1124 } } set_variable = { name = ywc_nmg_coastal_phase value = 2 } ywc_nmg_coastal_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另支出；观察照常推进。",
+                "en": "No extra outlay; the review proceeds."
+              },
+              "consequence_note": {
+                "zh": "折价保库，信用伤了三成。",
+                "en": "A discount spares the vault and wounds migrant."
+              },
+              "trigger": "{ ywc_nmg_coastal_at_1123 = yes }"
+            },
+            {
+              "key": "wait_at_1203",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1123 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，赔付未决。",
+                "en": "Defers one turn; the payout waits."
+              }
+            },
+            {
+              "key": "withdraw_at_1123",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1123 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接首赔与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands from first payout to review; the phase-2 pulse counts real months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "gold_reserves",
+            "is_at_war"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_loss_recorded",
+            "ywc_nmg_coastal_phase",
+            "ywc_nmg_coastal_review_running"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1124",
+          "title": {
+            "zh": "月度对账",
+            "en": "The Monthly Reckoning"
+          },
+          "desc": {
+            "zh": "基金与商号的账目各成一本，书办要把两本账对成一册。",
+            "en": "Fund and houses keep separate books; the clerks must bind them into one."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1124 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1124 } set_variable = { name = ywc_nmg_coastal_last_event value = 1124 } }",
+          "options": [
+            {
+              "key": "continue_review",
+              "label": {
+                "zh": "续对账",
+                "en": "Continue the reckoning"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1124 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1125 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1125 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察继续，直至满期或被战事打断。",
+                "en": "The review continues until six months pass or it breaks."
+              }
+            },
+            {
+              "key": "wait_at_1204",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1124 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两本账仍两本。",
+                "en": "Defers one turn; two books stay two."
+              }
+            },
+            {
+              "key": "withdraw_at_1124",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1124 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review 状态；续观察不花钱，中断会清零 streak。",
+            "en": "Reads only review state; continuing costs nothing, interruption clears the streak."
+          },
+          "reads": [
+            "ywc_nmg_coastal_review_streak",
+            "ywc_nmg_coastal_review_mature",
+            "ywc_nmg_coastal_review_interrupted"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_stage",
+            "ywc_nmg_coastal_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1125",
+          "title": {
+            "zh": "第二场风讯",
+            "en": "Word of a Second Storm"
+          },
+          "desc": {
+            "zh": "风讯又至：南海南碇三船失期。柜上again围满了递票的船主。",
+            "en": "Storm news again: three hulls overdue off the southern anchorage. Shipowners crowd the counter once more."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1125 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1125 } set_variable = { name = ywc_nmg_coastal_last_event value = 1125 } }",
+          "options": [
+            {
+              "key": "pay_again",
+              "label": {
+                "zh": "照章再赔",
+                "en": "Pay by the articles"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1125 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1126 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1126 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另支出，赔付走底银余额。",
+                "en": "No extra outlay; payout draws on the remaining seed."
+              },
+              "consequence_note": {
+                "zh": "再赔则信用愈固，底银愈薄。",
+                "en": "Paying again firms migrant and thins the seed."
+              },
+              "trigger": "{ ywc_nmg_coastal_fund_paid = yes }"
+            },
+            {
+              "key": "cap_the_payout",
+              "label": {
+                "zh": "设赔付上限",
+                "en": "Cap the payout"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1125 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1126 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1126 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "上限立，船主自担超额之险。",
+                "en": "A cap stands; owners carry the excess."
+              },
+              "trigger": "{ ywc_nmg_coastal_at_1125 = yes }"
+            },
+            {
+              "key": "wait_at_1205",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1125 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，风讯未决。",
+                "en": "Defers one turn; the storm news waits."
+              }
+            },
+            {
+              "key": "withdraw_at_1125",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1125 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 mode 与底银标记权衡两路；赔付上限不由敕令强加给已领照商号。",
+            "en": "Reads the mode and seed flags to weigh two roads; caps cannot be forced on licensed houses by decree."
+          },
+          "reads": [
+            "ywc_nmg_coastal_mode",
+            "ywc_nmg_coastal_fund_paid",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_stage",
+            "ywc_nmg_coastal_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1126",
+          "title": {
+            "zh": "对账将清",
+            "en": "The Reckoning Closes"
+          },
+          "desc": {
+            "zh": "半年对账将近：赔付几何、底银余几、执照几家如实，俱可点验。",
+            "en": "Half-year reckoning nears: payouts, remaining seed, honest licenses, all can be verified."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1126 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1126 } set_variable = { name = ywc_nmg_coastal_last_event value = 1126 } }",
+          "options": [
+            {
+              "key": "finalize_review",
+              "label": {
+                "zh": "收对账",
+                "en": "Close the reckoning"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1126 = yes NOT = { has_variable = ywc_nmg_coastal_outcome } } set_variable = { name = ywc_nmg_coastal_stage value = 1127 } set_variable = { name = ywc_nmg_coastal_pending_event value = 1127 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察满期则成熟，否则带瑕疵收束。",
+                "en": "A matured review closes clean; otherwise it closes with a flaw."
+              }
+            },
+            {
+              "key": "wait_at_1206",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1126 = yes } set_variable = { name = ywc_nmg_coastal_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，对账再清一分。",
+                "en": "Defers one turn; the reckoning sharpens."
+              }
+            },
+            {
+              "key": "withdraw_at_1126",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1126 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review_mature 与 interrupted 定收束口径。",
+            "en": "Reads review maturity and interruption to set the closing rule."
+          },
+          "reads": [
+            "ywc_nmg_coastal_review_mature",
+            "ywc_nmg_coastal_review_interrupted"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_stage",
+            "ywc_nmg_coastal_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1127",
+          "title": {
+            "zh": "船钞与信用的归结",
+            "en": "Notes and Credit Conclude"
+          },
+          "desc": {
+            "zh": "半年的账摊在案上。官保、商保、还是国债，笔下今日定。",
+            "en": "Half a year of books lies open. State cover, private cover, or sovereign debt: the brush must fall today."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_coastal_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_coastal_guard_settled } var:ywc_nmg_coastal_stage = 1127 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1127 } set_variable = { name = ywc_nmg_coastal_last_event value = 1127 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：信用立而赔付实",
+                "en": "Report: migrant stands, payouts real"
+              },
+              "effect": "{ ywc_nmg_coastal_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured six-month review and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured review."
+              },
+              "trigger": "{ ywc_nmg_coastal_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：有限信用",
+                "en": "Report: limited migrant"
+              },
+              "effect": "{ ywc_nmg_coastal_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_nmg_coastal_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：信用搁浅",
+                "en": "Report: migrant stranded"
+              },
+              "effect": "{ ywc_nmg_coastal_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_nmg_coastal_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1127",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_coastal_at_1127 = yes } ywc_nmg_coastal_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to a written outcome."
+          },
+          "reads": [
+            "ywc_nmg_coastal_review_mature",
+            "ywc_nmg_coastal_review_interrupted",
+            "ywc_nmg_coastal_finance_safe"
+          ],
+          "writes": [
+            "ywc_nmg_coastal_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:互保立而赔付实，执照章程与底银俱清",
+        "limited:有限信用，赔付行而章程未全，回执只得一半",
+        "setback:信用搁浅，底银未拨或赔付失约，已付各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_nmg_bay_ports：1100–1109 的船坞资本决定本线船主群体的底子，1200 mode 与 1205 风讯读其 outcome。",
+        "v03_nmg_land_arbitration：1000–1007 的地权裁定先例可被 1201 席次引用，同一先例两处出现不重复立制。"
+      ]
+    },
+    {
+      "slug": "v03_nmg_resident_representation",
+      "era": "late",
+      "participants": [
+        "王国海军与港务官（护航与驿馆）",
+        "LAN、DMG、NQG 诸港代表（席次与分摊）",
+        "海商与船主（航路与劫掠）",
+        "王国官署书办（条文与档案）",
+        "岛社与渔团（烽燧与港讯）"
+      ],
+      "depends_on": [
+        "v03_nmg_bay_ports"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_resident_mandate",
+          "title": {
+            "zh": " JE——海议请印",
+            "en": " JE: The Petition for a Council"
+          },
+          "desc": {
+            "zh": "从请印到授权，把诸港共议之门打开。",
+            "en": "From petition to mandate: open the future's door."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } } possible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } ywc_nmg_resident_finance_safe = yes } immediate = { ywc_v03_claim_arc_nmg_v03_jhg_v03_nmg_resident_representation = yes ywc_nmg_resident_open_once = yes } on_fail = { ywc_nmg_resident_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_resident_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1220 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1220 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1221 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1221 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1222 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1222 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1223 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1223 } } } } }",
+          "goal": "{ has_variable = ywc_nmg_resident_mandate_ready NOT = { has_variable = ywc_nmg_resident_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_nmg_resident_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_resident_budget",
+          "title": {
+            "zh": " JE——席次与分摊",
+            "en": " JE: Seats and Shares"
+          },
+          "desc": {
+            "zh": "常设海议的席次、护航分摊与底银三事。",
+            "en": "Seats, escort shares, and seed coin for the standing future."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_nmg_resident_phase var:ywc_nmg_resident_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } NOT = { has_journal_entry = ywc_je_v03_nmg_resident_budget } } possible = { c:NMG ?= this has_variable = ywc_nmg_resident_phase var:ywc_nmg_resident_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } } immediate = { ywc_nmg_resident_review_opened_once = yes } on_fail = { ywc_nmg_resident_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_resident_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1224 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1224 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1225 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1225 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1226 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1226 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1227 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1227 } } } } }",
+          "goal": "{ OR = { var:ywc_nmg_resident_outcome = 1 var:ywc_nmg_resident_outcome = 2 var:ywc_nmg_resident_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_nmg_resident_withdrawn var:ywc_nmg_resident_outcome = 4 } }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_resident_terms",
+          "title": {
+            "zh": " JE——海约条文",
+            "en": " JE: The Pact's Terms"
+          },
+          "desc": {
+            "zh": "条文之议与四个月观察，以真实月份计。",
+            "en": "Terms debate and a four-month review, counted in real months."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_nmg_resident_terms_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } NOT = { has_journal_entry = ywc_je_v03_nmg_resident_terms } } possible = { c:NMG ?= this has_variable = ywc_nmg_resident_terms_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled }  } immediate = { ywc_nmg_resident_begin_terms = yes } on_fail = { ywc_nmg_resident_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_resident_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1228 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1228 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_resident_pending_event = 1229 } remove_variable = ywc_nmg_resident_pending_event trigger_event = { id = ywc_nmg.1229 } } } } }",
+          "goal": "{ OR = { var:ywc_nmg_resident_outcome = 1 var:ywc_nmg_resident_outcome = 2 var:ywc_nmg_resident_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_nmg_resident_withdrawn var:ywc_nmg_resident_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1200",
+          "title": {
+            "zh": "诸港共议的请印",
+            "en": "The Ports Ask for a Council"
+          },
+          "desc": {
+            "zh": "海上劫掠使护航各自为战。LAN、DMG、NQG 诸港公推请印，要一个常设的海议。",
+            "en": "Raids leave each port convoying alone. LAN, DMG, and NQG petition together for a standing sea future."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1200 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1200 } set_variable = { name = ywc_nmg_resident_last_event value = 1200 } }",
+          "options": [
+            {
+              "key": "accept_the_mandate",
+              "label": {
+                "zh": "受请开议",
+                "en": "Accept the mandate"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1200 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1201 } set_variable = { name = ywc_nmg_resident_pending_event value = 1201 } } set_variable = { name = ywc_nmg_resident_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先应请后费项；后续实付按半周收入计。",
+                "en": "Mandate first, costs later; later steps pay half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "常设海议以王国为首，诸港分席。",
+                "en": "A standing future seats the realm first, ports by share."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1200 = yes ywc_nmg_resident_partners_present = yes }"
+            },
+            {
+              "key": "rotating_convoy",
+              "label": {
+                "zh": "轮值护航",
+                "en": "Rotating convoys"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1200 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1201 } set_variable = { name = ywc_nmg_resident_pending_event value = 1201 } } set_variable = { name = ywc_nmg_resident_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先应请后费项。",
+                "en": "Same order: mandate first, costs later."
+              },
+              "consequence_note": {
+                "zh": "不设常席，诸港按季轮值出船。",
+                "en": "No permanent seat; ports rotate the escort by season."
+              }
+            },
+            {
+              "key": "bilateral_only",
+              "label": {
+                "zh": "只订双边",
+                "en": "Bilateral pacts only"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1200 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1201 } set_variable = { name = ywc_nmg_resident_pending_event value = 1201 } } set_variable = { name = ywc_nmg_resident_mode value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先应请后费项。",
+                "en": "Same order: mandate first, costs later."
+              },
+              "consequence_note": {
+                "zh": "一港一约，不立共议之名。",
+                "en": "One port, one pact; no future name is raised."
+              }
+            },
+            {
+              "key": "wait_at_1220",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1200 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，请印未复。",
+                "en": "Defers one turn; the petition waits."
+              }
+            },
+            {
+              "key": "withdraw_at_1200",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1200 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 LAN/DMG/NQG 是否实际存在定伙伴清点；未同意者不设席位。",
+            "en": "Counts only partners that actually exist; no seat without consent."
+          },
+          "reads": [
+            "exists",
+            "is_country_alive",
+            "navy_size",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_nmg_resident_mode",
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1201",
+          "title": {
+            "zh": "使费的账单",
+            "en": "The Envoys' Bill"
+          },
+          "desc": {
+            "zh": "开议要使费：聘书、舟楫、驿馆。户部把账单递了上来。",
+            "en": "A future needs envoys: letters, hulls, lodging. The treasury hands up the bill."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1201 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1201 } set_variable = { name = ywc_nmg_resident_last_event value = 1201 } }",
+          "options": [
+            {
+              "key": "pay_the_envoys",
+              "label": {
+                "zh": "如数拨付",
+                "en": "Pay the envoys"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1201 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1202 } set_variable = { name = ywc_nmg_resident_pending_event value = 1202 } } ywc_nmg_resident_pay_envoy_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入；库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "使团成行，海议有门。",
+                "en": "The envoys sail; the future opens."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1201 = yes ywc_nmg_resident_finance_safe = yes }"
+            },
+            {
+              "key": "let_ports_host",
+              "label": {
+                "zh": "诸港自任接待",
+                "en": "Ports host their own"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1201 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1202 } set_variable = { name = ywc_nmg_resident_pending_event value = 1202 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，接待在诸港。",
+                "en": "No outlay; ports bear the hosting."
+              },
+              "consequence_note": {
+                "zh": "省了使费，欠了人情。",
+                "en": "Fees saved; favors owed."
+              }
+            },
+            {
+              "key": "wait_at_1221",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1201 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，账单压着。",
+                "en": "Defers one turn; the bill stays on the pile."
+              }
+            },
+            {
+              "key": "withdraw_at_1201",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1201 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记决定钱是否真动；不见钱不遣使。",
+            "en": "Reads finances and payment flags before coin moves; no envoys without payment."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_resident_envoy_paid"
+          ],
+          "writes": [
+            "ywc_nmg_resident_envoy_paid",
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1202",
+          "title": {
+            "zh": "港讯的驿馆",
+            "en": "The Port-Report Station"
+          },
+          "desc": {
+            "zh": "共议要通港讯：风暴、劫掠、失期，须有一处驿馆日夜收发。",
+            "en": "A future needs port reports: storms, raids, overdue hulls, all through one station, day and night."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1202 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1202 } set_variable = { name = ywc_nmg_resident_last_event value = 1202 } }",
+          "options": [
+            {
+              "key": "staff_the_station",
+              "label": {
+                "zh": "官设驿馆",
+                "en": "Staff the station"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1202 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1203 } set_variable = { name = ywc_nmg_resident_pending_event value = 1203 } } ywc_nmg_resident_pay_station_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添港口雇工。",
+                "en": "Pays half a weekly income and adds port staff."
+              },
+              "consequence_note": {
+                "zh": "驿馆立而港讯通，劫掠难再各个击破。",
+                "en": "The station links the ports; raids lose their isolation."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1202 = yes ywc_nmg_resident_finance_safe = yes }"
+            },
+            {
+              "key": "use_old_beacons",
+              "label": {
+                "zh": "沿用旧烽燧",
+                "en": "Keep the old beacons"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1202 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1203 } set_variable = { name = ywc_nmg_resident_pending_event value = 1203 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，讯息仍靠烽燧与商船。",
+                "en": "No outlay; news rides beacons and merchant sail."
+              },
+              "consequence_note": {
+                "zh": "烽燧迟半日，劫掠快半日。",
+                "en": "Beacons lag half a day; raiders gain half a day."
+              }
+            },
+            {
+              "key": "wait_at_1222",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1202 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，驿馆未设。",
+                "en": "Defers one turn; no station yet."
+              }
+            },
+            {
+              "key": "withdraw_at_1202",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1202 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与付费标记再动钱；驿馆为真实港口就业。",
+            "en": "Reads finances and payment flags before spending; the station is real port staff."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_resident_station_paid"
+          ],
+          "writes": [
+            "ywc_nmg_resident_station_paid",
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1203",
+          "title": {
+            "zh": "海议的授权状",
+            "en": "The Council's Mandate Sealed"
+          },
+          "desc": {
+            "zh": "使费既清，港讯既通。授权状落在纸上，海议之门由此而开。",
+            "en": "Fees paid, reports flowing. The mandate lands on paper; the future's door opens."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_mandate NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1203 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1203 } set_variable = { name = ywc_nmg_resident_last_event value = 1203 } set_variable = { name = ywc_nmg_resident_mandate_ready value = 1 } ywc_nmg_resident_open_second_journal_once = yes }",
+          "options": [
+            {
+              "key": "proceed",
+              "label": {
+                "zh": "进入列席之争",
+                "en": "On to the seats quarrel"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1203 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1204 } set_variable = { name = ywc_nmg_resident_pending_event value = 1204 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "授权既立，接着议席次。",
+                "en": "Mandate sealed; next, the seats."
+              },
+              "trigger": "{ ywc_nmg_resident_mandate_ready = yes }"
+            },
+            {
+              "key": "wait_at_1223",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1203 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，授权状未颁。",
+                "en": "Defers one turn; the mandate is unsigned."
+              }
+            },
+            {
+              "key": "withdraw_at_1203",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1203 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "置位 mandate_ready 并打开第二本日志；列席之争从 1224 起。",
+            "en": "Sets mandate_ready and opens the second journal; the seats quarrel starts at 1224."
+          },
+          "reads": [
+            "ywc_nmg_resident_mandate_ready"
+          ],
+          "writes": [
+            "ywc_nmg_resident_mandate_ready",
+            "ywc_nmg_resident_convene_started"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1204",
+          "title": {
+            "zh": "席次之争",
+            "en": "The Seats Quarrel"
+          },
+          "desc": {
+            "zh": "常设海议的第一会：席次如何分？首港与伙伴港各执一册。",
+            "en": "The standing future's first session: how are seats divided? The home port and the partner ports each hold a ledger."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_budget NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1204 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1204 } set_variable = { name = ywc_nmg_resident_last_event value = 1204 } ywc_nmg_resident_begin_convening = yes }",
+          "options": [
+            {
+              "key": "crown_first",
+              "label": {
+                "zh": "王座居首",
+                "en": "The crown first"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1204 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1205 } set_variable = { name = ywc_nmg_resident_pending_event value = 1205 } } set_variable = { name = ywc_nmg_resident_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "席次以王国为先，伙伴港按贡额列坐。",
+                "en": "The realm leads; partners sit by tribute."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1204 = yes }"
+            },
+            {
+              "key": "equal_shares",
+              "label": {
+                "zh": "按港均席",
+                "en": "Seats by port"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1204 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1205 } set_variable = { name = ywc_nmg_resident_pending_event value = 1205 } } set_variable = { name = ywc_nmg_resident_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "一港一席，轮值主席。",
+                "en": "One seat per port; the chair rotates."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1204 = yes }"
+            },
+            {
+              "key": "wait_at_1224",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1204 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，席次未定。",
+                "en": "Defers one turn; the seats wait."
+              }
+            },
+            {
+              "key": "withdraw_at_1204",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1204 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 mode 与伙伴清点权衡席次；未同意的港口不入席。",
+            "en": "Reads the mode and partner count; no seat without consent."
+          },
+          "reads": [
+            "ywc_nmg_resident_mode",
+            "exists",
+            "is_country_alive"
+          ],
+          "writes": [
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event",
+            "ywc_nmg_resident_convene_begun"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1205",
+          "title": {
+            "zh": "护航的分摊",
+            "en": "Splitting the Escort"
+          },
+          "desc": {
+            "zh": "席次既定，接着议船：护航船与饷银如何分摊？海军簿与港税册并陈。",
+            "en": "Seats set, ships come next: who fields hulls and pay? Navy lists and port tariffs lie side by side."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_budget NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1205 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1205 } set_variable = { name = ywc_nmg_resident_last_event value = 1205 } }",
+          "options": [
+            {
+              "key": "by_the_navy_book",
+              "label": {
+                "zh": "按海军簿摊",
+                "en": "Assess by navy lists"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1205 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1206 } set_variable = { name = ywc_nmg_resident_pending_event value = 1206 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "大港多出船，小港多出饷。",
+                "en": "Great ports hull, small ports pay."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1205 = yes }"
+            },
+            {
+              "key": "by_the_tariff",
+              "label": {
+                "zh": "按港税册摊",
+                "en": "Assess by tariffs"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1205 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1206 } set_variable = { name = ywc_nmg_resident_pending_event value = 1206 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "税重者多担，货多者受益。",
+                "en": "The taxed carry; the laden gain."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1205 = yes }"
+            },
+            {
+              "key": "wait_at_1225",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1205 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，分摊未决。",
+                "en": "Defers one turn; the split waits."
+              }
+            },
+            {
+              "key": "withdraw_at_1205",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1205 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读海军规模与港税两本真册权衡分摊；不凭空增船。",
+            "en": "Weighs the real navy lists against real tariffs; no hulls appear by decree."
+          },
+          "reads": [
+            "navy_size",
+            "market_goods_exports",
+            "net_fixed_income"
+          ],
+          "writes": [
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1206",
+          "title": {
+            "zh": "共同海约的底银",
+            "en": "Seed Coin for the Sea Pact"
+          },
+          "desc": {
+            "zh": "海约要底银：抚恤沉船、修补烽燧、岁修驿馆。诸港的目光落回王国。",
+            "en": "The pact needs seed coin: relief for lost hulls, beacon repair, station upkeep. Eyes turn back to the realm."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_budget NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1206 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1206 } set_variable = { name = ywc_nmg_resident_last_event value = 1206 } }",
+          "options": [
+            {
+              "key": "pay_the_fund",
+              "label": {
+                "zh": "如数拨付",
+                "en": "Pay the fund"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1206 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1207 } set_variable = { name = ywc_nmg_resident_pending_event value = 1207 } } ywc_nmg_resident_pay_fund_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入；库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "底银入库，海约有了实底。",
+                "en": "Seed paid; the pact gains a floor."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1206 = yes ywc_nmg_resident_finance_safe = yes }"
+            },
+            {
+              "key": "defer_the_fund",
+              "label": {
+                "zh": "缓拨",
+                "en": "Defer the fund"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1206 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1207 } set_variable = { name = ywc_nmg_resident_pending_event value = 1207 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，海约空转。",
+                "en": "No outlay; the pact idles."
+              },
+              "consequence_note": {
+                "zh": "约在纸上，海在门外。",
+                "en": "Pact on paper; the sea outside the door."
+              }
+            },
+            {
+              "key": "wait_at_1226",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1206 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，账单压着。",
+                "en": "Defers one turn; the bill stays on the pile."
+              }
+            },
+            {
+              "key": "withdraw_at_1206",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1206 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记决定钱是否真动；不见钱不立约。",
+            "en": "Reads finances and payment flags before coin moves; no pact without payment."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_resident_fund_paid"
+          ],
+          "writes": [
+            "ywc_nmg_resident_fund_paid",
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1207",
+          "title": {
+            "zh": "席次与分摊落笔",
+            "en": "Seats and Shares Signed"
+          },
+          "desc": {
+            "zh": "席次、分摊、底银三事俱清。海约正文可落笔，进入条文之议。",
+            "en": "Seats, shares, and seed are settled. The pact text can be signed; terms come next."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_budget NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1207 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1207 } set_variable = { name = ywc_nmg_resident_last_event value = 1207 } set_variable = { name = ywc_nmg_resident_seats_agreed value = 1 } ywc_nmg_resident_open_third_journal_once = yes }",
+          "options": [
+            {
+              "key": "proceed",
+              "label": {
+                "zh": "进入条文之议",
+                "en": "On to the terms"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1207 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1208 } set_variable = { name = ywc_nmg_resident_pending_event value = 1208 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "席次既定，接着议条文。",
+                "en": "Seats set; next, the terms."
+              },
+              "trigger": "{ ywc_nmg_resident_seats_agreed = yes }"
+            },
+            {
+              "key": "wait_at_1227",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1207 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，正文未落笔。",
+                "en": "Defers one turn; the text is unsigned."
+              }
+            },
+            {
+              "key": "withdraw_at_1207",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1207 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "置位 seats_agreed 并打开第三本日志；条文之议从 1228 起。",
+            "en": "Sets seats_agreed and opens the third journal; terms start at 1228."
+          },
+          "reads": [
+            "ywc_nmg_resident_seats_agreed"
+          ],
+          "writes": [
+            "ywc_nmg_resident_seats_agreed",
+            "ywc_nmg_resident_terms_started"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1208",
+          "title": {
+            "zh": "条文之议",
+            "en": "The Terms Debate"
+          },
+          "desc": {
+            "zh": "海约第一读：仲裁、庇护港、劫掠引渡。伙伴港的笔各自圈点。",
+            "en": "First reading: arbitration, sheltered harbors, raid extradition. Each partner's pen circles its own clauses."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_terms NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1208 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1208 } set_variable = { name = ywc_nmg_resident_last_event value = 1208 } ywc_nmg_resident_begin_terms = yes }",
+          "options": [
+            {
+              "key": "broad_terms",
+              "label": {
+                "zh": "条文从宽",
+                "en": "Broad terms"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1208 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1209 } set_variable = { name = ywc_nmg_resident_pending_event value = 1209 } } set_variable = { name = ywc_nmg_resident_phase value = 2 } ywc_nmg_resident_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出；观察按真实历月推进。",
+                "en": "No expense; the review advances by real calendar months."
+              },
+              "consequence_note": {
+                "zh": "多纳伙伴条款，约束也随广。",
+                "en": "More partners bound; the terms bind wider."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1208 = yes }"
+            },
+            {
+              "key": "narrow_terms",
+              "label": {
+                "zh": "条文从严",
+                "en": "Narrow terms"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1208 = yes NOT = { has_variable = ywc_nmg_resident_outcome } } set_variable = { name = ywc_nmg_resident_stage value = 1209 } set_variable = { name = ywc_nmg_resident_pending_event value = 1209 } } set_variable = { name = ywc_nmg_resident_phase value = 2 } ywc_nmg_resident_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出；观察照常推进。",
+                "en": "No expense; the review proceeds."
+              },
+              "consequence_note": {
+                "zh": "只定仲裁与护航，余事各商。",
+                "en": "Arbitration and escort only; the rest stays bilateral."
+              },
+              "trigger": "{ ywc_nmg_resident_at_1208 = yes }"
+            },
+            {
+              "key": "wait_at_1228",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1208 = yes } set_variable = { name = ywc_nmg_resident_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，条文未读毕。",
+                "en": "Defers one turn; the reading continues."
+              }
+            },
+            {
+              "key": "withdraw_at_1208",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1208 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接条文与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands from terms to review; the phase-2 pulse counts real calendar months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_nmg_resident_phase",
+            "ywc_nmg_resident_review_running",
+            "ywc_nmg_resident_stage",
+            "ywc_nmg_resident_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1209",
+          "title": {
+            "zh": "海约的归结",
+            "en": "The Sea Pact Concludes"
+          },
+          "desc": {
+            "zh": "四个月的回执俱在。常设、轮值、还是双边，笔下今日定。",
+            "en": "Four months of reports lie ready. Standing future, rotating convoys, or bilateral pacts: the brush must fall today."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_resident_terms NOT = { has_variable = ywc_v03_nmg_v03_nmg_resident_representation_settled } var:ywc_nmg_resident_stage = 1209 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1209 } set_variable = { name = ywc_nmg_resident_last_event value = 1209 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：海议常设",
+                "en": "Report: the future stands"
+              },
+              "effect": "{ ywc_nmg_resident_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured four-month review and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured review."
+              },
+              "trigger": "{ ywc_nmg_resident_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：有限海约",
+                "en": "Report: a limited pact"
+              },
+              "effect": "{ ywc_nmg_resident_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_nmg_resident_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：海约搁浅",
+                "en": "Report: the pact stranded"
+              },
+              "effect": "{ ywc_nmg_resident_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_nmg_resident_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1209",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_resident_at_1209 = yes } ywc_nmg_resident_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to a written outcome."
+          },
+          "reads": [
+            "ywc_nmg_resident_review_mature",
+            "ywc_nmg_resident_review_interrupted",
+            "ywc_nmg_resident_finance_safe"
+          ],
+          "writes": [
+            "ywc_nmg_resident_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:常设海议立，席次分摊与条文俱签，护航归一",
+        "limited:有限海约，轮值或窄条文成立，回执只得一半",
+        "setback:海约搁浅，使费未清或条文不签，已付各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_nmg_bay_ports：1110–1117 的港规章程是本线的直接母题，1220 mode 与 1224 席次回读其 outcome 变量。",
+        "v03_nmg_land_arbitration：1000–1007 的地权裁定是本线另一底子，1125 分摊读其既有责任，不重复立制。"
+      ]
+    },
+    {
+      "slug": "v03_nmg_neutrality_trade",
+      "era": "late",
+      "participants": [
+        "外来商馆账房（旧例与税目）",
+        "本地港主与泊把（泊位与港规）",
+        "王国官署书办（册目与争端审处）",
+        "码头雇工与驳船行（生计与工时）",
+        "诸港客商（税费与航路）"
+      ],
+      "depends_on": [
+        "v03_nmg_bay_ports"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_neutral_charter",
+          "title": {
+            "zh": " JE——港规章程",
+            "en": " JE: The Port Charter"
+          },
+          "desc": {
+            "zh": "从公所到册目，把商馆与港主的共处变成可核查的港务。",
+            "en": "From hall to ledger: turn coexistence of factories and lords into auditable port order."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } } possible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } ywc_nmg_neutral_finance_safe = yes } immediate = { ywc_v03_claim_arc_nmg_v03_jhg_v03_nmg_neutrality_trade = yes ywc_nmg_neutral_open_once = yes } on_fail = { ywc_nmg_neutral_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_neutral_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1110 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1110 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1111 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1111 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1112 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1112 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1113 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1113 } } } } }",
+          "goal": "{ has_variable = ywc_nmg_neutral_phase NOT = { has_variable = ywc_nmg_neutral_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_nmg_neutral_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_neutral_review",
+          "title": {
+            "zh": " JE——六个月港务回执",
+            "en": " JE: Six Months of Port Reports"
+          },
+          "desc": {
+            "zh": "六个月的观察以真实月份计，战事或赖账会使之中断。",
+            "en": "Six real calendar months of review; war or default breaks it."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_nmg_neutral_phase var:ywc_nmg_neutral_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } NOT = { has_journal_entry = ywc_je_v03_nmg_neutral_review } } possible = { c:NMG ?= this has_variable = ywc_nmg_neutral_phase var:ywc_nmg_neutral_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } } immediate = { ywc_nmg_neutral_review_opened_once = yes } on_fail = { ywc_nmg_neutral_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_neutral_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1114 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1114 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1115 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1115 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1116 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1116 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_neutral_pending_event = 1117 } remove_variable = ywc_nmg_neutral_pending_event trigger_event = { id = ywc_nmg.1117 } } } } }",
+          "goal": "{ OR = { var:ywc_nmg_neutral_outcome = 1 var:ywc_nmg_neutral_outcome = 2 var:ywc_nmg_neutral_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_nmg_neutral_withdrawn var:ywc_nmg_neutral_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1210",
+          "title": {
+            "zh": "商馆里的另一张桌",
+            "en": "The Other Table in the Factory Hall"
+          },
+          "desc": {
+            "zh": "外来商馆的账房与本地港主的桌案同处一厅，税费与泊位各说各话。王国要定的是一张共同的桌。",
+            "en": "Foreign factory scribes and local port lords share one hall, each with their own tariffs and berths. The realm must set one table."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1210 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1210 } set_variable = { name = ywc_nmg_neutral_last_event value = 1210 } }",
+          "options": [
+            {
+              "key": "unified_rules",
+              "label": {
+                "zh": "统一港规",
+                "en": "Unified port rules"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1210 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1211 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1211 } } set_variable = { name = ywc_nmg_neutral_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先立规后费项；后续实付按半周收入计。",
+                "en": "Rules first, costs later; later steps pay half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "商馆与港主同规同税，泊位由官署分派。",
+                "en": "Factories and port lords share rules and tariffs; berths assigned by the office."
+              },
+              "trigger": "{ ywc_nmg_neutral_at_1210 = yes ywc_nmg_neutral_best_port = yes }"
+            },
+            {
+              "key": "split_concessions",
+              "label": {
+                "zh": "分港特许",
+                "en": "Split concessions"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1210 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1211 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1211 } } set_variable = { name = ywc_nmg_neutral_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立规后费项。",
+                "en": "Same order: rules first, costs later."
+              },
+              "consequence_note": {
+                "zh": "东港归商馆，西港归港主，井水河水两不相犯。",
+                "en": "East wharf to the factories, west to the lords; neither crosses the line."
+              }
+            },
+            {
+              "key": "keep_farm_tax",
+              "label": {
+                "zh": "维持包税",
+                "en": "Keep the farm tax"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1210 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1211 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1211 } } set_variable = { name = ywc_nmg_neutral_mode value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立规后费项。",
+                "en": "Same order: rules first, costs later."
+              },
+              "consequence_note": {
+                "zh": "旧商馆照旧包税，改一目少一事。",
+                "en": "The old farm stands; one less reform to mind."
+              }
+            },
+            {
+              "key": "wait_at_1110",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1210 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，桌案各归各。",
+                "en": "Defers one turn; each table keeps its own."
+              }
+            },
+            {
+              "key": "withdraw_at_1210",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1210 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读当前港口建筑与就业真实定 mode；三条路同图，无凭空准入。",
+            "en": "Reads real port buildings and employment to set the mode; three roads, one map, no invented access."
+          },
+          "reads": [
+            "occupancy",
+            "is_building_type",
+            "net_fixed_income",
+            "ywc_nmg_neutral_best_port"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_mode",
+            "ywc_nmg_neutral_stage",
+            "ywc_nmg_neutral_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1211",
+          "title": {
+            "zh": "商馆公所的房钱",
+            "en": "Rent for the Factory Hall"
+          },
+          "desc": {
+            "zh": "统一港规要一处诸商共议的公所。房主报了价，账房们各自观望。",
+            "en": "Unified rules need a hall where all merchants meet. The landlord names a price; the scribes watch each other."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1211 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1211 } set_variable = { name = ywc_nmg_neutral_last_event value = 1211 } }",
+          "options": [
+            {
+              "key": "build_the_hall",
+              "label": {
+                "zh": "官建公所",
+                "en": "Build the hall"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1211 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1212 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1212 } } ywc_nmg_neutral_pay_hall_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添贸易中心雇工；库房不足时选项失效。",
+                "en": "Pays half a weekly income and adds trade-center staff; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "公所立起，商馆与港主有了共议之地。",
+                "en": "The hall rises; factories and lords gain a common table."
+              },
+              "trigger": "{ ywc_nmg_neutral_at_1211 = yes ywc_nmg_neutral_finance_safe = yes }"
+            },
+            {
+              "key": "borrow_the_hall",
+              "label": {
+                "zh": "借商馆议事",
+                "en": "Borrow a factory hall"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1211 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1212 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1212 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，议事在别人屋檐下。",
+                "en": "No outlay; meetings sit under another's roof."
+              },
+              "consequence_note": {
+                "zh": "省了房钱，让了话事。",
+                "en": "Rent saved, say ceded."
+              }
+            },
+            {
+              "key": "wait_at_1111",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1211 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，公所未起。",
+                "en": "Defers one turn; no hall yet."
+              }
+            },
+            {
+              "key": "withdraw_at_1211",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1211 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记决定钱是否真动；不见钱不建所。",
+            "en": "Reads finances and payment flags before coin moves; no hall without payment."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_neutral_hall_paid"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_hall_paid",
+            "ywc_nmg_neutral_stage",
+            "ywc_nmg_neutral_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1212",
+          "title": {
+            "zh": "泊位与税率的登记",
+            "en": "Registering Berths and Rates"
+          },
+          "desc": {
+            "zh": "港规要落到册：泊位编次、税率列目。书办要人手，商馆要规矩。",
+            "en": "Rules become ledgers: berths numbered, rates listed. Clerks want hands; factories want form."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1212 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1212 } set_variable = { name = ywc_nmg_neutral_last_event value = 1212 } }",
+          "options": [
+            {
+              "key": "staff_the_register",
+              "label": {
+                "zh": "增设书办",
+                "en": "Staff the register"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1212 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1213 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1213 } } ywc_nmg_neutral_pay_register_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添官署雇工。",
+                "en": "Pays half a weekly income and adds administration staff."
+              },
+              "consequence_note": {
+                "zh": "册上有据，争端有卷可查。",
+                "en": "Entries on record; disputes get a file."
+              },
+              "trigger": "{ ywc_nmg_neutral_at_1212 = yes ywc_nmg_neutral_finance_safe = yes }"
+            },
+            {
+              "key": "let_factories_keep_books",
+              "label": {
+                "zh": "商馆自记",
+                "en": "Factories keep their own books"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1212 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1213 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1213 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，册在商馆。",
+                "en": "No outlay; books stay at the factories."
+              },
+              "consequence_note": {
+                "zh": "册不在官，问账要走三道门。",
+                "en": "Books elsewhere; every query crosses three doors."
+              }
+            },
+            {
+              "key": "wait_at_1112",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1212 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，册目未列。",
+                "en": "Defers one turn; no entries yet."
+              }
+            },
+            {
+              "key": "withdraw_at_1212",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1212 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与付费标记再动钱；册目为真实行政就业，非虚账。",
+            "en": "Reads finances and payment flags before spending; the register is real staff, not paper."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_neutral_register_paid"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_register_paid",
+            "ywc_nmg_neutral_stage",
+            "ywc_nmg_neutral_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1213",
+          "title": {
+            "zh": "章程成文之日",
+            "en": "The Charter Signed"
+          },
+          "desc": {
+            "zh": "港规章程拟毕：泊位、税目、争端审处，皆列其上。就差落在纸上。",
+            "en": "The charter draft is done: berths, rates, and dispute hearing, all listed. Only the signature is missing."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1213 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1213 } set_variable = { name = ywc_nmg_neutral_last_event value = 1213 } set_variable = { name = ywc_nmg_neutral_charter_written value = 1 } }",
+          "options": [
+            {
+              "key": "sign_and_open_review",
+              "label": {
+                "zh": "署章程开观察",
+                "en": "Sign and open the review"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1213 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1214 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1214 } } set_variable = { name = ywc_nmg_neutral_phase value = 2 } ywc_nmg_neutral_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出；观察按真实历月推进。",
+                "en": "No expense; the review advances by real calendar months."
+              },
+              "consequence_note": {
+                "zh": "六个月不逢战事与赖账，观察即成熟。",
+                "en": "Six unbroken months without war or default mature the review."
+              }
+            },
+            {
+              "key": "wait_at_1113",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1213 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，章程未署。",
+                "en": "Defers one turn; the charter is unsigned."
+              }
+            },
+            {
+              "key": "withdraw_at_1213",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1213 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接章程与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands from charter to review; the phase-2 pulse counts real months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_charter_written",
+            "ywc_nmg_neutral_phase",
+            "ywc_nmg_neutral_review_running"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1214",
+          "title": {
+            "zh": "头月的港务回执",
+            "en": "First Monthly Port Report"
+          },
+          "desc": {
+            "zh": "章程试行首月：泊位争端减了，商馆的税目还咬着旧例。",
+            "en": "First month under the charter: berth quarrels fall; factory rates still cling to the old list."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1214 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1214 } set_variable = { name = ywc_nmg_neutral_last_event value = 1214 } }",
+          "options": [
+            {
+              "key": "continue_review",
+              "label": {
+                "zh": "续观察",
+                "en": "Continue the review"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1214 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1215 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1215 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察继续，直至满期或被战事打断。",
+                "en": "The review continues until six months pass or it breaks."
+              }
+            },
+            {
+              "key": "wait_at_1114",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1214 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，回执再厚一点。",
+                "en": "Defers one turn; the reports thicken."
+              }
+            },
+            {
+              "key": "withdraw_at_1214",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1214 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review 状态；续观察不花钱，中断会清零 streak。",
+            "en": "Reads only review state; continuing costs nothing, interruption clears the streak."
+          },
+          "reads": [
+            "ywc_nmg_neutral_review_streak",
+            "ywc_nmg_neutral_review_mature",
+            "ywc_nmg_neutral_review_interrupted"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_stage",
+            "ywc_nmg_neutral_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1215",
+          "title": {
+            "zh": "商馆的旧例之争",
+            "en": "The Old-Usage Quarrel"
+          },
+          "desc": {
+            "zh": "商馆援旧例拒新税目，港主援新章拒旧泊次。公所里两造各执一端。",
+            "en": "Factories cite old usage against the new rates; port lords cite the charter against old berths. The hall holds both ends."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1215 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1215 } set_variable = { name = ywc_nmg_neutral_last_event value = 1215 } }",
+          "options": [
+            {
+              "key": "apply_the_charter",
+              "label": {
+                "zh": "依章程裁",
+                "en": "Rule by the charter"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1215 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1216 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1216 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "章程为准，旧例让位；商馆记账不满。",
+                "en": "The charter rules and old usage yields; factories keep score."
+              }
+            },
+            {
+              "key": "split_the_difference",
+              "label": {
+                "zh": "各让一步",
+                "en": "Split the difference"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1215 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1216 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1216 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "折中 settle，两造都留了话柄。",
+                "en": "A compromise settles both, leaving both a grievance."
+              }
+            },
+            {
+              "key": "wait_at_1115",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1215 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，争端未决。",
+                "en": "Defers one turn; the quarrel stands."
+              }
+            },
+            {
+              "key": "withdraw_at_1215",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1215 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 mode 与集团影响权衡两路；不由敕令改关税。",
+            "en": "Reads the mode and interest weight to weigh two roads; no tariff change by decree."
+          },
+          "reads": [
+            "ywc_nmg_neutral_mode",
+            "ig_clout",
+            "legitimacy"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_stage",
+            "ywc_nmg_neutral_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1216",
+          "title": {
+            "zh": "观察将满",
+            "en": "The Review Nears Maturity"
+          },
+          "desc": {
+            "zh": "月册一份份码高，公所的灯也亮得久了。诸商在等一个说法。",
+            "en": "Monthly ledgers stack; the hall burns lamp oil late. The merchants wait for a verdict."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1216 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1216 } set_variable = { name = ywc_nmg_neutral_last_event value = 1216 } }",
+          "options": [
+            {
+              "key": "finalize_review",
+              "label": {
+                "zh": "收观察",
+                "en": "Close the review"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1216 = yes NOT = { has_variable = ywc_nmg_neutral_outcome } } set_variable = { name = ywc_nmg_neutral_stage value = 1217 } set_variable = { name = ywc_nmg_neutral_pending_event value = 1217 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察满期则成熟，否则带瑕疵收束。",
+                "en": "A matured review closes clean; otherwise it closes with a flaw."
+              }
+            },
+            {
+              "key": "wait_at_1116",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1216 = yes } set_variable = { name = ywc_nmg_neutral_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，月册再添一份。",
+                "en": "Defers one turn; one more ledger joins."
+              }
+            },
+            {
+              "key": "withdraw_at_1216",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1216 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review_mature 与 interrupted 定收束口径。",
+            "en": "Reads review maturity and interruption to set the closing rule."
+          },
+          "reads": [
+            "ywc_nmg_neutral_review_mature",
+            "ywc_nmg_neutral_review_interrupted"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_stage",
+            "ywc_nmg_neutral_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1217",
+          "title": {
+            "zh": "港规的归结",
+            "en": "The Port Rules Conclude"
+          },
+          "desc": {
+            "zh": "六个月的回执俱在。统一、分港、还是旧例，笔下今日定。",
+            "en": "Six months of reports lie ready. Unified, split, or old usage: the brush must fall today."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_neutral_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_neutrality_trade_settled } var:ywc_nmg_neutral_stage = 1217 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1217 } set_variable = { name = ywc_nmg_neutral_last_event value = 1217 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：港规一统",
+                "en": "Report: rules unified"
+              },
+              "effect": "{ ywc_nmg_neutral_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured six-month review and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured review."
+              },
+              "trigger": "{ ywc_nmg_neutral_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：有限港规",
+                "en": "Report: limited rules"
+              },
+              "effect": "{ ywc_nmg_neutral_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_nmg_neutral_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：港规搁浅",
+                "en": "Report: rules stranded"
+              },
+              "effect": "{ ywc_nmg_neutral_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_nmg_neutral_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1217",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_neutral_at_1217 = yes } ywc_nmg_neutral_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to a written outcome."
+          },
+          "reads": [
+            "ywc_nmg_neutral_review_mature",
+            "ywc_nmg_neutral_review_interrupted",
+            "ywc_nmg_neutral_finance_safe"
+          ],
+          "writes": [
+            "ywc_nmg_neutral_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:港规一统，公所与册目俱立，泊位税目归一",
+        "limited:有限港规，章程立而旧例未除，回执只得一半",
+        "setback:港规搁浅，公所未建或册目不立，已付各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_nmg_bay_ports：1100–1109 的船坞资本决定本线港口就业的底子，1111 公所与 1112 书办读其 outcome。",
+        "v03_nmg_bay_ports：1100–1108 的港务任命影响 1125 争端裁处的筹码，同一港务系统两处引用不重复立制。"
+      ]
+    },
+    {
+      "slug": "v03_nmg_autonomy_successors",
+      "era": "late",
+      "participants": [
+        "船主与舵工（欠票与海险）",
+        "商号与账房（执照与赔付）",
+        "王国官署书办（章程与稽核）",
+        "港市储户与钱庄（利率与存款）",
+        "海军与护航官（风讯与航线）"
+      ],
+      "depends_on": [
+        "v03_nmg_autonomy_revenue"
+      ],
+      "journals": [
+        {
+          "id": "ywc_je_v03_nmg_succ_charter",
+          "title": {
+            "zh": " JE——船钞互保",
+            "en": " JE: The Shipowners' Pool"
+          },
+          "desc": {
+            "zh": "从欠票到赔付，把海险背书变成可核查的账目。",
+            "en": "From notes to payout: make sea-risk backing an auditable account."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } } possible = { c:NMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } ywc_nmg_succ_finance_safe = yes } immediate = { ywc_v03_claim_arc_nmg_v03_jhg_v03_nmg_autonomy_successors = yes ywc_nmg_succ_open_once = yes } on_fail = { ywc_nmg_succ_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_succ_prepare_queue = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1200 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1200 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1201 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1201 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1202 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1202 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1203 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1203 } } } } }",
+          "goal": "{ has_variable = ywc_nmg_succ_phase NOT = { has_variable = ywc_nmg_succ_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_nmg_succ_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_nmg_succ_review",
+          "title": {
+            "zh": " JE——半年对账",
+            "en": " JE: The Half-Year Reckoning"
+          },
+          "desc": {
+            "zh": "六个月的观察以真实月份计，战事或赖账会使之中断。",
+            "en": "Six real calendar months of review; war or default breaks it."
+          },
+          "script": "{ is_shown_when_inactive = { c:NMG ?= this has_variable = ywc_nmg_succ_phase var:ywc_nmg_succ_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } NOT = { has_journal_entry = ywc_je_v03_nmg_succ_review } } possible = { c:NMG ?= this has_variable = ywc_nmg_succ_phase var:ywc_nmg_succ_phase = 2 NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } } immediate = { ywc_nmg_succ_review_opened_once = yes } on_fail = { ywc_nmg_succ_close_withdrawn = yes } on_monthly_pulse = { effect = { ywc_nmg_succ_track_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1204 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1204 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1205 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1205 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1206 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1206 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_nmg_succ_pending_event = 1207 } remove_variable = ywc_nmg_succ_pending_event trigger_event = { id = ywc_nmg.1207 } } } } }",
+          "goal": "{ OR = { var:ywc_nmg_succ_outcome = 1 var:ywc_nmg_succ_outcome = 2 var:ywc_nmg_succ_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_nmg_succ_withdrawn var:ywc_nmg_succ_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_nmg.1220",
+          "title": {
+            "zh": "船主的欠票",
+            "en": "The Shipowners' Notes"
+          },
+          "desc": {
+            "zh": "台风季一过，沉船的欠票在港市流通。谁来给这些纸背书？",
+            "en": "After the typhoon season, notes of sunken hulls circulate. Who stands behind this paper?"
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1220 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1220 } set_variable = { name = ywc_nmg_succ_last_event value = 1220 } }",
+          "options": [
+            {
+              "key": "official_fund",
+              "label": {
+                "zh": "官方互保基金",
+                "en": "An official mutual fund"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1220 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1221 } set_variable = { name = ywc_nmg_succ_pending_event value = 1221 } } set_variable = { name = ywc_nmg_succ_mode value = 1 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "先立制后费项；后续实付按半周收入计。",
+                "en": "Institution first, costs later; later steps pay half a weekly income."
+              },
+              "consequence_note": {
+                "zh": "国库作保，船主共济，风险归官。",
+                "en": "The treasury backs the pool; risk lands on the state."
+              },
+              "trigger": "{ ywc_nmg_succ_at_1220 = yes }"
+            },
+            {
+              "key": "private_licenses",
+              "label": {
+                "zh": "私营保险执照",
+                "en": "Private insurance licenses"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1220 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1221 } set_variable = { name = ywc_nmg_succ_pending_event value = 1221 } } set_variable = { name = ywc_nmg_succ_mode value = 2 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立制后费项。",
+                "en": "Same order: institution first, costs later."
+              },
+              "consequence_note": {
+                "zh": "商号领照经营，官署只管章程。",
+                "en": "Houses take licenses; the office keeps the rules."
+              }
+            },
+            {
+              "key": "state_borrowing",
+              "label": {
+                "zh": "国家直接举债",
+                "en": "The state borrows directly"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1220 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1221 } set_variable = { name = ywc_nmg_succ_pending_event value = 1221 } } set_variable = { name = ywc_nmg_succ_mode value = 3 } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "同上，先立制后费项。",
+                "en": "Same order: institution first, costs later."
+              },
+              "consequence_note": {
+                "zh": "以国债抚欠票，利息压上后任的账。",
+                "en": "Sovereign debt soothes the notes; interest lands on later books."
+              }
+            },
+            {
+              "key": "wait_at_1200",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1220 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，欠票仍飘。",
+                "en": "Defers one turn; the notes still drift."
+              }
+            },
+            {
+              "key": "withdraw_at_1220",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1220 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读金融区建筑与财政真实定 mode；三条路同图。",
+            "en": "Reads real financial districts and finances to set the mode; three roads, one map."
+          },
+          "reads": [
+            "is_building_type",
+            "in_default",
+            "net_fixed_income",
+            "ywc_nmg_succ_has_financial"
+          ],
+          "writes": [
+            "ywc_nmg_succ_mode",
+            "ywc_nmg_succ_stage",
+            "ywc_nmg_succ_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1221",
+          "title": {
+            "zh": "互保基金的底银",
+            "en": "Seed Coin for the Fund"
+          },
+          "desc": {
+            "zh": "立了互保，就要有底银。户部把第一笔的账单递了上来。",
+            "en": "A pool needs seed coin. The treasury hands up the first bill."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1221 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1221 } set_variable = { name = ywc_nmg_succ_last_event value = 1221 } }",
+          "options": [
+            {
+              "key": "pay_the_seed",
+              "label": {
+                "zh": "如数拨付",
+                "en": "Pay the seed"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1221 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1222 } set_variable = { name = ywc_nmg_succ_pending_event value = 1222 } } ywc_nmg_succ_pay_fund_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入；库房不足时选项失效。",
+                "en": "Pays half a weekly income; inactive while the treasury cannot cover it."
+              },
+              "consequence_note": {
+                "zh": "底银入库，欠票开始有价。",
+                "en": "Seed paid; the notes gain a price."
+              },
+              "trigger": "{ ywc_nmg_succ_at_1221 = yes ywc_nmg_succ_finance_safe = yes }"
+            },
+            {
+              "key": "defer_the_seed",
+              "label": {
+                "zh": "缓拨",
+                "en": "Defer the seed"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1221 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1222 } set_variable = { name = ywc_nmg_succ_pending_event value = 1222 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，基金空转。",
+                "en": "No outlay; the fund idles."
+              },
+              "consequence_note": {
+                "zh": "纸面上的保，海上的险照旧。",
+                "en": "Insurance on paper; the sea keeps its risks."
+              }
+            },
+            {
+              "key": "wait_at_1201",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1221 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，账单压着。",
+                "en": "Defers one turn; the bill stays on the pile."
+              }
+            },
+            {
+              "key": "withdraw_at_1221",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1221 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与既往付费标记决定钱是否真动；不见钱不立保。",
+            "en": "Reads finances and payment flags before coin moves; no cover without payment."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_succ_fund_paid"
+          ],
+          "writes": [
+            "ywc_nmg_succ_fund_paid",
+            "ywc_nmg_succ_stage",
+            "ywc_nmg_succ_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1222",
+          "title": {
+            "zh": "执照与章程",
+            "en": "Licenses and Articles"
+          },
+          "desc": {
+            "zh": "走商号之路，就要给执照定章程：赔付、稽核、停业，一一列明。",
+            "en": "The private road needs license articles: payout, audit, suspension, each clause listed."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1222 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1222 } set_variable = { name = ywc_nmg_succ_last_event value = 1222 } }",
+          "options": [
+            {
+              "key": "charter_the_houses",
+              "label": {
+                "zh": "官署立章",
+                "en": "Charter by the office"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1222 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1223 } set_variable = { name = ywc_nmg_succ_pending_event value = 1223 } } ywc_nmg_succ_pay_charter_once = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "实付半周收入并添金融区雇工。",
+                "en": "Pays half a weekly income and adds financial-district staff."
+              },
+              "consequence_note": {
+                "zh": "执照有名，赔付有据。",
+                "en": "Licenses named; payouts on record."
+              },
+              "trigger": "{ ywc_nmg_succ_at_1222 = yes ywc_nmg_succ_finance_safe = yes }"
+            },
+            {
+              "key": "let_houses_draft",
+              "label": {
+                "zh": "商号自拟",
+                "en": "Houses draft their own"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1222 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1223 } set_variable = { name = ywc_nmg_succ_pending_event value = 1223 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出，章在商号。",
+                "en": "No outlay; articles stay with the houses."
+              },
+              "consequence_note": {
+                "zh": "章不在官，问赔付要走商号的门。",
+                "en": "Articles elsewhere; claims knock on private doors."
+              }
+            },
+            {
+              "key": "wait_at_1202",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1222 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，章程未定。",
+                "en": "Defers one turn; no articles yet."
+              }
+            },
+            {
+              "key": "withdraw_at_1222",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1222 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读库房与付费标记再动钱；执照章程为真实金融就业。",
+            "en": "Reads finances and payment flags before spending; licensing is real financial staff."
+          },
+          "reads": [
+            "gold_reserves",
+            "net_fixed_income",
+            "ywc_nmg_succ_charter_paid"
+          ],
+          "writes": [
+            "ywc_nmg_succ_charter_paid",
+            "ywc_nmg_succ_stage",
+            "ywc_nmg_succ_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1223",
+          "title": {
+            "zh": "第一笔赔付",
+            "en": "The First Payout"
+          },
+          "desc": {
+            "zh": "霜季第一笔赔付到期：三条沉船的欠票递到柜上。基金与商号都在看。",
+            "en": "The first payout falls due: notes of three lost hulls reach the counter. Fund and houses watch."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_charter NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1223 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1223 } set_variable = { name = ywc_nmg_succ_last_event value = 1223 } set_variable = { name = ywc_nmg_succ_loss_recorded value = 1 } }",
+          "options": [
+            {
+              "key": "honor_the_notes",
+              "label": {
+                "zh": "如约赔付",
+                "en": "Honor the notes"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1223 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1224 } set_variable = { name = ywc_nmg_succ_pending_event value = 1224 } } set_variable = { name = ywc_nmg_succ_phase value = 2 } ywc_nmg_succ_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "赔付走既有底银；观察按真实历月推进。",
+                "en": "Payout draws on the seed; the review advances by real months."
+              },
+              "consequence_note": {
+                "zh": "如约赔付，信用立而库银薄。",
+                "en": "Notes honored; migrant rises as coin falls."
+              },
+              "trigger": "{ ywc_nmg_succ_at_1223 = yes ywc_nmg_succ_finance_safe = yes }"
+            },
+            {
+              "key": "haggle_the_payout",
+              "label": {
+                "zh": "折价赔付",
+                "en": "Settle at a discount"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1223 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1224 } set_variable = { name = ywc_nmg_succ_pending_event value = 1224 } } set_variable = { name = ywc_nmg_succ_phase value = 2 } ywc_nmg_succ_start_review = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另支出；观察照常推进。",
+                "en": "No extra outlay; the review proceeds."
+              },
+              "consequence_note": {
+                "zh": "折价保库，信用伤了三成。",
+                "en": "A discount spares the vault and wounds migrant."
+              },
+              "trigger": "{ ywc_nmg_succ_at_1223 = yes }"
+            },
+            {
+              "key": "wait_at_1203",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1223 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，赔付未决。",
+                "en": "Defers one turn; the payout waits."
+              }
+            },
+            {
+              "key": "withdraw_at_1223",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1223 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "交接首赔与观察；phase 2 的每月脉冲只认真实月份。",
+            "en": "Hands from first payout to review; the phase-2 pulse counts real months."
+          },
+          "reads": [
+            "ywc_nmg_current_calendar_month",
+            "gold_reserves",
+            "is_at_war"
+          ],
+          "writes": [
+            "ywc_nmg_succ_loss_recorded",
+            "ywc_nmg_succ_phase",
+            "ywc_nmg_succ_review_running"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1224",
+          "title": {
+            "zh": "月度对账",
+            "en": "The Monthly Reckoning"
+          },
+          "desc": {
+            "zh": "基金与商号的账目各成一本，书办要把两本账对成一册。",
+            "en": "Fund and houses keep separate books; the clerks must bind them into one."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1224 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1224 } set_variable = { name = ywc_nmg_succ_last_event value = 1224 } }",
+          "options": [
+            {
+              "key": "continue_review",
+              "label": {
+                "zh": "续对账",
+                "en": "Continue the reckoning"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1224 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1225 } set_variable = { name = ywc_nmg_succ_pending_event value = 1225 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察继续，直至满期或被战事打断。",
+                "en": "The review continues until six months pass or it breaks."
+              }
+            },
+            {
+              "key": "wait_at_1204",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1224 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，两本账仍两本。",
+                "en": "Defers one turn; two books stay two."
+              }
+            },
+            {
+              "key": "withdraw_at_1224",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1224 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review 状态；续观察不花钱，中断会清零 streak。",
+            "en": "Reads only review state; continuing costs nothing, interruption clears the streak."
+          },
+          "reads": [
+            "ywc_nmg_succ_review_streak",
+            "ywc_nmg_succ_review_mature",
+            "ywc_nmg_succ_review_interrupted"
+          ],
+          "writes": [
+            "ywc_nmg_succ_stage",
+            "ywc_nmg_succ_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1225",
+          "title": {
+            "zh": "第二场风讯",
+            "en": "Word of a Second Storm"
+          },
+          "desc": {
+            "zh": "风讯又至：南海南碇三船失期。柜上again围满了递票的船主。",
+            "en": "Storm news again: three hulls overdue off the southern anchorage. Shipowners crowd the counter once more."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1225 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1225 } set_variable = { name = ywc_nmg_succ_last_event value = 1225 } }",
+          "options": [
+            {
+              "key": "pay_again",
+              "label": {
+                "zh": "照章再赔",
+                "en": "Pay by the articles"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1225 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1226 } set_variable = { name = ywc_nmg_succ_pending_event value = 1226 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另支出，赔付走底银余额。",
+                "en": "No extra outlay; payout draws on the remaining seed."
+              },
+              "consequence_note": {
+                "zh": "再赔则信用愈固，底银愈薄。",
+                "en": "Paying again firms migrant and thins the seed."
+              },
+              "trigger": "{ ywc_nmg_succ_fund_paid = yes }"
+            },
+            {
+              "key": "cap_the_payout",
+              "label": {
+                "zh": "设赔付上限",
+                "en": "Cap the payout"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1225 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1226 } set_variable = { name = ywc_nmg_succ_pending_event value = 1226 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "上限立，船主自担超额之险。",
+                "en": "A cap stands; owners carry the excess."
+              },
+              "trigger": "{ ywc_nmg_succ_at_1225 = yes }"
+            },
+            {
+              "key": "wait_at_1205",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1225 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，风讯未决。",
+                "en": "Defers one turn; the storm news waits."
+              }
+            },
+            {
+              "key": "withdraw_at_1225",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1225 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 mode 与底银标记权衡两路；赔付上限不由敕令强加给已领照商号。",
+            "en": "Reads the mode and seed flags to weigh two roads; caps cannot be forced on licensed houses by decree."
+          },
+          "reads": [
+            "ywc_nmg_succ_mode",
+            "ywc_nmg_succ_fund_paid",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_nmg_succ_stage",
+            "ywc_nmg_succ_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1226",
+          "title": {
+            "zh": "对账将清",
+            "en": "The Reckoning Closes"
+          },
+          "desc": {
+            "zh": "半年对账将近：赔付几何、底银余几、执照几家如实，俱可点验。",
+            "en": "Half-year reckoning nears: payouts, remaining seed, honest licenses, all can be verified."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1226 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1226 } set_variable = { name = ywc_nmg_succ_last_event value = 1226 } }",
+          "options": [
+            {
+              "key": "finalize_review",
+              "label": {
+                "zh": "收对账",
+                "en": "Close the reckoning"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1226 = yes NOT = { has_variable = ywc_nmg_succ_outcome } } set_variable = { name = ywc_nmg_succ_stage value = 1227 } set_variable = { name = ywc_nmg_succ_pending_event value = 1227 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "观察满期则成熟，否则带瑕疵收束。",
+                "en": "A matured review closes clean; otherwise it closes with a flaw."
+              }
+            },
+            {
+              "key": "wait_at_1206",
+              "label": {
+                "zh": "暂缓一轮再议",
+                "en": "Defer the decision"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1226 = yes } set_variable = { name = ywc_nmg_succ_waiting value = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无支出。",
+                "en": "No expense."
+              },
+              "consequence_note": {
+                "zh": "搁置一轮，对账再清一分。",
+                "en": "Defers one turn; the reckoning sharpens."
+              }
+            },
+            {
+              "key": "withdraw_at_1226",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1226 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 review_mature 与 interrupted 定收束口径。",
+            "en": "Reads review maturity and interruption to set the closing rule."
+          },
+          "reads": [
+            "ywc_nmg_succ_review_mature",
+            "ywc_nmg_succ_review_interrupted"
+          ],
+          "writes": [
+            "ywc_nmg_succ_stage",
+            "ywc_nmg_succ_pending_event"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1227",
+          "title": {
+            "zh": "船钞与信用的归结",
+            "en": "Notes and Credit Conclude"
+          },
+          "desc": {
+            "zh": "半年的账摊在案上。官保、商保、还是国债，笔下今日定。",
+            "en": "Half a year of books lies open. State cover, private cover, or sovereign debt: the brush must fall today."
+          },
+          "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_nmg_succ_review NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_successors_settled } var:ywc_nmg_succ_stage = 1227 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_nmg_event_dispatch value = 1227 } set_variable = { name = ywc_nmg_succ_last_event value = 1227 } }",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "报：信用立而赔付实",
+                "en": "Report: migrant stands, payouts real"
+              },
+              "effect": "{ ywc_nmg_succ_close_full = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求满期观察且财政未破。",
+                "en": "Requires a matured six-month review and intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付与成熟观察记录归于完全成功。",
+                "en": "Closes as full success on real payments and the matured review."
+              },
+              "trigger": "{ ywc_nmg_succ_close_full_ready = yes }"
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "报：有限信用",
+                "en": "Report: limited migrant"
+              },
+              "effect": "{ ywc_nmg_succ_close_limited = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "要求财政未破。",
+                "en": "Requires intact finances."
+              },
+              "consequence_note": {
+                "zh": "以实付记录归于部分成效。",
+                "en": "Closes as partial results on the real financial record."
+              },
+              "trigger": "{ ywc_nmg_succ_close_limited_ready = yes }"
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "报：信用搁浅",
+                "en": "Report: migrant stranded"
+              },
+              "effect": "{ ywc_nmg_succ_close_setback = yes }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无前置，作为收束出口。",
+                "en": "No gate; the closure exit."
+              },
+              "consequence_note": {
+                "zh": "归于受挫，保留已付各款的记录。",
+                "en": "Closes as a setback, keeping the record of sums paid."
+              },
+              "trigger": "{ ywc_nmg_succ_close_setback_ready = yes }"
+            },
+            {
+              "key": "withdraw_at_1227",
+              "label": {
+                "zh": "退出本线",
+                "en": "Withdraw from this line"
+              },
+              "effect": "{ if = { limit = { ywc_nmg_succ_at_1227 = yes } ywc_nmg_succ_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "无直接支出；已付部分不退还。",
+                "en": "No direct expense; sums already paid are not refunded."
+              },
+              "consequence_note": {
+                "zh": "本线结束并释放议程容量，保留已付记录。",
+                "en": "The line ends, freeing agenda capacity; the record of sums paid is kept."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读 close_full_ready 等三个收束 trigger，三条门都通向已写好的 outcome。",
+            "en": "Reads the three close-ready triggers; every door leads to a written outcome."
+          },
+          "reads": [
+            "ywc_nmg_succ_review_mature",
+            "ywc_nmg_succ_review_interrupted",
+            "ywc_nmg_succ_finance_safe"
+          ],
+          "writes": [
+            "ywc_nmg_succ_outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:互保立而赔付实，执照章程与底银俱清",
+        "limited:有限信用，赔付行而章程未全，回执只得一半",
+        "setback:信用搁浅，底银未拨或赔付失约，已付各款留档",
+        "withdrawn:主动退出并释放本线容量，保留已付记录，不承诺当前未提供的重开入口"
+      ],
+      "legacy_links": [
+        "v03_nmg_autonomy_revenue：1100–1109 的船坞资本决定本线船主群体的底子，1200 mode 与 1205 风讯读其 outcome。",
+        "v03_nmg_land_arbitration：1000–1007 的地权裁定先例可被 1201 席次引用，同一先例两处出现不重复立制。"
+      ]
     }
   ]
 }
