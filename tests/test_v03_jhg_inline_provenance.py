@@ -254,18 +254,27 @@ def _native_notice_stem(queue):
 
 
 def _phase_worlds(testcase):
-    """Copy each genuinely admitted live JHG phase during the natural route."""
+    """Copy each genuinely admitted live JHG phase at its real prepare wake."""
     actual.assert_inline_supported(testcase)
     world, evidence = actual.actual_jhg_inline_world()
     phases = {}
-    def after_ack(current, name, tag):
-        ident = int(name.rsplit("_", 1)[1])
-        dispatch = current.dispatch_contexts[-1]
-        row = _selected(dispatch["event_id"], ident)
-        testcase.assertIsNotNone(row, (name, dispatch))
-        phases.setdefault(row["branch"]["journal"],
-                          actual.copy_actual_world_without_observers(current))
-    with actual.observe_actual_owned_ack(world, lambda *_: None, after=after_ack):
+    witnesses = world.inline_rendered["live_witnesses"]
+    def at_prepare(current, name, tag):
+        if name != PREFIX + "_prepare" or tag != TAG:
+            return
+        state = current.countries[tag]
+        for journal, witness in witnesses.items():
+            if journal in phases or not current.journal_is_active(tag, journal):
+                continue
+            if current.is_finished(tag, journal) or witness not in state or state[witness] != 1:
+                continue
+            definition = current.journal_defs[journal]
+            if current.conditions(actual._field(definition, "complete", []), tag):
+                continue
+            if current.conditions(actual._field(definition, "fail", []), tag):
+                continue
+            phases[journal] = actual.copy_actual_world_without_observers(current)
+    with actual.observe_actual_effect_runs(world, at_prepare):
         result = run_native_route(2, world=world, evidence=evidence)
     _assert_route2_contract(testcase, result)
     testcase.assertEqual(set(phases), {row["branch"]["journal"] for row in _all_bindings()},

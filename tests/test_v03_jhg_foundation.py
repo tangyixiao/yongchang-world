@@ -393,7 +393,7 @@ class JhgFoundationTest(unittest.TestCase):
     def test_foundation_arcs_keep_the_locked_card_shape(self):
         self.assertEqual({"key", "layer", "runtime_tags", "arcs"}, set(catalog()))
         expected = {"slug", "era", "participants", "depends_on", "journals", "events",
-                    "outcomes", "legacy_links"}
+                    "outcomes", "legacy_links", "inline_delivery_adapter"}
         counts = {COURT: (8, 2), CONVOY: (10, 3), TRIBUTE: (6, 1)}
         for item in catalog()["arcs"]:
             self.assertEqual(expected, set(item), item["slug"])

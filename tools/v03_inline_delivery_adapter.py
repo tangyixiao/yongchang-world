@@ -1162,8 +1162,24 @@ def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
         raise ValueError("MGL native source inventory must contain exactly 66 sender sites and 24 event bodies")
 
 
+def validate_jhg_native_helper_source(effects_source: str, triggers_source: str) -> None:
+    """Validate the locked JHG native helper ABI through its focused adapter."""
+    try:
+        from tools.v03_jhg_inline_delivery_adapter import validate_jhg_native_helper_source as validate
+    except ModuleNotFoundError:
+        from v03_jhg_inline_delivery_adapter import validate_jhg_native_helper_source as validate
+    validate(effects_source, triggers_source)
+
+
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
     """Validate exact inline branch/source ownership for explicitly opted-in arcs."""
+    if isinstance(catalog, dict) and catalog.get("key") == "country_jhg":
+        try:
+            from tools.v03_jhg_inline_delivery_adapter import validate_jhg_inline_catalog
+        except ModuleNotFoundError:
+            from v03_jhg_inline_delivery_adapter import validate_jhg_inline_catalog
+        validate_jhg_inline_catalog(catalog)
+        return
     if isinstance(catalog, dict) and catalog.get("key") == "country_lan":
         _validate_lan_inline_catalog(catalog)
         return
@@ -1717,6 +1733,12 @@ def _mgl_snapshot_checks(c: dict[str, Any], prefix: str) -> list[str]:
 
 def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     """Render source-bound per-branch dispatch gates, snapshots and immediate ACKs."""
+    if isinstance(catalog, dict) and catalog.get("key") == "country_jhg":
+        try:
+            from tools.v03_jhg_inline_delivery_adapter import render_jhg_inline_country_adapters
+        except ModuleNotFoundError:
+            from v03_jhg_inline_delivery_adapter import render_jhg_inline_country_adapters
+        return render_jhg_inline_country_adapters(catalog)
     validate_inline_catalog(catalog)
     is_kor = catalog["key"] == "country_kor"
     is_nqg = catalog["key"] == "country_nqg"

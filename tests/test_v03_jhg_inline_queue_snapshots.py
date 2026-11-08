@@ -186,19 +186,53 @@ class JhgInlineQueueSnapshots(unittest.TestCase):
         self.assertEqual(state.get(sender_stamp), 1)
         self.assertIn(row["candidate"]["queue"], state)
 
-        # Body-only: source proof is fault-removed after the genuine append;
-        # the real native event creates only its own body-side proof/wake.
-        world, dispatch = _source_callsite_fixture(self, row)
+        # Body-only is captured at the real append, before the source's R
+        # continuation. The original source finishes on its separate world.
+        phases = _phase_worlds(self)
+        source_world = actual.copy_actual_world_without_observers(phases[row["branch"]["journal"]])
+        source_world.advance_days(91)
+        self.assertNotIn(COOLDOWN, source_world.days_until_expiry[TAG])
+        for sibling in _JHG_QUEUE_NAMES:
+            source_world.countries[TAG].pop(sibling, None)
+        source_world.countries[TAG][row["candidate"]["queue"]] = row["candidate"]["value"]
+        captured = []
+        def capture_pre_r(current, queued):
+            captured.append((actual.copy_actual_world_without_observers(current),
+                             copy.deepcopy(queued)))
+        sender = _generated_sender(source_world, row)
+        with actual.observe_actual_dispatch_append(source_world, capture_pre_r):
+            source_world.run(PREFIX + "_prepare", TAG)
+            self.assertTrue(source_world.conditions(
+                source_world.triggers[f"{PREFIX}_turn_{ident}"], TAG))
+            self.assertTrue(source_world.conditions(actual._field(sender[2], "limit", []), TAG))
+            source_world.execute([("if", sender[1], sender[2])], TAG)
+        self.assertEqual(len(captured), 1)
+        world, dispatch = captured[0]
         state = world.countries[TAG]
-        state.pop(sender_stamp, None); state.pop(sender_epoch, None)
+        boundary = f"{PREFIX}_source_boundary_{ident}"
+        boundary_epoch = f"{PREFIX}_source_boundary_epoch_{ident}"
+        epoch = dispatch["scope_context"][PREFIX + "_dispatch_epoch"]
+        self.assertGreater(epoch, 0)
+        self.assertEqual(state.get(PREFIX + "_reservation"), ident)
+        self.assertEqual(state.get(PREFIX + "_reservation_epoch"), epoch)
+        self.assertNotIn(boundary, state); self.assertNotIn(boundary_epoch, state)
+        self.assertNotIn(sender_stamp, state); self.assertNotIn(sender_epoch, state)
+        self.assertNotIn(body_stamp, state); self.assertNotIn(body_epoch, state)
+        self.assertEqual(source_world.countries[TAG].get(boundary), ident)
+        self.assertEqual(source_world.countries[TAG].get(boundary_epoch), epoch)
+        self.assertEqual(source_world.countries[TAG].get(sender_stamp), 1)
+        self.assertEqual(source_world.countries[TAG].get(sender_epoch), epoch)
         body_runs = []
         with actual.observe_actual_effect_runs(
             world, lambda _w, name, _tag: body_runs.append(name)):
             actual.run_queued_inline_event_immediate(world, dispatch)
         self.assertIn(f"{PREFIX}_body_return_{ident}", body_runs)
+        self.assertNotIn(f"{PREFIX}_sender_return_{ident}", body_runs)
+        self.assertNotIn(f"{PREFIX}_ack_{ident}", body_runs)
         self.assertEqual(state.get(body_stamp), 1)
         self.assertEqual(state.get(body_epoch), dispatch["scope_context"][PREFIX + "_dispatch_epoch"])
         self.assertNotIn(sender_stamp, state); self.assertNotIn(sender_epoch, state)
+        self.assertNotIn(boundary, state); self.assertNotIn(boundary_epoch, state)
         native_after_body = _native_fields(world); served_before = _served_snapshot(world)
         world.run(f"{PREFIX}_callback_{ident}", TAG)
         world.run(f"{PREFIX}_join_{ident}", TAG)
@@ -207,6 +241,32 @@ class JhgInlineQueueSnapshots(unittest.TestCase):
         self.assertEqual(_served_snapshot(world), served_before)
         self.assertIn(row["candidate"]["queue"], state)
         self.assertEqual(world.days_until_expiry[TAG].get(COOLDOWN), 90)
+        self.assertNotIn(sender_stamp, state); self.assertNotIn(sender_epoch, state)
+        self.assertEqual(state.get(body_stamp), 1)
+        self.assertEqual(state.get(body_epoch), epoch)
+
+        # A completed source with only its sender-proof pair removed is a
+        # post-boundary fault: it must never reopen the pre-R body path.
+        world, dispatch = _source_callsite_fixture(self, row)
+        state = world.countries[TAG]
+        epoch = dispatch["scope_context"][PREFIX + "_dispatch_epoch"]
+        self.assertEqual(state.get(boundary), ident)
+        self.assertEqual(state.get(boundary_epoch), epoch)
+        self.assertEqual(state.get(sender_stamp), 1)
+        self.assertEqual(state.get(sender_epoch), epoch)
+        state.pop(sender_stamp, None); state.pop(sender_epoch, None)
+        before_rejected_body = _complete_state_snapshot(world)
+        with self.assertRaises(ValueError):
+            actual.run_queued_inline_event_immediate(world, dispatch)
+        self.assertEqual(_complete_state_snapshot(world), before_rejected_body)
+        self.assertNotIn(body_stamp, state); self.assertNotIn(body_epoch, state)
+        self.assertNotIn(sender_stamp, state); self.assertNotIn(sender_epoch, state)
+        for suffix in (f"callback_{ident}", f"join_{ident}", f"ack_{ident}"):
+            world.run(f"{PREFIX}_{suffix}", TAG)
+        self.assertEqual(_complete_state_snapshot(world), before_rejected_body)
+        self.assertNotIn(body_stamp, state); self.assertNotIn(body_epoch, state)
+        self.assertNotIn(sender_stamp, state); self.assertNotIn(sender_epoch, state)
+        self.assertIn(row["candidate"]["queue"], state)
 
         # Both receipts are source-generated here, then a named fault changes
         # one epoch only after the true body has reached its ACK boundary.
