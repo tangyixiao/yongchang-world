@@ -6,6 +6,7 @@ It uses real country history, legacy events, initializer, roots and source helpe
 from __future__ import annotations
 from pathlib import Path
 from contextlib import contextmanager
+import copy
 import math
 import unittest
 from tests.clausewitz_harness import PulseWorld, parse
@@ -36,8 +37,11 @@ class _ScopedDispatchList(list):
     def __init__(self,world): super().__init__(); self.world=world
     def append(self,row):
         super().append(row)
-        self.world.dispatch_contexts.append({'tag':row[0],'event_id':row[1],
-          'scope_context':dict(self.world.scope_context),'dispatch_id':len(self.world.dispatch_contexts)+1})
+        dispatch={'tag':row[0],'event_id':row[1],
+          'scope_context':dict(self.world.scope_context),'dispatch_id':len(self.world.dispatch_contexts)+1}
+        self.world.dispatch_contexts.append(dispatch)
+        observer=self.world._dispatch_append_observer
+        if observer is not None: observer(self.world,copy.deepcopy(dispatch))
 
 class _ActualJhgWorld(foundation.JhgTerminalWorld):
     def __init__(self,effects,countries,known_journals):
@@ -45,6 +49,10 @@ class _ActualJhgWorld(foundation.JhgTerminalWorld):
         super().__init__(effects,countries)
         self.scope_context={}; self.scope_context_stack=[]; self.dispatch_contexts=[]; self._explicit_context=0
         self._execute_depth=0
+        self._dispatch_append_observer=None
+        self._owned_ack_observer=None
+        self._owned_ack_after_observer=None
+        self._effect_run_observer=None
         self.events=_ScopedDispatchList(self)
     @contextmanager
     def invocation(self, frozen=None):
@@ -53,6 +61,16 @@ class _ActualJhgWorld(foundation.JhgTerminalWorld):
         self._explicit_context+=1
         try: yield
         finally: self.scope_context=prior; self._explicit_context-=1
+    def run(self,name,tag=TAG):
+        if self._effect_run_observer is not None:
+            self._effect_run_observer(self,name,tag)
+        owned=isinstance(name,str) and name.startswith('ywc_v03_jhg_inline_ack_')
+        if owned and self._owned_ack_observer is not None:
+            self._owned_ack_observer(self,name,tag)
+        result=super().run(name,tag)
+        if owned and self._owned_ack_after_observer is not None:
+            self._owned_ack_after_observer(self,name,tag)
+        return result
     def condition(self,node,tag):
         # Only the documented scope-value subset is modeled here. All other
         # predicates retain the strict native-source harness behavior.
@@ -334,6 +352,86 @@ def run_queued_inline_event_immediate(world,dispatch):
     if dispatch.get('event_id') not in world.event_defs: raise KeyError(dispatch.get('event_id'))
     with world.invocation(dispatch.get('scope_context',{})):
         return _run_inline_event_in_current_context(world,dispatch['event_id'],dispatch['tag'])
+
+@contextmanager
+def observe_actual_dispatch_append(world,observer):
+    """Observe after a real trigger_event append with its copied scoped values.
+
+    The observer is a test-only scheduling seam. It does not add commands,
+    tokens, receipts, or queue state to the source interpreter.
+    """
+    previous=world._dispatch_append_observer
+    if previous is not None: raise AssertionError('nested dispatch append observers are unsupported')
+    world._dispatch_append_observer=observer
+    try: yield
+    finally: world._dispatch_append_observer=previous
+
+@contextmanager
+def observe_actual_owned_ack(world,observer,after=None):
+    """Observe/intervene around the actually invoked owned ACK.
+
+    The actual body and generated receipt/callback commands have already run
+    when this seam fires. The observer may inspect or fault native state, then
+    the unchanged source helper still executes if the observer returns.
+    """
+    if world._owned_ack_observer is not None: raise AssertionError('nested ACK observers are unsupported')
+    world._owned_ack_observer=observer
+    world._owned_ack_after_observer=after
+    try: yield
+    finally:
+        world._owned_ack_observer=None
+        world._owned_ack_after_observer=None
+
+@contextmanager
+def observe_actual_effect_runs(world,observer):
+    """Record real named-effect invocations without replacing their bodies."""
+    previous=world._effect_run_observer
+    if previous is not None: raise AssertionError('nested effect-run observers are unsupported')
+    world._effect_run_observer=observer
+    try: yield
+    finally: world._effect_run_observer=previous
+
+def copy_actual_world_without_observers(world):
+    """Copy source state without transient callbacks; run remains self-bound."""
+    before=(world._dispatch_append_observer,world._owned_ack_observer,
+            world._owned_ack_after_observer,world._effect_run_observer)
+    world._dispatch_append_observer=None
+    world._owned_ack_observer=None
+    world._owned_ack_after_observer=None
+    world._effect_run_observer=None
+    try:
+        # A generic deepcopy reconstructs list subclasses by replaying append;
+        # _ScopedDispatchList.append itself records a fresh dispatch. Build a
+        # shell first, then populate event rows through list.extend (the base
+        # implementation) so copied pending events remain inert history.
+        clone=copy.copy(world)
+        events=_ScopedDispatchList.__new__(_ScopedDispatchList)
+        list.__init__(events)
+        memo={id(world):clone,id(world.events):events}
+        clone.__dict__.update(world.__dict__)
+        for name,value in world.__dict__.items():
+            if name=='events':
+                list.extend(events,copy.deepcopy(list(world.events),memo))
+            else:
+                clone.__dict__[name]=copy.deepcopy(value,memo)
+        events.world=clone
+        clone.events=events
+        clone._dispatch_append_observer=None
+        clone._owned_ack_observer=None
+        clone._owned_ack_after_observer=None
+        clone._effect_run_observer=None
+        # A checkpoint may be taken from inside execute()/invocation() at a
+        # genuine trigger_event append. The clone is a fresh standalone world,
+        # not a continuation of those suspended Python frames. Frozen context
+        # already lives on dispatch_contexts/events and remains untouched.
+        clone._execute_depth=0
+        clone._explicit_context=0
+        clone.scope_context={}
+        clone.scope_context_stack=[]
+    finally:
+        (world._dispatch_append_observer,world._owned_ack_observer,
+         world._owned_ack_after_observer,world._effect_run_observer)=before
+    return clone
 
 def source_scope_model_control_world():
     """Fresh real-source factory for documented command/guard primitive tests."""
