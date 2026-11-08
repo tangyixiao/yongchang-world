@@ -233,7 +233,7 @@ class KorFoundationContractTest(unittest.TestCase):
         self.assertIn("ywc_kor_school_route", auditor)
         self.assertIn("ywc_kor_ports_current_route_ready", auditor)
 
-    def test_closers_write_outcome_and_release_the_slot(self):
+    def test_review_proposals_keep_dispatcher_until_terminal_and_breach_releases_once(self):
         for arc, names in (
             (self.school, ["ywc_kor_close_school_as_established",
                            "ywc_kor_close_school_as_compromise",
@@ -244,12 +244,20 @@ class KorFoundationContractTest(unittest.TestCase):
         ):
             for name in names:
                 body = _helper_body(self.effects, name)
-                self.assertIn("ywc_v03_active_arc_count", body, name)
-                self.assertIn("ywc_v03_visible_task_count", body, name)
-                self.assertIn("change_variable", body, name)
-                self.assertIn("clamp_variable", body, name)
                 expected_slot = arc["slug"].replace("v03_", "ywc_v03_kor_v03_", 1)
                 self.assertIn(f"{expected_slot}_settled", body, name)
+                if name.endswith("_as_breach") or "ports" in name:
+                    self.assertIn("ywc_v03_active_arc_count", body, name)
+                    self.assertIn("ywc_v03_visible_task_count", body, name)
+                    self.assertIn("change_variable", body, name)
+                    self.assertIn("clamp_variable", body, name)
+                else:
+                    self.assertNotIn("ywc_v03_active_arc_count", body, name)
+                    self.assertNotIn("ywc_v03_visible_task_count", body, name)
+        school_finalize = _helper_body(self.effects, "ywc_kor_school_finalize")
+        for field in ("ywc_v03_active_arc_count", "ywc_v03_visible_task_count"):
+            self.assertIn(field, school_finalize)
+        self.assertIn("clamp_variable", school_finalize)
 
     def test_observation_maturation_and_blockage_notices_exist(self):
         school_text = _arc_text(self.school)

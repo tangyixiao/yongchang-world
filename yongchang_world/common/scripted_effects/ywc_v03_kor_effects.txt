@@ -342,21 +342,7 @@ ywc_kor_close_school_as_established = {
 			ywc_kor_school_full_ready = yes
 		}
 		set_variable = { name = ywc_kor_school_established value = 1 }
-		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 1 }
-		if = {
-			limit = { var:ywc_kor_school_route = 2 }
-			set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 2 }
-		}
-		if = {
-			limit = { has_variable = ywc_v03_kor_v03_kor_school_factions_started NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled } }
-			set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
-			change_variable = { name = ywc_v03_active_arc_count add = -1 }
-			change_variable = { name = ywc_v03_visible_task_count add = -1 }
-			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
-			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-		}
-		ywc_kor_school_finalize = yes
-		set_variable = { name = ywc_kor_pending_event value = 1017 }
+		set_variable = { name = ywc_kor_school_pending_event value = 1017 }
 	}
 }
 
@@ -371,17 +357,7 @@ ywc_kor_close_school_as_compromise = {
 			ywc_kor_school_limited_ready = yes
 		}
 		set_variable = { name = ywc_kor_school_compromise value = 1 }
-		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 3 }
-		if = {
-			limit = { has_variable = ywc_v03_kor_v03_kor_school_factions_started NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled } }
-			set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
-			change_variable = { name = ywc_v03_active_arc_count add = -1 }
-			change_variable = { name = ywc_v03_visible_task_count add = -1 }
-			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
-			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-		}
-		ywc_kor_school_finalize = yes
-		set_variable = { name = ywc_kor_pending_event value = 1017 }
+		set_variable = { name = ywc_kor_school_pending_event value = 1017 }
 	}
 }
 
@@ -412,8 +388,29 @@ ywc_kor_school_finalize = {
 		limit = {
 			has_variable = ywc_v03_kor_v03_kor_school_factions_started
 			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
-			var:ywc_v03_kor_v03_kor_school_factions_outcome > 0
+			has_variable = ywc_kor_school_established
 		}
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 1 }
+		if = { limit = { var:ywc_kor_school_route = 2 } set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 2 } }
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		remove_variable = ywc_kor_school_12_notice
+		remove_variable = ywc_kor_school_36_notice
+		remove_variable = ywc_kor_school_notice_event
+		remove_variable = ywc_kor_school_12_notice
+		remove_variable = ywc_kor_school_36_notice
+		remove_variable = ywc_kor_school_notice_event
+	}
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_school_factions_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
+			has_variable = ywc_kor_school_compromise
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 3 }
 		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
 		change_variable = { name = ywc_v03_active_arc_count add = -1 }
 		change_variable = { name = ywc_v03_visible_task_count add = -1 }
@@ -503,6 +500,12 @@ ywc_kor_school_monthly_review = {
 					set_variable = { name = ywc_kor_school_limited_started value = 1 }
 				}
 			}
+			remove_variable = ywc_kor_school_blocked_timer_started
+			remove_variable = ywc_kor_school_blocked_12_due
+			remove_variable = ywc_kor_school_blocked_36_due
+			remove_variable = ywc_kor_school_12_notice
+			remove_variable = ywc_kor_school_36_notice
+			remove_variable = ywc_kor_school_notice_event
 		}
 		else = {
 			remove_variable = ywc_kor_school_observation_timer
@@ -511,7 +514,35 @@ ywc_kor_school_monthly_review = {
 			remove_variable = ywc_kor_school_limited_timer
 			remove_variable = ywc_kor_school_limited_started
 			remove_variable = ywc_kor_school_limited_six_months_complete
+			if = {
+				limit = { has_variable = ywc_kor_school_route }
+				if = {
+					limit = { NOT = { has_variable = ywc_kor_school_blocked_timer_started } }
+					set_variable = { name = ywc_kor_school_blocked_timer_started value = 1 }
+					set_variable = { name = ywc_kor_school_blocked_12_due value = 1 days = 365 }
+					set_variable = { name = ywc_kor_school_blocked_36_due value = 1 days = 1095 }
+				}
+				if = {
+					limit = { has_variable = ywc_kor_school_blocked_timer_started NOT = { has_variable = ywc_kor_school_blocked_12_due } NOT = { has_variable = ywc_kor_school_12_notice } NOT = { has_variable = ywc_kor_school_notice_event } }
+					set_variable = { name = ywc_kor_school_12_notice value = 1 }
+					set_variable = { name = ywc_kor_school_notice_event value = 1016 }
+				}
+				if = {
+					limit = { has_variable = ywc_kor_school_blocked_timer_started NOT = { has_variable = ywc_kor_school_blocked_36_due } NOT = { has_variable = ywc_kor_school_36_notice } NOT = { has_variable = ywc_kor_school_notice_event } }
+					set_variable = { name = ywc_kor_school_36_notice value = 1 }
+					set_variable = { name = ywc_kor_school_notice_event value = 1016 }
+				}
+			}
 		}
+	}
+	if = {
+		limit = {
+			has_variable = ywc_kor_school_final_review_waiting
+			has_variable = ywc_kor_school_six_months_complete
+			NOT = { has_variable = ywc_kor_school_pending_event }
+		}
+		remove_variable = ywc_kor_school_final_review_waiting
+		set_variable = { name = ywc_kor_school_pending_event value = 1016 }
 	}
 }
 
@@ -604,7 +635,7 @@ ywc_kor_close_ports_as_established = {
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
 		}
-		set_variable = { name = ywc_kor_pending_event value = 1023 }
+		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
 	}
 }
 
@@ -628,7 +659,7 @@ ywc_kor_close_ports_as_compromise = {
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
 		}
-		set_variable = { name = ywc_kor_pending_event value = 1023 }
+		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
 	}
 }
 
@@ -726,6 +757,9 @@ ywc_kor_ports_monthly_review = {
 			remove_variable = ywc_kor_ports_blocked_timer_started
 			remove_variable = ywc_kor_ports_blocked_12_due
 			remove_variable = ywc_kor_ports_blocked_36_due
+			remove_variable = ywc_kor_ports_12_notice
+			remove_variable = ywc_kor_ports_36_notice
+			remove_variable = ywc_kor_ports_notice_event
 			if = {
 				limit = { has_variable = ywc_kor_ports_blocked_months }
 				set_variable = { name = ywc_kor_ports_blocked_months value = 0 }
@@ -775,16 +809,25 @@ ywc_kor_ports_monthly_review = {
 					set_variable = { name = ywc_kor_ports_blocked_36_due value = 1 days = 1095 }
 				}
 				if = {
-					limit = { has_variable = ywc_kor_ports_blocked_timer_started NOT = { has_variable = ywc_kor_ports_blocked_12_due } NOT = { has_variable = ywc_kor_ports_12_notice } NOT = { has_variable = ywc_kor_pending_event } }
+					limit = { has_variable = ywc_kor_ports_blocked_timer_started NOT = { has_variable = ywc_kor_ports_blocked_12_due } NOT = { has_variable = ywc_kor_ports_12_notice } NOT = { has_variable = ywc_kor_ports_notice_event } }
 					set_variable = { name = ywc_kor_ports_12_notice value = 1 }
-					set_variable = { name = ywc_kor_pending_event value = 1022 }
+					set_variable = { name = ywc_kor_ports_notice_event value = 1022 }
 				}
 				if = {
-					limit = { has_variable = ywc_kor_ports_blocked_timer_started NOT = { has_variable = ywc_kor_ports_blocked_36_due } NOT = { has_variable = ywc_kor_ports_36_notice } NOT = { has_variable = ywc_kor_pending_event } }
+					limit = { has_variable = ywc_kor_ports_blocked_timer_started NOT = { has_variable = ywc_kor_ports_blocked_36_due } NOT = { has_variable = ywc_kor_ports_36_notice } NOT = { has_variable = ywc_kor_ports_notice_event } }
 					set_variable = { name = ywc_kor_ports_36_notice value = 1 }
-					set_variable = { name = ywc_kor_pending_event value = 1022 }
+					set_variable = { name = ywc_kor_ports_notice_event value = 1022 }
 				}
 			}
 		}
+	}
+	if = {
+		limit = {
+			has_variable = ywc_kor_ports_final_review_waiting
+			has_variable = ywc_kor_ports_six_months_complete
+			NOT = { has_variable = ywc_kor_ports_pending_event }
+		}
+		remove_variable = ywc_kor_ports_final_review_waiting
+		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
 	}
 }
