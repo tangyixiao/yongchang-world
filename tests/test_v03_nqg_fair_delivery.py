@@ -401,16 +401,17 @@ class NqgActualFairDeliveryBaseline(unittest.TestCase):
     def test_catalog_distinguishes_candidate_senders_from_phase_class_records(self):
         world = NqgActualWorld()
         candidates = list(_candidates(world).values())
-        self.assertEqual(len(candidates), 70)
+        self.assertEqual(len(candidates), 73)
         kinds = [candidate["candidate"]["kind"] for candidate in candidates]
         self.assertEqual(kinds.count("normal_queued_event"), 52)
         self.assertEqual(kinds.count("remedy_final"), 6)
         self.assertEqual(kinds.count("notice12"), 6)
         self.assertEqual(kinds.count("notice36"), 6)
+        self.assertEqual(kinds.count("notice"), 3)
         first_phase = {arc_slug: journal_id for arc_slug, journal_id, _, _ in ARCS}
         first_classes = [row for row in candidates
                          if row["branch"]["journal"] in first_phase.values()
-                         and row["candidate"]["kind"] != "normal_queued_event"]
+                         and row["candidate"]["kind"] in {"remedy_final", "notice12", "notice36"}]
         self.assertEqual(len(first_classes), 9)
         self.assertEqual({row["candidate"]["kind"] for row in first_classes},
                          {"remedy_final", "notice12", "notice36"})

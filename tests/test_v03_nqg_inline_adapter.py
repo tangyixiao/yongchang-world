@@ -14,6 +14,7 @@ from tools.v03_inline_delivery_adapter import (
     direct_values,
     parse_block,
     render_inline_country_adapters,
+    trigger_event_ids,
     validate_inline_catalog,
     validate_nqg_native_helper_source,
 )
@@ -32,7 +33,7 @@ def monthly_sender_nodes(script: str):
     top = parse_block(script)
     monthly = direct_values(top, "on_monthly_pulse")
     effect = direct_values(children(monthly[0]), "effect")
-    return [node for node in children(effect[0]) if node.key in {"if", "else_if"} and any(n.key == "trigger_event" for n in children(node))]
+    return [node for node in children(effect[0]) if node.key in {"if", "else_if"} and trigger_event_ids((node,))]
 
 
 def has_reserve_call(node) -> bool:
@@ -85,7 +86,10 @@ class NqgInlineAdapterTests(unittest.TestCase):
         arcs = [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"]
         self.assertEqual(len(arcs), 3)
         self.assertEqual(sum(len(arc["inline_delivery_adapter"]["live_phases"]) for arc in arcs), 6)
-        self.assertEqual(sum(len(arc["inline_delivery_adapter"]["branches"]) for arc in arcs), 70)
+        self.assertEqual(sum(len(arc["inline_delivery_adapter"]["branches"]) for arc in arcs), 73)
+        aid = [record for arc in arcs for record in arc["inline_delivery_adapter"]["branches"] if record["event"] == "ywc_nqg.1031"]
+        self.assertEqual(len(aid), 3)
+        self.assertTrue(all(record["candidates"] == [{"queue": "ywc_nqg_winter_aid_notice_event", "kind": "notice", "mode": "exact", "value": 1031}] for record in aid))
         records = [record for arc in arcs for record in arc["inline_delivery_adapter"]["branches"] if record["event"] in LATE_EVENTS]
         self.assertEqual(len(records), 24)
         by_phase: dict[str, set[str]] = {}
@@ -150,7 +154,7 @@ class NqgInlineAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "own direct notice helper"):
             validate_nqg_native_helper_source(nested_foreign, effects_source)
 
-    def test_native_nonqueue_dispatch_effects_keep_order_at_all_70_sites(self) -> None:
+    def test_native_nonqueue_dispatch_effects_keep_order_at_all_73_sites(self) -> None:
         catalog = load_catalog()
         adapter = render_inline_country_adapters(catalog)
         checked = 0
@@ -167,10 +171,17 @@ class NqgInlineAdapterTests(unittest.TestCase):
                     queue_removals = {candidate["queue"] for candidate in proof["candidates"]}
                     old_effects = [node for node in old_effects if not (node.key == "remove_variable" and node.value in queue_removals)]
                     new_effects = [node for node in children(new) if node.key != "limit"]
+                    if proof["event"] == "ywc_nqg.1031":
+                        self.assertEqual(trigger_event_ids(tuple(old_effects)), ["ywc_nqg.1031"])
+                        self.assertEqual(trigger_event_ids(tuple(new_effects)), ["ywc_nqg.1031"])
+                        self.assertTrue(any(has_reserve_call(node) for node in new_effects))
+                        self.assertIn("ywc_nqg_winter_aid_notice_serial", adapter["journal_scripts"][journal["id"]])
+                        checked += 1
+                        continue
                     new_effects = [node for node in new_effects if not (node.key == "if" and has_reserve_call(node))]
                     self.assertEqual([ast_shape(n) for n in new_effects], [ast_shape(n) for n in old_effects], f"{journal['id']} branch {proof['branch_index']}")
                     checked += 1
-        self.assertEqual(checked, 70)
+        self.assertEqual(checked, 73)
 
     def test_pre_and_post_send_intent_conditions_preserve_native_if_else_if_rules(self) -> None:
         catalog = load_catalog()
@@ -251,10 +262,14 @@ class NqgInlineAdapterTests(unittest.TestCase):
         self.assertTrue(direct_intent_absence(callback_late, "ywc_nqg_winter_notice36_intent"))
 
     def test_dispatch_source_guards_are_candidate_local_across_arcs(self) -> None:
-        adapter = render_inline_country_adapters(load_catalog())
+        catalog = load_catalog()
+        adapter = render_inline_country_adapters(catalog)
         rows = adapter["triggers"].splitlines()
-        winter = next(row for row in rows if row.startswith("ywc_v03_nqg_inline_dispatch_4 ="))
-        port = next(row for row in rows if row.startswith("ywc_v03_nqg_inline_dispatch_59 ="))
+        entries = [(proof, candidate) for arc in catalog["arcs"] for proof in arc["inline_delivery_adapter"]["branches"] for candidate in proof["candidates"]]
+        winter_id = next(i for i, (proof, candidate) in enumerate(entries, 1) if proof["event"] == "ywc_nqg.1000" and candidate["kind"] == "normal_queued_event")
+        port_id = next(i for i, (proof, candidate) in enumerate(entries, 1) if proof["event"] == "ywc_nqg.1027" and candidate["kind"] == "normal_queued_event")
+        winter = next(row for row in rows if row.startswith(f"ywc_v03_nqg_inline_dispatch_{winter_id} ="))
+        port = next(row for row in rows if row.startswith(f"ywc_v03_nqg_inline_dispatch_{port_id} ="))
         self.assertIn("var:ywc_nqg_winter_pending = 1000", winter)
         self.assertNotIn("var:ywc_nqg_port_pending = 1027", winter)
         self.assertIn("var:ywc_nqg_port_pending = 1027", port)
