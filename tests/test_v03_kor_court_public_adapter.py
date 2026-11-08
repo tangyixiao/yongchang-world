@@ -248,12 +248,12 @@ class KorCourtPublicGeneratedAdapter(unittest.TestCase):
         prior = json.loads(frozen("data/content/v03/countries/kor.json"))["arcs"]
         from test_v03_current_choice_guards import migrated_opening_projection
         expected = migrated_opening_projection("kor", prior)
-        self.assertEqual(active[:-1], expected, "only the nine reviewed foundation opening effects may change")
-        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, REVENUE, COURT])
-        self.assertEqual(sum(len(a["journals"]) for a in active[:-1]), 8)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:-1]), 39)
-        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in active[:-1]), 5)
-        arc = active[-1]
+        self.assertEqual(active[:4], expected, "only the nine reviewed foundation opening effects may change")
+        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, REVENUE, COURT, "v03_kor_workshops_credit"])
+        self.assertEqual(sum(len(a["journals"]) for a in active[:4]), 8)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:4]), 39)
+        self.assertEqual(sum(len(a["inline_delivery_adapter"]["direct_adds"]) for a in active[:4]), 5)
+        arc = active[4]
         self.assertEqual([j["id"] for j in arc["journals"]], list(JES))
         proofs = arc["inline_delivery_adapter"]["branches"]
         self.assertEqual([p["event"] for p in proofs], [f"ywc_kor.{n}" for n in range(1120, 1128)])
@@ -267,7 +267,7 @@ class KorCourtPublicGeneratedAdapter(unittest.TestCase):
                              (RECEIPT, int(event["id"].rsplit(".", 1)[1]) - 1119))
         adapter.validate_inline_catalog(catalog)
         rendered = adapter.render_inline_country_adapters(catalog)
-        self.assertEqual(len(rendered["journal_scripts"]), 10)
+        self.assertEqual(len(rendered["journal_scripts"]), 12)
         self.assertIn("ywc_v03_kor_inline_served_5", rendered["effects"])
         for candidate in range(40, 48):
             self.assertIn(f"ywc_v03_kor_inline_candidate_{candidate} =", rendered["triggers"])
