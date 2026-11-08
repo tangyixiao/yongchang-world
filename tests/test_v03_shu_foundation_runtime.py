@@ -883,7 +883,7 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_compact_fee_waived"), 1)
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 2)
 
-    def test_untouched_fiscal_catalog_preserves_historical_digest_after_owner_vocabulary_inverse(self):
+    def test_fiscal_catalog_preserves_historical_digest_after_documented_goal_and_owner_inverse(self):
         current_arc = next(a for a in CATALOG["arcs"] if a["slug"] == "v03_shu_fiscal_register")
         baseline = json.loads(json.dumps(current_arc, ensure_ascii=False))
         baseline.pop("inline_delivery_adapter", None)
@@ -891,6 +891,14 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         # merchant and military obligation repairs. Keep the historical comparison for every
         # other authored field instead of freezing the entire arc forever.
         baseline["journals"][0].pop("script", None)
+        # The two real withdrawal paths formerly satisfied both complete/fail.
+        # Lock the exact bounded correction, then invert only it for the old
+        # digest; every other remaining authored field stays in the projection.
+        settlement = next(j for j in baseline["journals"]
+                          if j["id"] == "ywc_je_v03_shu_fiscal_settlement")
+        self.assertEqual(settlement["goal"],
+                         "{ has_variable = ywc_shu_register_resolved NOT = { has_variable = ywc_shu_arc_abandoned } }")
+        settlement["goal"] = "{ has_variable = ywc_shu_register_resolved }"
         repaired = {"ywc_shu.1003", "ywc_shu.1005", "ywc_shu.1006", "ywc_shu.1007", "ywc_shu.1009"}
         baseline["events"] = [event for event in baseline["events"] if event["id"] not in repaired]
         compensation = next(o for e in baseline["events"] if e["id"] == "ywc_shu.1002" for o in e["options"] if o["key"] == "collect_with_compensation")

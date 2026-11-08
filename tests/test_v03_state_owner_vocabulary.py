@@ -20,7 +20,7 @@ from shu_kor_strict_review_runtime import Strict, facts, field
 from test_v03_shu_merchant_obligations import reached_offer
 
 ROOT = Path(__file__).resolve().parents[1]
-COUNTS = dict(dmg=9, jhg=4, kor=6, shu=24, oir=9, nmg=6, tib=8, nqg=1)
+COUNTS = dict(dmg=9, jhg=4, kor=6, shu=44, oir=9, nmg=6, tib=8, nqg=1)
 
 
 def source(path):
@@ -73,9 +73,9 @@ class StateOwnerVocabularyTests(unittest.TestCase):
             with self.subTest(country=country):
                 self.assert_source_owners(trigger_source(country), count)
         self.assert_source_owners(source("yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt"), 1)
-        # Merchant source ownership now lives in its named source triggers;
-        # the service funding helpers also add four real state predicates.
-        self.assert_source_owners(source("yongchang_world/events/ywc_v03_country_shu_events.txt"), 12)
+        # Foundation keeps 12 source-owner predicates. The middle arc's four
+        # pilot choices each check ownership in both display and execution.
+        self.assert_source_owners(source("yongchang_world/events/ywc_v03_country_shu_events.txt"), 20)
         catalog = json.loads(source("data/content/v03/countries/shu.json"))
         def strings(value):
             if isinstance(value, str): yield value
@@ -83,8 +83,11 @@ class StateOwnerVocabularyTests(unittest.TestCase):
                 for child in value: yield from strings(child)
             elif isinstance(value, dict):
                 for child in value.values(): yield from strings(child)
+        for era, count in (("foundation", 12), ("middle", 8)):
+            era_scripts = [text for arc in catalog["arcs"] if arc["era"] == era
+                           for text in strings(arc)]
+            self.assertEqual(sum(text.count("owner = ROOT") for text in era_scripts), count)
         scripts = [text for text in strings(catalog) if "owner = ROOT" in text or "is_owned_by" in text]
-        self.assertEqual(sum(text.count("owner = ROOT") for text in scripts), 12)
         for text in scripts:
             self.assert_source_owners(text.strip()[1:-1], text.count("owner = ROOT"))
 

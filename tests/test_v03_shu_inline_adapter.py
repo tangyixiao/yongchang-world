@@ -43,10 +43,11 @@ class ShuInlineAdapterTests(unittest.TestCase):
     def test_catalog_covers_all_native_sites_and_journal_phases(self) -> None:
         catalog = load_catalog()
         validate_inline_catalog(catalog)
-        adapters = [arc["inline_delivery_adapter"] for arc in catalog["arcs"]]
+        foundation = [arc for arc in catalog["arcs"] if arc["era"] == "foundation"]
+        adapters = [arc["inline_delivery_adapter"] for arc in foundation]
         self.assertEqual(31, sum(len(item["branches"]) for item in adapters))
         self.assertEqual(6, sum(len(item["live_phases"]) for item in adapters))
-        self.assertEqual(26, sum(len(arc["events"]) for arc in catalog["arcs"]))
+        self.assertEqual(26, sum(len(arc["events"]) for arc in foundation))
 
     def test_foreign_queue_auxiliary_or_bad_ordinal_is_rejected(self) -> None:
         catalog = load_catalog()
