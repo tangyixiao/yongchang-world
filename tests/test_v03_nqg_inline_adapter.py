@@ -124,7 +124,7 @@ class NqgInlineAdapterTests(unittest.TestCase):
     def test_native_helper_receipt_and_event_arc_mutants_are_rejected(self) -> None:
         catalog = load_catalog()
         effects_path = ROOT / "yongchang_world/common/scripted_effects/ywc_v03_nqg_effects.txt"
-        effects_source = effects_path.read_text(encoding="utf-8")
+        effects_source = effects_path.read_text(encoding="utf-8-sig")
         helper_start = effects_source.index("ywc_nqg_winter_mark_notice_delivery = {")
         helper_end = effects_source.index("\nywc_nqg_hunting_mark_notice_delivery =", helper_start)
         winter_helper = effects_source[helper_start:helper_end]
