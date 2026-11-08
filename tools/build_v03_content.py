@@ -288,8 +288,8 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                 except ValueError as exc:
                     errors.append(f"{where}.delivery_adapter: {exc}")
         if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])):
-            if key != "country_dmg":
-                errors.append(f"{where}.inline_delivery_adapter is currently enabled only for country_dmg")
+            if key not in {"country_dmg", "country_kor"}:
+                errors.append(f"{where}.inline_delivery_adapter is not registered for {key}")
             else:
                 try:
                     validate_inline_catalog(catalog)
@@ -319,7 +319,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key == "country_dmg" else set())
+            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor"} else set())
             _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional=arc_optional)
             owner = arc_owner(layer, arc, tags)
             if layer == "country":
@@ -541,7 +541,7 @@ def _outputs_for(key: str, *, adapter: bool = False) -> list[Path]:
         Path(f"localization/english/ywc_v03_{key}_l_english.yml"),
     ]
     if adapter:
-        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else None
+        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else None
         if not country: raise ValueError(f"no registered adapter output namespace for {key}")
         paths.extend((Path(f"common/scripted_effects/ywc_v03_delivery_{country}_effects.txt"),
                       Path(f"common/scripted_triggers/ywc_v03_delivery_{country}_triggers.txt")))
@@ -745,8 +745,9 @@ def render_all(root: Path) -> dict[Path, str]:
                 rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
                              "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
             else:
-                rendered += ["# Generated DMG inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
-                             "# Generated DMG inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
+                country = "KOR" if key == "country_kor" else "DMG"
+                rendered += [f"# Generated {country} inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
+                             f"# Generated {country} inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
         outputs.update(zip(paths, rendered))
     return outputs
 
