@@ -1,5 +1,6 @@
 """NMG lifecycle paths through the authored JE/event scripts and shared pulse."""
 import json
+import copy
 import sys
 import unittest
 from pathlib import Path
@@ -12,9 +13,13 @@ CATALOG = json.loads((ROOT / "data/content/v03/countries/nmg.json").read_text(en
 MOD = ROOT / "yongchang_world"
 EFFECTS = (MOD / "common/scripted_effects/ywc_v03_nmg_effects.txt").read_text(encoding="utf-8-sig")
 SHARED_EFFECTS = (MOD / "common/scripted_effects/ywc_v03_effects.txt").read_text(encoding="utf-8-sig")
+DELIVERY_EFFECTS_PATH = MOD / "common/scripted_effects/ywc_v03_delivery_nmg_effects.txt"
+DELIVERY_TRIGGERS_PATH = MOD / "common/scripted_triggers/ywc_v03_delivery_nmg_triggers.txt"
+DELIVERY_EFFECTS = DELIVERY_EFFECTS_PATH.read_text(encoding="utf-8-sig") if DELIVERY_EFFECTS_PATH.exists() else ""
+DELIVERY_TRIGGERS = DELIVERY_TRIGGERS_PATH.read_text(encoding="utf-8-sig") if DELIVERY_TRIGGERS_PATH.exists() else ""
 TRIGGERS = (MOD / "common/scripted_triggers/ywc_v03_nmg_triggers.txt").read_text(encoding="utf-8-sig")
 SHARED_TRIGGERS = (MOD / "common/scripted_triggers/ywc_v03_triggers.txt").read_text(encoding="utf-8-sig")
-TRIGGER_MAP = {k: b for k, _, b in parse(TRIGGERS + "\n" + SHARED_TRIGGERS)}
+SOURCE_TRIGGER_DEFS = {k: b for k, _, b in parse(TRIGGERS + "\n" + SHARED_TRIGGERS + "\n" + DELIVERY_TRIGGERS)}
 GENERATED_JES = {k: b for k, _, b in parse((MOD / "common/journal_entries/ywc_v03_country_nmg_journal.txt").read_text(encoding="utf-8-sig"))}
 GENERATED_EVENTS = {k: b for k, _, b in parse((MOD / "events/ywc_v03_country_nmg_events.txt").read_text(encoding="utf-8-sig"))}
 
@@ -31,8 +36,21 @@ def event_option(event_id, key):
 
 class NmgWorld(PulseWorld):
     """Interpret authored scripts; fixture only the engine-owned world facts."""
+    SUPPORTED_CONDITION_PRIMITIVES = {
+        "has_variable", "has_modifier", "exists", "always", "net_fixed_income",
+        "bureaucracy", "gold_reserves", "yearly_gross_income", "scaled_debt",
+        "in_default", "is_at_war", "trigger_if", "calc_true_if", "ywc_nmg_v03_has_owned_state",
+        "is_owned_by", "any_scope_state", "any_scope_building", "is_building_type",
+        "occupancy", "building_has_goods_shortage", "has_law_or_variant", "radical_fraction",
+        "literacy_rate", "institution_investment_level", "is_subject", "is_subject_of",
+        "overlord", "relations:root", "relations_threshold:poor", "any_interest_group",
+        "is_interest_group_type", "ig_approval",
+    }
+
     def __init__(self, countries):
-        super().__init__(EFFECTS + "\n" + SHARED_EFFECTS, countries)
+        super().__init__(EFFECTS + "\n" + SHARED_EFFECTS + "\n" + DELIVERY_EFFECTS, countries)
+        self.trigger_defs = copy.deepcopy(SOURCE_TRIGGER_DEFS)
+        self._trigger_stack = set()
         self.events = []
         self.completed_journals = []
         self.failed_journals = []
@@ -87,16 +105,95 @@ class NmgWorld(PulseWorld):
                 except ValueError as exc:
                     raise ValueError("ig_approval threshold must be numeric") from exc
 
+    def validate_condition(self, node, seen=frozenset()):
+        """Validate all actual condition branches, including branches not taken."""
+        key, comparison, value = node
+        if key in {"AND", "OR", "NOT", "NOR"}:
+            if comparison != "=" or not isinstance(value, list):
+                raise AssertionError(("invalid_boolean_condition", node))
+            for child in value:
+                self.validate_condition(child, seen)
+            return
+        if key in self.trigger_defs:
+            if comparison != "=" or value not in ("yes", "no") or key in seen:
+                raise AssertionError(("invalid_or_recursive_scripted_trigger", node))
+            body = self.trigger_defs[key]
+            self._validate_condition_tree(body)
+            for child in body:
+                self.validate_condition(child, seen | {key})
+            return
+        if key == "has_journal_entry":
+            if (comparison != "=" or not isinstance(value, str) or not value.startswith("ywc_je_")
+                    or not value.removeprefix("ywc_je_").replace("_", "").isalnum()):
+                raise AssertionError(("invalid_journal_entry_query", node))
+            return
+        if key == "trigger_if":
+            if comparison != "=" or not isinstance(value, list):
+                raise AssertionError(("invalid_trigger_if_condition", node))
+            limits = [(cmp, body) for child, cmp, body in value if child == "limit"]
+            if len(limits) != 1 or limits[0][0] != "=" or not isinstance(limits[0][1], list):
+                raise AssertionError(("invalid_trigger_if_limit", node))
+            for child, cmp, body in value:
+                if child in ("limit", "trigger_else"):
+                    if cmp != "=" or not isinstance(body, list):
+                        raise AssertionError(("invalid_trigger_if_branch", (child, cmp, body)))
+                    for nested in body:
+                        self.validate_condition(nested, seen)
+                else:
+                    self.validate_condition((child, cmp, body), seen)
+            return
+        if key == "calc_true_if":
+            if comparison != "=" or not isinstance(value, list):
+                raise AssertionError(("invalid_calc_true_if_condition", node))
+            amounts = [(cmp, body) for child, cmp, body in value if child == "amount"]
+            if len(amounts) != 1 or amounts[0][0] not in ("=", ">="):
+                raise AssertionError(("invalid_calc_true_if_amount", node))
+            try:
+                float(amounts[0][1])
+            except (TypeError, ValueError) as exc:
+                raise AssertionError(("invalid_calc_true_if_amount", node)) from exc
+            for child in value:
+                if child[0] != "amount":
+                    self.validate_condition(child, seen)
+            return
+        if key.startswith("c:"):
+            if isinstance(value, list):
+                for child in value:
+                    self.validate_condition(child, seen)
+            return
+        if key in {"any_scope_state", "any_scope_building", "overlord", "any_interest_group"}:
+            if not isinstance(value, list):
+                raise AssertionError(("invalid_scoped_condition", node))
+            for child in value:
+                self.validate_condition(child, seen)
+            return
+        if key not in self.SUPPORTED_CONDITION_PRIMITIVES and not key.startswith("var:"):
+            raise AssertionError(("unsupported_test_condition", node))
+        if key in {"institution_investment_level", "radical_fraction"}:
+            self._validate_condition_tree([node])
+
     def conditions(self, nodes, tag):
         self._validate_condition_tree(nodes)
+        for node in nodes:
+            self.validate_condition(node)
         return super().conditions(nodes, tag)
 
     def condition(self, node, tag):
         self._validate_condition_tree([node])
+        self.validate_condition(node)
         key, comparison, value = node
         v = self.countries[tag]
-        if key in TRIGGER_MAP:
-            return self.conditions(TRIGGER_MAP[key], tag)
+        if key in self.trigger_defs:
+            if key in self._trigger_stack:
+                raise AssertionError(("invalid_or_recursive_scripted_trigger", node))
+            self._trigger_stack.add(key)
+            try:
+                result = self.conditions(self.trigger_defs[key], tag)
+            finally:
+                self._trigger_stack.remove(key)
+            return result == (value == "yes")
+        if key == "has_journal_entry":
+            return comparison == "=" and tag == "NMG" and value in self.active_journals
         if key == "ywc_nmg_v03_has_owned_state" or key == "is_owned_by":
             return bool(v.get("fixture_owned_state", 0)) and v.get("fixture_state_owner", "NMG") == tag
         if key == "any_scope_state":
@@ -217,12 +314,12 @@ class NmgLifecycleTest(unittest.TestCase):
     def test_world_fact_fixture_rejects_missing_state_shortage_and_unknown_primitives(self):
         world = NmgWorld(fixture())
         v = world.countries["NMG"]
-        self.assertTrue(world.conditions(TRIGGER_MAP["ywc_nmg_land_administration_present"], "NMG"))
+        self.assertTrue(world.conditions(world.trigger_defs["ywc_nmg_land_administration_present"], "NMG"))
         v["fixture_shortages"].add("building_government_administration")
-        self.assertFalse(world.conditions(TRIGGER_MAP["ywc_nmg_land_administration_present"], "NMG"))
+        self.assertFalse(world.conditions(world.trigger_defs["ywc_nmg_land_administration_present"], "NMG"))
         v["fixture_shortages"].clear()
         v["fixture_state_owner"] = "MEX"
-        self.assertFalse(world.conditions(TRIGGER_MAP["ywc_nmg_v03_has_owned_state"], "NMG"))
+        self.assertFalse(world.conditions(world.trigger_defs["ywc_nmg_v03_has_owned_state"], "NMG"))
         with self.assertRaises(AssertionError):
             world.condition(("not_a_real_game_primitive", "=", "yes"), "NMG")
         laws = v["fixture_laws"]
@@ -385,8 +482,8 @@ class NmgLifecycleTest(unittest.TestCase):
                               "ywc_nmg_revenue_fixed_ready")[arc_i]
                 limited_ready = ("ywc_nmg_land_old_ready", "ywc_nmg_office_single_ready",
                                  "ywc_nmg_revenue_arrears_ready")[arc_i]
-                self.assertFalse(world.conditions(TRIGGER_MAP[full_ready], "NMG"), "higher obligation must remain unmet")
-                self.assertTrue(world.conditions(TRIGGER_MAP[limited_ready], "NMG"), "lower target must be currently feasible")
+                self.assertFalse(world.conditions(world.trigger_defs[full_ready], "NMG"), "higher obligation must remain unmet")
+                self.assertTrue(world.conditions(world.trigger_defs[limited_ready], "NMG"), "lower target must be currently feasible")
                 self.assertEqual(world.treasury["NMG"], paid_treasury, "renegotiation preserves sunk fee without second debit")
                 for suffix in ("watch_started", "watch_timer", "six_months_complete"):
                     self.assertNotIn(f"ywc_nmg_{lane_name}_{suffix}", v)
@@ -503,7 +600,7 @@ class NmgLifecycleTest(unittest.TestCase):
                         self.assertEqual(eid,next_id)
                         choose_normal(eid,key)
                 self.assertEqual(v.get(paid_var),1)
-                self.assertFalse(world.conditions(TRIGGER_MAP[f"ywc_nmg_{lane}_route_ready"],"NMG"))
+                self.assertFalse(world.conditions(world.trigger_defs[f"ywc_nmg_{lane}_route_ready"],"NMG"))
                 cash_after_fee=world.treasury["NMG"]
 
                 lose(v); acknowledged=False
@@ -538,8 +635,8 @@ class NmgLifecycleTest(unittest.TestCase):
                 for suffix in ("notice12_delivered","notice36_delivered","notice_pending","notice_response_context","notice_return_event"):
                     self.assertNotIn(f"ywc_nmg_{lane}_{suffix}",v)
                 self.assertEqual(world.treasury["NMG"],cash_after_fee)
-                self.assertTrue(world.conditions(TRIGGER_MAP[f"ywc_nmg_{lane}_selected_target_ready"],"NMG"))
-                self.assertFalse(world.conditions(TRIGGER_MAP[f"ywc_nmg_{lane}_route_ready"],"NMG"))
+                self.assertTrue(world.conditions(world.trigger_defs[f"ywc_nmg_{lane}_selected_target_ready"],"NMG"))
+                self.assertFalse(world.conditions(world.trigger_defs[f"ywc_nmg_{lane}_route_ready"],"NMG"))
                 key=replay_choices.get(int(ordinary_pending))
                 self.assertIsNotNone(key,(lane,ordinary_pending))
                 option=event_option(eid,key)
@@ -614,7 +711,7 @@ class NmgLifecycleTest(unittest.TestCase):
                 option=event_option(eid,"settle_partial")
                 if world.conditions(field(option,"trigger"),"NMG"):
                     self.assertEqual(v.get("ywc_nmg_revenue_six_months_complete"),1)
-                    self.assertTrue(world.conditions(TRIGGER_MAP["ywc_nmg_revenue_route_ready"],"NMG"))
+                    self.assertTrue(world.conditions(world.trigger_defs["ywc_nmg_revenue_route_ready"],"NMG"))
                     return world,eid,v
                 wait=event_option(eid,"wait_retry")
                 self.assertTrue(world.conditions(field(wait,"trigger"),"NMG"))
@@ -646,7 +743,7 @@ class NmgLifecycleTest(unittest.TestCase):
         world,eid,v=real_mature_popup()
         option=event_option(eid,"settle_partial")
         v["fixture_buildings"].pop("building_barrack")
-        self.assertFalse(world.conditions(TRIGGER_MAP["ywc_nmg_revenue_route_ready"],"NMG"))
+        self.assertFalse(world.conditions(world.trigger_defs["ywc_nmg_revenue_route_ready"],"NMG"))
         self.assertFalse(world.conditions(field(option,"trigger"),"NMG"),"stale matured popup cannot close after target loss")
         wait=event_option(eid,"wait_retry")
         self.assertTrue(world.conditions(field(wait,"trigger"),"NMG"))
@@ -710,7 +807,10 @@ class NmgLifecycleTest(unittest.TestCase):
         v["fixture_buildings"]["building_barrack"] = 0.8
         eid = self.pulse_until_event(world, world.active_journal)
         self.assertEqual(eid, "ywc_nmg.1020", "restoration must resume the phase-correct opening queue")
-        self.assertNotIn("ywc_nmg_revenue_pending", v, "the live pulse consumed the queued opening event")
+        self.assertEqual(v.get("ywc_nmg_revenue_pending"), 1020,
+                         "the selected opening queue remains intact until the event body is acknowledged")
+        self.assertEqual(v.get("ywc_v03_nmg_inline_reservation"), 23)
+        self.assertEqual(v.get("ywc_v03_nmg_inline_c23_ywc_nmg_revenue_pending_value"), 1020)
         self.assertEqual(v.get("gold_reserves"), paid_cash, "ack and recovery do not charge the sunk fee again")
         self.assertTrue(world.conditions(field(GENERATED_EVENTS[eid], "trigger"), "NMG"))
         self.choose(world, eid, "wait_for_funds")
@@ -734,6 +834,7 @@ class NmgLifecycleTest(unittest.TestCase):
         failed = world.conditions(field(entry, "fail"), "NMG")
         self.assertFalse(complete and failed, f"JE has mutually exclusive terminal predicates: {je_id}")
         if complete:
+            world.execute(field(entry, "on_complete"), "NMG")
             world.completed_journals.append(je_id)
             world.active_journals.discard(je_id)
             world.active_journal = None
@@ -868,7 +969,7 @@ class NmgLifecycleTest(unittest.TestCase):
         v = world.countries["NMG"]
         self.assertEqual(v.get("ywc_v03_active_arc_count"), 3)
         self.assertEqual(v.get("ywc_v03_visible_task_count"), 3)
-        self.assertFalse(world.conditions(TRIGGER_MAP["ywc_v03_has_capacity"], "NMG"))
+        self.assertFalse(world.conditions(world.trigger_defs["ywc_v03_has_capacity"], "NMG"))
         delivery_months = []
         for je_id, event_num in zip(openings, expected):
             eid = self.pulse_until_event(world, je_id)
@@ -898,7 +999,7 @@ class NmgLifecycleTest(unittest.TestCase):
         paid = world.treasury["NMG"]
         # Lose the selected contract's real defense building after payment.
         v["fixture_buildings"].pop("building_barrack")
-        self.assertFalse(world.conditions(TRIGGER_MAP["ywc_nmg_revenue_route_ready"], "NMG"))
+        self.assertFalse(world.conditions(world.trigger_defs["ywc_nmg_revenue_route_ready"], "NMG"))
         relation_before_notice = v["fixture_relations"]
 
         def deliver_notice(target, due_variable, delivered_variable, chosen_option):
@@ -1075,37 +1176,66 @@ class NmgLifecycleTest(unittest.TestCase):
 
     def test_real_target_loss_delivers_12_and_36_month_notices_during_defer(self):
         world = NmgWorld(fixture())
-        self.activate(world, "ywc_je_v03_nmg_land_arbitration")
+        arc = CATALOG["arcs"][0]
+        order = [journal["id"] for journal in arc["journals"]]
+        self.activate(world, order[0])
         event_id = self.pulse_until_event(world, world.active_journal)
         self.choose(world, event_id, "mixed")
         v = world.countries["NMG"]
         # Actual selected-route readiness is lost after commitment; the normal
         # narrative queue continues to be deferred while notice delivery ages.
         v["fixture_buildings"] = {}
-        entry = GENERATED_JES[world.active_journal]
-        pulse = field(field(entry, "on_monthly_pulse"), "effect")
         delivered = set()
+
+        def reconcile_and_handoff():
+            if world.active_journal is None:
+                return None
+            status = self.reconcile_active_je(world)
+            if status == "complete":
+                next_index = len(world.completed_journals)
+                if next_index < len(order):
+                    self.activate(world, order[next_index])
+            return status
+
         for _ in range(40):
+            reconcile_and_handoff()
+            if world.active_journal is None:
+                break
+            active = world.active_journal
+            entry = GENERATED_JES[active]
+            pulse = field(field(entry, "on_monthly_pulse"), "effect")
             world.execute(pulse, "NMG")
             if world.events:
                 actual_id = world.events[-1][1]
                 ev = GENERATED_EVENTS[actual_id]
                 self.assertTrue(world.conditions(field(ev, "trigger"), "NMG"), actual_id)
+                notice12_was_due = actual_id == "ywc_nmg.1006" and v.get("ywc_nmg_land_notice12_due") == 1
+                notice36_was_due = actual_id == "ywc_nmg.1007" and v.get("ywc_nmg_land_notice36_due") == 1
                 world.execute(field(ev, "immediate"), "NMG")
-                if actual_id == "ywc_nmg.1006" and v.get("ywc_nmg_land_notice12_delivered"):
+                delivered_this_event = False
+                if notice12_was_due and v.get("ywc_nmg_land_notice12_delivered") == 1:
                     delivered.add(12)
-                if actual_id == "ywc_nmg.1007" and v.get("ywc_nmg_land_notice36_delivered"):
+                    delivered_this_event = True
+                if notice36_was_due and v.get("ywc_nmg_land_notice36_delivered") == 1:
                     delivered.add(36)
-                is_notice = actual_id == "ywc_nmg.1006" and 12 in delivered or actual_id == "ywc_nmg.1007" and 36 in delivered
-                if not is_notice:
-                    keys = {o["key"] for e in CATALOG["arcs"][0]["events"] if e["id"] == actual_id for o in e["options"]}
-                    fallback = "defer" if "defer" in keys else "wait_retry" if "wait_retry" in keys else None
-                    if fallback:
-                        option = event_option(actual_id, fallback)
-                        effect = [n for n in option if n[0] not in ("name", "trigger", "ai_chance", "custom_tooltip")]
-                        world.execute(effect, "NMG")
+                    delivered_this_event = True
+                is_notice = delivered_this_event
+                option_key = ("renegotiate" if actual_id == "ywc_nmg.1006" else "wait_retry") if is_notice else None
+                option_names = []
+                if option_key is None:
+                    option_names = [field(body, "name").split(".")[-1]
+                                    for key, _, body in ev if key == "option"]
+                    option_key = "defer" if "defer" in option_names else "wait_retry" if "wait_retry" in option_names else None
+                self.assertIsNotNone(option_key, (actual_id, option_names))
+                option = event_option(actual_id, option_key)
+                self.assertTrue(world.conditions(field(option, "trigger"), "NMG"),
+                                (actual_id, option_key, v))
+                effect = [n for n in option if n[0] not in ("name", "trigger", "ai_chance", "custom_tooltip")]
+                world.execute(effect, "NMG")
                 world.events.clear()
+            reconcile_and_handoff()
             world.advance_months(1)
+            reconcile_and_handoff()
         self.assertEqual(delivered, {12, 36})
         self.assertEqual(v.get("ywc_nmg_land_route"), 1)
         self.assertEqual(v.get("ywc_nmg_land_fee_paid"), 1)
