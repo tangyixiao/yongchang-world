@@ -20,8 +20,10 @@ except ModuleNotFoundError:
 
 try:
     from tools.v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
+    from tools.v03_inline_delivery_adapter import validate_inline_catalog, render_inline_country_adapters
 except ModuleNotFoundError:
     from v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
+    from v03_inline_delivery_adapter import validate_inline_catalog, render_inline_country_adapters
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,7 +105,7 @@ def _is_output_path(relative: str) -> bool:
         and re.fullmatch(r"ywc_v03_[a-z0-9_]+_l_(simp_chinese|english)\.yml", name) is not None
     ) or (
         path.parent in {Path("common/scripted_effects"), Path("common/scripted_triggers")}
-        and re.fullmatch(r"ywc_v03_delivery_oir_(effects|triggers)\.txt", name) is not None
+        and re.fullmatch(r"ywc_v03_delivery_[a-z0-9_]+_(effects|triggers)\.txt", name) is not None
     )
 
 
@@ -285,6 +287,14 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                     validate_catalogue_adapters(catalog)
                 except ValueError as exc:
                     errors.append(f"{where}.delivery_adapter: {exc}")
+        if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])):
+            if key != "country_dmg":
+                errors.append(f"{where}.inline_delivery_adapter is currently enabled only for country_dmg")
+            else:
+                try:
+                    validate_inline_catalog(catalog)
+                except ValueError as exc:
+                    errors.append(f"{where}.inline_delivery_adapter: {exc}")
         layer = catalog.get("layer")
         if key != mapping_key:
             errors.append(f"{where}.key must match its catalog map key")
@@ -309,7 +319,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set())
+            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key == "country_dmg" else set())
             _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional=arc_optional)
             owner = arc_owner(layer, arc, tags)
             if layer == "country":
@@ -531,13 +541,15 @@ def _outputs_for(key: str, *, adapter: bool = False) -> list[Path]:
         Path(f"localization/english/ywc_v03_{key}_l_english.yml"),
     ]
     if adapter:
-        paths.extend((Path("common/scripted_effects/ywc_v03_delivery_oir_effects.txt"),
-                      Path("common/scripted_triggers/ywc_v03_delivery_oir_triggers.txt")))
+        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else None
+        if not country: raise ValueError(f"no registered adapter output namespace for {key}")
+        paths.extend((Path(f"common/scripted_effects/ywc_v03_delivery_{country}_effects.txt"),
+                      Path(f"common/scripted_triggers/ywc_v03_delivery_{country}_triggers.txt")))
     return paths
 
 
 def _catalog_outputs(catalog: dict) -> list[Path]:
-    return _outputs_for(catalog["key"], adapter=any("delivery_adapter" in arc for arc in catalog.get("arcs", [])))
+    return _outputs_for(catalog["key"], adapter=any("delivery_adapter" in arc or "inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])))
 
 
 def _append_to_named_block(block: str, field: str, insertion: str) -> str:
@@ -621,30 +633,51 @@ def _adapter_event_trigger(event: dict, adapter: dict | None) -> str:
 def _adapter_event_immediate(event: dict, adapter: dict | None) -> str:
     original = event["immediate"].strip()
     hooks = (adapter or {}).get("ack_hooks", {}).get(event["id"], [])
+    guards = (adapter or {}).get("event_hooks", {}).get(event["id"], [])
     if not hooks:
         return original
-    hooked = _append_to_named_block("immediate = " + original, "immediate", " ".join(f"{name} = yes" for name in hooks))
-    return hooked.split("=", 1)[1].strip()
+    if event["id"] not in (adapter or {}).get("guarded_immediate_events", []):
+        # Preserve the original scripted-dispatch renderer contract byte for
+        # byte. Only inline adapters opt into rechecking the event gate around
+        # native immediate effects.
+        return "{ " + " ".join(part for part in (_inner(original), " ".join(f"{name} = yes" for name in hooks)) if part) + " }"
+    if not guards:
+        raise ValueError(f"guarded immediate {event['id']} has no source dispatch guard")
+    # Revalidate the exact source queue/phase at the start of the actual
+    # immediate. Native DMG notice helpers may clear multiple queues, so ACK
+    # itself must use the captured snapshot after this guarded source operation.
+    guard = " OR = { " + " ".join(f"{name} = yes" for name in guards) + " }"
+    body = _inner(original)
+    effects = " ".join(part for part in (body, " ".join(f"{name} = yes" for name in hooks)) if part)
+    return "{ if = { limit = {" + guard + "} " + effects + " } }"
 
 
 def _render_journal_file(catalog: dict, adapter: dict | None = None) -> str:
     lines = [f"# Generated by tools/build_v03_content.py from data/content/v03/{catalog['key']}.json.", ""]
     live_by_journal = {phase["journal"]: phase["live_witness"] for arc in catalog["arcs"] if adapter and "delivery_adapter" in arc for phase in arc["delivery_adapter"]["live_phases"]}
+    live_by_journal.update((adapter or {}).get("live_witnesses", {}))
     callers = (adapter or {}).get("journal_calls", {})
     for arc in catalog["arcs"]:
         for journal in arc["journals"]:
             lines.extend([f"{journal['id']} = {{"])
-            script = journal["script"]
+            script = (adapter or {}).get("journal_scripts", {}).get(journal["id"], journal["script"])
             witness = live_by_journal.get(journal["id"])
             add_on_complete = False
+            add_on_fail = False
             if witness:
                 caller = callers.get(journal["id"])
-                old_dispatch = arc["delivery_adapter"]["source_dispatch_effect"]
-                if not caller or not re.search(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", script):
-                    raise ValueError(f"adapter cannot bind source dispatcher for {journal['id']}")
-                script = re.sub(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", f"{caller} = yes", script, count=1)
+                if journal["id"] in callers:
+                    old_dispatch = arc["delivery_adapter"]["source_dispatch_effect"]
+                    if not caller or not re.search(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", script):
+                        raise ValueError(f"adapter cannot bind source dispatcher for {journal['id']}")
+                    script = re.sub(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", f"{caller} = yes", script, count=1)
+                elif journal["id"] not in (adapter or {}).get("journal_scripts", {}):
+                    raise ValueError(f"adapter cannot bind source journal for {journal['id']}")
                 script = _append_to_named_block(script, "immediate", f"set_variable = {{ name = {witness} value = 1 }}")
-                script = _append_to_named_block(script, "on_fail", f"remove_variable = {witness}")
+                if re.search(r"(?<![a-z0-9_])on_fail\s*=\s*\{", script):
+                    script = _append_to_named_block(script, "on_fail", f"remove_variable = {witness}")
+                else:
+                    add_on_fail = True
                 if re.search(r"(?<![a-z0-9_])on_complete\s*=\s*\{", script):
                     script = _append_to_named_block(script, "on_complete", f"remove_variable = {witness}")
                 else:
@@ -656,6 +689,8 @@ def _render_journal_file(catalog: dict, adapter: dict | None = None) -> str:
                 f"    complete = {journal['goal'].strip()}",
                 f"    fail = {journal['exit_conditions'].strip()}",
             ])
+            if add_on_fail:
+                lines.append(f"    on_fail = {{ remove_variable = {witness} }}")
             if add_on_complete:
                 lines.append(f"    on_complete = {{ remove_variable = {witness} }}")
             lines.extend(["}", ""])
@@ -695,8 +730,9 @@ def render_all(root: Path) -> dict[Path, str]:
     for key, catalog in catalogs.items():
         if not any(arc["events"] or arc["journals"] for arc in catalog["arcs"]):
             continue
-        has_adapter = any("delivery_adapter" in arc for arc in catalog["arcs"])
-        adapter = render_country_adapters(catalog) if has_adapter else None
+        has_country_adapter = any("delivery_adapter" in arc for arc in catalog["arcs"])
+        has_inline_adapter = any("inline_delivery_adapter" in arc for arc in catalog["arcs"])
+        adapter = render_country_adapters(catalog) if has_country_adapter else render_inline_country_adapters(catalog) if has_inline_adapter else None
         paths = _catalog_outputs(catalog)
         rendered = [
             _render_event_file(catalog, root, adapter),
@@ -705,8 +741,12 @@ def render_all(root: Path) -> dict[Path, str]:
             _render_localization(catalog, "en"),
         ]
         if adapter:
-            rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
-                         "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
+            if key == "country_oir":
+                rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
+                             "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
+            else:
+                rendered += ["# Generated DMG inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
+                             "# Generated DMG inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
         outputs.update(zip(paths, rendered))
     return outputs
 

@@ -25,6 +25,7 @@ from tools.build_v03_content import (  # noqa: E402
     _render_localization,
     _safe_relative,
     render_country_adapters,
+    render_inline_country_adapters,
     read_manifest,
     validate_catalogs_at,
 )
@@ -54,8 +55,8 @@ def render_country(root: Path, key: str) -> dict[Path, str]:
         raise ValueError("invalid catalog:\n" + "\n".join(errors))
     if not any(arc["events"] or arc["journals"] for arc in catalog["arcs"]):
         return {}
-    has_adapter = any("delivery_adapter" in arc for arc in catalog.get("arcs", []))
-    adapter = render_country_adapters(catalog) if has_adapter else None
+    has_adapter = any("delivery_adapter" in arc or "inline_delivery_adapter" in arc for arc in catalog.get("arcs", []))
+    adapter = (render_country_adapters(catalog) if any("delivery_adapter" in arc for arc in catalog.get("arcs", [])) else render_inline_country_adapters(catalog) if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])) else None)
     paths = _outputs_for(key, adapter=has_adapter)
     rendered = [
         _render_event_file(catalog, root, adapter),
@@ -64,8 +65,12 @@ def render_country(root: Path, key: str) -> dict[Path, str]:
         _render_localization(catalog, "en"),
     ]
     if adapter:
-        rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
-                     "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
+        if key == "country_oir":
+            rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
+                         "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
+        else:
+            rendered += ["# Generated DMG inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
+                         "# Generated DMG inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
     return dict(zip(paths, rendered))
 
 
