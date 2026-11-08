@@ -24,6 +24,7 @@ from tools.build_v03_content import (  # noqa: E402
     _render_journal_file,
     _render_localization,
     _safe_relative,
+    render_country_adapters,
     read_manifest,
     validate_catalogs_at,
 )
@@ -53,13 +54,18 @@ def render_country(root: Path, key: str) -> dict[Path, str]:
         raise ValueError("invalid catalog:\n" + "\n".join(errors))
     if not any(arc["events"] or arc["journals"] for arc in catalog["arcs"]):
         return {}
-    paths = _outputs_for(key)
+    has_adapter = any("delivery_adapter" in arc for arc in catalog.get("arcs", []))
+    adapter = render_country_adapters(catalog) if has_adapter else None
+    paths = _outputs_for(key, adapter=has_adapter)
     rendered = [
-        _render_event_file(catalog, root),
-        _render_journal_file(catalog),
+        _render_event_file(catalog, root, adapter),
+        _render_journal_file(catalog, adapter),
         _render_localization(catalog, "zh"),
         _render_localization(catalog, "en"),
     ]
+    if adapter:
+        rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
+                     "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
     return dict(zip(paths, rendered))
 
 
