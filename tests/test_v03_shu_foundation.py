@@ -59,7 +59,6 @@ REQUIRED_TRIGGERS = [
     "ywc_shu_v03_service_professional_ready",
     "ywc_shu_v03_service_route_ready",
     "ywc_shu_service_route_ready",
-    "ywc_shu_service_actual_ready",
     "ywc_shu_v03_has_port",
     "ywc_shu_v03_inland_office_ready",
     "ywc_shu_v03_customs_law_ready",

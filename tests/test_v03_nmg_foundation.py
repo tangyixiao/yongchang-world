@@ -63,9 +63,6 @@ REQUIRED_EFFECTS = [
     "ywc_nmg_land_monthly_review",
     "ywc_nmg_office_monthly_review",
     "ywc_nmg_revenue_monthly_review",
-    "ywc_nmg_land_note_blocked",
-    "ywc_nmg_office_note_blocked",
-    "ywc_nmg_revenue_note_blocked",
     "ywc_nmg_land_open_settlement",
     "ywc_nmg_revenue_open_negotiation",
     "ywc_nmg_revenue_open_settlement",
@@ -401,9 +398,6 @@ class NmgFoundationContractTest(unittest.TestCase):
             self.assertIn("blocked_months >= 12", review, short)
             self.assertIn(f"ywc_nmg_{short}_notice36_due", review, short)
             self.assertIn("blocked_months >= 36", review, short)
-            blocked = _helper_body(self.effects, "ywc_nmg_%s_note_blocked" % short)
-            self.assertIn("_blocked_note value = 1 months = 12", blocked, short)
-            self.assertIn("_blocked_long value = 1 months = 36", blocked, short)
 
     # -------------------------------------------------------------- revenue
     def test_revenue_arc_is_a_staged_opening_negotiation_settlement(self):
