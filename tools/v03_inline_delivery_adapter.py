@@ -373,7 +373,7 @@ def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
             if negative:
                 continue
             if node.key == "has_variable" and isinstance(node.value, str) and node.value.startswith("ywc_") and node.value.endswith(("_pending_event", "_notice_event")):
-                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_public_pending_event", node.value):
+                if not re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_(public|gold)_pending_event", node.value):
                     raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.value}")
                 continue
             if not node.key.startswith("var:ywc_lan_"):
@@ -381,7 +381,7 @@ def _lan_queue_candidates(branch_source: str) -> list[dict[str, Any]]:
                     raise ValueError(f"LAN sender contains a foreign or unsupported queue: {node.key}")
                 continue
             queue = node.key.removeprefix("var:")
-            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_public_pending_event", queue)
+            match = re.fullmatch(r"ywc_lan_(mine|river|fund)_(pending_event|notice_event)|ywc_lan_(public|gold)_pending_event", queue)
             if not match:
                 raise ValueError(f"LAN sender contains an unknown queue predicate: {queue}")
             if node.op != "=" or not isinstance(node.value, str) or not node.value.isdigit():
@@ -1070,6 +1070,26 @@ _LAN_FOUNDATION_SLUGS = (
     "v03_lan_mine_accounts", "v03_lan_river_compacts", "v03_lan_work_accident_fund",
 )
 _LAN_COMPANY_SLUG = "v03_lan_company_public"
+_LAN_GOLD_SLUG = "v03_lan_beyond_gold"
+_LAN_GOLD_JOURNAL_HASHES = {
+    "ywc_je_v03_lan_gold_livelihood": (
+        "d94050b70ff2e95f26887eb2c73fe81bd1c842b94199bd5411bf2390eac3ff5d",
+        "56b4b2e4d82b24157bf395723d41fbf78e62f128cf96af95b42904d0750d8451",
+        "cb7160799f7a0ec3e630e905e6810bcb97f0bf4c848d87dd17f620447de9e66b"),
+    "ywc_je_v03_lan_gold_share_future": (
+        "a58e5206cdee831f24a3cb5824776e26ce486705c5afa8e99d4fb2fde4119f25",
+        "cfb646d5582fcbf10af966ebfb661a719e3cce0c305e0b69ec614567d6493f08",
+        "cb7160799f7a0ec3e630e905e6810bcb97f0bf4c848d87dd17f620447de9e66b"),
+}
+
+
+def _lan_tracked_sender_state(stem: str) -> list[str]:
+    names = [f"ywc_lan_{stem}_notice_current", f"ywc_lan_{stem}_notice12_sent",
+             f"ywc_lan_{stem}_notice36_sent", f"ywc_lan_{stem}_pending_event",
+             f"ywc_lan_{stem}_notice_event"]
+    if stem == "gold":
+        names.append("ywc_lan_gold_observation_waiting")
+    return names
 
 
 def _lan_native_receipt(event: dict[str, Any]) -> tuple[str | None, int | None]:
@@ -1083,6 +1103,13 @@ def _lan_native_receipt(event: dict[str, Any]) -> tuple[str | None, int | None]:
         value = int(event_id.rsplit(".", 1)[1]) - 1099
         expected = ("{ ywc_v03_mark_major_delivered = yes "
                     f"set_variable = {{ name = {receipt} value = {value} }} }}")
+    elif re.fullmatch(r"ywc_lan\.112[0-7]", event_id):
+        receipt = "ywc_v03_lan_v03_lan_beyond_gold_last_event"
+        value = int(event_id.rsplit(".", 1)[1]) - 1119
+        expected = ("{ ywc_v03_mark_major_delivered = yes "
+                    f"set_variable = {{ name = {receipt} value = {value} }} "
+                    "change_variable = { name = ywc_lan_gold_popup_epoch add = 1 } "
+                    "save_scope_value_as = { name = ywc_lan_gold_popup_epoch value = var:ywc_lan_gold_popup_epoch } }")
     else:
         raise ValueError(f"{event_id}: unregistered LAN native receipt")
     actual = parse_block(event.get("immediate", ""))
@@ -1098,14 +1125,19 @@ def _lan_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_LAN_FOUNDATION_SLUGS):
         raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
     extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    registered = {}
     for arc in extra:
-        if not isinstance(arc, dict) or arc.get("slug") != _LAN_COMPANY_SLUG or arc.get("era") != "middle":
+        if not isinstance(arc, dict) or arc.get("slug") not in {_LAN_COMPANY_SLUG, _LAN_GOLD_SLUG} or arc.get("era") != "middle":
             slug = arc.get("slug") if isinstance(arc, dict) else None
             raise ValueError(f"unregistered LAN inline arc: {slug}")
-    if len(extra) > 1:
-        raise ValueError("LAN inline adapter permits one registered company-public arc")
+        if arc["slug"] in registered:
+            raise ValueError(f"duplicate LAN inline arc: {arc['slug']}")
+        registered[arc["slug"]] = arc
+    if _LAN_GOLD_SLUG in registered and _LAN_COMPANY_SLUG not in registered:
+        raise ValueError("LAN beyond-gold requires the registered company-public arc")
     return [next(arc for arc in foundation if arc["slug"] == slug)
-            for slug in _LAN_FOUNDATION_SLUGS] + extra
+            for slug in _LAN_FOUNDATION_SLUGS] + [registered[slug] for slug in
+                (_LAN_COMPANY_SLUG, _LAN_GOLD_SLUG) if slug in registered]
 
 
 def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
@@ -1116,17 +1148,20 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
     active = _lan_active_arcs(catalog)
     if {a.get("slug") for a in active[:3]} != expected_slugs:
         raise ValueError("LAN inline adapter requires exactly its three foundation arcs")
-    has_company = len(active) == 4
+    has_company = any(arc["slug"] == _LAN_COMPANY_SLUG for arc in active)
+    has_gold = any(arc["slug"] == _LAN_GOLD_SLUG for arc in active)
     counts = {"ywc_je_v03_lan_mine_ledger": 7, "ywc_je_v03_lan_mine_settlement": 5,
               "ywc_je_v03_lan_river_compacts": 8, "ywc_je_v03_lan_river_settlement": 4,
               "ywc_je_v03_lan_accident_fund": 7, "ywc_je_v03_lan_fund_settlement": 5,
               "ywc_je_v03_lan_public_mandate": 4, "ywc_je_v03_lan_public_budget": 4,
-              "ywc_je_v03_lan_public_succession": 2}
+              "ywc_je_v03_lan_public_succession": 2,
+              "ywc_je_v03_lan_gold_livelihood": 6, "ywc_je_v03_lan_gold_share_future": 4}
     all_events: set[str] = set()
     witnesses: set[str] = set()
     modes = {"normal": 0, "notice12": 0, "notice36": 0}
     for arc in active:
         is_company = arc["slug"] == _LAN_COMPANY_SLUG
+        is_gold = arc["slug"] == _LAN_GOLD_SLUG
         adapter = arc.get("inline_delivery_adapter")
         if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches", "direct_adds"} or adapter.get("schema") != "v03.foundation_inline_adapter.v2":
             raise ValueError(f"{arc['slug']}: LAN requires strict v2 inline metadata")
@@ -1137,6 +1172,15 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                 "ywc_je_v03_lan_public_mandate", "ywc_je_v03_lan_public_budget",
                 "ywc_je_v03_lan_public_succession"]:
             raise ValueError("LAN public card requires its three ordered native phases")
+        if is_gold and [journal.get("id") for journal in journals] != [
+                "ywc_je_v03_lan_gold_livelihood", "ywc_je_v03_lan_gold_share_future"]:
+            raise ValueError("LAN beyond-gold requires its two ordered native phases")
+        if is_gold:
+            for journal in journals:
+                actual = tuple(hashlib.sha256(journal[field].encode()).hexdigest()
+                               for field in ("script", "goal", "exit_conditions"))
+                if actual != _LAN_GOLD_JOURNAL_HASHES[journal["id"]]:
+                    raise ValueError(f"{journal['id']}: frozen LAN beyond-gold source drift")
         phases = adapter["live_phases"]
         if not isinstance(phases, list) or len(phases) != len(journals):
             raise ValueError(f"{arc['slug']}: every source JE needs one live phase")
@@ -1158,7 +1202,7 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             raise ValueError(f"{arc['slug']}: all LAN sender sites must be bound")
         event_ids = {e.get("id") for e in arc.get("events", []) if isinstance(e, dict)}
         expected_base={"v03_lan_mine_accounts":1000,"v03_lan_river_compacts":1010,"v03_lan_work_accident_fund":1020,
-                       _LAN_COMPANY_SLUG:1100}[arc["slug"]]
+                       _LAN_COMPANY_SLUG:1100, _LAN_GOLD_SLUG:1120}[arc["slug"]]
         if event_ids != {f"ywc_lan.{n}" for n in range(expected_base,expected_base+(10 if is_company else 8))}:
             raise ValueError(f"{arc['slug']}: LAN native event inventory drift")
         all_events |= event_ids
@@ -1172,14 +1216,14 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             if proof["event"] not in event_ids:
                 raise ValueError(f"{arc['slug']}/{jid}: LAN sender event is not owned by its arc")
             cand = proof["candidates"][0]
-            stem = re.match(r"ywc_lan_(mine|river|fund|public)_", cand["queue"])
+            stem = re.match(r"ywc_lan_(mine|river|fund|public|gold)_", cand["queue"])
             expected_stem = {"v03_lan_mine_accounts": "mine", "v03_lan_river_compacts": "river",
-                             "v03_lan_work_accident_fund": "fund", _LAN_COMPANY_SLUG: "public"}[arc["slug"]]
+                             "v03_lan_work_accident_fund": "fund", _LAN_COMPANY_SLUG: "public", _LAN_GOLD_SLUG: "gold"}[arc["slug"]]
             if not stem or stem.group(1) != expected_stem or cand["mode"] != "exact":
                 raise ValueError(f"{arc['slug']}/{jid}: LAN queue is not exact and arc-owned")
             if cand["kind"] == "notice":
-                if is_company:
-                    raise ValueError("LAN public card has only its ten normal event queues")
+                if is_company or is_gold:
+                    raise ValueError("LAN middle cards have only normal event queues")
                 if cand["queue"] != f"ywc_lan_{expected_stem}_notice_event" or cand["value"] not in {12, 36}:
                     raise ValueError(f"{arc['slug']}/{jid}: malformed LAN notice queue")
                 modes[f"notice{cand['value']}"] += 1
@@ -1191,11 +1235,16 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
             node = _branch_node(script, source)[0]
             ops = [n for n in children(node) if n.key not in {"limit", "trigger_event"}]
             expected_ops = (["remove_variable"] if cand["kind"] == "normal" else ["remove_variable", "set_variable", "set_variable"])
+            if is_gold and proof["event"] == "ywc_lan.1125":
+                expected_ops = ["remove_variable", "remove_variable"]
             if [n.key for n in ops] != expected_ops:
                 raise ValueError(f"{arc['slug']}/{jid}: unsupported LAN native pre-trigger operations")
             first_fields = children(ops[0]) if isinstance(ops[0].value, tuple) else ()
             if ops[0].op != "=" or len(first_fields) != 0 or ops[0].value != cand["queue"]:
                 raise ValueError(f"{arc['slug']}/{jid}: LAN sender must remove only its selected queue")
+            if is_gold and proof["event"] == "ywc_lan.1125":
+                if ops[1].op != "=" or ops[1].value != "ywc_lan_gold_observation_waiting":
+                    raise ValueError("LAN beyond-gold review sender must consume its exact waiting flag")
             if cand["kind"] == "notice":
                 values = []
                 for n in ops[1:]:
@@ -1221,6 +1270,16 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError("LAN public card native phase sender inventory drift")
             for event in arc["events"]:
                 _lan_native_receipt(event)
+        if is_gold:
+            expected_sites = {
+                "ywc_je_v03_lan_gold_livelihood": ["ywc_lan.1126", "ywc_lan.1120", "ywc_lan.1121", "ywc_lan.1122", "ywc_lan.1123", "ywc_lan.1124"],
+                "ywc_je_v03_lan_gold_share_future": ["ywc_lan.1126", "ywc_lan.1125", "ywc_lan.1126", "ywc_lan.1127"],
+            }
+            for journal in journals:
+                if [row["event"] for jid, row in expected if jid == journal["id"]] != expected_sites[journal["id"]]:
+                    raise ValueError("LAN beyond-gold native sender order or phase drift")
+            for event in arc["events"]:
+                _lan_native_receipt(event)
         for event in arc.get("events", []):
             if not isinstance(event, dict) or not re.fullmatch(r"ywc_lan\.(100[0-7]|101[0-7]|102[0-7])", event.get("id", "")):
                 continue
@@ -1229,7 +1288,7 @@ def _validate_lan_inline_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{arc['slug']}/{event['id']}: LAN native trigger drift")
             if event.get("immediate") != "{ ywc_v03_mark_major_delivered = yes }":
                 raise ValueError(f"{arc['slug']}/{event['id']}: LAN native immediate must remain the pinned complete body")
-    if modes != {"normal": 34 if has_company else 24, "notice12": 6, "notice36": 6}:
+    if modes != {"normal": 24 + (10 if has_company else 0) + (10 if has_gold else 0), "notice12": 6, "notice36": 6}:
         raise ValueError(f"LAN sender class inventory drift: {modes}")
 
 
@@ -2761,8 +2820,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 dispatch_checks.append("NOT = { " + _limit_inner_source(prior["limit_source"]) + " }")
             dispatch_checks.append(f"NOT = {{ var:{served[slug]} = var:{roundv} }}")
             dispatch_checks.extend(eligibility_terms[2:])
-            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            tracked=_lan_tracked_sender_state(stem)
             for name in dict.fromkeys(tracked):
+                if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                    dispatch_checks.append(f"NOT = {{ has_variable = {name} }}")
+                    continue
                 if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
                     expected_post=str(q["value"]) if name.endswith("notice_current") else "1"
                     dispatch_checks += [f"has_variable = {name}",f"var:{name} = {expected_post}"]
@@ -2860,7 +2922,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 stem=qvar.split("_")[2]
                 names += [f"{prefix}_rollback_armed_{ident}", f"{prefix}_body_completed_{ident}", f"{prefix}_body_completed_epoch_{ident}"]
                 names += [f"{prefix}_snapshot_complete_{ident}"]
-                tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                tracked=_lan_tracked_sender_state(stem)
                 names += [_queue_snapshot_name(ident,state,suffix,prefix) for state in tracked for suffix in ("present","value")]
             if is_shu and ident == 2:
                 names.extend([f"{prefix}_aux_waiting_present_2", f"{prefix}_aux_waiting_value_2"])
@@ -2901,6 +2963,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     owned=f"has_variable = {pv} has_variable = {vv} OR = {{ AND = {{ var:{pv} = 1 has_variable = {name} var:{name} = {post} }} AND = {{ var:{pv} = 0 var:{vv} = 0 has_variable = {name} var:{name} = {post} }} }}"
                     restore=f"if = {{ limit = {{ var:{pv} = 1 }} set_variable = {{ name = {name} value = var:{vv} }} }} if = {{ limit = {{ var:{pv} = 0 var:{vv} = 0 }} remove_variable = {name} }}"
                     rollback.append(f"if = {{ limit = {{ has_variable = {prefix}_snapshot_complete_{ident} var:{prefix}_snapshot_complete_{ident} = 1 has_variable = {armed} var:{armed} = 1 NOT = {{ has_variable = {completed} }} {owned} }} {restore} }}")
+            if stem == "gold" and c["event"]["id"] == "ywc_lan.1125":
+                name = "ywc_lan_gold_observation_waiting"
+                pv = _queue_snapshot_name(ident, name, "present", prefix)
+                vv = _queue_snapshot_name(ident, name, "value", prefix)
+                rollback.append(
+                    f"if = {{ limit = {{ has_variable = {prefix}_snapshot_complete_{ident} "
+                    f"var:{prefix}_snapshot_complete_{ident} = 1 has_variable = {armed} var:{armed} = 1 "
+                    f"NOT = {{ has_variable = {completed} }} has_variable = {pv} var:{pv} = 1 "
+                    f"has_variable = {vv} NOT = {{ has_variable = {name} }} }} "
+                    f"set_variable = {{ name = {name} value = var:{vv} }} }}")
             clear=" ".join(f"remove_variable = {x}" for x in ephemeral_by_candidate[ident]); base=f"var:{reservation} = {ident}"; roll=" ".join(rollback)
             prep.append(f"    if = {{ limit = {{ {base} NOT = {{ has_variable = {timer} }} }} {roll} remove_variable = {reservation} {clear} }}")
             prep.append(f"    if = {{ limit = {{ {base} has_variable = {timer} NOT = {{ {dispatch(c)} = yes }} }} {roll} remove_variable = {reservation} remove_variable = {timer} {clear} }}")
@@ -3031,11 +3103,12 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                         f"set_variable = {{ name = {f['partner_available']} value = 1 }} }}"]
         if is_lan:
             stem=qvar.split("_")[2]
-            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            tracked=_lan_tracked_sender_state(stem)
             for name in dict.fromkeys(tracked):
                 pv=_queue_snapshot_name(ident,name,"present",prefix); vv=_queue_snapshot_name(ident,name,"value",prefix)
                 capture += [f"    set_variable = {{ name = {pv} value = 0 }}",f"    set_variable = {{ name = {vv} value = 0 }}",f"    if = {{ limit = {{ has_variable = {name} }} set_variable = {{ name = {pv} value = 1 }} set_variable = {{ name = {vv} value = var:{name} }} }}"]
-            if q["kind"] == "notice": capture += [f"    set_variable = {{ name = {prefix}_rollback_armed_{ident} value = 1 }}"]
+            if q["kind"] == "notice" or (stem == "gold" and c["event"]["id"] == "ywc_lan.1125"):
+                capture += [f"    set_variable = {{ name = {prefix}_rollback_armed_{ident} value = 1 }}"]
             capture += [f"    set_variable = {{ name = {prefix}_snapshot_complete_{ident} value = 1 }}"]
             capture += [f"    remove_variable = {prefix}_body_completed_{ident}",f"    remove_variable = {prefix}_body_completed_epoch_{ident}"]
         elif is_nqg:
@@ -3149,8 +3222,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                        "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
         if is_lan:
             stem=qvar.split("_")[2]
-            tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+            tracked=_lan_tracked_sender_state(stem)
             for name in dict.fromkeys(tracked):
+                if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                    checks.append(f"NOT = {{ has_variable = {name} }}")
+                    continue
                 if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
                     post=str(q["value"]) if name.endswith("notice_current") else "1"
                     checks += [f"has_variable = {name}",f"var:{name} = {post}"]
@@ -3211,8 +3287,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             if is_lan:
                 callback_guard += [f"has_variable = {prefix}_body_completed_{ident}",f"var:{prefix}_body_completed_{ident} = 1",f"has_variable = {prefix}_body_completed_epoch_{ident}",f"var:{prefix}_body_completed_epoch_{ident} = var:{epoch}"]
                 stem=qvar.split("_")[2]
-                tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                tracked=_lan_tracked_sender_state(stem)
                 for name in dict.fromkeys(tracked):
+                    if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                        callback_guard.append(f"NOT = {{ has_variable = {name} }}")
+                        continue
                     if q["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{q['value']}_sent"}:
                         post=str(q["value"]) if name.endswith("notice_current") else "1"
                         callback_guard += [f"has_variable = {name}",f"var:{name} = {post}"]
@@ -3413,8 +3492,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                                "var:ywc_nqg_winter_aid_notice_open_serial = scope:ywc_nqg_winter_aid_notice_serial"]
                 if is_lan:
                     stem=qvar.split("_")[2]; queue=c["queue"]
-                    tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
+                    tracked=_lan_tracked_sender_state(stem)
                     for name in dict.fromkeys(tracked):
+                        if name == "ywc_lan_gold_observation_waiting" and c["event"]["id"] == "ywc_lan.1125":
+                            checks.append(f"NOT = {{ has_variable = {name} }}")
+                            continue
                         if queue["kind"] == "notice" and name in {f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice{queue['value']}_sent"}:
                             post=str(queue["value"]) if name.endswith("notice_current") else "1"
                             checks += [f"has_variable = {name}",f"var:{name} = {post}"]
