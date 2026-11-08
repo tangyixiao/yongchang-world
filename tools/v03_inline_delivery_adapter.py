@@ -767,6 +767,13 @@ def _validate_shu_inline_catalog(catalog: dict[str, Any]) -> None:
     active = [arc for arc in catalog["arcs"] if isinstance(arc, dict) and arc.get("era") == "foundation"]
     if len(active) != 3 or {arc.get("slug") for arc in active} != expected_slugs:
         raise ValueError("SHU inline adapter requires exactly its three foundation arcs")
+    # A raw JE outside this inventory would be retained by the generic renderer,
+    # bypassing source reservations and cross-arc fairness. New eras must be
+    # registered together with their source pins and coordinator candidates.
+    for arc in catalog["arcs"]:
+        if not isinstance(arc, dict) or arc.get("slug") not in expected_slugs:
+            slug = arc.get("slug") if isinstance(arc, dict) else None
+            raise ValueError(f"unregistered SHU inline arc: {slug}")
     witnesses: set[str] = set()
     queues_by_arc: dict[str, set[str]] = {}
     queue_owners: dict[str, str] = {}
