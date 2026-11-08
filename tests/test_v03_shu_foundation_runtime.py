@@ -882,23 +882,29 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_compact_fee_waived"), 1)
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 2)
 
-    def test_m1_fiscal_catalog_preserves_historical_digest_after_owner_vocabulary_inverse(self):
+    def test_untouched_fiscal_catalog_preserves_historical_digest_after_owner_vocabulary_inverse(self):
         current_arc = next(a for a in CATALOG["arcs"] if a["slug"] == "v03_shu_fiscal_register")
         baseline = json.loads(json.dumps(current_arc, ensure_ascii=False))
         baseline.pop("inline_delivery_adapter", None)
+        # The queue script and these four events are intentionally changed by the
+        # merchant-obligation repair. Keep the historical comparison for every
+        # other authored field instead of freezing the entire arc forever.
+        baseline["journals"][0].pop("script", None)
+        repaired = {"ywc_shu.1005", "ywc_shu.1006", "ywc_shu.1007", "ywc_shu.1009"}
+        baseline["events"] = [event for event in baseline["events"] if event["id"] not in repaired]
         compensation = next(o for e in baseline["events"] if e["id"] == "ywc_shu.1002" for o in e["options"] if o["key"] == "collect_with_compensation")
         compensation["ai_chance"] = "{\nbase = 100\n}"
-        # This arc had exactly 14 legacy predicates and no owner = ROOT.
+        # The unchanged projection has 12 legacy predicates and no owner = ROOT.
         # Invert only those exact migrated predicates before historical hashing.
         migrated = json.dumps(baseline, ensure_ascii=False)
-        self.assertEqual(migrated.count("owner = ROOT"), 14)
+        self.assertEqual(migrated.count("owner = ROOT"), 12)
         self.assertNotIn("is_owned_by", migrated)
         historical = migrated.replace("owner = ROOT", "is_owned_by = ROOT")
-        self.assertEqual(historical.count("is_owned_by = ROOT"), 14)
+        self.assertEqual(historical.count("is_owned_by = ROOT"), 12)
         self.assertEqual(historical.replace("is_owned_by = ROOT", "owner = ROOT"), migrated)
         baseline = json.loads(historical)
         canonical = json.dumps(baseline, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "c9d2097f2d67b9a1ad0781cac6f047ab07372db905c0fcf83fe860f5ed75da92")
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "ea9437d307faab4c5c805ae68f9116f929b665ae4e5a59430190a7ebc804cc55")
 
     def test_service_healthy_over_36_months_then_loss_starts_fresh_clock(self):
         runtime = ShuRuntime("v03_shu_service_compact", {

@@ -160,6 +160,9 @@ class ShuContentCardTest(unittest.TestCase):
         self.assertNotIn("ywc_shu_second_audit", local)
         local["ywc_shu_merchant_advance_refused"] = 1
         local_world.run("ywc_shu_record_second_audit")
+        self.assertNotIn("ywc_shu_second_audit", local, "a refusal cannot cancel an accepted advance")
+        local.pop("ywc_shu_merchant_advance")
+        local_world.run("ywc_shu_record_second_audit")
         self.assertEqual(local.get("ywc_shu_second_audit"), 1)
         second_audit = self.effects.split("ywc_shu_record_second_audit = {", 1)[1].split("\nywc_shu_start_settlement_review", 1)[0]
         self.assertLess(second_audit.index("ywc_shu_pay_audit_second_half_once = yes"), second_audit.index("set_variable = { name = ywc_shu_second_audit value = 1 }"))
@@ -243,14 +246,22 @@ class ShuContentCardTest(unittest.TestCase):
 
     def test_merchant_repayment_runs_from_country_monthly_on_action_after_exit(self):
         effect = shu_monthly_effect()
-        world = PulseWorld(self.effects, {"SHU": {"yearly_gross_income": 52_000, "gold_reserves": 2_000,
-                              "ywc_shu_register_resolved": 1}})
+        from shu_kor_strict_review_runtime import Strict, facts
+        world = Strict("shu")
+        world.countries["SHU"] = facts()
+        world.countries["SHU"].update({"yearly_gross_income": 52_000, "gold_reserves": 2_000,
+                                      "ywc_v03_shu_v03_shu_fiscal_register_last_event": 6})
+        world.active["SHU"].append("ywc_je_v03_shu_register_pilot")
         world.run("ywc_shu_accept_merchant_advance")
+        world.active["SHU"].clear()
+        world.countries["SHU"]["ywc_shu_register_resolved"] = 1
         principal = world.countries["SHU"]["ywc_shu_merchant_principal"]
         self.assertAlmostEqual(world.treasury["SHU"], principal)
         for _ in range(11):
+            world.advance_months(1)
             world.execute(effect, "SHU")
         self.assertNotIn("ywc_shu_merchant_advance_repaid", world.countries["SHU"])
+        world.advance_months(1)
         world.execute(effect, "SHU")
         self.assertAlmostEqual(world.treasury["SHU"], 0)
         self.assertEqual(world.countries["SHU"].get("ywc_shu_merchant_advance_repaid"), 1)
@@ -516,7 +527,7 @@ class ShuContentCardTest(unittest.TestCase):
         empty.execute(pulse, "SHU")
         empty.execute(parse_country_effect(e1["immediate"]), "SHU")
         empty.execute(parse(reselect["effect"][1:-1]), "SHU")
-        self.assertEqual(empty_state.get("ywc_shu_pending_event"), 1006)
+        self.assertEqual(empty_state.get("ywc_shu_pending_event"), 1005)
 
         no_candidate = {"test_unsettled": 1, "test_cooldown_clear": 1,
                         "ywc_shu_v03_pilot_state": 1}
@@ -640,7 +651,7 @@ class ShuContentCardTest(unittest.TestCase):
         pulse = inject_fact_triggers(pulse_effect_nodes(self.arc["journals"][0]))
         cases = (
             ({"ywc_shu_waiting_for_capacity": 1, "ywc_shu_blocked_36_due": 1, "test_cooldown_clear": 1}, "ywc_shu.1001"),
-            ({"ywc_shu_blocked_12_due": 1, "test_cooldown_clear": 1}, "ywc_shu.1006"),
+            ({"ywc_shu_blocked_12_due": 1, "ywc_shu_blocked_12_notice": 1, "ywc_shu_waiting_for_capacity": 1, "test_cooldown_clear": 1}, "ywc_shu.1006"),
         )
         for state, expected in cases:
             state["test_unsettled"] = 1

@@ -195,3 +195,30 @@ ywc_shu_port_block_target_ready = { ywc_shu_v03_port_execution_ready = yes NOT =
 ywc_shu_v03_port_narrow_ready = {
 	AND = { var:ywc_shu_port_route = 4 has_variable = ywc_shu_port_narrow_target ywc_shu_v03_inland_office_ready = yes }
 }
+
+# E6 requires an actual staffed source and one irrevocable first choice.
+ywc_shu_merchant_choice_unmade = {
+ has_journal_entry = ywc_je_v03_shu_register_pilot
+ var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 6
+ NOT = { has_variable = ywc_shu_pending_event }
+ NOT = { has_variable = ywc_shu_arc_abandoned }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled }
+ NOT = { has_variable = ywc_shu_merchant_advance }
+ NOT = { has_variable = ywc_shu_merchant_advance_unpaid }
+ NOT = { has_variable = ywc_shu_merchant_advance_repaid }
+ NOT = { has_variable = ywc_shu_merchant_advance_refused }
+ NOT = { has_variable = ywc_shu_merchant_advance_narrowed }
+}
+
+ywc_shu_merchant_port_source = {
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_port occupancy >= 0.5 building_has_goods_shortage = no } }
+}
+
+ywc_shu_merchant_farm_source = {
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_group = bg_agriculture occupancy >= 0.5 building_has_goods_shortage = no } }
+}
+
+ywc_shu_merchant_offer_ready = {
+ ywc_shu_merchant_choice_unmade = yes
+ OR = { ywc_shu_merchant_port_source = yes ywc_shu_merchant_farm_source = yes }
+}
