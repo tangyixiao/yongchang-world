@@ -199,6 +199,7 @@ ywc_shu_v03_port_narrow_ready = {
 # E6 requires an actual staffed source and one irrevocable first choice.
 ywc_shu_merchant_choice_unmade = {
  has_journal_entry = ywc_je_v03_shu_register_pilot
+ ywc_shu_v03_has_pilot_state = yes
  var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 6
  NOT = { has_variable = ywc_shu_pending_event }
  NOT = { has_variable = ywc_shu_arc_abandoned }
@@ -221,4 +222,39 @@ ywc_shu_merchant_farm_source = {
 ywc_shu_merchant_offer_ready = {
  ywc_shu_merchant_choice_unmade = yes
  OR = { ywc_shu_merchant_port_source = yes ywc_shu_merchant_farm_source = yes }
+}
+
+# E4: bind the financing decision to the active, unanswered military-pay stage.
+ywc_shu_military_choice_unmade = {
+ has_journal_entry = ywc_je_v03_shu_register_pilot
+ ywc_shu_v03_has_pilot_state = yes
+ var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 4
+ NOT = { has_variable = ywc_shu_pending_event }
+ NOT = { has_variable = ywc_shu_arc_abandoned }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled }
+ NOT = { has_variable = ywc_shu_military_payer }
+ NOT = { has_variable = ywc_shu_military_advance_paid }
+ NOT = { has_variable = ywc_shu_military_contract_active }
+ NOT = { has_variable = ywc_shu_military_contract_fulfilled }
+}
+
+ywc_shu_military_first_payment_ready = {
+ ywc_shu_military_choice_unmade = yes
+ has_variable = ywc_shu_fiscal_cost_captured
+ var:ywc_shu_fiscal_cost > 0
+ net_fixed_income >= 0
+ NOT = { in_default = yes }
+ NOT = { has_modifier = declared_bankruptcy }
+ gold_reserves >= { value = var:ywc_shu_fiscal_cost multiply = 0.25 }
+}
+
+# Missing or impossible saved ledger values must never mint money or mark debt paid.
+ywc_shu_military_contract_valid = {
+ has_variable = ywc_shu_military_installment
+ var:ywc_shu_military_installment > 0
+ has_variable = ywc_shu_military_installments_due
+ OR = { var:ywc_shu_military_installments_due = 1 var:ywc_shu_military_installments_due = 2 var:ywc_shu_military_installments_due = 3 var:ywc_shu_military_installments_due = 4 var:ywc_shu_military_installments_due = 5 var:ywc_shu_military_installments_due = 6 var:ywc_shu_military_installments_due = 7 var:ywc_shu_military_installments_due = 8 var:ywc_shu_military_installments_due = 9 var:ywc_shu_military_installments_due = 10 var:ywc_shu_military_installments_due = 11 var:ywc_shu_military_installments_due = 12 }
+ has_variable = ywc_shu_military_installments_paid
+ OR = { var:ywc_shu_military_installments_paid = 1 var:ywc_shu_military_installments_paid = 2 var:ywc_shu_military_installments_paid = 3 var:ywc_shu_military_installments_paid = 4 var:ywc_shu_military_installments_paid = 5 var:ywc_shu_military_installments_paid = 6 var:ywc_shu_military_installments_paid = 7 var:ywc_shu_military_installments_paid = 8 var:ywc_shu_military_installments_paid = 9 var:ywc_shu_military_installments_paid = 10 var:ywc_shu_military_installments_paid = 11 var:ywc_shu_military_installments_paid = 12 }
+ var:ywc_shu_military_installments_paid <= var:ywc_shu_military_installments_due
 }

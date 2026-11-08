@@ -237,34 +237,48 @@ ywc_v03_can_deliver_major = yes
  set_variable = { name = ywc_v03_shu_v03_shu_fiscal_register_last_event value = 4 } if = { limit = { var:ywc_v03_shu_inline_reservation = 4 has_variable = ywc_v03_shu_inline_timer has_variable = ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_candidate_epoch_4 var:ywc_v03_shu_inline_reservation_epoch > 0 var:ywc_v03_shu_inline_candidate_epoch_4 = var:ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_c4_pending_event_present has_variable = ywc_v03_shu_inline_c4_pending_event_value has_journal_entry = ywc_je_v03_shu_register_pilot has_variable = ywc_v03_shu_inline_live_register_pilot has_variable = ywc_shu_pending_event var:ywc_shu_pending_event = var:ywc_v03_shu_inline_c4_pending_event_value NOT = { var:ywc_v03_shu_inline_served_1 = var:ywc_v03_shu_inline_round } has_variable = ywc_v03_shu_v03_shu_fiscal_register_last_event var:ywc_v03_shu_v03_shu_fiscal_register_last_event = 4 var:ywc_v03_shu_inline_c4_pending_event_value = 1003 } set_variable = { name = ywc_v03_shu_inline_callback_4 value = 1 } set_variable = { name = ywc_v03_shu_inline_callback_candidate_4 value = 4 } set_variable = { name = ywc_v03_shu_inline_callback_epoch_4 value = var:ywc_v03_shu_inline_reservation_epoch } set_variable = { name = ywc_v03_shu_inline_callback_queue_4 value = var:ywc_shu_pending_event } } ywc_v03_shu_inline_callback_4 = yes } }
     option = {
         name = ywc_shu.1003.pay_partial_advance
+        trigger = { ywc_shu_military_first_payment_ready = yes }
         ai_chance = {
 base = 100
 }
         custom_tooltip = { text = ywc_shu.1003.pay_partial_advance.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1003.pay_partial_advance.consequence_tooltip }
-        ywc_shu_pay_military_advance_once = yes
-        set_variable = { name = ywc_shu_pending_event value = 1004 }
+        if = { limit = { ywc_shu_military_first_payment_ready = yes } ywc_shu_pay_military_advance_once = yes if = { limit = { has_variable = ywc_shu_military_contract_active } set_variable = { name = ywc_shu_pending_event value = 1004 } } } else = { if = { limit = { ywc_shu_military_choice_unmade = yes } set_variable = { name = ywc_shu_pending_event value = 1003 } } }
     }
     option = {
         name = ywc_shu.1003.budget_queue
+        trigger = { ywc_shu_military_choice_unmade = yes }
         ai_chance = {
 base = 100
 }
         custom_tooltip = { text = ywc_shu.1003.budget_queue.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1003.budget_queue.consequence_tooltip }
-        set_variable = { name = ywc_shu_military_payer value = 2 }
-        set_variable = { name = ywc_shu_pending_event value = 1004 }
+        if = { limit = { ywc_shu_military_choice_unmade = yes } set_variable = { name = ywc_shu_military_payer value = 2 } set_variable = { name = ywc_shu_pending_event value = 1004 } }
     }
     option = {
         name = ywc_shu.1003.provincial_pay
+        trigger = { ywc_shu_military_choice_unmade = yes }
         ai_chance = {
 base = 100
 }
         custom_tooltip = { text = ywc_shu.1003.provincial_pay.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1003.provincial_pay.consequence_tooltip }
-        set_variable = { name = ywc_shu_military_payer value = 3 }
-        set_variable = { name = ywc_shu_local_audit_right value = 1 }
-        set_variable = { name = ywc_shu_pending_event value = 1004 }
+        if = { limit = { ywc_shu_military_choice_unmade = yes } set_variable = { name = ywc_shu_military_payer value = 3 } set_variable = { name = ywc_shu_local_audit_right value = 1 } set_variable = { name = ywc_shu_pending_event value = 1004 } }
+    }
+    option = {
+        name = ywc_shu.1003.continue_military_recorded
+        trigger = { OR = { has_variable = ywc_shu_military_payer has_variable = ywc_shu_military_advance_paid } }
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1003.continue_military_recorded.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1003.continue_military_recorded.consequence_tooltip }
+        if = { limit = { has_journal_entry = ywc_je_v03_shu_register_pilot var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 4 NOT = { has_variable = ywc_shu_pending_event } NOT = { has_variable = ywc_shu_arc_abandoned } NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } OR = { has_variable = ywc_shu_military_payer has_variable = ywc_shu_military_advance_paid } } set_variable = { name = ywc_shu_pending_event value = 1004 } }
+    }
+    option = {
+        name = ywc_shu.1003.dismiss_military_stale
+        trigger = { OR = { has_variable = ywc_shu_pending_event has_variable = ywc_shu_arc_abandoned has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled NOT = { has_journal_entry = ywc_je_v03_shu_register_pilot } NOT = { ywc_shu_v03_has_pilot_state = yes } NOT = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 4 } } }
+        ai_chance = { base = 1 }
+        custom_tooltip = { text = ywc_shu.1003.dismiss_military_stale.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1003.dismiss_military_stale.consequence_tooltip }
     }
 }
 
@@ -377,7 +391,7 @@ base = 100
     }
     option = {
         name = ywc_shu.1005.dismiss_stale
-        trigger = { OR = { has_variable = ywc_shu_pending_event has_variable = ywc_shu_arc_abandoned has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled NOT = { has_journal_entry = ywc_je_v03_shu_register_pilot } NOT = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 6 } } }
+        trigger = { OR = { has_variable = ywc_shu_pending_event has_variable = ywc_shu_arc_abandoned has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled NOT = { has_journal_entry = ywc_je_v03_shu_register_pilot } NOT = { ywc_shu_v03_has_pilot_state = yes } NOT = { var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 6 } } }
         ai_chance = { base = 1 }
         custom_tooltip = { text = ywc_shu.1005.dismiss_stale.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1005.dismiss_stale.consequence_tooltip }
@@ -649,13 +663,21 @@ base = 100
     }
     option = {
         name = ywc_shu.1009.confirm_provincial_share
-        trigger = { has_variable = ywc_shu_second_audit var:ywc_shu_settlement_mode = 2 has_variable = ywc_shu_local_audit_right var:ywc_shu_military_payer = 2 has_variable = ywc_shu_settlement_review_mature NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } } }
+        trigger = { has_variable = ywc_shu_second_audit var:ywc_shu_settlement_mode = 2 has_variable = ywc_shu_local_audit_right OR = { var:ywc_shu_military_payer = 1 var:ywc_shu_military_payer = 2 var:ywc_shu_military_payer = 3 } has_variable = ywc_shu_settlement_review_mature NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } } }
         ai_chance = {
 base = 100
 }
         custom_tooltip = { text = ywc_shu.1009.confirm_provincial_share.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1009.confirm_provincial_share.consequence_tooltip }
         ywc_shu_close_as_provincial = yes
+    }
+    option = {
+        name = ywc_shu.1009.reconcile_legacy_military_budget
+        trigger = { has_variable = ywc_shu_second_audit var:ywc_shu_settlement_mode = 2 has_variable = ywc_shu_local_audit_right NOT = { has_variable = ywc_shu_military_payer } NOT = { has_variable = ywc_shu_military_advance_paid } NOT = { has_variable = ywc_shu_military_contract_active } NOT = { has_variable = ywc_shu_military_contract_fulfilled } has_variable = ywc_shu_settlement_review_mature NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } } has_journal_entry = ywc_je_v03_shu_fiscal_settlement var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 10 NOT = { has_variable = ywc_shu_pending_event } NOT = { has_variable = ywc_shu_arc_abandoned } NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } NOT = { has_variable = ywc_shu_fiscal_outcome_central_audit } NOT = { has_variable = ywc_shu_fiscal_outcome_provincial_share } NOT = { has_variable = ywc_shu_fiscal_outcome_capped_legacy } NOT = { has_variable = ywc_shu_fiscal_outcome_withdrawn_breach } }
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1009.reconcile_legacy_military_budget.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1009.reconcile_legacy_military_budget.consequence_tooltip }
+        if = { limit = { has_variable = ywc_shu_second_audit var:ywc_shu_settlement_mode = 2 has_variable = ywc_shu_local_audit_right NOT = { has_variable = ywc_shu_military_payer } NOT = { has_variable = ywc_shu_military_advance_paid } NOT = { has_variable = ywc_shu_military_contract_active } NOT = { has_variable = ywc_shu_military_contract_fulfilled } has_variable = ywc_shu_settlement_review_mature NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes ywc_shu_v03_real_execution_ready = yes AND = { NOT = { has_variable = ywc_shu_merchant_advance_unpaid } OR = { AND = { has_variable = ywc_shu_merchant_consultation has_variable = ywc_shu_merchant_advance_repaid } AND = { has_variable = ywc_shu_merchant_advance_refused NOT = { has_variable = ywc_shu_merchant_advance } } } } has_journal_entry = ywc_je_v03_shu_fiscal_settlement var:ywc_v03_shu_v03_shu_fiscal_register_last_event ?= 10 NOT = { has_variable = ywc_shu_pending_event } NOT = { has_variable = ywc_shu_arc_abandoned } NOT = { has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled } NOT = { has_variable = ywc_shu_fiscal_outcome_central_audit } NOT = { has_variable = ywc_shu_fiscal_outcome_provincial_share } NOT = { has_variable = ywc_shu_fiscal_outcome_capped_legacy } NOT = { has_variable = ywc_shu_fiscal_outcome_withdrawn_breach } } set_variable = { name = ywc_shu_military_payer value = 2 } ywc_shu_close_as_provincial = yes if = { limit = { has_variable = ywc_shu_fiscal_outcome_provincial_share } set_variable = { name = ywc_shu_military_legacy_budget_reconciled value = 1 } } }
     }
     option = {
         name = ywc_shu.1009.keep_capped_quotas
