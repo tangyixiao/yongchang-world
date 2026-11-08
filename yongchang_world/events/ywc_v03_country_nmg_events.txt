@@ -15,7 +15,7 @@ ywc_nmg.1000 = {
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1000.mixed.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1000.mixed.consequence_tooltip }
-        ywc_nmg_choose_land_mixed = yes set_variable = { name = ywc_nmg_land_pending value = 1001 }
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_choose_land_mixed = yes
     }
     option = {
         name = ywc_nmg.1000.unified
@@ -23,7 +23,7 @@ ywc_nmg.1000 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1000.unified.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1000.unified.consequence_tooltip }
-        ywc_nmg_choose_land_unified = yes set_variable = { name = ywc_nmg_land_pending value = 1001 }
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_choose_land_unified = yes
     }
     option = {
         name = ywc_nmg.1000.old
@@ -31,7 +31,15 @@ ywc_nmg.1000 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1000.old.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1000.old.consequence_tooltip }
-        ywc_nmg_choose_land_old = yes set_variable = { name = ywc_nmg_land_pending value = 1001 }
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_choose_land_old = yes
+    }
+    option = {
+        name = ywc_nmg.1000.wait_for_funds
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1000.wait_for_funds.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1000.wait_for_funds.consequence_tooltip }
+        set_variable = { name = ywc_nmg_land_pending value = 1000 }
     }
 }
 
@@ -48,7 +56,7 @@ ywc_nmg.1001 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1001.rule_register.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1001.rule_register.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_rule value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1002 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_rule value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1002 }
     }
     option = {
         name = ywc_nmg.1001.rule_custom
@@ -56,7 +64,7 @@ ywc_nmg.1001 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1001.rule_custom.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1001.rule_custom.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_rule value = 2 } ywc_nmg_land_record_backlog = yes set_variable = { name = ywc_nmg_land_pending value = 1002 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_rule value = 2 } ywc_nmg_land_record_backlog = yes set_variable = { name = ywc_nmg_land_pending value = 1002 }
     }
     option = {
         name = ywc_nmg.1001.defer
@@ -64,7 +72,7 @@ ywc_nmg.1001 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1001.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1001.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1002 }
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }set_variable = { name = ywc_nmg_land_pending value = 1002 }
     }
 }
 
@@ -77,11 +85,11 @@ ywc_nmg.1002 = {
     immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1002 } }
     option = {
         name = ywc_nmg.1002.finish_survey
-        trigger = { ywc_nmg_land_administration_present = yes }
+        trigger = { ywc_nmg_land_affordable = yes }
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1002.finish_survey.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1002.finish_survey.consequence_tooltip }
-        add_treasury = { value = var:ywc_nmg_land_fee multiply = -1 } set_variable = { name = ywc_nmg_land_survey_full value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1003 }
+        remove_variable = ywc_nmg_land_blocked_defer if = { limit = { NOT = { has_variable = ywc_nmg_land_survey_full } ywc_nmg_land_affordable = yes } add_treasury = { value = var:ywc_nmg_land_fee multiply = -1 } set_variable = { name = ywc_nmg_land_survey_full value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1003 } } else_if = { limit = { has_variable = ywc_nmg_land_survey_full } set_variable = { name = ywc_nmg_land_pending value = 1003 } } else = { set_variable = { name = ywc_nmg_land_pending value = 1002 } }
     }
     option = {
         name = ywc_nmg.1002.half_survey
@@ -89,7 +97,7 @@ ywc_nmg.1002 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1002.half_survey.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1002.half_survey.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_survey_partial value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1003 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_survey_partial value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1003 }
     }
     option = {
         name = ywc_nmg.1002.defer
@@ -97,7 +105,7 @@ ywc_nmg.1002 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1002.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1002.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1003 }
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }set_variable = { name = ywc_nmg_land_pending value = 1003 }
     }
 }
 
@@ -114,7 +122,7 @@ ywc_nmg.1003 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1003.keep_old.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1003.keep_old.consequence_tooltip }
-        ywc_nmg_land_open_settlement = yes
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_land_open_settlement = yes
     }
     option = {
         name = ywc_nmg.1003.canal_deal
@@ -122,7 +130,7 @@ ywc_nmg.1003 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1003.canal_deal.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1003.canal_deal.consequence_tooltip }
-        ywc_nmg_office_record_parish = yes set_variable = { name = ywc_nmg_land_canal value = 1 } ywc_nmg_land_open_settlement = yes
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_office_record_parish = yes set_variable = { name = ywc_nmg_land_canal value = 1 } ywc_nmg_land_open_settlement = yes
     }
     option = {
         name = ywc_nmg.1003.defer
@@ -130,7 +138,7 @@ ywc_nmg.1003 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1003.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1003.defer.consequence_tooltip }
-        ywc_nmg_land_open_settlement = yes
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }ywc_nmg_land_open_settlement = yes
     }
 }
 
@@ -147,7 +155,7 @@ ywc_nmg.1004 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1004.keep_recording.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1004.keep_recording.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1005 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_pending value = 1005 }
     }
     option = {
         name = ywc_nmg.1004.slow_intake
@@ -155,7 +163,7 @@ ywc_nmg.1004 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1004.slow_intake.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1004.slow_intake.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_slow_intake value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1005 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_slow_intake value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1005 }
     }
     option = {
         name = ywc_nmg.1004.defer
@@ -163,7 +171,7 @@ ywc_nmg.1004 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1004.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1004.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1005 }
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }set_variable = { name = ywc_nmg_land_pending value = 1005 }
     }
 }
 
@@ -180,7 +188,7 @@ ywc_nmg.1005 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1005.old_assessment.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1005.old_assessment.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1006 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_pending value = 1006 }
     }
     option = {
         name = ywc_nmg.1005.new_assessment
@@ -188,7 +196,7 @@ ywc_nmg.1005 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1005.new_assessment.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1005.new_assessment.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_reassessed value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1006 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_reassessed value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1006 }
     }
     option = {
         name = ywc_nmg.1005.defer
@@ -196,7 +204,7 @@ ywc_nmg.1005 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1005.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1005.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1006 }
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }set_variable = { name = ywc_nmg_land_pending value = 1006 }
     }
 }
 
@@ -206,14 +214,14 @@ ywc_nmg.1006 = {
     title = ywc_nmg.1006.t
     desc = ywc_nmg.1006.d
     trigger = { c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }
-    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1006 } }
+    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_notice_return_event value = var:ywc_nmg_land_last_event } set_variable = { name = ywc_nmg_land_last_event value = 1006 } if = { limit = { has_variable = ywc_nmg_land_notice12_due } set_variable = { name = ywc_nmg_land_notice_response_context value = 1 } set_variable = { name = ywc_nmg_land_notice12_delivered value = 1 } remove_variable = ywc_nmg_land_notice12_due } }
     option = {
         name = ywc_nmg.1006.hold_route
         trigger = { always = yes }
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1006.hold_route.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1006.hold_route.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_hold value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1007 }
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }set_variable = { name = ywc_nmg_land_hold value = 1 } if = { limit = { NOT = { has_variable = ywc_nmg_land_notice_response_context } } set_variable = { name = ywc_nmg_land_pending value = 1007 } }  if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
     }
     option = {
         name = ywc_nmg.1006.renegotiate
@@ -221,7 +229,7 @@ ywc_nmg.1006 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1006.renegotiate.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1006.renegotiate.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_renegotiated value = 1 } set_variable = { name = ywc_nmg_land_pending value = 1007 }
+        remove_variable = ywc_nmg_land_blocked_defer set_variable = { name = ywc_nmg_land_renegotiated value = 1 } if = { limit = { NOT = { has_variable = ywc_nmg_land_notice_response_context } } set_variable = { name = ywc_nmg_land_pending value = 1007 } }  if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
     }
     option = {
         name = ywc_nmg.1006.defer
@@ -229,7 +237,7 @@ ywc_nmg.1006 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1006.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1006.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_land_pending value = 1007 }
+        set_variable = { name = ywc_nmg_land_blocked_defer value = 1 }if = { limit = { NOT = { has_variable = ywc_nmg_land_notice_response_context } } set_variable = { name = ywc_nmg_land_pending value = 1007 } }  if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
     }
 }
 
@@ -239,14 +247,14 @@ ywc_nmg.1007 = {
     title = ywc_nmg.1007.t
     desc = ywc_nmg.1007.d
     trigger = { c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_land_unsettled = yes }
-    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_last_event value = 1007 } }
+    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_land_notice_return_event value = var:ywc_nmg_land_last_event } set_variable = { name = ywc_nmg_land_last_event value = 1007 } if = { limit = { has_variable = ywc_nmg_land_notice36_due } set_variable = { name = ywc_nmg_land_notice_response_context value = 1 } set_variable = { name = ywc_nmg_land_notice36_delivered value = 1 } remove_variable = ywc_nmg_land_notice36_due } }
     option = {
         name = ywc_nmg.1007.settle_full
-        trigger = { ywc_nmg_land_route_ready = yes }
+        trigger = { has_variable = ywc_nmg_land_six_months_complete NOT = { has_variable = ywc_nmg_land_limited_selected } ywc_nmg_land_route_ready = yes ywc_nmg_v03_finance_safe = yes }
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1007.settle_full.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1007.settle_full.consequence_tooltip }
-        ywc_nmg_close_land_as_established = yes
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_close_land_as_established = yes  if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
     }
     option = {
         name = ywc_nmg.1007.settle_partial
@@ -254,7 +262,7 @@ ywc_nmg.1007 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1007.settle_partial.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1007.settle_partial.consequence_tooltip }
-        ywc_nmg_close_land_as_compromise = yes
+        remove_variable = ywc_nmg_land_blocked_defer if = { limit = { OR = { has_variable = ywc_nmg_land_limited_selected AND = { has_variable = ywc_nmg_land_six_months_complete ywc_nmg_land_route_ready = yes } } } ywc_nmg_close_land_as_compromise = yes } else = { ywc_nmg_land_select_limited_target = yes }   if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
     }
     option = {
         name = ywc_nmg.1007.withdraw
@@ -262,7 +270,15 @@ ywc_nmg.1007 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1007.withdraw.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1007.withdraw.consequence_tooltip }
-        ywc_nmg_close_land_as_breach = yes
+        remove_variable = ywc_nmg_land_blocked_defer ywc_nmg_close_land_as_breach = yes  if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
+    }
+    option = {
+        name = ywc_nmg.1007.wait_retry
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1007.wait_retry.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1007.wait_retry.consequence_tooltip }
+        if = { limit = { NOT = { ywc_nmg_land_route_ready = yes } } remove_variable = ywc_nmg_land_watch_started remove_variable = ywc_nmg_land_watch_timer remove_variable = ywc_nmg_land_six_months_complete } if = { limit = { NOT = { has_variable = ywc_nmg_land_notice_response_context } } set_variable = { name = ywc_nmg_land_pending value = 1007 } }   if = { limit = { has_variable = ywc_nmg_land_notice_response_context has_variable = ywc_nmg_land_notice_return_event NOT = { has_variable = ywc_nmg_land_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_withdrawn } } set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_notice_return_event } } remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event
     }
 }
 
@@ -279,7 +295,7 @@ ywc_nmg.1010 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1010.bilingual.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1010.bilingual.consequence_tooltip }
-        ywc_nmg_choose_office_bilingual = yes set_variable = { name = ywc_nmg_office_pending value = 1011 }
+        remove_variable = ywc_nmg_office_blocked_defer ywc_nmg_choose_office_bilingual = yes
     }
     option = {
         name = ywc_nmg.1010.local
@@ -287,7 +303,7 @@ ywc_nmg.1010 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1010.local.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1010.local.consequence_tooltip }
-        ywc_nmg_choose_office_local = yes set_variable = { name = ywc_nmg_office_pending value = 1011 }
+        remove_variable = ywc_nmg_office_blocked_defer ywc_nmg_choose_office_local = yes
     }
     option = {
         name = ywc_nmg.1010.single
@@ -295,7 +311,15 @@ ywc_nmg.1010 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1010.single.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1010.single.consequence_tooltip }
-        ywc_nmg_choose_office_single = yes set_variable = { name = ywc_nmg_office_pending value = 1011 }
+        remove_variable = ywc_nmg_office_blocked_defer ywc_nmg_choose_office_single = yes
+    }
+    option = {
+        name = ywc_nmg.1010.wait_for_funds
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1010.wait_for_funds.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1010.wait_for_funds.consequence_tooltip }
+        set_variable = { name = ywc_nmg_office_pending value = 1010 }
     }
 }
 
@@ -308,11 +332,11 @@ ywc_nmg.1011 = {
     immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1011 } }
     option = {
         name = ywc_nmg.1011.hire_full
-        trigger = { ywc_nmg_office_admin_present = yes }
+        trigger = { ywc_nmg_office_affordable = yes }
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1011.hire_full.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1011.hire_full.consequence_tooltip }
-        add_treasury = { value = var:ywc_nmg_office_fee multiply = -1 } set_variable = { name = ywc_nmg_office_roster_full value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1012 }
+        remove_variable = ywc_nmg_office_blocked_defer if = { limit = { NOT = { has_variable = ywc_nmg_office_roster_full } ywc_nmg_office_affordable = yes } add_treasury = { value = var:ywc_nmg_office_fee multiply = -1 } set_variable = { name = ywc_nmg_office_roster_full value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1012 } } else_if = { limit = { has_variable = ywc_nmg_office_roster_full } set_variable = { name = ywc_nmg_office_pending value = 1012 } } else = { set_variable = { name = ywc_nmg_office_pending value = 1011 } }
     }
     option = {
         name = ywc_nmg.1011.hire_thin
@@ -320,7 +344,7 @@ ywc_nmg.1011 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1011.hire_thin.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1011.hire_thin.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_roster_thin value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1012 }
+        remove_variable = ywc_nmg_office_blocked_defer set_variable = { name = ywc_nmg_office_roster_thin value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1012 }
     }
     option = {
         name = ywc_nmg.1011.defer
@@ -328,7 +352,7 @@ ywc_nmg.1011 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1011.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1011.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_pending value = 1012 }
+        set_variable = { name = ywc_nmg_office_blocked_defer value = 1 }set_variable = { name = ywc_nmg_office_pending value = 1012 }
     }
 }
 
@@ -345,7 +369,7 @@ ywc_nmg.1012 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1012.court_parish.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1012.court_parish.consequence_tooltip }
-        ywc_nmg_office_record_parish = yes set_variable = { name = ywc_nmg_office_pending value = 1013 }
+        remove_variable = ywc_nmg_office_blocked_defer ywc_nmg_office_record_parish = yes set_variable = { name = ywc_nmg_office_pending value = 1013 }
     }
     option = {
         name = ywc_nmg.1012.court_council
@@ -353,7 +377,7 @@ ywc_nmg.1012 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1012.court_council.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1012.court_council.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_oversight value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1013 }
+        remove_variable = ywc_nmg_office_blocked_defer set_variable = { name = ywc_nmg_office_oversight value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1013 }
     }
     option = {
         name = ywc_nmg.1012.defer
@@ -361,7 +385,7 @@ ywc_nmg.1012 = {
         ai_chance = { base = 20 }
         custom_tooltip = { text = ywc_nmg.1012.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1012.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_pending value = 1013 }
+        set_variable = { name = ywc_nmg_office_blocked_defer value = 1 }set_variable = { name = ywc_nmg_office_pending value = 1013 }
     }
 }
 
@@ -378,7 +402,7 @@ ywc_nmg.1013 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1013.fund_schools.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1013.fund_schools.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_schools value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1014 }
+        remove_variable = ywc_nmg_office_blocked_defer set_variable = { name = ywc_nmg_office_schools value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1014 }
     }
     option = {
         name = ywc_nmg.1013.borrow_staff
@@ -386,7 +410,7 @@ ywc_nmg.1013 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1013.borrow_staff.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1013.borrow_staff.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_borrowed value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1014 }
+        remove_variable = ywc_nmg_office_blocked_defer set_variable = { name = ywc_nmg_office_borrowed value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1014 }
     }
     option = {
         name = ywc_nmg.1013.defer
@@ -394,7 +418,7 @@ ywc_nmg.1013 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1013.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1013.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_pending value = 1014 }
+        set_variable = { name = ywc_nmg_office_blocked_defer value = 1 }set_variable = { name = ywc_nmg_office_pending value = 1014 }
     }
 }
 
@@ -404,14 +428,14 @@ ywc_nmg.1014 = {
     title = ywc_nmg.1014.t
     desc = ywc_nmg.1014.d
     trigger = { c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }
-    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1014 } }
+    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_notice_return_event value = var:ywc_nmg_office_last_event } set_variable = { name = ywc_nmg_office_last_event value = 1014 } if = { limit = { has_variable = ywc_nmg_office_notice12_due } set_variable = { name = ywc_nmg_office_notice_response_context value = 1 } set_variable = { name = ywc_nmg_office_notice12_delivered value = 1 } remove_variable = ywc_nmg_office_notice12_due } }
     option = {
         name = ywc_nmg.1014.keep_route
         trigger = { always = yes }
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1014.keep_route.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1014.keep_route.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_hold value = 1 } set_variable = { name = ywc_nmg_office_pending value = 1015 }
+        remove_variable = ywc_nmg_office_blocked_defer set_variable = { name = ywc_nmg_office_hold value = 1 } if = { limit = { NOT = { has_variable = ywc_nmg_office_notice_response_context } } set_variable = { name = ywc_nmg_office_pending value = 1015 } }  if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
     }
     option = {
         name = ywc_nmg.1014.switch_local
@@ -419,7 +443,7 @@ ywc_nmg.1014 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1014.switch_local.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1014.switch_local.consequence_tooltip }
-        set_variable = { name = ywc_nmg_office_route value = 2 } add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 } set_variable = { name = ywc_nmg_office_pending value = 1015 }
+        remove_variable = ywc_nmg_office_blocked_defer set_variable = { name = ywc_nmg_office_route value = 2 } add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 } if = { limit = { NOT = { has_variable = ywc_nmg_office_notice_response_context } } set_variable = { name = ywc_nmg_office_pending value = 1015 } }  if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
     }
     option = {
         name = ywc_nmg.1014.withdraw
@@ -427,7 +451,7 @@ ywc_nmg.1014 = {
         ai_chance = { base = 20 }
         custom_tooltip = { text = ywc_nmg.1014.withdraw.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1014.withdraw.consequence_tooltip }
-        ywc_nmg_close_office_as_breach = yes
+        ywc_nmg_close_office_as_breach = yes  if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
     }
 }
 
@@ -437,14 +461,14 @@ ywc_nmg.1015 = {
     title = ywc_nmg.1015.t
     desc = ywc_nmg.1015.d
     trigger = { c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_office_unsettled = yes }
-    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_last_event value = 1015 } }
+    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_office_notice_return_event value = var:ywc_nmg_office_last_event } set_variable = { name = ywc_nmg_office_last_event value = 1015 } if = { limit = { has_variable = ywc_nmg_office_notice36_due } set_variable = { name = ywc_nmg_office_notice_response_context value = 1 } set_variable = { name = ywc_nmg_office_notice36_delivered value = 1 } remove_variable = ywc_nmg_office_notice36_due } }
     option = {
         name = ywc_nmg.1015.close_full
-        trigger = { ywc_nmg_office_route_ready = yes }
+        trigger = { has_variable = ywc_nmg_office_six_months_complete NOT = { has_variable = ywc_nmg_office_limited_selected } ywc_nmg_office_route_ready = yes ywc_nmg_v03_finance_safe = yes }
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1015.close_full.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1015.close_full.consequence_tooltip }
-        ywc_nmg_close_office_as_established = yes
+        remove_variable = ywc_nmg_office_blocked_defer ywc_nmg_close_office_as_established = yes  if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
     }
     option = {
         name = ywc_nmg.1015.close_partial
@@ -452,7 +476,7 @@ ywc_nmg.1015 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1015.close_partial.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1015.close_partial.consequence_tooltip }
-        ywc_nmg_close_office_as_compromise = yes
+        remove_variable = ywc_nmg_office_blocked_defer if = { limit = { OR = { has_variable = ywc_nmg_office_limited_selected AND = { has_variable = ywc_nmg_office_six_months_complete ywc_nmg_office_route_ready = yes } } } ywc_nmg_close_office_as_compromise = yes } else = { ywc_nmg_office_select_limited_target = yes }   if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
     }
     option = {
         name = ywc_nmg.1015.withdraw
@@ -460,7 +484,15 @@ ywc_nmg.1015 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1015.withdraw.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1015.withdraw.consequence_tooltip }
-        ywc_nmg_close_office_as_breach = yes
+        remove_variable = ywc_nmg_office_blocked_defer ywc_nmg_close_office_as_breach = yes  if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
+    }
+    option = {
+        name = ywc_nmg.1015.wait_retry
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1015.wait_retry.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1015.wait_retry.consequence_tooltip }
+        if = { limit = { NOT = { ywc_nmg_office_route_ready = yes } } remove_variable = ywc_nmg_office_watch_started remove_variable = ywc_nmg_office_watch_timer remove_variable = ywc_nmg_office_six_months_complete } if = { limit = { NOT = { has_variable = ywc_nmg_office_notice_response_context } } set_variable = { name = ywc_nmg_office_pending value = 1015 } }   if = { limit = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_notice_return_event NOT = { has_variable = ywc_nmg_office_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_withdrawn } } set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_notice_return_event } } remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event
     }
 }
 
@@ -477,7 +509,7 @@ ywc_nmg.1020 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1020.fixed.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1020.fixed.consequence_tooltip }
-        ywc_nmg_choose_revenue_fixed = yes set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_choose_revenue_fixed = yes
     }
     option = {
         name = ywc_nmg.1020.joint
@@ -485,7 +517,7 @@ ywc_nmg.1020 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1020.joint.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1020.joint.consequence_tooltip }
-        ywc_nmg_choose_revenue_joint = yes set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_choose_revenue_joint = yes
     }
     option = {
         name = ywc_nmg.1020.arrears
@@ -493,7 +525,15 @@ ywc_nmg.1020 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1020.arrears.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1020.arrears.consequence_tooltip }
-        ywc_nmg_choose_revenue_arrears = yes set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_choose_revenue_arrears = yes
+    }
+    option = {
+        name = ywc_nmg.1020.wait_for_funds
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1020.wait_for_funds.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1020.wait_for_funds.consequence_tooltip }
+        set_variable = { name = ywc_nmg_revenue_pending value = 1020 }
     }
 }
 
@@ -510,7 +550,7 @@ ywc_nmg.1021 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1021.audit_strict.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1021.audit_strict.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_audit_strict value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 }
+        remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_audit_strict value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 }
     }
     option = {
         name = ywc_nmg.1021.audit_public
@@ -518,7 +558,7 @@ ywc_nmg.1021 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1021.audit_public.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1021.audit_public.consequence_tooltip }
-        add_loyalists_in_state = { value = small_loyalists } set_variable = { name = ywc_nmg_revenue_audit_public value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 }
+        remove_variable = ywc_nmg_revenue_blocked_defer add_loyalists_in_state = { value = small_loyalists } set_variable = { name = ywc_nmg_revenue_audit_public value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 }
     }
     option = {
         name = ywc_nmg.1021.defer
@@ -526,7 +566,7 @@ ywc_nmg.1021 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1021.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1021.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1022 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }set_variable = { name = ywc_nmg_revenue_pending value = 1022 }
     }
 }
 
@@ -543,7 +583,7 @@ ywc_nmg.1022 = {
         ai_chance = { base = 60 }
         custom_tooltip = { text = ywc_nmg.1022.close_account.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1022.close_account.consequence_tooltip }
-        ywc_nmg_revenue_open_negotiation = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_negotiation = yes
     }
     option = {
         name = ywc_nmg.1022.close_account_joint
@@ -551,7 +591,7 @@ ywc_nmg.1022 = {
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1022.close_account_joint.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1022.close_account_joint.consequence_tooltip }
-        ywc_nmg_revenue_open_negotiation = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_negotiation = yes
     }
     option = {
         name = ywc_nmg.1022.reopen
@@ -559,7 +599,7 @@ ywc_nmg.1022 = {
         ai_chance = { base = 10 }
         custom_tooltip = { text = ywc_nmg.1022.reopen.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1022.reopen.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1020 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }set_variable = { name = ywc_nmg_revenue_pending value = 1020 }
     }
 }
 
@@ -576,7 +616,7 @@ ywc_nmg.1023 = {
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1023.press_quota.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1023.press_quota.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_press value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 }
+        remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_press value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 }
     }
     option = {
         name = ywc_nmg.1023.accept_floor
@@ -584,7 +624,7 @@ ywc_nmg.1023 = {
         ai_chance = { base = 40 }
         custom_tooltip = { text = ywc_nmg.1023.accept_floor.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1023.accept_floor.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 }
+        remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 }
     }
     option = {
         name = ywc_nmg.1023.defer
@@ -592,7 +632,7 @@ ywc_nmg.1023 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1023.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1023.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1024 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }set_variable = { name = ywc_nmg_revenue_pending value = 1024 }
     }
 }
 
@@ -609,7 +649,7 @@ ywc_nmg.1024 = {
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1024.use_temperature.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1024.use_temperature.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1025 }
+        remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_pending value = 1025 }
     }
     option = {
         name = ywc_nmg.1024.escalate
@@ -617,7 +657,7 @@ ywc_nmg.1024 = {
         ai_chance = { base = 30 }
         custom_tooltip = { text = ywc_nmg.1024.escalate.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1024.escalate.consequence_tooltip }
-        change_relations = { country = c:MEX value = { add = -10 } } set_variable = { name = ywc_nmg_revenue_escalated value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1025 }
+        remove_variable = ywc_nmg_revenue_blocked_defer change_relations = { country = c:MEX value = { add = -10 } } set_variable = { name = ywc_nmg_revenue_escalated value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1025 }
     }
     option = {
         name = ywc_nmg.1024.defer
@@ -625,7 +665,7 @@ ywc_nmg.1024 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1024.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1024.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1025 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }set_variable = { name = ywc_nmg_revenue_pending value = 1025 }
     }
 }
 
@@ -642,15 +682,15 @@ ywc_nmg.1025 = {
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1025.share_even.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1025.share_even.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_share value = 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 }
+        remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_share value = 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 }
     }
     option = {
         name = ywc_nmg.1025.carry_heavy
-        trigger = { always = yes }
+        trigger = { ywc_nmg_revenue_quota_affordable = yes }
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1025.carry_heavy.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1025.carry_heavy.consequence_tooltip }
-        add_treasury = { value = var:ywc_nmg_revenue_quota multiply = -1 } set_variable = { name = ywc_nmg_revenue_share value = 3 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 }
+        remove_variable = ywc_nmg_revenue_blocked_defer if = { limit = { NOT = { has_variable = ywc_nmg_revenue_heavy_paid } ywc_nmg_revenue_quota_affordable = yes } add_treasury = { value = var:ywc_nmg_revenue_quota multiply = -1 } set_variable = { name = ywc_nmg_revenue_heavy_paid value = 1 } set_variable = { name = ywc_nmg_revenue_share value = 3 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 } } else_if = { limit = { has_variable = ywc_nmg_revenue_heavy_paid } set_variable = { name = ywc_nmg_revenue_pending value = 1026 } } else = { set_variable = { name = ywc_nmg_revenue_pending value = 1025 } }
     }
     option = {
         name = ywc_nmg.1025.defer
@@ -658,7 +698,7 @@ ywc_nmg.1025 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1025.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1025.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1026 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }set_variable = { name = ywc_nmg_revenue_pending value = 1026 }
     }
 }
 
@@ -675,7 +715,7 @@ ywc_nmg.1026 = {
         ai_chance = { base = 60 }
         custom_tooltip = { text = ywc_nmg.1026.conclude.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1026.conclude.consequence_tooltip }
-        ywc_nmg_revenue_open_settlement = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_settlement = yes
     }
     option = {
         name = ywc_nmg.1026.walk_out
@@ -683,7 +723,7 @@ ywc_nmg.1026 = {
         ai_chance = { base = 20 }
         custom_tooltip = { text = ywc_nmg.1026.walk_out.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1026.walk_out.consequence_tooltip }
-        change_relations = { country = c:MEX value = { add = -25 } } set_variable = { name = ywc_nmg_revenue_pending value = 1020 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }change_relations = { country = c:MEX value = { add = -25 } } set_variable = { name = ywc_nmg_revenue_pending value = 1020 }
     }
     option = {
         name = ywc_nmg.1026.defer
@@ -691,7 +731,7 @@ ywc_nmg.1026 = {
         ai_chance = { base = 20 }
         custom_tooltip = { text = ywc_nmg.1026.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1026.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1023 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }set_variable = { name = ywc_nmg_revenue_pending value = 1023 }
     }
 }
 
@@ -704,19 +744,19 @@ ywc_nmg.1027 = {
     immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1027 } }
     option = {
         name = ywc_nmg.1027.settle_full
-        trigger = { ywc_nmg_revenue_route_ready = yes }
+        trigger = { has_variable = ywc_nmg_revenue_six_months_complete ywc_nmg_revenue_route_ready = yes ywc_nmg_v03_finance_safe = yes }
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1027.settle_full.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1027.settle_full.consequence_tooltip }
-        ywc_nmg_close_revenue_as_established = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_close_revenue_as_established = yes
     }
     option = {
         name = ywc_nmg.1027.settle_partial
-        trigger = { always = yes }
+        trigger = { has_variable = ywc_nmg_revenue_six_months_complete ywc_nmg_revenue_route_ready = yes ywc_nmg_v03_finance_safe = yes }
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1027.settle_partial.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1027.settle_partial.consequence_tooltip }
-        ywc_nmg_close_revenue_as_compromise = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_close_revenue_as_compromise = yes
     }
     option = {
         name = ywc_nmg.1027.defer
@@ -726,6 +766,14 @@ ywc_nmg.1027 = {
         custom_tooltip = { text = ywc_nmg.1027.defer.consequence_tooltip }
         set_variable = { name = ywc_nmg_revenue_pending value = 1028 }
     }
+    option = {
+        name = ywc_nmg.1027.wait_retry
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1027.wait_retry.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1027.wait_retry.consequence_tooltip }
+        if = { limit = { NOT = { ywc_nmg_revenue_route_ready = yes } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete } set_variable = { name = ywc_nmg_revenue_pending value = 1027 }
+    }
 }
 
 ywc_nmg.1028 = {
@@ -734,14 +782,14 @@ ywc_nmg.1028 = {
     title = ywc_nmg.1028.t
     desc = ywc_nmg.1028.d
     trigger = { c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }
-    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1028 } }
+    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_notice_return_event value = var:ywc_nmg_revenue_last_event } set_variable = { name = ywc_nmg_revenue_last_event value = 1028 } if = { limit = { has_variable = ywc_nmg_revenue_notice12_due } set_variable = { name = ywc_nmg_revenue_notice_response_context value = 1 } set_variable = { name = ywc_nmg_revenue_notice12_delivered value = 1 } remove_variable = ywc_nmg_revenue_notice12_due } }
     option = {
         name = ywc_nmg.1028.own_arrears
         trigger = { always = yes }
         ai_chance = { base = 45 }
         custom_tooltip = { text = ywc_nmg.1028.own_arrears.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1028.own_arrears.consequence_tooltip }
-        change_relations = { country = c:MEX value = { add = -5 } } set_variable = { name = ywc_nmg_revenue_arrears_owned value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1029 }
+        remove_variable = ywc_nmg_revenue_blocked_defer change_relations = { country = c:MEX value = { add = -5 } } set_variable = { name = ywc_nmg_revenue_arrears_owned value = 1 } if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }  if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
     }
     option = {
         name = ywc_nmg.1028.dispute
@@ -749,7 +797,7 @@ ywc_nmg.1028 = {
         ai_chance = { base = 30 }
         custom_tooltip = { text = ywc_nmg.1028.dispute.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1028.dispute.consequence_tooltip }
-        change_relations = { country = c:MEX value = { add = -25 } } set_variable = { name = ywc_nmg_revenue_disputed value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1029 }
+        remove_variable = ywc_nmg_revenue_blocked_defer change_relations = { country = c:MEX value = { add = -25 } } set_variable = { name = ywc_nmg_revenue_disputed value = 1 } if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }  if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
     }
     option = {
         name = ywc_nmg.1028.defer
@@ -757,7 +805,7 @@ ywc_nmg.1028 = {
         ai_chance = { base = 25 }
         custom_tooltip = { text = ywc_nmg.1028.defer.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1028.defer.consequence_tooltip }
-        set_variable = { name = ywc_nmg_revenue_pending value = 1029 }
+        set_variable = { name = ywc_nmg_revenue_blocked_defer value = 1 }if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }  if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
     }
 }
 
@@ -767,14 +815,14 @@ ywc_nmg.1029 = {
     title = ywc_nmg.1029.t
     desc = ywc_nmg.1029.d
     trigger = { c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }
-    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1029 } }
+    immediate = { ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_notice_return_event value = var:ywc_nmg_revenue_last_event } set_variable = { name = ywc_nmg_revenue_last_event value = 1029 } if = { limit = { has_variable = ywc_nmg_revenue_notice36_due } set_variable = { name = ywc_nmg_revenue_notice_response_context value = 1 } set_variable = { name = ywc_nmg_revenue_notice36_delivered value = 1 } remove_variable = ywc_nmg_revenue_notice36_due } }
     option = {
         name = ywc_nmg.1029.close_full
-        trigger = { always = yes }
+        trigger = { has_variable = ywc_nmg_revenue_six_months_complete NOT = { has_variable = ywc_nmg_revenue_limited_selected } ywc_nmg_revenue_route_ready = yes ywc_nmg_v03_finance_safe = yes }
         ai_chance = { base = 50 }
         custom_tooltip = { text = ywc_nmg.1029.close_full.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1029.close_full.consequence_tooltip }
-        ywc_nmg_close_revenue_as_established = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_close_revenue_as_established = yes  if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
     }
     option = {
         name = ywc_nmg.1029.close_partial
@@ -782,7 +830,7 @@ ywc_nmg.1029 = {
         ai_chance = { base = 35 }
         custom_tooltip = { text = ywc_nmg.1029.close_partial.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1029.close_partial.consequence_tooltip }
-        ywc_nmg_close_revenue_as_compromise = yes
+        remove_variable = ywc_nmg_revenue_blocked_defer if = { limit = { OR = { has_variable = ywc_nmg_revenue_limited_selected AND = { has_variable = ywc_nmg_revenue_six_months_complete ywc_nmg_revenue_route_ready = yes } } } ywc_nmg_close_revenue_as_compromise = yes } else = { ywc_nmg_revenue_select_limited_target = yes }   if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
     }
     option = {
         name = ywc_nmg.1029.withdraw
@@ -790,6 +838,14 @@ ywc_nmg.1029 = {
         ai_chance = { base = 15 }
         custom_tooltip = { text = ywc_nmg.1029.withdraw.cost_tooltip }
         custom_tooltip = { text = ywc_nmg.1029.withdraw.consequence_tooltip }
-        ywc_nmg_close_revenue_as_breach = yes change_relations = { country = c:MEX value = { add = -25 } }
+        remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_close_revenue_as_breach = yes if = { limit = { NOT = { AND = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_arrears } } } change_relations = { country = c:MEX value = { add = -25 } } }  if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
+    }
+    option = {
+        name = ywc_nmg.1029.wait_retry
+        trigger = { always = yes }
+        ai_chance = { base = 0 }
+        custom_tooltip = { text = ywc_nmg.1029.wait_retry.cost_tooltip }
+        custom_tooltip = { text = ywc_nmg.1029.wait_retry.consequence_tooltip }
+        if = { limit = { NOT = { ywc_nmg_revenue_route_ready = yes } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete } if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }   if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event
     }
 }

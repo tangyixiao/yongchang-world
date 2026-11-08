@@ -192,8 +192,16 @@ def _helper_body(text, name):
         start = text.index(f"\n{name} = {{")
     except ValueError:
         raise AssertionError(f"scripted definition missing: {name}") from None
-    end = text.find("\n}", start)
-    return text[start:end if end != -1 else len(text)]
+    opening = text.index("{", start)
+    depth = 0
+    for index in range(opening, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+    raise AssertionError(f"scripted definition has unbalanced braces: {name}")
 
 
 class NmgFoundationContractTest(unittest.TestCase):
@@ -389,11 +397,10 @@ class NmgFoundationContractTest(unittest.TestCase):
             self.assertIn("ywc_nmg_%s_watch_timer" % short, review, short)
             self.assertIn("value = 1 months = 6", review, short)
             self.assertIn("ywc_nmg_%s_six_months_complete" % short, review, short)
-            self.assertIn("ywc_nmg_%s_12_notice" % short, review, short)
-            self.assertIn("months = 12", review, short)
-            self.assertIn("ywc_nmg_%s_36_notice" % short, review, short)
-            self.assertIn("months = 36", review, short)
-            self.assertIn("ywc_nmg_%s_note_blocked = yes" % short, review, short)
+            self.assertIn(f"ywc_nmg_{short}_notice12_due", review, short)
+            self.assertIn("blocked_months >= 12", review, short)
+            self.assertIn(f"ywc_nmg_{short}_notice36_due", review, short)
+            self.assertIn("blocked_months >= 36", review, short)
             blocked = _helper_body(self.effects, "ywc_nmg_%s_note_blocked" % short)
             self.assertIn("_blocked_note value = 1 months = 12", blocked, short)
             self.assertIn("_blocked_long value = 1 months = 36", blocked, short)

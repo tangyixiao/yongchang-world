@@ -17,18 +17,12 @@ ywc_nmg_land_fee_snapshot = {
 }
 
 ywc_nmg_land_pay_fee_once = {
-	if = {
-		limit = { NOT = { has_variable = ywc_nmg_land_fee } }
-		ywc_nmg_land_fee_snapshot = yes
-	}
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_nmg_land_fee_paid }
-			gold_reserves >= var:ywc_nmg_land_fee
-		}
-		add_treasury = { value = var:ywc_nmg_land_fee multiply = -1 }
-		set_variable = { name = ywc_nmg_land_fee_paid value = 1 }
-	}
+if = { limit = { NOT = { has_variable = ywc_nmg_land_fee } } ywc_nmg_land_fee_snapshot = yes }
+if = {
+  limit = { NOT = { has_variable = ywc_nmg_land_fee_paid } ywc_nmg_v03_finance_safe = yes gold_reserves >= var:ywc_nmg_land_fee }
+  add_treasury = { value = var:ywc_nmg_land_fee multiply = -1 }
+  set_variable = { name = ywc_nmg_land_fee_paid value = 1 }
+}
 }
 
 ywc_nmg_land_note_blocked = {
@@ -86,18 +80,12 @@ ywc_nmg_office_fee_snapshot = {
 }
 
 ywc_nmg_office_pay_fee_once = {
-	if = {
-		limit = { NOT = { has_variable = ywc_nmg_office_fee } }
-		ywc_nmg_office_fee_snapshot = yes
-	}
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_nmg_office_fee_paid }
-			gold_reserves >= var:ywc_nmg_office_fee
-		}
-		add_treasury = { value = var:ywc_nmg_office_fee multiply = -1 }
-		set_variable = { name = ywc_nmg_office_fee_paid value = 1 }
-	}
+if = { limit = { NOT = { has_variable = ywc_nmg_office_fee } } ywc_nmg_office_fee_snapshot = yes }
+if = {
+  limit = { NOT = { has_variable = ywc_nmg_office_fee_paid } ywc_nmg_v03_finance_safe = yes gold_reserves >= var:ywc_nmg_office_fee }
+  add_treasury = { value = var:ywc_nmg_office_fee multiply = -1 }
+  set_variable = { name = ywc_nmg_office_fee_paid value = 1 }
+}
 }
 
 ywc_nmg_office_note_blocked = {
@@ -155,18 +143,12 @@ ywc_nmg_revenue_fee_snapshot = {
 }
 
 ywc_nmg_revenue_pay_fee_once = {
-	if = {
-		limit = { NOT = { has_variable = ywc_nmg_revenue_quota } }
-		ywc_nmg_revenue_fee_snapshot = yes
-	}
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_nmg_revenue_quota_paid }
-			gold_reserves >= var:ywc_nmg_revenue_quota
-		}
-		add_treasury = { value = var:ywc_nmg_revenue_quota multiply = -1 }
-		set_variable = { name = ywc_nmg_revenue_quota_paid value = 1 }
-	}
+if = { limit = { NOT = { has_variable = ywc_nmg_revenue_quota } } ywc_nmg_revenue_fee_snapshot = yes }
+if = {
+  limit = { NOT = { has_variable = ywc_nmg_revenue_quota_paid } ywc_nmg_v03_finance_safe = yes gold_reserves >= var:ywc_nmg_revenue_quota }
+  add_treasury = { value = var:ywc_nmg_revenue_quota multiply = -1 }
+  set_variable = { name = ywc_nmg_revenue_quota_paid value = 1 }
+}
 }
 
 ywc_nmg_revenue_note_blocked = {
@@ -215,130 +197,124 @@ ywc_nmg_open_revenue_once = {
 }
 
 ywc_nmg_close_land_as_established = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_outcome value = 3 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_settled value = 1 }
-		set_variable = { name = ywc_nmg_land_closed value = 1 }
-		set_variable = { name = ywc_nmg_land_established value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = {
+ limit = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } NOT = { has_variable = ywc_nmg_land_limited_selected } has_variable = ywc_nmg_land_fee_paid has_variable = ywc_nmg_land_six_months_complete ywc_nmg_land_route_ready = yes ywc_nmg_v03_finance_safe = yes }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_outcome value = 3 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_settled value = 1 }
+ set_variable = { name = ywc_nmg_land_closed value = 1 }
+ set_variable = { name = ywc_nmg_land_established value = 1 }
+ ywc_nmg_release_slot = yes
+}
+else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }
+ if = { limit = { OR = { NOT = { ywc_nmg_land_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_land_watch_started remove_variable = ywc_nmg_land_watch_timer remove_variable = ywc_nmg_land_six_months_complete }
+ set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_last_event }
+}
 }
 
 ywc_nmg_close_land_as_compromise = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_outcome value = 2 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_settled value = 1 }
-		set_variable = { name = ywc_nmg_land_closed value = 1 }
-		set_variable = { name = ywc_nmg_land_compromise value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = {
+ limit = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } has_variable = ywc_nmg_land_fee_paid has_variable = ywc_nmg_land_six_months_complete ywc_nmg_land_route_ready = yes ywc_nmg_v03_finance_safe = yes }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_outcome value = 2 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_settled value = 1 }
+ set_variable = { name = ywc_nmg_land_closed value = 1 }
+ set_variable = { name = ywc_nmg_land_compromise value = 1 }
+ ywc_nmg_release_slot = yes
+}
+else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }
+ if = { limit = { OR = { NOT = { ywc_nmg_land_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_land_watch_started remove_variable = ywc_nmg_land_watch_timer remove_variable = ywc_nmg_land_six_months_complete }
+ set_variable = { name = ywc_nmg_land_pending value = var:ywc_nmg_land_last_event }
+}
 }
 
 ywc_nmg_close_land_as_breach = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_outcome value = 1 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_settled value = 1 }
-		set_variable = { name = ywc_nmg_land_closed value = 1 }
-		set_variable = { name = ywc_nmg_land_withdrawn value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_outcome value = 1 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_land_arbitration_settled value = 1 }
+ set_variable = { name = ywc_nmg_land_closed value = 1 }
+ set_variable = { name = ywc_nmg_land_withdrawn value = 1 }
+ ywc_nmg_release_slot = yes
+}
 }
 
 ywc_nmg_close_office_as_established = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_outcome value = 3 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
-		set_variable = { name = ywc_nmg_office_closed value = 1 }
-		set_variable = { name = ywc_nmg_office_established value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = {
+ limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } NOT = { has_variable = ywc_nmg_office_limited_selected } has_variable = ywc_nmg_office_fee_paid has_variable = ywc_nmg_office_six_months_complete ywc_nmg_office_route_ready = yes ywc_nmg_v03_finance_safe = yes }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_outcome value = 3 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
+ set_variable = { name = ywc_nmg_office_closed value = 1 }
+ set_variable = { name = ywc_nmg_office_established value = 1 }
+ ywc_nmg_release_slot = yes
+}
+else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } }
+ if = { limit = { OR = { NOT = { ywc_nmg_office_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_office_watch_started remove_variable = ywc_nmg_office_watch_timer remove_variable = ywc_nmg_office_six_months_complete }
+ set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_last_event }
+}
 }
 
 ywc_nmg_close_office_as_compromise = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_outcome value = 2 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
-		set_variable = { name = ywc_nmg_office_closed value = 1 }
-		set_variable = { name = ywc_nmg_office_compromise value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = {
+ limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } has_variable = ywc_nmg_office_fee_paid has_variable = ywc_nmg_office_six_months_complete ywc_nmg_office_route_ready = yes ywc_nmg_v03_finance_safe = yes }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_outcome value = 2 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
+ set_variable = { name = ywc_nmg_office_closed value = 1 }
+ set_variable = { name = ywc_nmg_office_compromise value = 1 }
+ ywc_nmg_release_slot = yes
+}
+else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } }
+ if = { limit = { OR = { NOT = { ywc_nmg_office_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_office_watch_started remove_variable = ywc_nmg_office_watch_timer remove_variable = ywc_nmg_office_six_months_complete }
+ set_variable = { name = ywc_nmg_office_pending value = var:ywc_nmg_office_last_event }
+}
 }
 
 ywc_nmg_close_office_as_breach = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_outcome value = 1 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
-		set_variable = { name = ywc_nmg_office_closed value = 1 }
-		set_variable = { name = ywc_nmg_office_withdrawn value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_outcome value = 1 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
+ set_variable = { name = ywc_nmg_office_closed value = 1 }
+ set_variable = { name = ywc_nmg_office_withdrawn value = 1 }
+ ywc_nmg_release_slot = yes
+}
 }
 
 ywc_nmg_close_revenue_as_established = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 3 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
-		set_variable = { name = ywc_nmg_revenue_closed value = 1 }
-		set_variable = { name = ywc_nmg_revenue_established value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = {
+ limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_limited_selected } has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_six_months_complete ywc_nmg_revenue_route_ready = yes ywc_nmg_v03_finance_safe = yes }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 3 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
+ set_variable = { name = ywc_nmg_revenue_closed value = 1 }
+ set_variable = { name = ywc_nmg_revenue_established value = 1 }
+ ywc_nmg_release_slot = yes
+}
+else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
+ if = { limit = { OR = { NOT = { ywc_nmg_revenue_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete }
+ set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event }
+}
 }
 
 ywc_nmg_close_revenue_as_compromise = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 2 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
-		set_variable = { name = ywc_nmg_revenue_closed value = 1 }
-		set_variable = { name = ywc_nmg_revenue_compromise value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = {
+ limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_six_months_complete ywc_nmg_revenue_route_ready = yes ywc_nmg_v03_finance_safe = yes }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 2 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
+ set_variable = { name = ywc_nmg_revenue_closed value = 1 }
+ set_variable = { name = ywc_nmg_revenue_compromise value = 1 }
+ ywc_nmg_release_slot = yes
+}
+else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
+ if = { limit = { OR = { NOT = { ywc_nmg_revenue_route_ready = yes } NOT = { ywc_nmg_v03_finance_safe = yes } } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete }
+ set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_last_event }
+}
 }
 
 ywc_nmg_close_revenue_as_breach = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled }
-		}
-		set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 1 }
-		set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
-		set_variable = { name = ywc_nmg_revenue_closed value = 1 }
-		set_variable = { name = ywc_nmg_revenue_withdrawn value = 1 }
-		set_variable = { name = ywc_nmg_revenue_arrears value = 1 }
-		ywc_nmg_release_slot = yes
-	}
+if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
+ if = { limit = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_arrears exists = c:MEX } change_relations = { country = c:MEX value = { add = -25 } } }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome value = 1 }
+ set_variable = { name = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled value = 1 }
+ set_variable = { name = ywc_nmg_revenue_closed value = 1 }
+ set_variable = { name = ywc_nmg_revenue_withdrawn value = 1 }
+ ywc_nmg_release_slot = yes
+}
 }
 
 ywc_nmg_land_open_settlement = {
@@ -359,63 +335,167 @@ ywc_nmg_revenue_open_settlement = {
 }
 
 ywc_nmg_choose_land_mixed = {
-	set_variable = { name = ywc_nmg_land_route value = 1 }
-	ywc_nmg_land_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_mixed_court_upkeep months = 120 }
+if = {
+ limit = { var:ywc_nmg_land_route = 1 has_variable = ywc_nmg_land_fee_paid }
+ set_variable = { name = ywc_nmg_land_pending value = 1001 }
+}
+else_if = {
+ limit = { var:ywc_nmg_land_route = 0 ywc_nmg_land_mixed_ready = yes }
+ ywc_nmg_land_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_land_fee_paid }
+  set_variable = { name = ywc_nmg_land_route value = 1 }
+  add_modifier = { name = ywc_nmg_mixed_court_upkeep months = 120 }
+  set_variable = { name = ywc_nmg_land_pending value = 1001 }
+ }
+ else = { set_variable = { name = ywc_nmg_land_pending value = 1000 } }
+}
+else = { set_variable = { name = ywc_nmg_land_pending value = 1000 } }
 }
 
 ywc_nmg_choose_land_unified = {
-	set_variable = { name = ywc_nmg_land_route value = 2 }
-	ywc_nmg_land_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_unified_registry_gain months = 120 }
+if = {
+ limit = { var:ywc_nmg_land_route = 2 has_variable = ywc_nmg_land_fee_paid }
+ set_variable = { name = ywc_nmg_land_pending value = 1001 }
+}
+else_if = {
+ limit = { var:ywc_nmg_land_route = 0 ywc_nmg_land_unified_ready = yes }
+ ywc_nmg_land_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_land_fee_paid }
+  set_variable = { name = ywc_nmg_land_route value = 2 }
+  add_modifier = { name = ywc_nmg_unified_registry_gain months = 120 }
+  set_variable = { name = ywc_nmg_land_pending value = 1001 }
+ }
+ else = { set_variable = { name = ywc_nmg_land_pending value = 1000 } }
+}
+else = { set_variable = { name = ywc_nmg_land_pending value = 1000 } }
 }
 
 ywc_nmg_choose_land_old = {
-	set_variable = { name = ywc_nmg_land_route value = 3 }
-	ywc_nmg_land_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_old_boundary_hold months = 120 }
+if = {
+ limit = { var:ywc_nmg_land_route = 3 has_variable = ywc_nmg_land_fee_paid }
+ set_variable = { name = ywc_nmg_land_pending value = 1001 }
+}
+else_if = {
+ limit = { var:ywc_nmg_land_route = 0 ywc_nmg_land_old_ready = yes }
+ ywc_nmg_land_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_land_fee_paid }
+  set_variable = { name = ywc_nmg_land_route value = 3 }
+  add_modifier = { name = ywc_nmg_old_boundary_hold months = 120 }
+  set_variable = { name = ywc_nmg_land_pending value = 1001 }
+ }
+ else = { set_variable = { name = ywc_nmg_land_pending value = 1000 } }
+}
+else = { set_variable = { name = ywc_nmg_land_pending value = 1000 } }
 }
 
 ywc_nmg_choose_office_bilingual = {
-	set_variable = { name = ywc_nmg_office_route value = 1 }
-	ywc_nmg_office_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_bilingual_office_gain months = 120 }
-	add_modifier = { name = ywc_nmg_bilingual_office_upkeep months = 120 }
+if = {
+ limit = { var:ywc_nmg_office_route = 1 has_variable = ywc_nmg_office_fee_paid }
+ set_variable = { name = ywc_nmg_office_pending value = 1011 }
+}
+else_if = {
+ limit = { var:ywc_nmg_office_route = 0 ywc_nmg_office_bilingual_ready = yes }
+ ywc_nmg_office_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_office_fee_paid }
+  set_variable = { name = ywc_nmg_office_route value = 1 }
+  add_modifier = { name = ywc_nmg_bilingual_office_gain months = 120 }
+  set_variable = { name = ywc_nmg_office_pending value = 1011 }
+ }
+ else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
+}
+else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
 }
 
 ywc_nmg_choose_office_local = {
-	set_variable = { name = ywc_nmg_office_route value = 2 }
-	ywc_nmg_office_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_local_translator_uneven months = 120 }
+if = {
+ limit = { var:ywc_nmg_office_route = 2 has_variable = ywc_nmg_office_fee_paid }
+ set_variable = { name = ywc_nmg_office_pending value = 1011 }
+}
+else_if = {
+ limit = { var:ywc_nmg_office_route = 0 ywc_nmg_office_local_ready = yes }
+ ywc_nmg_office_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_office_fee_paid }
+  set_variable = { name = ywc_nmg_office_route value = 2 }
+  add_modifier = { name = ywc_nmg_local_translator_uneven months = 120 }
+  set_variable = { name = ywc_nmg_office_pending value = 1011 }
+ }
+ else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
+}
+else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
 }
 
 ywc_nmg_choose_office_single = {
-	set_variable = { name = ywc_nmg_office_route value = 3 }
-	ywc_nmg_office_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_single_language_friction months = 120 }
+if = {
+ limit = { var:ywc_nmg_office_route = 3 has_variable = ywc_nmg_office_fee_paid }
+ set_variable = { name = ywc_nmg_office_pending value = 1011 }
+}
+else_if = {
+ limit = { var:ywc_nmg_office_route = 0 ywc_nmg_office_single_ready = yes }
+ ywc_nmg_office_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_office_fee_paid }
+  set_variable = { name = ywc_nmg_office_route value = 3 }
+  add_modifier = { name = ywc_nmg_single_language_friction months = 120 }
+  set_variable = { name = ywc_nmg_office_pending value = 1011 }
+ }
+ else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
+}
+else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
 }
 
 ywc_nmg_choose_revenue_fixed = {
-	set_variable = { name = ywc_nmg_revenue_route value = 1 }
-	ywc_nmg_revenue_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_revenue_fixed_share months = 120 }
+if = {
+ limit = { var:ywc_nmg_revenue_route = 1 has_variable = ywc_nmg_revenue_quota_paid }
+ set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+}
+else_if = {
+ limit = { var:ywc_nmg_revenue_route = 0 ywc_nmg_revenue_fixed_ready = yes }
+ ywc_nmg_revenue_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_revenue_quota_paid }
+  set_variable = { name = ywc_nmg_revenue_route value = 1 }
+  add_modifier = { name = ywc_nmg_revenue_fixed_share months = 120 }
+  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ }
+ else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+}
+else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
 }
 
 ywc_nmg_choose_revenue_joint = {
-	set_variable = { name = ywc_nmg_revenue_route value = 2 }
-	ywc_nmg_revenue_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_revenue_joint_project months = 120 }
+if = {
+ limit = { var:ywc_nmg_revenue_route = 2 has_variable = ywc_nmg_revenue_quota_paid }
+ set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+}
+else_if = {
+ limit = { var:ywc_nmg_revenue_route = 0 ywc_nmg_revenue_joint_ready = yes ywc_nmg_revenue_real_subject = yes }
+ ywc_nmg_revenue_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_revenue_quota_paid }
+  set_variable = { name = ywc_nmg_revenue_route value = 2 }
+  add_modifier = { name = ywc_nmg_revenue_joint_project months = 120 }
+  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ }
+ else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+}
+else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
 }
 
 ywc_nmg_choose_revenue_arrears = {
-	set_variable = { name = ywc_nmg_revenue_route value = 3 }
-	ywc_nmg_revenue_pay_fee_once = yes
-	add_modifier = { name = ywc_nmg_revenue_arrears_strain months = 120 }
-	if = {
-			limit = { exists = c:MEX }
-			change_relations = { country = c:MEX value = { add = -25 } }
-		}
-	set_variable = { name = ywc_nmg_revenue_arrears value = 1 }
+if = {
+ limit = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_quota_paid }
+ set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+}
+else_if = {
+ limit = { var:ywc_nmg_revenue_route = 0 ywc_nmg_revenue_arrears_ready = yes ywc_nmg_revenue_real_subject = yes }
+ ywc_nmg_revenue_pay_fee_once = yes
+ if = { limit = { has_variable = ywc_nmg_revenue_quota_paid }
+  set_variable = { name = ywc_nmg_revenue_route value = 3 }
+  add_modifier = { name = ywc_nmg_revenue_arrears_strain months = 120 }
+ if = { limit = { exists = c:MEX } change_relations = { country = c:MEX value = { add = -25 } } }
+ set_variable = { name = ywc_nmg_revenue_arrears value = 1 }
+  set_variable = { name = ywc_nmg_revenue_pending value = 1021 }
+ }
+ else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
+}
+else = { set_variable = { name = ywc_nmg_revenue_pending value = 1020 } }
 }
 
 ywc_nmg_land_record_backlog = {
@@ -429,133 +509,67 @@ ywc_nmg_office_record_parish = {
 }
 
 ywc_nmg_land_monthly_review = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled }
-		}
-		if = {
-			limit = { NOT = { has_variable = ywc_nmg_land_watch_started } }
-			set_variable = { name = ywc_nmg_land_watch_started value = 1 }
-			set_variable = { name = ywc_nmg_land_watch_timer value = 1 months = 6 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_land_watch_started
-				NOT = { has_variable = ywc_nmg_land_watch_timer }
-				NOT = { has_variable = ywc_nmg_land_six_months_complete }
-			}
-			set_variable = { name = ywc_nmg_land_six_months_complete value = 1 }
-			remove_variable = ywc_nmg_land_watch_started
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_land_six_months_complete
-				NOT = { has_variable = ywc_nmg_land_12_notice }
-			}
-			set_variable = { name = ywc_nmg_land_12_notice value = 1 months = 12 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_land_six_months_complete
-				NOT = { has_variable = ywc_nmg_land_36_notice }
-			}
-			set_variable = { name = ywc_nmg_land_36_notice value = 1 months = 36 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_land_six_months_complete
-				NOT = { ywc_nmg_land_route_ready = yes }
-			}
-			ywc_nmg_land_note_blocked = yes
-		}
-	}
+if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_land_arbitration_settled } }
+ if = { limit = { ywc_nmg_land_route_ready = yes }
+  if = { limit = { NOT = { has_variable = ywc_nmg_land_watch_started } NOT = { has_variable = ywc_nmg_land_six_months_complete } } set_variable = { name = ywc_nmg_land_watch_started value = 1 } set_variable = { name = ywc_nmg_land_watch_timer value = 1 months = 6 } }
+  if = { limit = { has_variable = ywc_nmg_land_watch_started NOT = { has_variable = ywc_nmg_land_watch_timer } } set_variable = { name = ywc_nmg_land_six_months_complete value = 1 } remove_variable = ywc_nmg_land_watch_started }
+  if = { limit = { has_variable = ywc_nmg_land_blocked_clock_started } remove_variable = ywc_nmg_land_blocked_defer remove_variable = ywc_nmg_land_blocked_clock_started remove_variable = ywc_nmg_land_blocked_months remove_variable = ywc_nmg_land_notice12_due remove_variable = ywc_nmg_land_notice36_due remove_variable = ywc_nmg_land_notice_pending remove_variable = ywc_nmg_land_notice12_due remove_variable = ywc_nmg_land_notice36_due remove_variable = ywc_nmg_land_notice12_delivered remove_variable = ywc_nmg_land_notice36_delivered remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event }
+ } else = {
+  if = { limit = { OR = { NOT = { ywc_nmg_land_selected_target_ready = yes } has_variable = ywc_nmg_land_watch_started has_variable = ywc_nmg_land_watch_timer has_variable = ywc_nmg_land_six_months_complete has_variable = ywc_nmg_land_blocked_defer } } if = { limit = { NOT = { has_variable = ywc_nmg_land_blocked_clock_started } } set_variable = { name = ywc_nmg_land_blocked_clock_started value = 1 } set_variable = { name = ywc_nmg_land_blocked_months value = 0 } } }
+  remove_variable = ywc_nmg_land_watch_started remove_variable = ywc_nmg_land_watch_timer remove_variable = ywc_nmg_land_six_months_complete
+ }
+ if = { limit = { ywc_nmg_land_selected_target_ready = yes NOT = { ywc_nmg_land_route_ready = yes } NOT = { has_variable = ywc_nmg_land_blocked_defer } } remove_variable = ywc_nmg_land_blocked_clock_started remove_variable = ywc_nmg_land_blocked_months remove_variable = ywc_nmg_land_notice12_due remove_variable = ywc_nmg_land_notice36_due remove_variable = ywc_nmg_land_notice_pending remove_variable = ywc_nmg_land_notice12_delivered remove_variable = ywc_nmg_land_notice36_delivered remove_variable = ywc_nmg_land_notice_response_context remove_variable = ywc_nmg_land_notice_return_event }
+ if = { limit = { has_variable = ywc_nmg_land_blocked_clock_started } change_variable = { name = ywc_nmg_land_blocked_months add = 1 } if = { limit = { var:ywc_nmg_land_blocked_months >= 12 NOT = { has_variable = ywc_nmg_land_notice12_delivered } NOT = { has_variable = ywc_nmg_land_notice_pending } } set_variable = { name = ywc_nmg_land_notice12_due value = 1 } set_variable = { name = ywc_nmg_land_notice_pending value = 1006 } } if = { limit = { var:ywc_nmg_land_blocked_months >= 36 NOT = { has_variable = ywc_nmg_land_notice36_delivered } } set_variable = { name = ywc_nmg_land_notice36_due value = 1 } set_variable = { name = ywc_nmg_land_notice_pending value = 1007 } } }
+}
 }
 
 ywc_nmg_office_monthly_review = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled }
-		}
-		if = {
-			limit = { NOT = { has_variable = ywc_nmg_office_watch_started } }
-			set_variable = { name = ywc_nmg_office_watch_started value = 1 }
-			set_variable = { name = ywc_nmg_office_watch_timer value = 1 months = 6 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_office_watch_started
-				NOT = { has_variable = ywc_nmg_office_watch_timer }
-				NOT = { has_variable = ywc_nmg_office_six_months_complete }
-			}
-			set_variable = { name = ywc_nmg_office_six_months_complete value = 1 }
-			remove_variable = ywc_nmg_office_watch_started
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_office_six_months_complete
-				NOT = { has_variable = ywc_nmg_office_12_notice }
-			}
-			set_variable = { name = ywc_nmg_office_12_notice value = 1 months = 12 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_office_six_months_complete
-				NOT = { has_variable = ywc_nmg_office_36_notice }
-			}
-			set_variable = { name = ywc_nmg_office_36_notice value = 1 months = 36 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_office_six_months_complete
-				NOT = { ywc_nmg_office_route_ready = yes }
-			}
-			ywc_nmg_office_note_blocked = yes
-		}
-	}
+if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } }
+ if = { limit = { ywc_nmg_office_route_ready = yes }
+  if = { limit = { NOT = { has_variable = ywc_nmg_office_watch_started } NOT = { has_variable = ywc_nmg_office_six_months_complete } } set_variable = { name = ywc_nmg_office_watch_started value = 1 } set_variable = { name = ywc_nmg_office_watch_timer value = 1 months = 6 } }
+  if = { limit = { has_variable = ywc_nmg_office_watch_started NOT = { has_variable = ywc_nmg_office_watch_timer } } set_variable = { name = ywc_nmg_office_six_months_complete value = 1 } remove_variable = ywc_nmg_office_watch_started }
+  if = { limit = { has_variable = ywc_nmg_office_blocked_clock_started } remove_variable = ywc_nmg_office_blocked_defer remove_variable = ywc_nmg_office_blocked_clock_started remove_variable = ywc_nmg_office_blocked_months remove_variable = ywc_nmg_office_notice12_due remove_variable = ywc_nmg_office_notice36_due remove_variable = ywc_nmg_office_notice_pending remove_variable = ywc_nmg_office_notice12_due remove_variable = ywc_nmg_office_notice36_due remove_variable = ywc_nmg_office_notice12_delivered remove_variable = ywc_nmg_office_notice36_delivered remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event }
+ } else = {
+  if = { limit = { OR = { NOT = { ywc_nmg_office_selected_target_ready = yes } has_variable = ywc_nmg_office_watch_started has_variable = ywc_nmg_office_watch_timer has_variable = ywc_nmg_office_six_months_complete has_variable = ywc_nmg_office_blocked_defer } } if = { limit = { NOT = { has_variable = ywc_nmg_office_blocked_clock_started } } set_variable = { name = ywc_nmg_office_blocked_clock_started value = 1 } set_variable = { name = ywc_nmg_office_blocked_months value = 0 } } }
+  remove_variable = ywc_nmg_office_watch_started remove_variable = ywc_nmg_office_watch_timer remove_variable = ywc_nmg_office_six_months_complete
+ }
+ if = { limit = { ywc_nmg_office_selected_target_ready = yes NOT = { ywc_nmg_office_route_ready = yes } NOT = { has_variable = ywc_nmg_office_blocked_defer } } remove_variable = ywc_nmg_office_blocked_clock_started remove_variable = ywc_nmg_office_blocked_months remove_variable = ywc_nmg_office_notice12_due remove_variable = ywc_nmg_office_notice36_due remove_variable = ywc_nmg_office_notice_pending remove_variable = ywc_nmg_office_notice12_delivered remove_variable = ywc_nmg_office_notice36_delivered remove_variable = ywc_nmg_office_notice_response_context remove_variable = ywc_nmg_office_notice_return_event }
+ if = { limit = { has_variable = ywc_nmg_office_blocked_clock_started } change_variable = { name = ywc_nmg_office_blocked_months add = 1 } if = { limit = { var:ywc_nmg_office_blocked_months >= 12 NOT = { has_variable = ywc_nmg_office_notice12_delivered } NOT = { has_variable = ywc_nmg_office_notice_pending } } set_variable = { name = ywc_nmg_office_notice12_due value = 1 } set_variable = { name = ywc_nmg_office_notice_pending value = 1014 } } if = { limit = { var:ywc_nmg_office_blocked_months >= 36 NOT = { has_variable = ywc_nmg_office_notice36_delivered } } set_variable = { name = ywc_nmg_office_notice36_due value = 1 } set_variable = { name = ywc_nmg_office_notice_pending value = 1015 } } }
+}
 }
 
 ywc_nmg_revenue_monthly_review = {
-	if = {
-		limit = {
-			has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started
-			NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled }
-		}
-		if = {
-			limit = { NOT = { has_variable = ywc_nmg_revenue_watch_started } }
-			set_variable = { name = ywc_nmg_revenue_watch_started value = 1 }
-			set_variable = { name = ywc_nmg_revenue_watch_timer value = 1 months = 6 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_revenue_watch_started
-				NOT = { has_variable = ywc_nmg_revenue_watch_timer }
-				NOT = { has_variable = ywc_nmg_revenue_six_months_complete }
-			}
-			set_variable = { name = ywc_nmg_revenue_six_months_complete value = 1 }
-			remove_variable = ywc_nmg_revenue_watch_started
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_revenue_six_months_complete
-				NOT = { has_variable = ywc_nmg_revenue_12_notice }
-			}
-			set_variable = { name = ywc_nmg_revenue_12_notice value = 1 months = 12 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_revenue_six_months_complete
-				NOT = { has_variable = ywc_nmg_revenue_36_notice }
-			}
-			set_variable = { name = ywc_nmg_revenue_36_notice value = 1 months = 36 }
-		}
-		if = {
-			limit = {
-				has_variable = ywc_nmg_revenue_six_months_complete
-				NOT = { ywc_nmg_revenue_route_ready = yes }
-			}
-			ywc_nmg_revenue_note_blocked = yes
-		}
-	}
+if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } }
+ if = { limit = { ywc_nmg_revenue_route_ready = yes }
+  if = { limit = { NOT = { has_variable = ywc_nmg_revenue_watch_started } NOT = { has_variable = ywc_nmg_revenue_six_months_complete } } set_variable = { name = ywc_nmg_revenue_watch_started value = 1 } set_variable = { name = ywc_nmg_revenue_watch_timer value = 1 months = 6 } }
+  if = { limit = { has_variable = ywc_nmg_revenue_watch_started NOT = { has_variable = ywc_nmg_revenue_watch_timer } } set_variable = { name = ywc_nmg_revenue_six_months_complete value = 1 } remove_variable = ywc_nmg_revenue_watch_started }
+  if = { limit = { has_variable = ywc_nmg_revenue_blocked_clock_started } remove_variable = ywc_nmg_revenue_blocked_defer remove_variable = ywc_nmg_revenue_blocked_clock_started remove_variable = ywc_nmg_revenue_blocked_months remove_variable = ywc_nmg_revenue_notice12_due remove_variable = ywc_nmg_revenue_notice36_due remove_variable = ywc_nmg_revenue_notice_pending remove_variable = ywc_nmg_revenue_notice12_due remove_variable = ywc_nmg_revenue_notice36_due remove_variable = ywc_nmg_revenue_notice12_delivered remove_variable = ywc_nmg_revenue_notice36_delivered remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event }
+ } else = {
+  if = { limit = { OR = { NOT = { ywc_nmg_revenue_selected_target_ready = yes } has_variable = ywc_nmg_revenue_watch_started has_variable = ywc_nmg_revenue_watch_timer has_variable = ywc_nmg_revenue_six_months_complete has_variable = ywc_nmg_revenue_blocked_defer } } if = { limit = { NOT = { has_variable = ywc_nmg_revenue_blocked_clock_started } } set_variable = { name = ywc_nmg_revenue_blocked_clock_started value = 1 } set_variable = { name = ywc_nmg_revenue_blocked_months value = 0 } } }
+  remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete
+ }
+ if = { limit = { ywc_nmg_revenue_selected_target_ready = yes NOT = { ywc_nmg_revenue_route_ready = yes } NOT = { has_variable = ywc_nmg_revenue_blocked_defer } } remove_variable = ywc_nmg_revenue_blocked_clock_started remove_variable = ywc_nmg_revenue_blocked_months remove_variable = ywc_nmg_revenue_notice12_due remove_variable = ywc_nmg_revenue_notice36_due remove_variable = ywc_nmg_revenue_notice_pending remove_variable = ywc_nmg_revenue_notice12_delivered remove_variable = ywc_nmg_revenue_notice36_delivered remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event }
+ if = { limit = { has_variable = ywc_nmg_revenue_blocked_clock_started } change_variable = { name = ywc_nmg_revenue_blocked_months add = 1 } if = { limit = { var:ywc_nmg_revenue_blocked_months >= 12 NOT = { has_variable = ywc_nmg_revenue_notice12_delivered } NOT = { has_variable = ywc_nmg_revenue_notice_pending } } set_variable = { name = ywc_nmg_revenue_notice12_due value = 1 } set_variable = { name = ywc_nmg_revenue_notice_pending value = 1028 } } if = { limit = { var:ywc_nmg_revenue_blocked_months >= 36 NOT = { has_variable = ywc_nmg_revenue_notice36_delivered } } set_variable = { name = ywc_nmg_revenue_notice36_due value = 1 } set_variable = { name = ywc_nmg_revenue_notice_pending value = 1029 } } }
+}
+}
+
+ywc_nmg_land_select_limited_target = {
+ if = { limit = { has_variable = ywc_nmg_land_fee_paid NOT = { var:ywc_nmg_land_route = 3 } NOT = { ywc_nmg_land_route_ready = yes } ywc_nmg_land_old_ready = yes }
+  set_variable = { name = ywc_nmg_land_route value = 3 } set_variable = { name = ywc_nmg_land_survey_partial value = 1 } set_variable = { name = ywc_nmg_land_hold value = 1 } set_variable = { name = ywc_nmg_land_limited_selected value = 1 }
+  remove_variable = ywc_nmg_land_watch_started remove_variable = ywc_nmg_land_watch_timer remove_variable = ywc_nmg_land_six_months_complete if = { limit = { NOT = { has_variable = ywc_nmg_land_notice_response_context } } set_variable = { name = ywc_nmg_land_pending value = 1007 } }
+ } else = { set_variable = { name = ywc_nmg_land_pending value = 1007 } }
+}
+
+ywc_nmg_office_select_limited_target = {
+ if = { limit = { has_variable = ywc_nmg_office_fee_paid NOT = { var:ywc_nmg_office_route = 3 } NOT = { ywc_nmg_office_route_ready = yes } ywc_nmg_office_single_ready = yes }
+  set_variable = { name = ywc_nmg_office_route value = 3 } set_variable = { name = ywc_nmg_office_roster_full value = 1 } set_variable = { name = ywc_nmg_office_borrowed value = 1 } set_variable = { name = ywc_nmg_office_limited_selected value = 1 }
+  add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 } remove_variable = ywc_nmg_office_watch_started remove_variable = ywc_nmg_office_watch_timer remove_variable = ywc_nmg_office_six_months_complete if = { limit = { NOT = { has_variable = ywc_nmg_office_notice_response_context } } set_variable = { name = ywc_nmg_office_pending value = 1015 } }
+ } else = { set_variable = { name = ywc_nmg_office_pending value = 1015 } }
+}
+
+ywc_nmg_revenue_select_limited_target = {
+ if = { limit = { has_variable = ywc_nmg_revenue_quota_paid NOT = { var:ywc_nmg_revenue_route = 3 } NOT = { ywc_nmg_revenue_route_ready = yes } ywc_nmg_revenue_arrears_ready = yes }
+  set_variable = { name = ywc_nmg_revenue_route value = 3 } set_variable = { name = ywc_nmg_revenue_arrears_owned value = 1 } set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_limited_selected value = 1 }
+  change_relations = { country = c:MEX value = { add = -5 } } remove_variable = ywc_nmg_revenue_watch_started remove_variable = ywc_nmg_revenue_watch_timer remove_variable = ywc_nmg_revenue_six_months_complete if = { limit = { NOT = { has_variable = ywc_nmg_revenue_notice_response_context } } set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }
+ } else = { set_variable = { name = ywc_nmg_revenue_pending value = 1029 } }
 }
