@@ -336,3 +336,104 @@ ywc_shu_service_legacy_reduced_reopen_ready = {
  NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
  NOT = { has_variable = ywc_shu_service_withdrawn }
 }
+
+# A shared route may have reached the central form without both sharing rights.
+# Return to that decision without granting rights or forgiving existing costs.
+ywc_shu_port_revisit_share_terms_ready = {
+ has_journal_entry = ywc_je_v03_shu_port_customs
+ var:ywc_shu_port_route = 2
+ has_variable = ywc_shu_port_review_mature
+ NOT = { has_variable = ywc_shu_port_outcome }
+ NOT = { has_variable = ywc_shu_port_withdrawn }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
+ NOT = { has_variable = ywc_shu_port_notice_pending_event }
+ OR = { NOT = { has_variable = ywc_shu_port_pending_event } var:ywc_shu_port_pending_event ?= 1025 }
+ OR = { NOT = { has_variable = ywc_shu_port_merchant_review } NOT = { has_variable = ywc_shu_port_local_share } }
+}
+
+# Port credit is one decision tied to its own live event stage.
+ywc_shu_port_credit_choice_unmade = {
+ has_journal_entry = ywc_je_v03_shu_port_customs
+ has_variable = ywc_shu_port_advance_offer_open
+ NOT = { has_variable = ywc_shu_port_advance_accepted }
+ NOT = { has_variable = ywc_shu_port_advance_unpaid }
+ NOT = { has_variable = ywc_shu_port_advance_repaid }
+ NOT = { has_variable = ywc_shu_port_advance_refused }
+ NOT = { has_variable = ywc_shu_port_merchant_review }
+ NOT = { has_variable = ywc_shu_port_law_verified }
+ NOT = { has_variable = ywc_shu_port_receipts_checked }
+ NOT = { has_variable = ywc_shu_port_settlement_choice }
+ NOT = { has_variable = ywc_shu_port_review }
+ NOT = { has_variable = ywc_shu_port_outcome }
+ NOT = { has_variable = ywc_shu_port_withdrawn }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
+ NOT = { has_variable = ywc_shu_port_notice_pending_event }
+ OR = { NOT = { has_variable = ywc_shu_port_pending_event } var:ywc_shu_port_pending_event ?= 1020 }
+}
+
+ywc_shu_port_credit_offer_ready = {
+ ywc_shu_port_credit_choice_unmade = yes
+ ywc_shu_v03_has_port = yes
+ has_variable = ywc_shu_port_cost
+ var:ywc_shu_port_cost > 0
+ net_fixed_income >= 0
+ NOT = { in_default = yes }
+ NOT = { has_modifier = declared_bankruptcy }
+}
+
+ywc_shu_port_legacy_offer_reopen_ready = {
+ has_journal_entry = ywc_je_v03_shu_port_customs
+ NOT = { has_variable = ywc_shu_port_advance_offer_open }
+ NOT = { has_variable = ywc_shu_port_advance_accepted }
+ NOT = { has_variable = ywc_shu_port_advance_unpaid }
+ NOT = { has_variable = ywc_shu_port_advance_repaid }
+ NOT = { has_variable = ywc_shu_port_advance_refused }
+ NOT = { has_variable = ywc_shu_port_merchant_review }
+ NOT = { has_variable = ywc_shu_port_law_verified }
+ NOT = { has_variable = ywc_shu_port_receipts_checked }
+ NOT = { has_variable = ywc_shu_port_settlement_choice }
+ NOT = { has_variable = ywc_shu_port_review }
+ NOT = { has_variable = ywc_shu_port_outcome }
+ NOT = { has_variable = ywc_shu_port_withdrawn }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
+ NOT = { has_variable = ywc_shu_port_pending_event }
+ NOT = { has_variable = ywc_shu_port_notice_pending_event }
+}
+
+# A port interruption notice may arrive before the credit decision or alongside
+# the ordinary 1024 event.  Only the actual burden stage may start a review.
+ywc_shu_port_burden_choice_ready = {
+ has_journal_entry = ywc_je_v03_shu_port_customs
+ has_variable = ywc_shu_port_settlement_choice
+ NOT = { has_variable = ywc_shu_port_advance_offer_open }
+ NOT = { has_variable = ywc_shu_port_notice_pending_event }
+ NOT = { has_variable = ywc_shu_port_outcome }
+ NOT = { has_variable = ywc_shu_port_withdrawn }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
+ NOT = { has_variable = ywc_shu_port_review_mature }
+ OR = {
+  AND = { NOT = { has_variable = ywc_shu_port_review } NOT = { has_variable = ywc_shu_port_pending_event } }
+  AND = { has_variable = ywc_shu_port_review has_variable = ywc_shu_port_review_interrupted OR = { NOT = { has_variable = ywc_shu_port_pending_event } var:ywc_shu_port_pending_event ?= 1025 } }
+ }
+}
+
+# Reopen an unfinished credit offer only when earlier books and the actual
+# queued/open offer establish its stage and no later decision has been recorded.
+ywc_shu_port_unanswered_credit_recoverable = {
+ has_journal_entry = ywc_je_v03_shu_port_customs
+ has_variable = ywc_shu_port_books
+ OR = { has_variable = ywc_shu_port_advance_offer_open var:ywc_shu_port_pending_event ?= 1020 }
+ OR = { NOT = { has_variable = ywc_shu_port_pending_event } var:ywc_shu_port_pending_event ?= 1020 }
+ NOT = { has_variable = ywc_shu_port_notice_pending_event }
+ NOT = { has_variable = ywc_shu_port_advance_accepted }
+ NOT = { has_variable = ywc_shu_port_advance_unpaid }
+ NOT = { has_variable = ywc_shu_port_advance_repaid }
+ NOT = { has_variable = ywc_shu_port_advance_refused }
+ NOT = { has_variable = ywc_shu_port_merchant_review }
+ NOT = { has_variable = ywc_shu_port_law_verified }
+ NOT = { has_variable = ywc_shu_port_receipts_checked }
+ NOT = { has_variable = ywc_shu_port_settlement_choice }
+ NOT = { has_variable = ywc_shu_port_outcome }
+ NOT = { has_variable = ywc_shu_port_withdrawn }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
+}

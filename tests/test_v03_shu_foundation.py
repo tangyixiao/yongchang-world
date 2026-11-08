@@ -388,7 +388,10 @@ class ShuFoundationContractTest(unittest.TestCase):
         journal = self.port["journals"][0]
         pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
         effect = next(body for key, _, body in pulse if key == "effect")
-        world = PulseWorld(self.effects, {"SHU": {"test_port_ready": 1, "test_cooldown_clear": 1}})
+        # Maturity belongs to the declared burden stage, not an unanswered
+        # credit offer or an earlier queue (covered by test_v03_shu_port_credit).
+        world = PulseWorld(self.effects, {"SHU": {"test_port_ready": 1,
+                           "test_cooldown_clear": 1, "ywc_shu_port_settlement_choice": 1}})
         world.run("ywc_shu_port_start_review")
         world.advance_days(179)
         pulse_without_block_tracking = [node for node in effect if node[0] != "ywc_shu_track_port_block"]

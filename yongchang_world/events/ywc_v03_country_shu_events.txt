@@ -1210,33 +1210,48 @@ ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
 NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }  OR = { ywc_v03_shu_inline_dispatch_25 = yes } } }
     immediate = { if = { limit = { OR = { ywc_v03_shu_inline_dispatch_25 = yes }} ywc_v03_mark_major_delivered = yes
-set_variable = { name = ywc_v03_shu_event_dispatch value = 1020 } if = { limit = { var:ywc_v03_shu_inline_reservation = 25 has_variable = ywc_v03_shu_inline_timer has_variable = ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_candidate_epoch_25 var:ywc_v03_shu_inline_reservation_epoch > 0 var:ywc_v03_shu_inline_candidate_epoch_25 = var:ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_c25_port_pending_event_present has_variable = ywc_v03_shu_inline_c25_port_pending_event_value has_journal_entry = ywc_je_v03_shu_port_customs has_variable = ywc_v03_shu_inline_live_port_customs has_variable = ywc_shu_port_pending_event var:ywc_shu_port_pending_event = var:ywc_v03_shu_inline_c25_port_pending_event_value NOT = { var:ywc_v03_shu_inline_served_3 = var:ywc_v03_shu_inline_round } has_variable = ywc_v03_shu_event_dispatch var:ywc_v03_shu_event_dispatch = 1020 var:ywc_v03_shu_inline_c25_port_pending_event_value = 1020 } set_variable = { name = ywc_v03_shu_inline_callback_25 value = 1 } set_variable = { name = ywc_v03_shu_inline_callback_candidate_25 value = 25 } set_variable = { name = ywc_v03_shu_inline_callback_epoch_25 value = var:ywc_v03_shu_inline_reservation_epoch } set_variable = { name = ywc_v03_shu_inline_callback_queue_25 value = var:ywc_shu_port_pending_event } } ywc_v03_shu_inline_callback_25 = yes } }
+set_variable = { name = ywc_v03_shu_event_dispatch value = 1020 }
+
+if = { limit = { NOT = { has_variable = ywc_shu_port_advance_accepted } NOT = { has_variable = ywc_shu_port_advance_unpaid } NOT = { has_variable = ywc_shu_port_advance_repaid } NOT = { has_variable = ywc_shu_port_advance_refused } NOT = { has_variable = ywc_shu_port_merchant_review } NOT = { has_variable = ywc_shu_port_law_verified } NOT = { has_variable = ywc_shu_port_receipts_checked } NOT = { has_variable = ywc_shu_port_settlement_choice } NOT = { has_variable = ywc_shu_port_review } } set_variable = { name = ywc_shu_port_advance_offer_open value = 1 } } else = { remove_variable = ywc_shu_port_advance_offer_open } if = { limit = { var:ywc_v03_shu_inline_reservation = 25 has_variable = ywc_v03_shu_inline_timer has_variable = ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_candidate_epoch_25 var:ywc_v03_shu_inline_reservation_epoch > 0 var:ywc_v03_shu_inline_candidate_epoch_25 = var:ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_c25_port_pending_event_present has_variable = ywc_v03_shu_inline_c25_port_pending_event_value has_journal_entry = ywc_je_v03_shu_port_customs has_variable = ywc_v03_shu_inline_live_port_customs has_variable = ywc_shu_port_pending_event var:ywc_shu_port_pending_event = var:ywc_v03_shu_inline_c25_port_pending_event_value NOT = { var:ywc_v03_shu_inline_served_3 = var:ywc_v03_shu_inline_round } has_variable = ywc_v03_shu_event_dispatch var:ywc_v03_shu_event_dispatch = 1020 var:ywc_v03_shu_inline_c25_port_pending_event_value = 1020 } set_variable = { name = ywc_v03_shu_inline_callback_25 value = 1 } set_variable = { name = ywc_v03_shu_inline_callback_candidate_25 value = 25 } set_variable = { name = ywc_v03_shu_inline_callback_epoch_25 value = var:ywc_v03_shu_inline_reservation_epoch } set_variable = { name = ywc_v03_shu_inline_callback_queue_25 value = var:ywc_shu_port_pending_event } } ywc_v03_shu_inline_callback_25 = yes } }
     option = {
         name = ywc_shu.1020.merchant_advance
-        trigger = {
-        ywc_shu_v03_has_port = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } NOT = { has_variable = ywc_shu_port_advance_accepted }
-        }
+        trigger = { ywc_shu_port_credit_offer_ready = yes }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1020.merchant_advance.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1020.merchant_advance.consequence_tooltip }
-        ywc_shu_accept_port_advance = yes if = { limit = { has_variable = ywc_shu_port_advance_accepted }set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 } }
+        if = { limit = { ywc_shu_port_credit_offer_ready = yes } ywc_shu_accept_port_advance = yes if = { limit = { has_variable = ywc_shu_port_advance_accepted } set_variable = { name = ywc_shu_port_merchant_review value = 1 } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1021 } } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } }
     }
     option = {
         name = ywc_shu.1020.consult_only
-        trigger = {
-        net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } }
-        }
+        trigger = { ywc_shu_port_credit_choice_unmade = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } } } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1020.consult_only.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1020.consult_only.consequence_tooltip }
-        if = { limit = { net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_fee_half_mode value = 1 } ywc_shu_pay_port_fee = yes remove_variable = ywc_shu_port_fee_half_mode if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1020 } }
+        if = { limit = { ywc_shu_port_credit_choice_unmade = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } } } } set_variable = { name = ywc_shu_port_fee_half_mode value = 1 } ywc_shu_pay_port_fee = yes remove_variable = ywc_shu_port_fee_half_mode if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_consult_only value = 1 } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1021 } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } }
     }
     option = {
         name = ywc_shu.1020.refuse_credit
+        trigger = { ywc_shu_port_credit_choice_unmade = yes }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1020.refuse_credit.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1020.refuse_credit.consequence_tooltip }
-        set_variable = { name = ywc_shu_port_advance_refused value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1021 }
+        if = { limit = { ywc_shu_port_credit_choice_unmade = yes } set_variable = { name = ywc_shu_port_advance_refused value = 1 } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1021 } }
+    }
+    option = {
+        name = ywc_shu.1020.reopen_legacy_port_offer
+        trigger = { ywc_shu_port_legacy_offer_reopen_ready = yes }
+        ai_chance = { base = 1 }
+        custom_tooltip = { text = ywc_shu.1020.reopen_legacy_port_offer.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1020.reopen_legacy_port_offer.consequence_tooltip }
+        if = { limit = { ywc_shu_port_legacy_offer_reopen_ready = yes } set_variable = { name = ywc_shu_port_pending_event value = 1020 } }
+    }
+    option = {
+        name = ywc_shu.1020.dismiss_stale_port_offer
+        trigger = { NOT = { ywc_shu_port_credit_choice_unmade = yes } NOT = { ywc_shu_port_legacy_offer_reopen_ready = yes } }
+        ai_chance = { base = 1 }
+        custom_tooltip = { text = ywc_shu.1020.dismiss_stale_port_offer.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1020.dismiss_stale_port_offer.consequence_tooltip }
+        if = { limit = { has_journal_entry = ywc_je_v03_shu_port_customs has_variable = ywc_shu_port_advance_offer_open has_variable = ywc_shu_port_notice_pending_event NOT = { has_variable = ywc_shu_port_outcome } NOT = { has_variable = ywc_shu_port_withdrawn } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } OR = { NOT = { has_variable = ywc_shu_port_pending_event } var:ywc_shu_port_pending_event ?= 1020 } } remove_variable = ywc_shu_port_advance_offer_open if = { limit = { NOT = { has_variable = ywc_shu_port_pending_event } } set_variable = { name = ywc_shu_port_pending_event value = 1020 } } }
     }
 }
 
@@ -1291,7 +1306,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1022 } if = { limit =
     option = {
         name = ywc_shu.1022.pay_verification
         trigger = {
-        ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid gold_reserves >= { value = var:ywc_shu_port_cost } }
+        ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost } } }
         }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1022.pay_verification.cost_tooltip }
@@ -1367,44 +1382,51 @@ NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }  OR = { ywc_v
 set_variable = { name = ywc_v03_shu_event_dispatch value = 1024 } if = { limit = { var:ywc_v03_shu_inline_reservation = 29 has_variable = ywc_v03_shu_inline_timer has_variable = ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_candidate_epoch_29 var:ywc_v03_shu_inline_reservation_epoch > 0 var:ywc_v03_shu_inline_candidate_epoch_29 = var:ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_c29_port_pending_event_present has_variable = ywc_v03_shu_inline_c29_port_pending_event_value has_journal_entry = ywc_je_v03_shu_port_customs has_variable = ywc_v03_shu_inline_live_port_customs has_variable = ywc_shu_port_pending_event var:ywc_shu_port_pending_event = var:ywc_v03_shu_inline_c29_port_pending_event_value NOT = { var:ywc_v03_shu_inline_served_3 = var:ywc_v03_shu_inline_round } has_variable = ywc_v03_shu_event_dispatch var:ywc_v03_shu_event_dispatch = 1024 var:ywc_v03_shu_inline_c29_port_pending_event_value = 1024 } set_variable = { name = ywc_v03_shu_inline_callback_29 value = 1 } set_variable = { name = ywc_v03_shu_inline_callback_candidate_29 value = 29 } set_variable = { name = ywc_v03_shu_inline_callback_epoch_29 value = var:ywc_v03_shu_inline_reservation_epoch } set_variable = { name = ywc_v03_shu_inline_callback_queue_29 value = var:ywc_shu_port_pending_event } } if = { limit = { var:ywc_v03_shu_inline_reservation = 31 has_variable = ywc_v03_shu_inline_timer has_variable = ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_candidate_epoch_31 var:ywc_v03_shu_inline_reservation_epoch > 0 var:ywc_v03_shu_inline_candidate_epoch_31 = var:ywc_v03_shu_inline_reservation_epoch has_variable = ywc_v03_shu_inline_c31_port_notice_pending_event_present has_variable = ywc_v03_shu_inline_c31_port_notice_pending_event_value has_journal_entry = ywc_je_v03_shu_port_customs has_variable = ywc_v03_shu_inline_live_port_customs has_variable = ywc_shu_port_notice_pending_event var:ywc_shu_port_notice_pending_event = var:ywc_v03_shu_inline_c31_port_notice_pending_event_value NOT = { var:ywc_v03_shu_inline_served_3 = var:ywc_v03_shu_inline_round } has_variable = ywc_v03_shu_event_dispatch var:ywc_v03_shu_event_dispatch = 1024 } set_variable = { name = ywc_v03_shu_inline_callback_31 value = 1 } set_variable = { name = ywc_v03_shu_inline_callback_candidate_31 value = 31 } set_variable = { name = ywc_v03_shu_inline_callback_epoch_31 value = var:ywc_v03_shu_inline_reservation_epoch } set_variable = { name = ywc_v03_shu_inline_callback_queue_31 value = var:ywc_shu_port_notice_pending_event } } ywc_v03_shu_inline_callback_29 = yes ywc_v03_shu_inline_callback_31 = yes } }
     option = {
         name = ywc_shu.1024.central_burden
-        trigger = {
-        net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
-        }
+        trigger = { ywc_shu_port_burden_choice_ready = yes ywc_shu_port_block_target_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1024.central_burden.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1024.central_burden.consequence_tooltip }
-        if = { limit = { net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_burden value = 1 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 } }
+        if = { limit = { ywc_shu_port_burden_choice_ready = yes ywc_shu_port_block_target_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_burden value = 1 } ywc_shu_port_start_review = yes set_variable = { name = ywc_shu_port_pending_event value = 1025 } }
     }
     option = {
         name = ywc_shu.1024.shared_burden
+        trigger = { ywc_shu_port_burden_choice_ready = yes ywc_shu_port_block_target_ready = yes OR = { has_variable = ywc_shu_port_local_share has_variable = ywc_shu_port_merchant_review } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1024.shared_burden.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1024.shared_burden.consequence_tooltip }
-        set_variable = { name = ywc_shu_port_burden value = 2 } set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }
+        if = { limit = { ywc_shu_port_burden_choice_ready = yes ywc_shu_port_block_target_ready = yes OR = { has_variable = ywc_shu_port_local_share has_variable = ywc_shu_port_merchant_review } } set_variable = { name = ywc_shu_port_burden value = 2 } ywc_shu_port_start_review = yes set_variable = { name = ywc_shu_port_pending_event value = 1025 } }
     }
     option = {
         name = ywc_shu.1024.reduce_burden
-        trigger = {
-        ywc_shu_v03_inland_office_ready = yes NOT = { ywc_shu_v03_has_port = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy }
-        }
+        trigger = { ywc_shu_port_burden_choice_ready = yes ywc_shu_v03_inland_office_ready = yes ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } NOT = { ywc_shu_v03_has_port = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1024.reduce_burden.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1024.reduce_burden.consequence_tooltip }
-        set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_route value = 4 } set_variable = { name = ywc_shu_port_burden value = 3 } remove_variable = ywc_shu_port_review_due remove_variable = ywc_shu_port_review_mature remove_variable = ywc_shu_port_review_interrupted set_variable = { name = ywc_shu_port_review value = 1 } set_variable = { name = ywc_shu_port_review_due days = 180 } set_variable = { name = ywc_shu_port_pending_event value = 1025 }
+        if = { limit = { ywc_shu_port_burden_choice_ready = yes ywc_shu_v03_inland_office_ready = yes ywc_shu_v03_finance_safe = yes NOT = { is_at_war = yes } NOT = { ywc_shu_v03_has_port = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_narrow_target value = 1 } set_variable = { name = ywc_shu_port_route value = 4 } set_variable = { name = ywc_shu_port_burden value = 3 } ywc_shu_port_start_review = yes set_variable = { name = ywc_shu_port_pending_event value = 1025 } }
     }
     option = {
         name = ywc_shu.1024.withdraw_port
+        trigger = { has_journal_entry = ywc_je_v03_shu_port_customs NOT = { has_variable = ywc_shu_port_outcome } NOT = { has_variable = ywc_shu_port_withdrawn } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1024.withdraw_port.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1024.withdraw_port.consequence_tooltip }
-        set_variable = { name = ywc_shu_port_withdrawn value = 1 } ywc_shu_port_close_withdrawn = yes
+        if = { limit = { has_journal_entry = ywc_je_v03_shu_port_customs NOT = { has_variable = ywc_shu_port_outcome } NOT = { has_variable = ywc_shu_port_withdrawn } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } } set_variable = { name = ywc_shu_port_withdrawn value = 1 } ywc_shu_port_close_withdrawn = yes }
     }
     option = {
         name = ywc_shu.1024.retry_after_repair
+        trigger = { ywc_shu_port_burden_choice_ready = yes ywc_shu_port_block_target_ready = yes has_variable = ywc_shu_port_review_interrupted ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1024.retry_after_repair.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1024.retry_after_repair.consequence_tooltip }
-        ywc_shu_port_start_review = yes
+        if = { limit = { ywc_shu_port_burden_choice_ready = yes ywc_shu_port_block_target_ready = yes has_variable = ywc_shu_port_review_interrupted ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } ywc_shu_port_start_review = yes }
+    }
+    option = {
+        name = ywc_shu.1024.resume_pending_port_step
+        trigger = { has_journal_entry = ywc_je_v03_shu_port_customs NOT = { has_variable = ywc_shu_port_outcome } NOT = { has_variable = ywc_shu_port_withdrawn } NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled } OR = { NOT = { ywc_shu_port_burden_choice_ready = yes } NOT = { ywc_shu_port_block_target_ready = yes } } }
+        ai_chance = { base = 1 }
+        custom_tooltip = { text = ywc_shu.1024.resume_pending_port_step.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1024.resume_pending_port_step.consequence_tooltip }
+        if = { limit = { ywc_shu_port_unanswered_credit_recoverable = yes } remove_variable = ywc_shu_port_review remove_variable = ywc_shu_port_review_due remove_variable = ywc_shu_port_review_mature remove_variable = ywc_shu_port_review_interrupted remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } if = { limit = { has_journal_entry = ywc_je_v03_shu_port_customs has_variable = ywc_shu_port_settlement_choice has_variable = ywc_shu_port_advance_offer_open NOT = { has_variable = ywc_shu_port_review } NOT = { has_variable = ywc_shu_port_pending_event } NOT = { has_variable = ywc_shu_port_notice_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1024 } }
     }
 }
 
@@ -1449,6 +1471,14 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1025 } if = { limit =
         custom_tooltip = { text = ywc_shu.1025.settle_legacy.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1025.settle_legacy.consequence_tooltip }
         ywc_shu_port_close_legacy = yes
+    }
+    option = {
+        name = ywc_shu.1025.revisit_share_terms
+        trigger = { ywc_shu_port_revisit_share_terms_ready = yes }
+        ai_chance = { base = 100 }
+        custom_tooltip = { text = ywc_shu.1025.revisit_share_terms.cost_tooltip }
+        custom_tooltip = { text = ywc_shu.1025.revisit_share_terms.consequence_tooltip }
+        if = { limit = { ywc_shu_port_revisit_share_terms_ready = yes } remove_variable = ywc_shu_port_review remove_variable = ywc_shu_port_review_due remove_variable = ywc_shu_port_review_mature remove_variable = ywc_shu_port_review_interrupted remove_variable = ywc_shu_port_settlement_choice set_variable = { name = ywc_shu_port_pending_event value = 1023 } }
     }
     option = {
         name = ywc_shu.1025.retry_port
