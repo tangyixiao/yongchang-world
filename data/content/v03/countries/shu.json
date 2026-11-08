@@ -6087,6 +6087,1395 @@
         ],
         "direct_adds": []
       }
+    },
+    {
+      "slug": "v03_shu_public_deliberation",
+      "era": "middle",
+      "participants": [
+        "朝廷与户部（谁能向朝廷发言）",
+        "士人与清议（朝议咨询）",
+        "实业家与农本户（财产代表）",
+        "缙绅与军镇（密议与申诉）",
+        "原州官署公务人员"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_shu_deliberation_eligibility",
+          "title": {
+            "zh": "谁有资格站上朝堂",
+            "en": "Who May Address the Court"
+          },
+          "desc": {
+            "zh": "在真实财政旧约、现行法律、集团与原州岗位下，确定预算发言与申诉的责任：选择完整朝议咨询、财产代表或密议路线并核账见证，最终把真实预算责任签给户部。条件中断时如实记录，不把未发生的签字写成完成。",
+            "en": "Fix budget speech and appeal responsibility under the real old fiscal contract, current laws, groups and original-state offices: choose the full court-consultation, property-representation or sealed-deliberation route with a verified witness, then sign the real budget duty to the Board. Interruptions are recorded honestly; an unsigned budget is never written as done."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started } NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }\npossible = { c:SHU ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started } NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } ywc_shu_v03_has_candidate_state = yes }\nimmediate = { ywc_v03_claim_arc_shu_v03_shu_public_deliberation = yes ywc_shu_delib_open_once = yes }\non_fail = { ywc_shu_delib_close_withdrawn = yes }\non_monthly_pulse = { effect = {\nywc_shu_delib_write_register_phase = yes\nif = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1120 var:ywc_shu_delib_pending_event = 1120 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1120 } }\nelse_if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1121 var:ywc_shu_delib_pending_event = 1121 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1121 } }\nelse_if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1122 var:ywc_shu_delib_pending_event = 1122 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1122 } }\nelse_if = { limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1123 var:ywc_shu_delib_pending_event = 1123 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1123 } }\n} } }",
+          "goal": "{ has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_shu_delib_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_shu_delib_withdrawn }"
+        },
+        {
+          "id": "ywc_je_v03_shu_deliberation_appeal_execution",
+          "title": {
+            "zh": "六个月里谁在答复",
+            "en": "Who Answers Across Six Months"
+          },
+          "desc": {
+            "zh": "申诉受理后进入本线独有的六历月真实观察：每个真实月度 pulse 计一次，同日重复回调由一天过期门防止双计；战争、失州、破产或当前责任丢失会清零并记中断，恢复后须明确重启。满六次成熟才按完整或有限路线收束，也不把未成熟的观察写成答复。",
+            "en": "After an appeal is accepted, this line's own six-calendar-month observation begins: each real monthly pulse counts once and a one-day expiry gate blocks same-day double counting; war, a lost state, bankruptcy or a lost current duty clears the streak and records the interruption, and recovery needs an explicit restart. Only six matured counts close it, and an immature observation is never written as an answer."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }\npossible = { c:SHU ?= this has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled } }\nimmediate = { if = { limit = { NOT = { has_variable = ywc_shu_delib_appeal_opened } has_variable = ywc_shu_delib_signed } set_variable = { name = ywc_shu_delib_appeal_opened value = 1 } ywc_shu_delib_signed_handoff = yes } }\non_fail = { ywc_shu_delib_close_withdrawn = yes }\non_monthly_pulse = { effect = {\nywc_shu_delib_track_review = yes\nif = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1124 var:ywc_shu_delib_pending_event = 1124 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1124 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1125 var:ywc_shu_delib_pending_event = 1125 OR = { has_variable = ywc_shu_delib_review_mature has_variable = ywc_shu_delib_review_interrupted } } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1125 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1126 var:ywc_shu_delib_pending_event = 1126 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1126 } }\nelse_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1127 var:ywc_shu_delib_pending_event = 1127 } remove_variable = ywc_shu_delib_pending_event trigger_event = { id = ywc_shu.1127 } }\n} } }",
+          "goal": "{ OR = { var:ywc_shu_delib_outcome = 1 var:ywc_shu_delib_outcome = 2 var:ywc_shu_delib_outcome = 3 } }",
+          "exit_conditions": "{ OR = { has_variable = ywc_shu_delib_withdrawn var:ywc_shu_delib_outcome = 4 } }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_shu.1120",
+          "title": {
+            "zh": "先问谁能说话",
+            "en": "First Ask Who May Speak"
+          },
+          "desc": {
+            "zh": "朝堂收到四份请愿：士人求当庭咨询，有产的实业家与农本户求代表席，缙绅与军镇求一扇密议的门，而户部只想知道有限申诉到底交给谁。本线试点已在实际拥有的四川、重庆、云南或贵州中定下；现行mode条件不足时，完整路线不许选。",
+            "en": "Four petitions reach the court: scholars ask for open consultation, propertied industrialists and rural folk ask for representation, gentry and garrisons ask for a sealed channel, and the Board only wants to know who takes a limited appeal. This line's pilot is already fixed among actually owned Sichuan, Chongqing, Yunnan or Guizhou; when the current mode conditions fall short, the full route may not be chosen."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_eligibility\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nvar:ywc_shu_delib_stage = 1120\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1120 }\nset_variable = { name = ywc_shu_delib_last_event value = 1120 }\n}",
+          "options": [
+            {
+              "key": "court_consultation",
+              "label": {
+                "zh": "走朝议咨询：士人当庭发言",
+                "en": "Court consultation: scholars speak in open session"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_mode1_current = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_mode1_current = yes }\nset_variable = { name = ywc_shu_delib_mode value = 1 }\nset_variable = { name = ywc_shu_delib_target value = 1 }\nset_variable = { name = ywc_shu_delib_stage value = 1121 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本节点不交费；完整路线的登记费在1121按当时条件实付。",
+                "en": "No charge at this node; the full route's register fee is actually paid at 1121 under the conditions then current."
+              },
+              "consequence_note": {
+                "zh": "要求君主制、任命官僚、三项言论法之一、行政结余与正当性25、清议派在政府且clout≥0.10、原州公务≥0.8。",
+                "en": "Requires monarchy, appointed bureaucrats, one of three speech laws, non-negative bureaucracy, legitimacy 25, the intelligentsia in government at clout 0.10, and 0.8 original-state office staffing."
+              }
+            },
+            {
+              "key": "property_representation",
+              "label": {
+                "zh": "走财产代表：有产者入席",
+                "en": "Property representation: propertied interests take seats"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_mode2_current = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_mode2_current = yes }\nset_variable = { name = ywc_shu_delib_mode value = 2 }\nset_variable = { name = ywc_shu_delib_target value = 1 }\nset_variable = { name = ywc_shu_delib_stage value = 1121 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本节点不交费；有真实旧地方核账权时登记费为B，否则1.5B，在1121实付。",
+                "en": "No charge at this node; the register fee is B with a real old local audit right, otherwise 1.5B, actually paid at 1121."
+              },
+              "consequence_note": {
+                "zh": "要求财产/普查/普选选举法之一、集会或受保护言论、固定净收入非负、正当性25、实业家与农本户同在政府且clout≥0.10、原州公务≥0.5。",
+                "en": "Requires one of wealth/census/universal suffrage, assembly or protected speech, non-negative net fixed income, legitimacy 25, industrialists and rural folk both in government at clout 0.10, and 0.5 original-state office staffing."
+              }
+            },
+            {
+              "key": "sealed_appeal",
+              "label": {
+                "zh": "走密议：缙绅与军镇递封奏",
+                "en": "Sealed deliberation: gentry and garrisons submit sealed memorials"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_mode3_current = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_mode3_current = yes }\nset_variable = { name = ywc_shu_delib_mode value = 3 }\nset_variable = { name = ywc_shu_delib_target value = 1 }\nset_variable = { name = ywc_shu_delib_stage value = 1121 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本节点不交费；完整密议路线登记费为.5B，在1121实付。",
+                "en": "No charge at this node; the full sealed route's register fee is 0.5B, actually paid at 1121."
+              },
+              "consequence_note": {
+                "zh": "要求专制或寡头、禁止异见或审查、威权50、正当性25、缙绅与军方同在政府且clout≥0.10、原州公务≥0.5。",
+                "en": "Requires autocracy or oligarchy, outlawed dissent or censorship, authority 50, legitimacy 25, landowners and armed forces both in government at clout 0.10, and 0.5 original-state office staffing."
+              }
+            },
+            {
+              "key": "limited_appeal",
+              "label": {
+                "zh": "明确有限申诉：只设target2受理",
+                "en": "Explicit limited appeal: target2 acceptance only"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_target2_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1120 = yes ywc_shu_v03_delib_target2_ready = yes }\nset_variable = { name = ywc_shu_delib_mode value = 3 }\nset_variable = { name = ywc_shu_delib_target value = 2 }\nset_variable = { name = ywc_shu_delib_stage value = 1121 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本节点不交费；有限受理登记费固定.5B，完整特惠不能覆盖有限价格。",
+                "en": "No charge at this node; the limited register fee is fixed at 0.5B and no full-policy discount overrides the limited price."
+              },
+              "consequence_note": {
+                "zh": "适用于任一政体或法律：只需原州公务≥0.25、行政结余非负、正当性20、和平与财务安全。mode3在此只作为显式有限选择，不依赖mode3完整法律。",
+                "en": "Applies under any regime or law: only 0.25 office staffing, non-negative bureaucracy, legitimacy 20, peace and fiscal safety. mode3 here is an explicit limited choice, not reliance on full mode3 laws."
+              }
+            },
+            {
+              "key": "defer_mode_choice",
+              "label": {
+                "zh": "暂缓：条件不足，等现行事实恢复",
+                "en": "Defer: conditions fall short; wait for current facts to recover"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1120 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1120 = yes }\nset_variable = { name = ywc_shu_delib_waiting_mode value = 1 }\n} }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不扣费，不推进阶段。",
+                "en": "No charge and no stage advance."
+              },
+              "consequence_note": {
+                "zh": "保留stage 1120；现行法律、集团或公务恢复后由月度队列重发。允许以后再议。",
+                "en": "Keeps stage 1120; the monthly queue re-offers once laws, groups or staffing recover. Deferral allows later reconsideration."
+              }
+            },
+            {
+              "key": "withdraw_at_1120",
+              "label": {
+                "zh": "撤回发言资格议程",
+                "en": "Withdraw the speech-eligibility agenda"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1120 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1120 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次，记为主动退出；不改旧账、不清旧债。",
+                "en": "Releases this arc once as an active withdrawal; old ledgers and debts are untouched."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "只读当前真实法律、集团与原州公务来定mode/target；有限入口对无旧史者永远开放。",
+            "en": "Set mode and target only from current laws, groups and offices; the limited entry stays open to those without old history."
+          },
+          "reads": [
+            "has_law_or_variant",
+            "legitimacy",
+            "authority",
+            "bureaucracy",
+            "net_fixed_income",
+            "ig_clout",
+            "ig_approval",
+            "occupancy",
+            "ywc_shu_delib_pilot"
+          ],
+          "writes": [
+            "ywc_shu_delib_mode",
+            "ywc_shu_delib_target",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch",
+            "ywc_shu_delib_waiting_mode"
+          ]
+        },
+        {
+          "id": "ywc_shu.1121",
+          "title": {
+            "zh": "一份能被查问的预算",
+            "en": "A Budget That Can Be Questioned"
+          },
+          "desc": {
+            "zh": "户部把登记簿推过来：想把预算发言权立起来，先交登记费。完整朝议B、有真实旧地方核账权的财产代表B、无该权的财产代表1.5B、密议与有限受理各.5B。海商的旧钱不是新费，旧借入的钱不拿来支付本线。",
+            "en": "The Board slides the register over: establishing a budget speech right begins with a registration fee. Full consultation B, property representation B with a real old local audit right and 1.5B without, sealed deliberation and limited acceptance 0.5B each. The merchants' old money is not a new fee, and borrowed principal is never spent on this line."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_eligibility\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_mode\nvar:ywc_shu_delib_stage = 1121\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1121 }\nset_variable = { name = ywc_shu_delib_last_event value = 1121 }\n}",
+          "options": [
+            {
+              "key": "pay_register",
+              "label": {
+                "zh": "实付登记费，立预算册",
+                "en": "Pay the register fee and open the budget roll"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1121 = yes NOT = { has_variable = ywc_shu_delib_register_paid } ywc_shu_v03_delib_register_affordable = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1121 = yes NOT = { has_variable = ywc_shu_delib_register_paid } ywc_shu_v03_delib_register_affordable = yes }\nywc_shu_delib_pay_register_once = yes\nif = { limit = { has_variable = ywc_shu_delib_register_paid var:ywc_shu_delib_register_paid_amount > 0 }\nset_variable = { name = ywc_shu_delib_stage value = 1122 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1122 }\n}\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "B在开线时捕获（年总收入÷52，最低100，不随弹窗重算）。mode1完整B；mode2完整有真实旧地方核账权B、无则1.5B；mode3完整.5B；target2有限.5B。先扣后记正额，不透支，不退不补。",
+                "en": "B is captured at claim (annual gross income ÷ 52, minimum 100, never recomputed on popups). Full mode1 B; full mode2 B with a real old local audit right, else 1.5B; full mode3 0.5B; limited target2 0.5B. Deduct first, record a positive amount, never overdraft, refund or top up."
+              },
+              "consequence_note": {
+                "zh": "菜单与执行核同一当前价格、现金与破产状态；分支互斥，完整特惠不覆盖有限价格。",
+                "en": "Menu and execution read the same current price, cash and bankruptcy state; branches are mutually exclusive and no full discount overrides the limited price."
+              }
+            },
+            {
+              "key": "wait_register_funds",
+              "label": {
+                "zh": "暂缓缴费：先筹现款",
+                "en": "Defer the fee until cash is raised"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1121 = yes NOT = { has_variable = ywc_shu_delib_register_paid } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1121 = yes NOT = { has_variable = ywc_shu_delib_register_paid } }\nset_variable = { name = ywc_shu_delib_waiting_register value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费，不记已付。",
+                "en": "No deduction and no payment recorded."
+              },
+              "consequence_note": {
+                "zh": "保留stage 1121；现款恢复后由月度队列重发，价格按届时条件重核。",
+                "en": "Keeps stage 1121; the monthly queue re-offers once cash recovers, and the price is rechecked under the then-current conditions."
+              }
+            },
+            {
+              "key": "defer_register_stage",
+              "label": {
+                "zh": "再议：登记费暂不定",
+                "en": "Reconsider later: leave the register fee undecided"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1121 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1121 = yes }\nset_variable = { name = ywc_shu_delib_deferred_register value = 1 }\n} }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "wait允许以后再议；本节点不改业务、钱或队列。",
+                "en": "Deferral allows later reconsideration; this node changes no business, money or queue."
+              }
+            },
+            {
+              "key": "withdraw_at_1121",
+              "label": {
+                "zh": "撤回预算登记",
+                "en": "Withdraw the budget register"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1121 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1121 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次并记退出。",
+                "en": "Releases this arc once and records withdrawal."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "收取本线第一笔真实新费，价格由当前mode/target与真实旧核账权决定。",
+            "en": "Take this line's first real new fee, priced by the current mode and target and the real old audit right."
+          },
+          "reads": [
+            "ywc_shu_delib_cost",
+            "gold_reserves",
+            "net_fixed_income",
+            "in_default",
+            "ywc_shu_local_audit_right",
+            "ywc_shu_settlement_mode"
+          ],
+          "writes": [
+            "ywc_shu_delib_register_paid",
+            "ywc_shu_delib_register_paid_amount",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "treasury",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        },
+        {
+          "id": "ywc_shu.1122",
+          "title": {
+            "zh": "核账人的座次",
+            "en": "The Witness's Seat"
+          },
+          "desc": {
+            "zh": "预算册立了，还要一位核账人。沿用真实旧地方核账或省共议证明且当前本州公务≥0.5，是免费的真实沿袭；没有该权的新见证须公务≥0.8；target2专有的local_witness只需0.25。见证来源写进案卷，此后持续复核。",
+            "en": "The budget roll is open, but a witness must sit. Reusing a real old local audit right or province-compact proof at 0.5 current office staffing is a genuine inheritance; a new witness without that right needs 0.8; the target2-only local witness needs 0.25. The witness source is written into the record and rechecked continuously afterwards."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_eligibility\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_register_paid\nvar:ywc_shu_delib_stage = 1122\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1122 }\nset_variable = { name = ywc_shu_delib_last_event value = 1122 }\n}",
+          "options": [
+            {
+              "key": "reuse_local_witness",
+              "label": {
+                "zh": "沿用真实旧地方核账/省共议证明",
+                "en": "Reuse the real old local audit or province-compact proof"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } ywc_shu_v03_delib_old_witness_source = yes ywc_shu_v03_delib_office_50 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } ywc_shu_v03_delib_old_witness_source = yes ywc_shu_v03_delib_office_50 = yes }\nset_variable = { name = ywc_shu_delib_witness_source value = 1 }\nset_variable = { name = ywc_shu_delib_witness_mode value = var:ywc_shu_delib_mode }\nset_variable = { name = ywc_shu_delib_witness_target value = var:ywc_shu_delib_target }\nset_variable = { name = ywc_shu_delib_witness_pilot value = var:ywc_shu_delib_pilot }\nywc_shu_delib_adopt_central_budget = yes\nset_variable = { name = ywc_shu_delib_stage value = 1123 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1123 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费；真实旧权利即真实见证。",
+                "en": "No charge; a real old right is a real witness."
+              },
+              "consequence_note": {
+                "zh": "来源字段指向本线pilot对应的真实旧财政/省共议证据；此后每阶段持续复核，来源丢失即失效。",
+                "en": "The source field points to real old fiscal or province-compact evidence tied to this line's pilot; it is rechecked every stage and fails if lost."
+              }
+            },
+            {
+              "key": "new_witness",
+              "label": {
+                "zh": "新见证：原州公务≥0.8的官署",
+                "en": "New witness: an office at 0.8 original-state staffing"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } ywc_shu_v03_delib_office_80 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } ywc_shu_v03_delib_office_80 = yes }\nset_variable = { name = ywc_shu_delib_witness_source value = 2 }\nset_variable = { name = ywc_shu_delib_witness_mode value = var:ywc_shu_delib_mode }\nset_variable = { name = ywc_shu_delib_witness_target value = var:ywc_shu_delib_target }\nset_variable = { name = ywc_shu_delib_witness_pilot value = var:ywc_shu_delib_pilot }\nywc_shu_delib_adopt_central_budget = yes\nset_variable = { name = ywc_shu_delib_stage value = 1123 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1123 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费；新见证以真实在岗官署为准，不生成建筑或就业。",
+                "en": "No charge; a new witness rests on a real staffed office, and no building or job is created."
+              },
+              "consequence_note": {
+                "zh": "没有旧权的新见证须0.8；若当前新政策mode2本就允许0.5，两种见证的差异确实可见。",
+                "en": "A new witness without the old right needs 0.8; where current mode2 policy already allows 0.5, the difference between the two witnesses is genuinely visible."
+              }
+            },
+            {
+              "key": "local_witness",
+              "label": {
+                "zh": "有限受理专有：本地见证只需0.25",
+                "en": "Limited-only local witness at 0.25 staffing"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_office_25 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_office_25 = yes }\nset_variable = { name = ywc_shu_delib_witness_source value = 3 }\nset_variable = { name = ywc_shu_delib_witness_mode value = var:ywc_shu_delib_mode }\nset_variable = { name = ywc_shu_delib_witness_target value = 2 }\nset_variable = { name = ywc_shu_delib_witness_pilot value = var:ywc_shu_delib_pilot }\nywc_shu_delib_adopt_central_budget = yes\nset_variable = { name = ywc_shu_delib_stage value = 1123 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1123 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费；仅target2可用，完整路线不得借用0.25门槛。",
+                "en": "No charge; target2 only, and the full route may never borrow the 0.25 threshold."
+              },
+              "consequence_note": {
+                "zh": "写witness_source=3并记录target2；有限重签时会被替换并清旧源引用。",
+                "en": "Writes witness_source=3 with target2; a later narrow re-sign replaces it and clears the old source reference."
+              }
+            },
+            {
+              "key": "wait_witness_office",
+              "label": {
+                "zh": "暂缓：先补官署就业",
+                "en": "Defer until the office is staffed"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1122 = yes NOT = { has_variable = ywc_shu_delib_witness_source } }\nset_variable = { name = ywc_shu_delib_waiting_witness value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留stage 1122；就业恢复后由月度队列重发。允许以后再议。",
+                "en": "Keeps stage 1122; the monthly queue re-offers once staffing recovers. Deferral allows later reconsideration."
+              }
+            },
+            {
+              "key": "withdraw_at_1122",
+              "label": {
+                "zh": "撤回见证安排",
+                "en": "Withdraw the witness arrangement"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1122 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1122 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付登记费不退。",
+                "en": "No new charge; the paid register fee is not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次并记退出。",
+                "en": "Releases this arc once and records withdrawal."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "写见证来源并在旧权、新见证与有限见证间保持真实门槛差异。",
+            "en": "Write the witness source and keep the real threshold differences among old right, new witness and limited witness."
+          },
+          "reads": [
+            "ywc_shu_local_audit_right",
+            "ywc_shu_settlement_mode",
+            "ywc_shu_prov_share_terms",
+            "occupancy",
+            "ywc_shu_delib_target"
+          ],
+          "writes": [
+            "ywc_shu_delib_witness_source",
+            "ywc_shu_delib_witness_mode",
+            "ywc_shu_delib_witness_target",
+            "ywc_shu_delib_witness_pilot",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        },
+        {
+          "id": "ywc_shu.1123",
+          "title": {
+            "zh": "户部必须答复哪一页",
+            "en": "Which Page the Board Must Answer"
+          },
+          "desc": {
+            "zh": "签字前把所有页翻开：核即时法律与集团、原州岗位、已付登记费、当前见证来源和全部快照。全部成立才把budget责任签给户部并交接JE2；签字只核签字本身，不再核容量或owner——签后立即失州或容量满，申诉线仍能交接并真实退出。",
+            "en": "Every page is opened before signing: current laws and groups, original-state offices, the paid register fee, the current witness source and every snapshot. Only when all hold is the budget duty signed to the Board and JE2 handed off. The handoff checks only that a real signature exists, not capacity or ownership — even if the state is lost or capacity fills right after signing, the appeal line still takes over and can exit honestly."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_eligibility\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_register_paid\nhas_variable = ywc_shu_delib_witness_source\nvar:ywc_shu_delib_stage = 1123\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1123 }\nset_variable = { name = ywc_shu_delib_last_event value = 1123 }\n}",
+          "options": [
+            {
+              "key": "sign_budget",
+              "label": {
+                "zh": "核齐后签budget责任",
+                "en": "Sign the budget duty once every page checks out"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1123 = yes NOT = { has_variable = ywc_shu_delib_signed } ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes ywc_shu_v03_delib_central_budget_bound = yes has_variable = ywc_shu_delib_register_paid var:ywc_shu_delib_register_paid_amount > 0 NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1123 = yes NOT = { has_variable = ywc_shu_delib_signed } ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes ywc_shu_v03_delib_central_budget_bound = yes has_variable = ywc_shu_delib_register_paid var:ywc_shu_delib_register_paid_amount > 0 NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }\nywc_shu_delib_set_sign_snapshot = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不另收费；签字核的是当前事实与已付正额，不重扣、不补收。",
+                "en": "No extra charge; the signature checks current facts and the positive paid amount without recharging or topping up."
+              },
+              "consequence_note": {
+                "zh": "sign_mode/target/pilot快照与当前mode/target/pilot一致后写signed并交接JE2；JE2不核容量或owner。",
+                "en": "sign_mode/target/pilot snapshots must match the current mode, target and pilot; then signed is written and JE2 takes over without capacity or ownership checks."
+              }
+            },
+            {
+              "key": "defer_signing",
+              "label": {
+                "zh": "暂缓签字：待条件复核",
+                "en": "Defer signing pending rechecks"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1123 = yes NOT = { has_variable = ywc_shu_delib_signed } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1123 = yes NOT = { has_variable = ywc_shu_delib_signed } }\nset_variable = { name = ywc_shu_delib_waiting_sign value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留stage 1123；允许以后再议，条件恢复后由月度队列重发。",
+                "en": "Keeps stage 1123; deferral allows later reconsideration and the monthly queue re-offers after recovery."
+              }
+            },
+            {
+              "key": "withdraw_at_1123",
+              "label": {
+                "zh": "撤回签字议程",
+                "en": "Withdraw the signing agenda"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1123 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1123 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次并记退出；JE1以fail结束。",
+                "en": "Releases this arc once, records withdrawal, and JE1 fails."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "把JE1的全部真实前置核齐后签budget责任，并以只核签字的方式交接。",
+            "en": "Verify every real prerequisite of JE1, sign the budget duty, and hand off by checking the signature alone."
+          },
+          "reads": [
+            "has_law_or_variant",
+            "ig_clout",
+            "occupancy",
+            "ywc_shu_delib_register_paid_amount",
+            "ywc_shu_delib_witness_source",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_delib_signed",
+            "ywc_shu_delib_sign_mode",
+            "ywc_shu_delib_sign_target",
+            "ywc_shu_delib_sign_pilot",
+            "ywc_shu_delib_phase",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        },
+        {
+          "id": "ywc_shu.1124",
+          "title": {
+            "zh": "申诉递给谁",
+            "en": "Who Takes the Appeal"
+          },
+          "desc": {
+            "zh": "JE2第一问：按当前mode选受理人。mode1/2走公开受理，mode3走密奏受理，target2走本地受理；受理范围与承办公务真实记录，随后启动六个月观察。不收任何未批准的额外款项。",
+            "en": "JE2's first question: choose the recipient by the current mode. mode1/2 use public acceptance, mode3 sealed acceptance, and target2 local acceptance; the scope and handling office are recorded for real before the six-month observation starts. No unapproved extra payment is taken."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_signed\nvar:ywc_shu_delib_stage = 1124\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1124 }\nset_variable = { name = ywc_shu_delib_last_event value = 1124 }\n}",
+          "options": [
+            {
+              "key": "register_public_appeal",
+              "label": {
+                "zh": "公开受理：按朝议/财产代表范围",
+                "en": "Public acceptance under the consultation or representation scope"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } OR = { AND = { var:ywc_shu_delib_mode = 1 ywc_shu_v03_delib_mode1_current = yes } AND = { var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_mode2_current = yes } } var:ywc_shu_delib_target = 1 }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } OR = { AND = { var:ywc_shu_delib_mode = 1 ywc_shu_v03_delib_mode1_current = yes } AND = { var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_mode2_current = yes } } var:ywc_shu_delib_target = 1 }\nset_variable = { name = ywc_shu_delib_accept_scope value = 1 }\nywc_shu_delib_set_accept_snapshot = yes\nywc_shu_delib_start_review = yes\nset_variable = { name = ywc_shu_delib_stage value = 1125 }\nif = { limit = { has_variable = ywc_shu_delib_accepted } set_variable = { name = ywc_shu_delib_pending_event value = 1125 } }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费；不收未批准的额外款。",
+                "en": "No charge and no unapproved extra payment."
+              },
+              "consequence_note": {
+                "zh": "受理快照记录当前mode/target/pilot与承办公务门槛，随即进入1125六个月观察。",
+                "en": "The acceptance snapshot records the current mode, target and pilot with the handling-office threshold, then 1125's six-month observation begins."
+              }
+            },
+            {
+              "key": "register_sealed_appeal",
+              "label": {
+                "zh": "密奏受理：缙绅与军镇的封奏",
+                "en": "Sealed acceptance for gentry and garrison memorials"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } var:ywc_shu_delib_mode = 3 ywc_shu_v03_delib_mode3_current = yes var:ywc_shu_delib_target = 1 }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } var:ywc_shu_delib_mode = 3 ywc_shu_v03_delib_mode3_current = yes var:ywc_shu_delib_target = 1 }\nset_variable = { name = ywc_shu_delib_accept_scope value = 2 }\nywc_shu_delib_set_accept_snapshot = yes\nywc_shu_delib_start_review = yes\nset_variable = { name = ywc_shu_delib_stage value = 1125 }\nif = { limit = { has_variable = ywc_shu_delib_accepted } set_variable = { name = ywc_shu_delib_pending_event value = 1125 } }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "密奏渠道只对当前mode3完整条件开放；受理后进入1125观察。",
+                "en": "The sealed channel opens only under current full mode3 conditions; acceptance moves to 1125's observation."
+              }
+            },
+            {
+              "key": "register_local_appeal",
+              "label": {
+                "zh": "本地受理：target2专有",
+                "en": "Local acceptance, target2 only"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_target2_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_target2_ready = yes }\nset_variable = { name = ywc_shu_delib_accept_scope value = 3 }\nywc_shu_delib_set_accept_snapshot = yes\nywc_shu_delib_start_review = yes\nset_variable = { name = ywc_shu_delib_stage value = 1125 }\nif = { limit = { has_variable = ywc_shu_delib_accepted } set_variable = { name = ywc_shu_delib_pending_event value = 1125 } }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费；本地受理适用任一政体，只需当前target2条件。",
+                "en": "No charge; local acceptance applies under any regime and needs only current target2 conditions."
+              },
+              "consequence_note": {
+                "zh": "受理范围限本州官署公务；进入1125观察，六次真实月度成熟。",
+                "en": "The acceptance scope covers only this state's office duties; 1125's observation matures on six real monthly pulses."
+              }
+            },
+            {
+              "key": "defer_acceptance",
+              "label": {
+                "zh": "暂缓受理：待当前条件复核",
+                "en": "Defer acceptance pending a recheck of current conditions"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1124 = yes NOT = { has_variable = ywc_shu_delib_accepted } }\nset_variable = { name = ywc_shu_delib_waiting_accept value = 1 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费，不启动观察。",
+                "en": "No charge and no observation starts."
+              },
+              "consequence_note": {
+                "zh": "保留stage 1124；允许以后再议，条件恢复后由月度队列重发。",
+                "en": "Keeps stage 1124; deferral allows later reconsideration and the monthly queue re-offers after recovery."
+              }
+            },
+            {
+              "key": "withdraw_at_1124",
+              "label": {
+                "zh": "撤回申诉受理",
+                "en": "Withdraw the appeal acceptance"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1124 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1124 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次并记退出。",
+                "en": "Releases this arc once and records withdrawal."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "按当前mode/target真实受理申诉并记录快照；只有真实受理后才进入观察。",
+            "en": "Accept the appeal for real under the current mode and target, record the snapshot; the observation starts only after genuine acceptance."
+          },
+          "reads": [
+            "ywc_shu_delib_mode",
+            "ywc_shu_delib_target",
+            "ywc_shu_delib_sign_mode",
+            "occupancy",
+            "has_law_or_variant",
+            "ig_clout"
+          ],
+          "writes": [
+            "ywc_shu_delib_accepted",
+            "ywc_shu_delib_accept_scope",
+            "ywc_shu_delib_accept_mode",
+            "ywc_shu_delib_accept_target",
+            "ywc_shu_delib_accept_pilot",
+            "ywc_shu_delib_review_running",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        },
+        {
+          "id": "ywc_shu.1125",
+          "title": {
+            "zh": "旧债不能代替新答复",
+            "en": "Old Debts Do Not Answer for the Court"
+          },
+          "desc": {
+            "zh": "观察期成熟或被打断时到此。只有六次真实月度成熟才可实扣复核费进入1126——mode1完整B、真实已还清本金的海商咨询源下mode2完整B、无则1.5B、mode3与target2各.5B；咨询、本金与实还缺一不能领取优惠。实际中断后明确重启从零再数；narrow_and_recount显式重签有限见证与全部快照，保留实付、清请求与成熟、六个新月份。没有学校或旧史也能有限。",
+            "en": "The observation matures or breaks here. Only six real matured months let the review fee be actually paid before 1126 — full mode1 B, full mode2 B with a genuinely repaid-principal merchant consultation source and 1.5B without; mode3 and target2 0.5B each; consultation, principal and actual repayment are all required for the discount. After a real interruption, an explicit restart counts from zero; narrow_and_recount re-signs the limited witness and every snapshot, keeps actual payments, clears the request and maturity, and starts six fresh months. The limited route needs no school or old history."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_accepted\nvar:ywc_shu_delib_stage = 1125\nOR = { has_variable = ywc_shu_delib_review_mature has_variable = ywc_shu_delib_review_interrupted }\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1125 }\nset_variable = { name = ywc_shu_delib_last_event value = 1125 }\n}",
+          "options": [
+            {
+              "key": "pay_review",
+              "label": {
+                "zh": "实扣复核费，进入1126",
+                "en": "Pay the review fee and move to 1126"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_paid } has_variable = ywc_shu_delib_review_mature NOT = { has_variable = ywc_shu_delib_review_interrupted } ywc_shu_v03_delib_review_affordable = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_paid } has_variable = ywc_shu_delib_review_mature NOT = { has_variable = ywc_shu_delib_review_interrupted } ywc_shu_v03_delib_review_affordable = yes }\nywc_shu_delib_pay_review_once = yes\nif = { limit = { has_variable = ywc_shu_delib_review_paid var:ywc_shu_delib_review_paid_amount > 0 }\nset_variable = { name = ywc_shu_delib_stage value = 1126 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1126 }\n}\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "mode1完整B；mode2完整有真实已还本金的海商咨询源B、无则1.5B；mode3完整.5B；target2.5B。菜单、外层limit与helper核同一当前价格；先扣后记正额，不透支不重复。",
+                "en": "Full mode1 B; full mode2 B with a genuinely repaid-principal merchant consultation source, else 1.5B; full mode3 0.5B; target2 0.5B. Menu, outer limit and helper read the same current price; deduct first, record a positive amount, never overdraft or recharge."
+              },
+              "consequence_note": {
+                "zh": "只有真实成熟且复核已付才推进；五个月不是六个月，旧债与咨询权不代替新答复。",
+                "en": "Only genuine maturity plus a paid review advances; five months are not six, and old debts or consultation rights never answer for the court."
+              }
+            },
+            {
+              "key": "advance_paid_review",
+              "label": {
+                "zh": "已付复核费：六新月成熟后进入1126",
+                "en": "Review already paid: advance to 1126 once six fresh months mature"
+              },
+              "trigger": "{ ywc_shu_v03_delib_paid_advance_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_paid_advance_ready = yes }\nywc_shu_delib_advance_paid_review = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不再扣款；已实付的复核费与登记费按原金额保留，不退不补、不改写。",
+                "en": "No second charge; the paid review and register fees keep their original amounts, with no refund, top-up or rewrite."
+              },
+              "consequence_note": {
+                "zh": "复核已付且正额成立、六次真实新月成熟、当前阶段/phase/回执与快照仍有效时进入1126；未成熟不得跳过观察。",
+                "en": "Advance to 1126 only while the review is paid in a positive amount, six genuine fresh months have matured, and the current stage, phase, receipt and staged snapshots still hold; an immature observation never skips ahead."
+              }
+            },
+            {
+              "key": "restart_review",
+              "label": {
+                "zh": "明确重启：刷新真实记录从零再数",
+                "en": "Explicit restart: refresh the real record and count from zero"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_mature } has_variable = ywc_shu_delib_review_interrupted ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_mature } has_variable = ywc_shu_delib_review_interrupted ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }\nywc_shu_delib_restart_review = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费；已付登记费与复核费均保留。",
+                "en": "No charge; the paid register and review fees are both kept."
+              },
+              "consequence_note": {
+                "zh": "中断标记清除，streak/mature清零，六个真实新月重新计；基础义务必须当前可履行才允许重启。",
+                "en": "The interruption flag clears, streak and maturity reset to zero, and six fresh real months are counted; a restart requires the base duty to be currently performable."
+              }
+            },
+            {
+              "key": "narrow_and_recount",
+              "label": {
+                "zh": "显式重签有限见证与受理，六新月重数",
+                "en": "Explicitly re-sign the limited witness and acceptance, recounting six fresh months"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1125 = yes ywc_shu_v03_delib_target2_ready = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1125 = yes ywc_shu_v03_delib_target2_ready = yes }\nywc_shu_delib_narrow_and_recount = yes\nset_variable = { name = ywc_shu_delib_accept_scope value = 3 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收新费、不退旧费：已实付登记费与复核费按原金额保留，重算不重复扣。",
+                "en": "No new fee and no refund: actually paid register and review fees keep their original amounts, and the recount never recharges."
+              },
+              "consequence_note": {
+                "zh": "清请求与成熟、旧见证源引用被替换为有限见证，全部快照按target2重写，六个新月份起算。可以真实换本地见证与承办。",
+                "en": "Request and maturity clear, the old witness-source reference is replaced by the limited witness, every snapshot is rewritten for target2, and six fresh months begin. The local witness and handler can genuinely change."
+              }
+            },
+            {
+              "key": "wait_review_recovery",
+              "label": {
+                "zh": "暂缓：观察未成熟或仍在中断",
+                "en": "Defer while the observation is immature or still interrupted"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_paid } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1125 = yes NOT = { has_variable = ywc_shu_delib_review_paid } }\nset_variable = { name = ywc_shu_delib_waiting_review value = 1 }\n} }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留stage 1125；恢复后须重启或重签才能继续。允许以后再议。",
+                "en": "Keeps stage 1125; after recovery a restart or re-sign is needed before continuing. Deferral allows later reconsideration."
+              }
+            },
+            {
+              "key": "withdraw_at_1125",
+              "label": {
+                "zh": "撤回观察与申诉",
+                "en": "Withdraw the observation and appeal"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1125 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1125 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次并记退出。",
+                "en": "Releases this arc once and records withdrawal."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "以六次真实成熟为唯一闸门收复核费，并提供诚实重启与有限重签两条恢复路径。",
+            "en": "Gate the review fee on six genuine matured months, and offer honest restart and limited re-sign as the two recovery paths."
+          },
+          "reads": [
+            "ywc_shu_delib_review_streak",
+            "ywc_shu_delib_review_mature",
+            "ywc_shu_delib_review_interrupted",
+            "ywc_shu_delib_review_paid",
+            "ywc_shu_delib_review_paid_amount",
+            "ywc_shu_merchant_advance_repaid",
+            "ywc_shu_merchant_principal",
+            "gold_reserves",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_delib_review_paid",
+            "ywc_shu_delib_review_paid_amount",
+            "ywc_shu_delib_witness_source",
+            "ywc_shu_delib_target",
+            "ywc_shu_delib_review_running",
+            "ywc_shu_delib_review_streak",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "treasury",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        },
+        {
+          "id": "ywc_shu.1126",
+          "title": {
+            "zh": "把答复写进下期预算",
+            "en": "Write the Answer into the Next Budget"
+          },
+          "desc": {
+            "zh": "复核已付，答复成文时按当前事实选择：完整义务当期成立走request_full，有限义务走request_limited，义务确实丢失走request_setback。已恢复时缓存受挫按钮不能提出也不能执行。recount可回1125重数且不重扣；月度不得把本阶段改回1125。",
+            "en": "With the review paid, the answer is drafted from current facts: request_full while the full duty holds now, request_limited under the limited duty, request_setback only when the duty is genuinely lost. Once recovery has happened, a cached setback button can neither be proposed nor executed. recount may return to 1125 without recharging; the monthly pulse never rewinds this stage to 1125."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_review_paid\nvar:ywc_shu_delib_stage = 1126\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1126 }\nset_variable = { name = ywc_shu_delib_last_event value = 1126 }\n}",
+          "options": [
+            {
+              "key": "request_full",
+              "label": {
+                "zh": "按完整策略提出答复",
+                "en": "Propose the answer under the full policy"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1126 = yes var:ywc_shu_delib_target = 1 ywc_shu_v03_delib_full_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_central_budget_bound = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1126 = yes var:ywc_shu_delib_target = 1 ywc_shu_v03_delib_full_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes ywc_shu_v03_delib_office_current = yes ywc_shu_v03_delib_central_budget_bound = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }\nset_variable = { name = ywc_shu_delib_request value = 1 }\nset_variable = { name = ywc_shu_delib_stage value = 1127 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1127 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "答复类型按当前完整事实记录；进入1127后仍会双重检查。",
+                "en": "The answer type is recorded from current full facts; 1127 still double-checks."
+              }
+            },
+            {
+              "key": "request_limited",
+              "label": {
+                "zh": "按当前本地有限责任提出答复",
+                "en": "Propose the answer under the current limited local duty"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1126 = yes var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_limited_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes ywc_shu_v03_delib_central_budget_bound = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1126 = yes var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_limited_current = yes ywc_shu_v03_delib_witness_duty = yes ywc_shu_v03_delib_staged_contract = yes ywc_shu_v03_delib_central_budget_bound = yes NOT = { is_at_war = yes } ywc_shu_v03_finance_safe = yes }\nset_variable = { name = ywc_shu_delib_request value = 2 }\nset_variable = { name = ywc_shu_delib_stage value = 1127 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1127 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "有限答复只声称当前本地责任；不冒认完整政策。",
+                "en": "The limited answer claims only the current local duty and never passes for the full policy."
+              }
+            },
+            {
+              "key": "request_setback",
+              "label": {
+                "zh": "义务确实丢失：如实提出受挫答复",
+                "en": "The duty is genuinely lost: propose a setback answer honestly"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1126 = yes ywc_shu_v03_delib_setback_available = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1126 = yes ywc_shu_v03_delib_setback_available = yes }\nset_variable = { name = ywc_shu_delib_request value = 3 }\nset_variable = { name = ywc_shu_delib_stage value = 1127 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1127 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "受挫答复只在真正成熟且复核已付、当前义务丢失时可提出；恢复后本按钮消失且不可执行。",
+                "en": "A setback answer is available only while genuinely matured, review paid and the current duty lost; once recovered, this button disappears and cannot execute."
+              }
+            },
+            {
+              "key": "recount",
+              "label": {
+                "zh": "回1125重数：已付不重扣",
+                "en": "Return to 1125 and recount without recharging"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1126 = yes has_variable = ywc_shu_delib_review_paid OR = { ywc_shu_v03_delib_target2_ready = yes AND = { var:ywc_shu_delib_target = 1 ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes } } }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1126 = yes has_variable = ywc_shu_delib_review_paid OR = { ywc_shu_v03_delib_target2_ready = yes AND = { var:ywc_shu_delib_target = 1 ywc_shu_v03_delib_target_current = yes ywc_shu_v03_delib_office_current = yes } } }\nremove_variable = ywc_shu_delib_request\nremove_variable = ywc_shu_delib_review_mature\nywc_shu_delib_start_review = yes\nset_variable = { name = ywc_shu_delib_stage value = 1125 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1125 }\n} }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不产生额外费用：已付复核费按原金额保留，重数不再扣。",
+                "en": "No extra charge: the paid review fee keeps its original amount and the recount deducts nothing."
+              },
+              "consequence_note": {
+                "zh": "清当前请求与成熟，重开六个月观察；这是1126→1125的唯一合法回退。",
+                "en": "The current request and maturity clear and the six-month observation reopens; this is the only lawful 1126→1125 return."
+              }
+            },
+            {
+              "key": "withdraw_at_1126",
+              "label": {
+                "zh": "撤回复核答复",
+                "en": "Withdraw the reviewed answer"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1126 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1126 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 0 }",
+              "cost_note": {
+                "zh": "不产生新费用；已付款不退。",
+                "en": "No new charge; prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "释放本线一次并记退出。",
+                "en": "Releases this arc once and records withdrawal."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "按当前事实分流答复类型，并保证受挫缓存按钮随恢复失效。",
+            "en": "Route the answer by current facts and make the cached setback button die on recovery."
+          },
+          "reads": [
+            "ywc_shu_delib_review_paid_amount",
+            "ywc_shu_delib_target",
+            "has_law_or_variant",
+            "ig_clout",
+            "occupancy",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_delib_request",
+            "ywc_shu_delib_review_running",
+            "ywc_shu_delib_review_mature",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        },
+        {
+          "id": "ywc_shu.1127",
+          "title": {
+            "zh": "谁来对这份答复负责",
+            "en": "Who Answers for This Answer"
+          },
+          "desc": {
+            "zh": "收尾对当前事实做双重检查：outcome1要显式target1、当前完整策略、两笔正额实付、当前见证与受理来源、同mode-target-pilot快照与成熟六；outcome2要显式target2加当前本地有限责任；outcome3只在真正成熟且复核已付、当前义务丢失时结算，恢复的旧受挫按钮不合法。各写一次即释放本线，recount可回1125。",
+            "en": "The close double-checks current facts: outcome1 needs explicit target1, the current full policy, both fees actually paid in positive amounts, current witness and acceptance sources, the same mode-target-pilot snapshots and a matured six; outcome2 needs explicit target2 plus the current limited local duty; outcome3 settles only when genuinely matured, the review is paid and the current duty is lost — a recovered old setback button is unlawful. Each writes once and releases the arc; recount may return to 1125."
+          },
+          "trigger": "{\nc:SHU ?= this\nywc_v03_can_deliver_major = yes\nhas_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution\nNOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }\nhas_variable = ywc_shu_delib_review_paid\nvar:ywc_shu_delib_stage = 1127\n}",
+          "immediate": "{\nywc_v03_mark_major_delivered = yes\nset_variable = { name = ywc_v03_shu_event_dispatch value = 1127 }\nset_variable = { name = ywc_shu_delib_last_event value = 1127 }\n}",
+          "options": [
+            {
+              "key": "close_full",
+              "label": {
+                "zh": "确认完整答复并释放本线",
+                "en": "Confirm the full answer and release the arc"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } ywc_shu_v03_delib_full_terminal = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } ywc_shu_v03_delib_full_terminal = yes }\nywc_shu_delib_close_full = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "outcome1写一次并释放本线一次；mode与outcome绝不混用。",
+                "en": "outcome1 is written once and the arc released once; mode and outcome are never conflated."
+              }
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "确认有限答复并释放本线",
+                "en": "Confirm the limited answer and release the arc"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } ywc_shu_v03_delib_limited_terminal = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } ywc_shu_v03_delib_limited_terminal = yes }\nywc_shu_delib_close_limited = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "outcome2写一次并释放本线一次；不冒认完整责任。",
+                "en": "outcome2 is written once and the arc released once, without claiming full responsibility."
+              }
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "确认受挫答复",
+                "en": "Confirm the setback answer"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } ywc_shu_v03_delib_setback_available = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } ywc_shu_v03_delib_setback_available = yes }\nywc_shu_delib_close_setback = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不扣费；已付费用保留。",
+                "en": "No charge; paid fees are kept."
+              },
+              "consequence_note": {
+                "zh": "outcome3写一次并释放本线一次；恢复后旧受挫按钮不能提出或执行。",
+                "en": "outcome3 is written once and the arc released once; a recovered old setback button can neither be proposed nor executed."
+              }
+            },
+            {
+              "key": "recount_from_close",
+              "label": {
+                "zh": "回1125重数",
+                "en": "Return to 1125 and recount"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } has_variable = ywc_shu_delib_review_paid }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1127 = yes NOT = { has_variable = ywc_shu_delib_outcome } has_variable = ywc_shu_delib_review_paid }\nremove_variable = ywc_shu_delib_request\nremove_variable = ywc_shu_delib_review_mature\nywc_shu_delib_start_review = yes\nset_variable = { name = ywc_shu_delib_stage value = 1125 }\nset_variable = { name = ywc_shu_delib_pending_event value = 1125 }\n} }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "不重复收费。",
+                "en": "No repeated charge."
+              },
+              "consequence_note": {
+                "zh": "回1125重开观察；这是1127唯一的回退路径。",
+                "en": "Returns to 1125 and reopens the observation; this is the only retreat from 1127."
+              }
+            },
+            {
+              "key": "withdraw_at_1127",
+              "label": {
+                "zh": "主动退出",
+                "en": "Active exit"
+              },
+              "trigger": "{ ywc_shu_v03_delib_at_1127 = yes }",
+              "effect": "{ if = { limit = { ywc_shu_v03_delib_at_1127 = yes }\nywc_shu_delib_close_withdrawn = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不退已付款。",
+                "en": "Prior payments are not refunded."
+              },
+              "consequence_note": {
+                "zh": "outcome4只走fail出口；终结点永远有可执行选项。",
+                "en": "outcome4 goes only through the fail exit; the close always has an executable option."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "按当前事实双重检查后写一次outcome并释放本线一次，不赠法律、资金或主权。",
+            "en": "Write one outcome after a current-facts double check and release the arc once, granting no law, funds or sovereignty."
+          },
+          "reads": [
+            "ywc_shu_delib_target",
+            "ywc_shu_delib_register_paid_amount",
+            "ywc_shu_delib_review_paid_amount",
+            "ywc_shu_delib_witness_source",
+            "ywc_shu_delib_accept_scope",
+            "ywc_shu_delib_review_streak",
+            "is_at_war",
+            "in_default"
+          ],
+          "writes": [
+            "ywc_shu_delib_outcome",
+            "ywc_v03_shu_v03_shu_public_deliberation_outcome",
+            "ywc_v03_shu_v03_shu_public_deliberation_settled",
+            "ywc_v03_active_arc_count",
+            "ywc_v03_visible_task_count",
+            "ywc_shu_delib_stage",
+            "ywc_shu_delib_pending_event",
+            "ywc_shu_delib_last_event",
+            "ywc_v03_shu_event_dispatch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "full_answer:显式target1、当前完整策略、两笔正额实付、当前见证与受理来源、同mode-target-pilot快照与成熟六",
+        "limited_answer:显式target2与当前本地有限责任下的真实履责收束",
+        "setback:真正成熟且复核已付后当前义务丢失，如实记受挫，费用不退",
+        "withdrawn:主动退出并释放本线一次，保留已付款记录，不清旧债"
+      ],
+      "legacy_links": [
+        "v03_shu_fiscal_register：同一仍归本国的原pilot上真实旧地方核账权影响1121完整mode2登记费（1.5B→B）与1122/1123见证；省共议已结案合同与原始paid/share/relief/meeting一致时可作为另一真实见证来源。",
+        "v03_shu_port_treasury：真实已还清本金的海商咨询权影响1125完整mode2复核费（1.5B→B）；本线不清旧债，原债仍由原合同收款。"
+      ],
+      "inline_delivery_adapter": {
+        "schema": "v03.foundation_inline_adapter.v3",
+        "live_phases": [
+          {
+            "journal": "ywc_je_v03_shu_deliberation_eligibility",
+            "live_witness": "ywc_v03_shu_inline_live_deliberation_eligibility",
+            "source_script_sha256": "5f613a494026d580dc385f664f2404890c9e34e8c39243c4149ff37a166908f5",
+            "goal_sha256": "83d97e83aa4fffb4d5b2968b00052191bee6d41612360d2ac8d7f87e2a23f520",
+            "exit_sha256": "8cfb24f569a203e828e5bc899167f300dc03abd2eb9bb2d6dd33121dce26b0d5"
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_appeal_execution",
+            "live_witness": "ywc_v03_shu_inline_live_deliberation_appeal_execution",
+            "source_script_sha256": "80b443e0068540c23ecd0bc6efd9e336f95fcc927532d850335c920ce434e526",
+            "goal_sha256": "ee0db13a17eb23969c1a2606c1bc9eaa569af5dad395624645c71addafdde0e8",
+            "exit_sha256": "0231e87642334c9aff946db306a947af2e955362d392c903afc07cb9ad01ff91"
+          }
+        ],
+        "branches": [
+          {
+            "journal": "ywc_je_v03_shu_deliberation_eligibility",
+            "branch_index": 0,
+            "statement_ordinal": 1,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_shu.1120",
+            "limit_sha256": "19c2a32c13410fd7b373c7ca832a5b86bf6f9eb6ac4cebaba69fc772b5137faf",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1120
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "f01e3c76f9ad083b59a04007daa09edf03b4f2e725af2047fa3a7422ec099534",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_eligibility",
+            "branch_index": 1,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1121",
+            "limit_sha256": "8940c77c09e169b14b982a41921b11f46a4964f6f477679af09b7cc20c39003b",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f01e3c76f9ad083b59a04007daa09edf03b4f2e725af2047fa3a7422ec099534",
+                "limit_sha256": "19c2a32c13410fd7b373c7ca832a5b86bf6f9eb6ac4cebaba69fc772b5137faf",
+                "limit_source": "limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1120 var:ywc_shu_delib_pending_event = 1120 }"
+              }
+            ],
+            "chain_sha256": "a95d2ca8efc63a5db6a176760ea0edf605f41102021e11d17e11fd0fc927b187",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1121
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "f2267426360c00070dc4c8c437b1e613f2064aaa76f303f1e01c138cd65fc5a2",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_eligibility",
+            "branch_index": 2,
+            "statement_ordinal": 3,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1122",
+            "limit_sha256": "052f968f9dcc22a71a215ac51d25bf83500dc202837cacdcddf0f9805291efd7",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f01e3c76f9ad083b59a04007daa09edf03b4f2e725af2047fa3a7422ec099534",
+                "limit_sha256": "19c2a32c13410fd7b373c7ca832a5b86bf6f9eb6ac4cebaba69fc772b5137faf",
+                "limit_source": "limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1120 var:ywc_shu_delib_pending_event = 1120 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "f2267426360c00070dc4c8c437b1e613f2064aaa76f303f1e01c138cd65fc5a2",
+                "limit_sha256": "8940c77c09e169b14b982a41921b11f46a4964f6f477679af09b7cc20c39003b",
+                "limit_source": "limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1121 var:ywc_shu_delib_pending_event = 1121 }"
+              }
+            ],
+            "chain_sha256": "f09a8f8610140a79090caa7d7b2a0fc231c469c49fd65da333f2b8e553016164",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1122
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "d0e5074631369e78c42b6382df3f45f8b60541573f8d5ec93732118ea57594e8",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_eligibility",
+            "branch_index": 3,
+            "statement_ordinal": 4,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1123",
+            "limit_sha256": "a1009d6aa19dfc17ec195157170a754e4b98f0cc0c553965d956b4b6199c95a6",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "f01e3c76f9ad083b59a04007daa09edf03b4f2e725af2047fa3a7422ec099534",
+                "limit_sha256": "19c2a32c13410fd7b373c7ca832a5b86bf6f9eb6ac4cebaba69fc772b5137faf",
+                "limit_source": "limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1120 var:ywc_shu_delib_pending_event = 1120 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "f2267426360c00070dc4c8c437b1e613f2064aaa76f303f1e01c138cd65fc5a2",
+                "limit_sha256": "8940c77c09e169b14b982a41921b11f46a4964f6f477679af09b7cc20c39003b",
+                "limit_source": "limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1121 var:ywc_shu_delib_pending_event = 1121 }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "d0e5074631369e78c42b6382df3f45f8b60541573f8d5ec93732118ea57594e8",
+                "limit_sha256": "052f968f9dcc22a71a215ac51d25bf83500dc202837cacdcddf0f9805291efd7",
+                "limit_source": "limit = { NOT = { has_variable = ywc_shu_delib_signed } ywc_v03_can_deliver_major = yes var:ywc_shu_delib_stage = 1122 var:ywc_shu_delib_pending_event = 1122 }"
+              }
+            ],
+            "chain_sha256": "ac99101f08adedc6728c06360e860b39ed10d4b9b207ad89618308b8985e927a",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1123
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "28c552985460a219d14b2c73cebe569657e418f7cca34c1d5454696d3295ebf9",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_appeal_execution",
+            "branch_index": 0,
+            "statement_ordinal": 1,
+            "chain_index": 0,
+            "branch_kind": "if",
+            "event": "ywc_shu.1124",
+            "limit_sha256": "0217c8c536a10421fb986d85bd66a433d7d287421ea77ec90308de45019d87be",
+            "chain_prior": [],
+            "chain_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1124
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "9b9fae75ff5453a4a7f537f8d6f674397467651e2340ce5336952cdfa257361c",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_appeal_execution",
+            "branch_index": 1,
+            "statement_ordinal": 2,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1125",
+            "limit_sha256": "c4aba8cd30da6ded8ef42948ef4c779133d3e0a9023ab043d9852754c925cdcb",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "9b9fae75ff5453a4a7f537f8d6f674397467651e2340ce5336952cdfa257361c",
+                "limit_sha256": "0217c8c536a10421fb986d85bd66a433d7d287421ea77ec90308de45019d87be",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1124 var:ywc_shu_delib_pending_event = 1124 }"
+              }
+            ],
+            "chain_sha256": "61f7c7fe7d9562656466e34dffb9354891454d5c8796e5f4073407dd07605c80",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1125
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "c1c5d6d7bd7092d1bed0ba8f020fc4f813ab65d23b5994b5cf80d8713cc66a53",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_appeal_execution",
+            "branch_index": 2,
+            "statement_ordinal": 3,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1126",
+            "limit_sha256": "7ee0636b69ccc1f3a7ab39b7cac360cb6fb46be037ef93bae2136925a3a40936",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "9b9fae75ff5453a4a7f537f8d6f674397467651e2340ce5336952cdfa257361c",
+                "limit_sha256": "0217c8c536a10421fb986d85bd66a433d7d287421ea77ec90308de45019d87be",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1124 var:ywc_shu_delib_pending_event = 1124 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "c1c5d6d7bd7092d1bed0ba8f020fc4f813ab65d23b5994b5cf80d8713cc66a53",
+                "limit_sha256": "c4aba8cd30da6ded8ef42948ef4c779133d3e0a9023ab043d9852754c925cdcb",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1125 var:ywc_shu_delib_pending_event = 1125 OR = { has_variable = ywc_shu_delib_review_mature has_variable = ywc_shu_delib_review_interrupted } }"
+              }
+            ],
+            "chain_sha256": "1bc818bb510613efd9f210f4aae4acb8ccc1c750e0abf608990194a783253076",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1126
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "ae8515741f4734073afa1172f67e25e040415ec1b171345c0a9a5c5e826407d8",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_shu_deliberation_appeal_execution",
+            "branch_index": 3,
+            "statement_ordinal": 4,
+            "chain_index": 0,
+            "branch_kind": "else_if",
+            "event": "ywc_shu.1127",
+            "limit_sha256": "2f4f265cccd8a37108fdaa3a4b8aae2e0d2af49e2fada57b3c9d584983d0e0c8",
+            "chain_prior": [
+              {
+                "ordinal": 1,
+                "sha256": "9b9fae75ff5453a4a7f537f8d6f674397467651e2340ce5336952cdfa257361c",
+                "limit_sha256": "0217c8c536a10421fb986d85bd66a433d7d287421ea77ec90308de45019d87be",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1124 var:ywc_shu_delib_pending_event = 1124 }"
+              },
+              {
+                "ordinal": 2,
+                "sha256": "c1c5d6d7bd7092d1bed0ba8f020fc4f813ab65d23b5994b5cf80d8713cc66a53",
+                "limit_sha256": "c4aba8cd30da6ded8ef42948ef4c779133d3e0a9023ab043d9852754c925cdcb",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1125 var:ywc_shu_delib_pending_event = 1125 OR = { has_variable = ywc_shu_delib_review_mature has_variable = ywc_shu_delib_review_interrupted } }"
+              },
+              {
+                "ordinal": 3,
+                "sha256": "ae8515741f4734073afa1172f67e25e040415ec1b171345c0a9a5c5e826407d8",
+                "limit_sha256": "7ee0636b69ccc1f3a7ab39b7cac360cb6fb46be037ef93bae2136925a3a40936",
+                "limit_source": "limit = { ywc_v03_can_deliver_major = yes var:ywc_shu_delib_phase = 2 var:ywc_shu_delib_stage = 1126 var:ywc_shu_delib_pending_event = 1126 }"
+              }
+            ],
+            "chain_sha256": "62bc3dda2590e572aa9dd64c183c08562161fcf9c826d0ca13e64dba9486652d",
+            "candidates": [
+              {
+                "queue": "ywc_shu_delib_pending_event",
+                "kind": "normal",
+                "mode": "exact",
+                "value": 1127
+              }
+            ],
+            "queue_exclusions": [],
+            "branch_sha256": "46588d02723a82404d7689db299c7d411f68a7bb81e942fb88ca26f468f2a8e1",
+            "source_ops": [
+              {
+                "key": "remove_variable",
+                "op": "=",
+                "value": "ywc_shu_delib_pending_event"
+              }
+            ]
+          }
+        ],
+        "direct_adds": []
+      }
     }
   ]
 }

@@ -3,6 +3,7 @@ import copy
 import json
 from pathlib import Path
 import re
+import subprocess
 import unittest
 
 from tools import v03_inline_delivery_adapter as adapter
@@ -150,7 +151,12 @@ class DmgMarketAdapter(unittest.TestCase):
         self.assertEqual(metadata["schema"], "v03.foundation_inline_adapter.v1")
         self.assertEqual(len(metadata["branches"]), 8)
         active = adapter._dmg_active_arcs(catalog)
-        self.assertEqual(len(active), 5)
+        self.assertEqual(len(active), 6)
+        baseline = json.loads(subprocess.run(
+            ["git", "show", "9980153ba0edb9c48f141df84c11b2f530ab39b6:data/content/v03/countries/dmg.json"],
+            cwd=ROOT, check=True, capture_output=True).stdout.decode("utf-8-sig"))
+        self.assertEqual(active[:5], baseline["arcs"], "the original five market-era source bindings are frozen")
+        self.assertEqual([a["slug"] for a in active], [*FOUNDATION, SCHOOL, MARKET, "v03_dmg_representative_crown"])
         self.assertEqual(sum(len(a["inline_delivery_adapter"]["branches"]) for a in active[:3]), 29)
         self.assertEqual(sum(len(b["candidates"]) for a in active[:3]
                              for b in a["inline_delivery_adapter"]["branches"]), 48)
@@ -158,7 +164,14 @@ class DmgMarketAdapter(unittest.TestCase):
         self.assertEqual(len(active[3]["inline_delivery_adapter"]["branches"]), 6)
         adapter.validate_inline_catalog(catalog)
         result = adapter.render_inline_country_adapters(catalog)
-        self.assertEqual(len(result["journal_scripts"]), 9)
+        original = adapter.render_inline_country_adapters({**catalog, "arcs": active[:5]})
+        self.assertEqual(len(original["journal_scripts"]), 9)
+        self.assertEqual(original["journal_scripts"],
+                         {jid: result["journal_scripts"][jid] for jid in original["journal_scripts"]})
+        self.assertEqual(len(result["journal_scripts"]), 12)
+        self.assertEqual(set(result["journal_scripts"]) - set(original["journal_scripts"]), {
+            "ywc_je_v03_dmg_crown_representation", "ywc_je_v03_dmg_crown_budget",
+            "ywc_je_v03_dmg_crown_continuity"})
         self.assertIn("ywc_v03_dmg_inline_served_5", result["effects"])
         for number in range(49, 63):
             self.assertIn(f"ywc_v03_dmg_inline_candidate_{number} =", result["triggers"])

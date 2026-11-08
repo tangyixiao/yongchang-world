@@ -11,11 +11,12 @@ import unittest
 from pathlib import Path
 from tests.test_v03_nmg_actual_fairness import actual_nmg_admission_world
 from tests.clausewitz_harness import parse
+from tests.nmg_foundation_projection import foundation_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data/content/v03/countries/nmg.json"
 PREFIX = "ywc_v03_nmg_inline"
-ARC_ORDER = tuple(arc["slug"] for arc in json.loads(CATALOG_PATH.read_text(encoding="utf-8"))["arcs"])
+ARC_ORDER = tuple(arc["slug"] for arc in foundation_catalog()["arcs"])
 
 
 def _field(nodes, key, default=None):
@@ -44,7 +45,7 @@ def _native_last_event_variable(immediate):
 
 
 def _catalog():
-    return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    return foundation_catalog()
 
 
 def _rows():

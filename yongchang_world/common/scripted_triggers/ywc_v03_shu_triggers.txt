@@ -720,3 +720,501 @@ OR = {
  AND = { var:ywc_shu_prov_mode = 1 ywc_shu_v03_prov_admin_ready = yes bureaucracy >= 0 has_variable = ywc_shu_prov_central_paid NOT = { has_variable = ywc_shu_prov_relief_paid } }
 }
 }
+
+# M3+ SHU public deliberation: source-owned helpers. This line owns its own
+# pilot (ywc_shu_delib_pilot), its own stage/queue and its own last_event.
+# It never calls ywc_shu_v03_prior_local_right (which carries the provincial
+# contract pilot dependency); its old-right check re-states the real producer
+# union fields against this line's own pilot instead.
+
+ywc_shu_v03_delib_open = {
+has_variable = ywc_v03_shu_v03_shu_public_deliberation_started
+NOT = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_settled }
+NOT = { has_variable = ywc_shu_delib_outcome }
+NOT = { has_variable = ywc_shu_delib_withdrawn }
+}
+
+ywc_shu_v03_delib_has_pilot = {
+OR = {
+ AND = { var:ywc_shu_delib_pilot = 1 any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN } }
+ AND = { var:ywc_shu_delib_pilot = 2 any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING } }
+ AND = { var:ywc_shu_delib_pilot = 3 any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN } }
+ AND = { var:ywc_shu_delib_pilot = 4 any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU } }
+ }
+}
+
+# Office capacity is real employed bureaucrats/clerks in the SAME owned state
+# whose workplace is the government administration building at the threshold;
+# building occupancy alone and any other state's pops never count.
+ywc_shu_v03_delib_office_80 = {
+OR = {
+ AND = { var:ywc_shu_delib_pilot = 1 any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 2 any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 3 any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 4 any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } } } }
+ }
+}
+
+ywc_shu_v03_delib_office_50 = {
+OR = {
+ AND = { var:ywc_shu_delib_pilot = 1 any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 2 any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 3 any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 4 any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ }
+}
+
+ywc_shu_v03_delib_office_25 = {
+OR = {
+ AND = { var:ywc_shu_delib_pilot = 1 any_scope_state = { owner = ROOT state_region = s:STATE_SICHUAN any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 2 any_scope_state = { owner = ROOT state_region = s:STATE_CHONGQING any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 3 any_scope_state = { owner = ROOT state_region = s:STATE_YUNNAN any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } } }
+ AND = { var:ywc_shu_delib_pilot = 4 any_scope_state = { owner = ROOT state_region = s:STATE_GUIZHOU any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } } } }
+ }
+}
+
+# Three complete policies read only current facts; the arc never legislates.
+ywc_shu_v03_delib_mode1_full = {
+has_law_or_variant = law_type:law_monarchy
+has_law_or_variant = law_type:law_appointed_bureaucrats
+OR = {
+ has_law_or_variant = law_type:law_censorship
+ has_law_or_variant = law_type:law_right_of_assembly
+ has_law_or_variant = law_type:law_protected_speech
+ }
+bureaucracy >= 0
+legitimacy >= 25
+any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_shu_v03_delib_mode2_full = {
+OR = {
+ has_law_or_variant = law_type:law_wealth_voting
+ has_law_or_variant = law_type:law_census_voting
+ has_law_or_variant = law_type:law_universal_suffrage
+ }
+OR = {
+ has_law_or_variant = law_type:law_right_of_assembly
+ has_law_or_variant = law_type:law_protected_speech
+ }
+net_fixed_income >= 0
+legitimacy >= 25
+any_interest_group = { OR = { is_interest_group_type = ig_industrialists is_interest_group_type = ig_rural_folk } is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_shu_v03_delib_mode3_full = {
+OR = {
+ has_law_or_variant = law_type:law_autocracy
+ has_law_or_variant = law_type:law_oligarchy
+ }
+OR = {
+ has_law_or_variant = law_type:law_outlawed_dissent
+ has_law_or_variant = law_type:law_censorship
+ }
+authority >= 50
+legitimacy >= 25
+any_interest_group = { OR = { is_interest_group_type = ig_landowners is_interest_group_type = ig_armed_forces } is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+# Limited target2 applies under any regime or law; only real local capacity.
+ywc_shu_v03_delib_target2_ready = {
+bureaucracy >= 0
+legitimacy >= 20
+ywc_shu_v03_delib_office_25 = yes
+NOT = { is_at_war = yes }
+ywc_shu_v03_finance_safe = yes
+ywc_shu_v03_delib_has_pilot = yes
+}
+
+# Mode-current includes the original-state office threshold for that mode.
+ywc_shu_v03_delib_mode1_current = { ywc_shu_v03_delib_mode1_full = yes ywc_shu_v03_delib_office_80 = yes }
+ywc_shu_v03_delib_mode2_current = { ywc_shu_v03_delib_mode2_full = yes ywc_shu_v03_delib_office_50 = yes }
+ywc_shu_v03_delib_mode3_current = { ywc_shu_v03_delib_mode3_full = yes ywc_shu_v03_delib_office_50 = yes }
+
+ywc_shu_v03_delib_full_current = {
+OR = {
+ AND = { var:ywc_shu_delib_mode = 1 ywc_shu_v03_delib_mode1_current = yes }
+ AND = { var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_mode2_current = yes }
+ AND = { var:ywc_shu_delib_mode = 3 ywc_shu_v03_delib_mode3_current = yes }
+ }
+}
+
+ywc_shu_v03_delib_limited_current = { var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_target2_ready = yes }
+
+ywc_shu_v03_delib_target_current = {
+OR = {
+ AND = { var:ywc_shu_delib_target = 1 ywc_shu_v03_delib_full_current = yes }
+ AND = { var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_limited_current = yes }
+ }
+}
+
+ywc_shu_v03_delib_office_current = {
+OR = {
+ AND = { var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_office_25 = yes }
+ AND = { var:ywc_shu_delib_target = 1 OR = { AND = { var:ywc_shu_delib_mode = 1 ywc_shu_v03_delib_office_80 = yes } AND = { var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_office_50 = yes } AND = { var:ywc_shu_delib_mode = 3 ywc_shu_v03_delib_office_50 = yes } } }
+ }
+}
+
+# The witness duty re-reads the recorded source against the CURRENT office and
+# duty; it is a real current check, not just the mode's staffing threshold.
+ywc_shu_v03_delib_witness_duty = {
+has_variable = ywc_shu_delib_witness_source
+has_variable = ywc_shu_delib_witness_mode
+has_variable = ywc_shu_delib_witness_target
+has_variable = ywc_shu_delib_witness_pilot
+var:ywc_shu_delib_witness_mode = var:ywc_shu_delib_mode
+var:ywc_shu_delib_witness_target = var:ywc_shu_delib_target
+var:ywc_shu_delib_witness_pilot = var:ywc_shu_delib_pilot
+ywc_shu_v03_delib_has_pilot = yes
+OR = {
+ AND = { var:ywc_shu_delib_witness_source = 1 ywc_shu_v03_delib_old_witness_source = yes ywc_shu_v03_delib_office_50 = yes }
+ AND = { var:ywc_shu_delib_witness_source = 2 ywc_shu_v03_delib_office_80 = yes }
+ AND = { var:ywc_shu_delib_witness_source = 3 var:ywc_shu_delib_target = 2 ywc_shu_v03_delib_target2_ready = yes ywc_shu_v03_delib_office_25 = yes }
+ }
+}
+
+# Staged responsibility: a chosen witness bound to the CURRENT duty is enough
+# before 1123; after the real signature the sign snapshot must match; the
+# acceptance triple is required only once 1124 has actually accepted.
+ywc_shu_v03_delib_staged_contract = {
+ywc_shu_v03_delib_witness_duty = yes
+ywc_shu_v03_delib_office_current = yes
+ywc_shu_v03_delib_target_current = yes
+ywc_shu_v03_delib_has_pilot = yes
+OR = {
+ AND = { NOT = { has_variable = ywc_shu_delib_signed } NOT = { has_variable = ywc_shu_delib_accepted } }
+ AND = { has_variable = ywc_shu_delib_signed NOT = { has_variable = ywc_shu_delib_accepted }
+  has_variable = ywc_shu_delib_sign_mode has_variable = ywc_shu_delib_sign_target has_variable = ywc_shu_delib_sign_pilot
+  var:ywc_shu_delib_sign_mode = var:ywc_shu_delib_mode
+  var:ywc_shu_delib_sign_target = var:ywc_shu_delib_target
+  var:ywc_shu_delib_sign_pilot = var:ywc_shu_delib_pilot }
+ AND = { has_variable = ywc_shu_delib_accepted
+  has_variable = ywc_shu_delib_sign_mode has_variable = ywc_shu_delib_sign_target has_variable = ywc_shu_delib_sign_pilot
+  var:ywc_shu_delib_sign_mode = var:ywc_shu_delib_mode
+  var:ywc_shu_delib_sign_target = var:ywc_shu_delib_target
+  var:ywc_shu_delib_sign_pilot = var:ywc_shu_delib_pilot
+  has_variable = ywc_shu_delib_accept_mode has_variable = ywc_shu_delib_accept_target has_variable = ywc_shu_delib_accept_pilot
+  var:ywc_shu_delib_accept_mode = var:ywc_shu_delib_mode
+  var:ywc_shu_delib_accept_target = var:ywc_shu_delib_target
+  var:ywc_shu_delib_accept_pilot = var:ywc_shu_delib_pilot }
+ }
+}
+
+# Historical identity integrity: every correctly earned witness/sign/accept
+# mode-target-pilot triple still matches this original contract. It never
+# re-reads the CURRENT duty, so a genuinely lost source does not defeat the
+# honest setback that its loss is meant to evidence.
+ywc_shu_v03_delib_snapshot_identity = {
+has_variable = ywc_shu_delib_mode
+has_variable = ywc_shu_delib_target
+has_variable = ywc_shu_delib_pilot
+has_variable = ywc_shu_delib_witness_mode
+has_variable = ywc_shu_delib_witness_target
+has_variable = ywc_shu_delib_witness_pilot
+has_variable = ywc_shu_delib_sign_mode
+has_variable = ywc_shu_delib_sign_target
+has_variable = ywc_shu_delib_sign_pilot
+has_variable = ywc_shu_delib_accept_mode
+has_variable = ywc_shu_delib_accept_target
+has_variable = ywc_shu_delib_accept_pilot
+var:ywc_shu_delib_witness_mode = var:ywc_shu_delib_mode
+var:ywc_shu_delib_witness_target = var:ywc_shu_delib_target
+var:ywc_shu_delib_witness_pilot = var:ywc_shu_delib_pilot
+var:ywc_shu_delib_sign_mode = var:ywc_shu_delib_mode
+var:ywc_shu_delib_sign_target = var:ywc_shu_delib_target
+var:ywc_shu_delib_sign_pilot = var:ywc_shu_delib_pilot
+var:ywc_shu_delib_accept_mode = var:ywc_shu_delib_mode
+var:ywc_shu_delib_accept_target = var:ywc_shu_delib_target
+var:ywc_shu_delib_accept_pilot = var:ywc_shu_delib_pilot
+}
+
+# A complete snapshot requires the historical triples to hold AND the current
+# witness duty to still be live; this is the guard for a full/limited close.
+ywc_shu_v03_delib_snapshot_intact = {
+ywc_shu_v03_delib_snapshot_identity = yes
+ywc_shu_v03_delib_witness_duty = yes
+}
+
+# Real old fiscal-policy local audit right, restated for THIS line's pilot:
+# same pilot number as the foundation register and both still owned.
+ywc_shu_v03_delib_local_right_source = {
+has_variable = ywc_shu_v03_pilot_state
+has_variable = ywc_shu_delib_pilot
+var:ywc_shu_v03_pilot_state = var:ywc_shu_delib_pilot
+ywc_shu_v03_has_pilot_state = yes
+ywc_shu_v03_delib_has_pilot = yes
+has_variable = ywc_v03_shu_v03_shu_fiscal_register_started
+has_variable = ywc_shu_first_audit
+NOT = { has_variable = ywc_shu_fiscal_outcome_withdrawn_breach }
+OR = { has_variable = ywc_shu_local_audit_right var:ywc_shu_settlement_mode = 2 }
+}
+
+# A genuinely closed province contract: written terms bound to the same pilot
+# plus actual paid/relief/meeting records (or the real prior-right waiver).
+# province_outcome alone is never accepted as evidence. A real provincial
+# self-raise (relief_local) or the actual meeting fee counts; the old central
+# path does not own share_terms and never fabricates one here.
+ywc_shu_v03_delib_province_evidence = {
+has_variable = ywc_shu_prov_share_terms
+has_variable = ywc_shu_prov_terms_pilot
+var:ywc_shu_prov_terms_pilot = var:ywc_shu_delib_pilot
+OR = {
+  AND = { OR = { has_variable = ywc_shu_prov_meeting_fee_paid has_variable = ywc_shu_prov_meeting_fee_waived } OR = { has_variable = ywc_shu_prov_relief_local has_variable = ywc_shu_prov_relief_paid } }
+  AND = { has_variable = ywc_shu_prov_meeting_fee_paid ywc_shu_v03_delib_local_right_source = yes }
+ }
+ywc_shu_v03_delib_has_pilot = yes
+}
+
+# Separately: a genuinely adopted central-budget responsibility, from the real
+# central fiscal outcome plus BOTH actual central and relief payments and the
+# still owned matching pilot. This is the binding-plan 1123/1126 central read;
+# a lone flag/outcome or an OR is not this contract.
+ywc_shu_v03_delib_central_evidence = {
+var:ywc_v03_shu_v03_shu_fiscal_register_outcome = 1
+has_variable = ywc_shu_fiscal_outcome_central_audit
+has_variable = ywc_v03_shu_v03_shu_fiscal_register_settled
+has_variable = ywc_shu_v03_pilot_state
+has_variable = ywc_shu_delib_pilot
+var:ywc_shu_v03_pilot_state = var:ywc_shu_delib_pilot
+has_variable = ywc_shu_prov_central_paid
+has_variable = ywc_shu_prov_relief_paid
+ywc_shu_v03_delib_has_pilot = yes
+}
+
+# A central-budget responsibility adopted at 1122 still holds: the adopted
+# mode-target-pilot snapshot matches the current contract and the genuine
+# central evidence (both actual central and relief payments) remains live.
+ywc_shu_v03_delib_central_budget_duty = {
+has_variable = ywc_shu_delib_central_budget
+has_variable = ywc_shu_delib_central_budget_mode
+has_variable = ywc_shu_delib_central_budget_target
+has_variable = ywc_shu_delib_central_budget_pilot
+var:ywc_shu_delib_central_budget_mode = var:ywc_shu_delib_mode
+var:ywc_shu_delib_central_budget_target = var:ywc_shu_delib_target
+var:ywc_shu_delib_central_budget_pilot = var:ywc_shu_delib_pilot
+ywc_shu_v03_delib_central_evidence = yes
+}
+
+# Bound: either no central-funded budget was adopted (a fresh or other-source
+# line still has its own explicit current budget path), or the adopted central
+# responsibility still holds. Never auto-switch an adopted source after loss.
+ywc_shu_v03_delib_central_budget_bound = {
+OR = {
+ NOT = { has_variable = ywc_shu_delib_central_budget }
+ ywc_shu_v03_delib_central_budget_duty = yes
+ }
+}
+
+ywc_shu_v03_delib_old_witness_source = {
+OR = { ywc_shu_v03_delib_local_right_source = yes ywc_shu_v03_delib_province_evidence = yes }
+}
+
+# Repaid principal does not erase consultation; an unpaid advance or a
+# broken principal means the full mode2 review discount is unavailable.
+ywc_shu_v03_delib_merchant_repaid_discount = {
+ywc_shu_merchant_consultation_source = yes
+has_variable = ywc_shu_merchant_advance_repaid
+NOT = { has_variable = ywc_shu_merchant_advance_unpaid }
+}
+
+# The menu, the effect limit and the helper all read this same current price.
+# Register pricing re-reads the CURRENT selected mode/target/pilot/duty; loss
+# of the appointing law, group, pilot or posts stops an illegal real payment.
+ywc_shu_v03_delib_register_affordable = {
+has_variable = ywc_shu_delib_mode
+has_variable = ywc_shu_delib_target
+has_variable = ywc_shu_delib_pilot
+ywc_shu_v03_delib_has_pilot = yes
+ywc_shu_v03_delib_target_current = yes
+ywc_shu_v03_delib_office_current = yes
+net_fixed_income >= 0
+NOT = { in_default = yes }
+NOT = { has_modifier = declared_bankruptcy }
+has_variable = ywc_shu_delib_cost
+var:ywc_shu_delib_cost > 0
+OR = {
+ AND = { OR = { var:ywc_shu_delib_target = 2 AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 3 } } gold_reserves >= { value = var:ywc_shu_delib_cost multiply = 0.5 } }
+ AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 1 gold_reserves >= var:ywc_shu_delib_cost }
+ AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_old_witness_source = yes gold_reserves >= var:ywc_shu_delib_cost }
+ AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 NOT = { ywc_shu_v03_delib_old_witness_source = yes } gold_reserves >= { value = var:ywc_shu_delib_cost multiply = 1.5 } }
+ }
+}
+
+ywc_shu_v03_delib_review_affordable = {
+has_variable = ywc_shu_delib_mode
+has_variable = ywc_shu_delib_target
+has_variable = ywc_shu_delib_pilot
+ywc_shu_v03_delib_has_pilot = yes
+ywc_shu_v03_delib_target_current = yes
+ywc_shu_v03_delib_office_current = yes
+ywc_shu_v03_delib_witness_duty = yes
+net_fixed_income >= 0
+NOT = { in_default = yes }
+NOT = { has_modifier = declared_bankruptcy }
+has_variable = ywc_shu_delib_cost
+var:ywc_shu_delib_cost > 0
+OR = {
+ AND = { OR = { var:ywc_shu_delib_target = 2 AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 3 } } gold_reserves >= { value = var:ywc_shu_delib_cost multiply = 0.5 } }
+ AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 1 gold_reserves >= var:ywc_shu_delib_cost }
+ AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 ywc_shu_v03_delib_merchant_repaid_discount = yes gold_reserves >= var:ywc_shu_delib_cost }
+ AND = { var:ywc_shu_delib_target = 1 var:ywc_shu_delib_mode = 2 NOT = { ywc_shu_v03_delib_merchant_repaid_discount = yes } gold_reserves >= { value = var:ywc_shu_delib_cost multiply = 1.5 } }
+ }
+}
+
+ywc_shu_v03_delib_fees_current = {
+has_variable = ywc_shu_delib_register_paid
+var:ywc_shu_delib_register_paid_amount > 0
+has_variable = ywc_shu_delib_review_paid
+var:ywc_shu_delib_review_paid_amount > 0
+}
+
+ywc_shu_v03_delib_full_terminal = {
+var:ywc_shu_delib_target = 1
+ywc_shu_v03_delib_full_current = yes
+ywc_shu_v03_delib_snapshot_intact = yes
+ywc_shu_v03_delib_fees_current = yes
+ywc_shu_v03_delib_witness_duty = yes
+ywc_shu_v03_delib_central_budget_bound = yes
+has_variable = ywc_shu_delib_review_mature
+NOT = { has_variable = ywc_shu_delib_review_interrupted }
+NOT = { is_at_war = yes }
+ywc_shu_v03_finance_safe = yes
+ywc_shu_v03_delib_has_pilot = yes
+}
+
+ywc_shu_v03_delib_limited_terminal = {
+var:ywc_shu_delib_target = 2
+ywc_shu_v03_delib_limited_current = yes
+ywc_shu_v03_delib_snapshot_intact = yes
+ywc_shu_v03_delib_fees_current = yes
+ywc_shu_v03_delib_witness_duty = yes
+ywc_shu_v03_delib_central_budget_bound = yes
+has_variable = ywc_shu_delib_review_mature
+NOT = { has_variable = ywc_shu_delib_review_interrupted }
+NOT = { is_at_war = yes }
+ywc_shu_v03_finance_safe = yes
+ywc_shu_v03_delib_has_pilot = yes
+}
+
+# A cached setback button is only real while the current obligation is
+# actually lost; once the full or limited duty holds again it goes inert.
+# It requires genuine positive-paid maturity plus historical identity, then
+# any real current inability (war, unsafe finance, lost pilot, lost witness
+# source, lost adopted central budget, or lost full/limited policy duty). It
+# must not require the lost current ability to prove its own failure.
+ywc_shu_v03_delib_setback_available = {
+has_variable = ywc_shu_delib_review_mature
+has_variable = ywc_shu_delib_review_paid
+var:ywc_shu_delib_review_paid_amount > 0
+NOT = { has_variable = ywc_shu_delib_review_interrupted }
+ywc_shu_v03_delib_snapshot_identity = yes
+OR = {
+ is_at_war = yes
+ NOT = { ywc_shu_v03_finance_safe = yes }
+ NOT = { ywc_shu_v03_delib_has_pilot = yes }
+ NOT = { ywc_shu_v03_delib_witness_duty = yes }
+ NOT = { ywc_shu_v03_delib_central_budget_bound = yes }
+ AND = { var:ywc_shu_delib_target = 1 NOT = { ywc_shu_v03_delib_full_current = yes } }
+ AND = { var:ywc_shu_delib_target = 2 NOT = { ywc_shu_v03_delib_limited_current = yes } }
+ }
+}
+
+ywc_shu_v03_delib_phase1 = {
+has_variable = ywc_shu_delib_phase
+var:ywc_shu_delib_phase = 1
+}
+
+ywc_shu_v03_delib_phase2 = {
+has_variable = ywc_shu_delib_phase
+var:ywc_shu_delib_phase = 2
+}
+
+ywc_shu_v03_delib_at_1120 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase1 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_eligibility
+var:ywc_shu_delib_stage = 1120
+var:ywc_shu_delib_last_event = 1120
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1120 }
+}
+
+ywc_shu_v03_delib_at_1121 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase1 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_eligibility
+var:ywc_shu_delib_stage = 1121
+var:ywc_shu_delib_last_event = 1121
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1121 }
+}
+
+ywc_shu_v03_delib_at_1122 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase1 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_eligibility
+var:ywc_shu_delib_stage = 1122
+var:ywc_shu_delib_last_event = 1122
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1122 }
+}
+
+ywc_shu_v03_delib_at_1123 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase1 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_eligibility
+var:ywc_shu_delib_stage = 1123
+var:ywc_shu_delib_last_event = 1123
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1123 }
+}
+
+ywc_shu_v03_delib_at_1124 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase2 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution
+var:ywc_shu_delib_stage = 1124
+var:ywc_shu_delib_last_event = 1124
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1124 }
+}
+
+ywc_shu_v03_delib_at_1125 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase2 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution
+var:ywc_shu_delib_stage = 1125
+var:ywc_shu_delib_last_event = 1125
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1125 }
+}
+
+ywc_shu_v03_delib_at_1126 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase2 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution
+var:ywc_shu_delib_stage = 1126
+var:ywc_shu_delib_last_event = 1126
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1126 }
+}
+
+ywc_shu_v03_delib_at_1127 = {
+ywc_shu_v03_delib_open = yes
+ywc_shu_v03_delib_phase2 = yes
+has_journal_entry = ywc_je_v03_shu_deliberation_appeal_execution
+var:ywc_shu_delib_stage = 1127
+var:ywc_shu_delib_last_event = 1127
+OR = { NOT = { has_variable = ywc_shu_delib_pending_event } var:ywc_shu_delib_pending_event = 1127 }
+}
+
+# The already-paid recount advance: current stage/phase/receipt and every staged
+# snapshot must hold, and six genuine NEW months must have matured; the positive
+# review_paid amount then moves to 1126 without another cash affordability check.
+ywc_shu_v03_delib_paid_advance_ready = {
+ywc_shu_v03_delib_at_1125 = yes
+has_variable = ywc_shu_delib_review_paid
+var:ywc_shu_delib_review_paid_amount > 0
+has_variable = ywc_shu_delib_review_mature
+NOT = { has_variable = ywc_shu_delib_review_interrupted }
+ywc_shu_v03_delib_has_pilot = yes
+ywc_shu_v03_delib_target_current = yes
+ywc_shu_v03_delib_office_current = yes
+ywc_shu_v03_delib_witness_duty = yes
+ywc_shu_v03_delib_staged_contract = yes
+NOT = { is_at_war = yes }
+ywc_shu_v03_finance_safe = yes
+}
