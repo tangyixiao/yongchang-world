@@ -301,6 +301,145 @@ class OIRContract(unittest.TestCase):
      else:v['fixture_modifiers'].add('declared_bankruptcy')
      w.execute(nodes(op['effect']),'OIR');self.assertEqual(w.treasury['OIR'],0)
      self.assertNotIn('ywc_oir_'+pre(a)+'_route',v);self.assertEqual(v['ywc_oir_'+pre(a)+'_pending_event'],int(ev['id'].split('.')[-1]))
+ def test_all_terminal_closers_share_stale_rejection_and_preserve_other_queues(self):
+  cases={"pasture":("court","banner","custom"),"supply":("unified","quota","capped"),"tolls":("single","shared","banner")}
+  for p,names in cases.items():
+   for name in names:
+    reject=f'ywc_oir_{p}_reject_as_{name}';close=f'ywc_oir_close_{p}_as_{name}'
+    closer=body(self.e,close);self.assertIn(f'else = {{ {reject} = yes }}',closer)
+    logic=body(self.e,reject);self.assertIn(f'ywc_oir_{p}_reset_observation = yes',logic)
+    self.assertNotIn(f'ywc_oir_{p}_reset_blocked_epoch = yes',logic)
+    self.assertIn(f'NOT = {{ has_variable = ywc_oir_{p}_pending_event }}',logic)
+    self.assertIn(f'value = {dict(pasture=1005,supply=1017,tolls=1023)[p]}',logic)
+    self.assertNotIn(f'remove_variable = ywc_oir_{p}_notice_event',logic)
+ def test_paid_route_narrowed_limited_rejection_requeues_without_changing_obligation(self):
+  fees={"pasture":(150,50),"supply":(100,60),"tolls":(100,40)}
+  for a in self.arcs:
+   p=pre(a);key='ywc_oir_'+p;final_id=int(a['events'][-3]['id'].split('.')[-1])
+   for route in (1,2):
+    for loss_pulse_first in (False,True):
+     fee=fees[p][route-1];w,ev=play_final(a,route);v=w.countries['OIR']
+     self.assertEqual(w.treasury['OIR'],-fee);choose(w,ev,'defer')
+     if p=='pasture':v['ywc_flavor_oir_banner_cohesion']=40
+     elif p=='supply':v['army_size']=600
+     else:
+      v['fixture_states'][0]['market_access']=0.45;v['ywc_flavor_oir_banner_cohesion']=40
+     ev=deliver(w,a);choose(w,ev,'defer');w.advance_days(365)
+     notice=deliver(w,a,0);self.assertEqual(notice['id'],a['events'][-2]['id'])
+     choose(w,notice,'narrow_scope');self.assertEqual(v[key+'_route'],route);self.assertEqual(w.treasury['OIR'],-fee)
+     ev=deliver(w,a);self.assertEqual(ev['id'],a['events'][-3]['id']);choose(w,ev,'defer')
+     w.advance_months(6);before=len(w.events);pulse_current(w,a)
+     self.assertIn(key+'_limited_six_months_complete',v);self.assertEqual(len(w.events),before+1)
+     ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));self.assertEqual(ev['id'],a['events'][-3]['id'])
+     v['in_default']=True
+     if loss_pulse_first:
+      before=len(w.events);pulse_current(w,a);self.assertEqual(len(w.events),before)
+     stale=next(o for o in ev['options'] if o['key']=='route_3');w.execute(nodes(stale['effect']),'OIR');sync(w)
+     self.assertNotIn(key+'_limited_six_months_complete',v);self.assertNotIn(key+'_outcome',v)
+     self.assertEqual(v[key+'_route'],route);self.assertEqual(w.treasury['OIR'],-fee);self.assertEqual(v[key+'_pending_event'],final_id)
+     if loss_pulse_first:
+      self.assertIn(key+'_blocked_timer_started',v);self.assertEqual(w.days_until_expiry['OIR'][key+'_blocked_12_due'],365)
+      self.assertEqual(w.days_until_expiry['OIR'][key+'_blocked_36_due'],1095)
+     v['in_default']=False;w.advance_days(90);ev=deliver(w,a,0);self.assertEqual(ev['id'],a['events'][-3]['id']);choose(w,ev,'defer')
+     self.assertNotIn(key+'_limited_six_months_complete',v)
+     w.advance_months(5);pulse_current(w,a);self.assertNotIn(key+'_limited_six_months_complete',v)
+     w.advance_months(1);before=len(w.events);pulse_current(w,a);self.assertIn(key+'_limited_six_months_complete',v);self.assertEqual(len(w.events),before+1)
+     ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));choose(w,ev,'route_3')
+     self.assertEqual(v[slot(a)+'_outcome'],3);self.assertEqual(v[key+'_route'],route)
+     self.assertEqual(w.treasury['OIR'],-fee);self.assertEqual(v['ywc_v03_active_arc_count'],0)
+ def test_stale_full_rejection_preserves_current_queued_notice_epoch(self):
+  for i,a in enumerate(self.arcs):
+   p=pre(a);key='ywc_oir_'+p;w,ev=play_final(a,1);v=w.countries['OIR'];fee={'pasture':150,'supply':100,'tolls':100}[p]
+   choose(w,ev,'defer');ev=deliver(w,a);choose(w,ev,'defer');w.advance_months(6);before=len(w.events);pulse_current(w,a)
+   self.assertEqual(len(w.events),before+1);ev=fire(w,a,int(w.events[-1][1].split('.')[-1]))
+   v['in_default']=True
+   if p=='pasture':v['fixture_states'][0]['buildings'][1]['occupancy']=0.2
+   elif p=='supply':v['army_size']=100
+   else:v['fixture_states'][0]['market_access']=0.2
+   pulse_current(w,a);self.assertIn(key+'_blocked_timer_started',v);self.assertNotIn(key+'_six_months_complete',v)
+   w.advance_days(365);other=self.arcs[(i+1)%len(self.arcs)];start(w,other);other_event=deliver(w,other,0);choose(w,other_event,'defer')
+   before=len(w.events);pulse_current(w,a);self.assertEqual(len(w.events),before)
+   notice_id=int(a['events'][-2]['id'].split('.')[-1]);self.assertEqual(v[key+'_notice_event'],notice_id)
+   self.assertIn(key+'_12_notice_sent',v);self.assertEqual(w.days_until_expiry['OIR'][key+'_blocked_36_due'],730)
+   stale=next(o for o in ev['options'] if o['key']=='route_1');w.execute(nodes(stale['effect']),'OIR');sync(w)
+   self.assertEqual(v[key+'_pending_event'],int(a['events'][-3]['id'].split('.')[-1]))
+   self.assertEqual(v[key+'_notice_event'],notice_id);self.assertIn(key+'_blocked_timer_started',v);self.assertIn(key+'_12_notice_sent',v)
+   self.assertEqual(w.days_until_expiry['OIR'][key+'_blocked_36_due'],730);self.assertNotIn(key+'_outcome',v);self.assertEqual(w.treasury['OIR'],-fee)
+ def test_actual_mature_terminal_rejection_requeues_and_requires_fresh_watch(self):
+  fees={"pasture":(150,50),"supply":(100,60),"tolls":(100,40)}
+  for a in self.arcs:
+   p=pre(a);vkey='ywc_oir_'+p
+   for route in (1,2):
+    fee=fees[p][route-1];w,ev=play_final(a,route);v=w.countries['OIR'];self.assertEqual(w.treasury['OIR'],-fee)
+    choose(w,ev,'defer');ev=deliver(w,a);choose(w,ev,'defer')
+    w.advance_months(6);before=len(w.events);pulse_current(w,a);self.assertIn(vkey+'_six_months_complete',v)
+    self.assertEqual(len(w.events),before+1);ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));self.assertEqual(ev['id'],a['events'][-3]['id'])
+    v['in_default']=True;cash=w.treasury['OIR'];stale_option=next(o for o in ev['options'] if o['key']==f'route_{route}');w.execute(nodes(stale_option['effect']),'OIR');sync(w)
+    self.assertEqual(w.treasury['OIR'],cash);self.assertEqual(v[vkey+'_route'],route)
+    self.assertNotIn(vkey+'_six_months_complete',v);self.assertNotIn(vkey+'_observation_timer',v)
+    self.assertEqual(v[vkey+'_pending_event'],int(ev['id'].split('.')[-1]))
+    v['in_default']=False
+    w.advance_days(90);ev=deliver(w,a,0);self.assertEqual(ev['id'],a['events'][-3]['id'])
+    choose(w,ev,'defer');self.assertNotIn(vkey+'_six_months_complete',v)
+    w.advance_months(5);pulse_current(w,a);self.assertNotIn(vkey+'_six_months_complete',v)
+    w.advance_months(1);before=len(w.events);pulse_current(w,a);self.assertIn(vkey+'_six_months_complete',v)
+    self.assertEqual(len(w.events),before+1);ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));choose(w,ev,f'route_{route}')
+    self.assertEqual(v[slot(a)+'_outcome'],route);self.assertEqual(w.treasury['OIR'],-fee)
+    self.assertEqual(v['ywc_v03_active_arc_count'],0)
+ def test_actual_limited_terminal_rejection_requeues_and_restarts_limited_watch(self):
+  for a in self.arcs:
+   p=pre(a);key='ywc_oir_'+p;w,ev=play_final(a,3);v=w.countries['OIR']
+   choose(w,ev,'defer');ev=deliver(w,a);choose(w,ev,'defer')
+   if p=='pasture':v['ywc_flavor_oir_banner_cohesion']=30
+   elif p=='supply':v['army_size']=400
+   else:v['fixture_states'][0]['market_access']=0.45
+   ev=deliver(w,a);choose(w,ev,'defer');w.advance_days(365);notice=deliver(w,a,0)
+   self.assertEqual(notice['id'],a['events'][-2]['id']);choose(w,notice,'narrow_scope')
+   ev=deliver(w,a);self.assertEqual(ev['id'],a['events'][-3]['id']);choose(w,ev,'defer')
+   w.advance_months(6);before=len(w.events);pulse_current(w,a)
+   self.assertIn(key+'_limited_six_months_complete',v);self.assertEqual(len(w.events),before+1)
+   ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));v['in_default']=True
+   stale_option=next(o for o in ev['options'] if o['key']=='route_3');w.execute(nodes(stale_option['effect']),'OIR');sync(w)
+   self.assertNotIn(key+'_limited_six_months_complete',v);self.assertEqual(v[key+'_pending_event'],int(ev['id'].split('.')[-1]))
+   self.assertEqual(v[key+'_route'],3);self.assertNotIn(slot(a)+'_settled',v)
+   v['in_default']=False;w.advance_days(90);before=len(w.events);pulse_current(w,a);self.assertEqual(len(w.events),before+1)
+   ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));choose(w,ev,'defer')
+   self.assertNotIn(key+'_limited_six_months_complete',v)
+   w.advance_months(5);pulse_current(w,a);self.assertNotIn(key+'_limited_six_months_complete',v)
+   w.advance_months(1);before=len(w.events);pulse_current(w,a);self.assertIn(key+'_limited_six_months_complete',v);self.assertEqual(len(w.events),before+1)
+   ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));choose(w,ev,'route_3')
+   self.assertEqual(v[slot(a)+'_outcome'],3);self.assertEqual(w.treasury['OIR'],0);self.assertEqual(v['ywc_v03_active_arc_count'],0)
+ def test_qualified_immature_close_keeps_clock_and_settled_close_stays_terminal(self):
+  calls={"pasture":"ywc_oir_close_pasture_as_court","supply":"ywc_oir_close_supply_as_unified","tolls":"ywc_oir_close_tolls_as_single"}
+  for a in self.arcs:
+   p=pre(a);key='ywc_oir_'+p;w,ev=play_final(a,1);v=w.countries['OIR']
+   choose(w,ev,'defer');ev=deliver(w,a);choose(w,ev,'defer')
+   timer=v[key+'_observation_timer'];self.assertIn(key+'_observation_started',v)
+   w.run(calls[p],'OIR');self.assertEqual(v[key+'_observation_timer'],timer)
+   self.assertIn(key+'_observation_started',v);self.assertNotIn(key+'_six_months_complete',v)
+   w.advance_months(6);before=len(w.events);pulse_current(w,a);self.assertEqual(len(w.events),before+1)
+   ev=fire(w,a,int(w.events[-1][1].split('.')[-1]));choose(w,ev,'route_1')
+   after=(v[slot(a)+'_outcome'],v['ywc_v03_active_arc_count'],v['ywc_v03_visible_task_count'],w.treasury['OIR'],len(w.modifiers))
+   w.run(calls[p],'OIR')
+   self.assertEqual((v[slot(a)+'_outcome'],v['ywc_v03_active_arc_count'],v['ywc_v03_visible_task_count'],w.treasury['OIR'],len(w.modifiers)),after)
+ def test_actual_recovery_starts_new_twelve_and_thirty_six_month_notice_epoch(self):
+  for a in self.arcs:
+   p=pre(a);vkey='ywc_oir_'+p
+   w,ev=play_final(a,1);v=w.countries['OIR'];choose(w,ev,'defer');lose(v,p)
+   ev=deliver(w,a);choose(w,ev,'defer')
+   w.advance_days(365);n=deliver(w,a,0);self.assertEqual(n['id'],a['events'][-2]['id']);choose(w,n,'defer')
+   w.advance_days(730);n=deliver(w,a,0);self.assertEqual(n['id'],a['events'][-1]['id']);choose(w,n,'defer')
+   if p=='pasture':v['fixture_states'][0]['buildings'][1]['occupancy']=0.8
+   elif p=='supply':v['army_size']=2200
+   else:v['fixture_states'][0]['market_access']=0.9
+   pulse_current(w,a)
+   for suffix in ('blocked_timer_started','blocked_12_due','blocked_36_due','12_notice_sent','36_notice_sent','notice_event','last_notice_event'):
+    self.assertNotIn(vkey+'_'+suffix,v,(a['slug'],suffix))
+   lose(v,p);ev=deliver(w,a);choose(w,ev,'defer')
+   w.advance_days(365);n=deliver(w,a,0);self.assertEqual(n['id'],a['events'][-2]['id'])
+   self.assertIn(vkey+'_12_notice_sent',v);choose(w,n,'defer')
+   w.advance_days(730);n=deliver(w,a,0);self.assertEqual(n['id'],a['events'][-1]['id'])
+   self.assertIn(vkey+'_36_notice_sent',v);choose(w,n,'defer')
  def test_all_helpers_resolve_and_no_territory_or_minerals(self):
   calls=set(re.findall(r'(?<![A-Za-z0-9_.])(ywc_[a-z0-9_]+)\s*=\s*(?:yes|no|\{)',json.dumps(self.catalog)))
   self.assertFalse(calls-defs(),sorted(calls-defs()))
