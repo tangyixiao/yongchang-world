@@ -181,7 +181,6 @@ def validate_catalogue_adapters(catalogue:dict[str,Any])->None:
             owner_by_queue[var]=arc["slug"]
 
 def _candidate(slug:str,key:str)->str: return f"ywc_v03_scheduler_candidate_{slug}_{key}"
-def _arc_turn(slug:str)->str: return f"ywc_v03_scheduler_turn_{slug}"
 def _candidate_turn(slug:str,key:str)->str: return f"ywc_v03_scheduler_turn_{slug}_{key}"
 def _dispatch(slug:str,key:str)->str: return f"ywc_v03_scheduler_dispatch_{slug}_{key}"
 
@@ -226,9 +225,6 @@ def render_country_adapters(catalogue:dict[str,Any])->dict[str,str]:
         allowed=set(c.get("source_journals",[ph["journal"] for ph in ad["live_phases"]])); phase=" OR = { "+" ".join("AND = { "+_inner(ph["predicate"],"phase")+" }" for ph in ad["live_phases"] if ph["journal"] in allowed)+" }"
         checks=[f"{cn} = yes",f"var:{ra} = {arcpos[slug]}",f"var:{rk} = {ident}",f"has_variable = {rt}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {cep}",f"var:{cep} > 0",f"var:{cep} = var:{epoch}",f"has_variable = {sp}",f"has_variable = {sv}",f"has_variable = {qvar}",f"var:{qvar} = var:{sv}",phase,f"has_variable = {ad['owner_started']}",f"NOT = {{ has_variable = {ad['owner_settled']} }}",f"NOT = {{ var:ywc_v03_scheduler_served_{slug} = var:{roundv} }}"]
         trigs.append(f"{_dispatch(slug,c['key'])} = {{ AND = {{ {' '.join(checks)} }} }}")
-    for slug in arcpos:
-        arc_defs=[(q,c,cn) for a,q,c,cn in defs if a["slug"]==slug]
-        trigs.append(f"{_arc_turn(slug)} = {{ OR = {{ "+" ".join(f"{_candidate_turn(slug,c['key'])} = yes" for _,c,_ in arc_defs)+" } }")
     # Expired or stale reservations are cleared before scheduling. A reservation is
     # valid only while its exact candidate, phase, owner and one-day timer remain live.
     prep=[f"ywc_v03_scheduler_prepare_{key} = {{","    if = { limit = { NOT = { has_variable = "+roundv+" } } set_variable = { name = "+roundv+" value = 1 } }"]

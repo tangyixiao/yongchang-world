@@ -94,7 +94,7 @@ class AggregateSchedulerContract(unittest.TestCase):
         self.assertIn("var:alpha_notice = 1", triggers)
         self.assertIn("ywc_v03_alpha_live = yes", triggers)
         self.assertNotIn("ywc_v03_can_deliver_major", triggers)
-        self.assertIn("ywc_v03_scheduler_turn_alpha = {", triggers)
+        self.assertIn("ywc_v03_scheduler_turn_alpha_normal_pending = {", triggers)
         self.assertIn("ywc_v03_scheduler_ack_alpha_normal_pending", effects)
         self.assertIn("ywc_v03_scheduler_ack_alpha_notice12_pending", effects)
         self.assertIn("set_variable = { name = ywc_v03_demo_reservation_timer value = 1 days = 1 }", effects)
