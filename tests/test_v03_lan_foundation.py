@@ -194,6 +194,12 @@ def _catalog():
     return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
 
 
+def _foundation_catalog():
+    catalog = _catalog()
+    catalog["arcs"] = [arc for arc in catalog["arcs"] if arc["era"] == "foundation"]
+    return catalog
+
+
 def _arc(catalog, slug):
     for arc in catalog["arcs"]:
         if arc["slug"] == slug:
@@ -232,7 +238,7 @@ def _helper_body(text, name):
 
 class LanCatalogShapeTest(unittest.TestCase):
     def test_three_arcs_with_eight_events_and_two_journals_each(self):
-        catalog = _catalog()
+        catalog = _foundation_catalog()
         self.assertEqual(catalog["key"], "country_lan")
         self.assertEqual(catalog["runtime_tags"], ["LAN"])
         self.assertEqual(len(catalog["arcs"]), 3)
@@ -264,7 +270,7 @@ class LanCatalogShapeTest(unittest.TestCase):
                 self.assertTrue(event["id"].startswith("ywc_lan."), event["id"])
 
     def test_journal_ids_use_the_lan_namespace(self):
-        catalog = _catalog()
+        catalog = _foundation_catalog()
         for arc in catalog["arcs"]:
             for journal in arc["journals"]:
                 self.assertRegex(journal["id"], r"^ywc_je_v03_lan_[a-z0-9_]+$")
@@ -280,7 +286,7 @@ class LanCatalogShapeTest(unittest.TestCase):
     def test_every_event_has_a_free_idempotent_exit(self):
         """A player must always be able to walk away without paying: every event carries a
         free `withdraw`, and every non-terminal event also carries a free `defer`."""
-        catalog = _catalog()
+        catalog = _foundation_catalog()
         for arc in catalog["arcs"]:
             terminal = max(_number(e["id"]) for e in arc["events"])
             for event in arc["events"]:
@@ -309,7 +315,7 @@ class LanCatalogShapeTest(unittest.TestCase):
 
 class LanContextContractRegressionTest(unittest.TestCase):
     def test_context_claims_match_recorded_flags_and_one_time_costs(self):
-        events = {event["id"]: event for arc in _catalog()["arcs"] for event in arc["events"]}
+        events = {event["id"]: event for arc in _foundation_catalog()["arcs"] for event in arc["events"]}
         self.assertEqual(len(events), 24)
 
         def option(event_id, key):
@@ -1871,7 +1877,7 @@ class LanObservationTest(unittest.TestCase):
 
 class LanLegacyTest(unittest.TestCase):
     def test_arcs_read_the_old_campaign_variable(self):
-        catalog = _catalog()
+        catalog = _foundation_catalog()
         for arc in catalog["arcs"]:
             text = _arc_text(arc)
             self.assertIn("ywc_campaign_lan_c1_outcome", text, arc["slug"])

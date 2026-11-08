@@ -326,8 +326,8 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                         native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_nqg_effects.txt")
                         validate_nqg_native_helper_source(catalog, native_effects.read_text(encoding="utf-8-sig"))
                     if key == "country_lan":
-                        # LAN has no receipt variable. Validate the one native cooldown helper
-                        # as a complete AST definition before accepting its inline proof path.
+                        # Validate LAN's native cooldown helper as a complete AST.
+                        # The adapter separately checks each permitted event/receipt body.
                         native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_effects.txt")
                         validate_lan_native_helper_source(native_effects.read_text(encoding="utf-8"))
                     if key == "country_nmg":

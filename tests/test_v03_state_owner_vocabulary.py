@@ -22,7 +22,7 @@ from test_v03_shu_merchant_obligations import reached_offer
 ROOT = Path(__file__).resolve().parents[1]
 # DMG retains its nine foundation predicates and adds six school queries, each
 # nested in the selected owned state before entering pop/workplace scope.
-COUNTS = dict(dmg=15, jhg=4, kor=6, shu=44, oir=9, nmg=6, tib=8, nqg=1)
+COUNTS = dict(dmg=15, jhg=4, kor=6, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
 
 
 def source(path):
