@@ -1,4 +1,5 @@
 import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -61,17 +62,29 @@ class InlineSourceParserTests(unittest.TestCase):
                       if a["era"] == "foundation" for j in a["journals"]]
         self.assertEqual(sum(len(item["branches"]) for item in foundation), 29)
         self.assertEqual(len({item["journal"] for item in foundation}), 6)
-        self.assertEqual(sum(len(item["branches"]) for item in bindings), 43)
-        self.assertEqual(len({item["journal"] for item in bindings}), 9)
+        old_arcs = [a for a in catalog["arcs"] if a["slug"] != "v03_dmg_representative_crown"]
+        previous = json.loads(subprocess.run(
+            ["git", "show", "9980153ba0edb9c48f141df84c11b2f530ab39b6:data/content/v03/countries/dmg.json"],
+            cwd=ROOT, check=True, capture_output=True).stdout.decode("utf-8-sig"))
+        self.assertEqual(old_arcs, previous["arcs"], "all five old cards and exact source proofs are preserved")
+        old_bindings = [source_binding(j["id"], j["script"]) for a in old_arcs for j in a["journals"]]
+        self.assertEqual(sum(len(item["branches"]) for item in old_bindings), 43)
+        self.assertEqual(len(old_bindings), 9)
+        crown = next(a for a in catalog["arcs"] if a["slug"] == "v03_dmg_representative_crown")
+        self.assertEqual(len(crown["journals"]), 3)
+        self.assertEqual({e["id"] for e in crown["events"]}, {f"ywc_dmg.{n}" for n in range(1110, 1120)})
+        self.assertEqual(sum(len(item["branches"]) for item in bindings), 53)
+        self.assertEqual(len({item["journal"] for item in bindings}), 12)
         self.assertEqual(sum(b["event"] == "ywc_dmg.1015" for item in bindings for b in item["branches"]), 3)
         self.assertTrue(all(len(b["sha256"]) == 64 and b["end"] > b["start"] for item in bindings for b in item["branches"]))
         candidates = [queue_candidates(b["limit_source"]) for item in bindings for b in item["branches"]]
+        self.assertEqual(sum(map(len, candidates)), 72)
         self.assertTrue(all(candidates), "every actual sender branch has a source-backed queue"); self.assertTrue(any(c["kind"] == "notice12" for group in candidates for c in group)); self.assertTrue(any(c["kind"] == "notice36" for group in candidates for c in group)); self.assertTrue(any(c["mode"] == "presence" for group in candidates for c in group)); self.assertTrue(any(c["mode"] == "exact" for group in candidates for c in group))
 
     def test_rendered_dispatch_rechecks_exact_captured_queue_before_native_immediate(self):
         catalog = json.loads((ROOT / "data/content/v03/countries/dmg.json").read_text(encoding="utf-8-sig"))
         rendered = render_inline_country_adapters(catalog)
-        self.assertEqual(len(rendered["journal_scripts"]), 9)
+        self.assertEqual(len(rendered["journal_scripts"]), 12)
         number = 0
         for arc in catalog["arcs"]:
             if arc.get("era") != "foundation":
@@ -108,6 +121,22 @@ class InlineSourceParserTests(unittest.TestCase):
                         self.assertIn(f"var:{sibling} = var:{sibling_value}", dispatch)
                         self.assertIn(f"NOT = {{ has_variable = {sibling} }}", dispatch)
         self.assertEqual(number, 48)
+        # The original foundation snapshot remains exactly48; registered
+        # school/market/crown queues append after it without renumbering.
+        middle = ([(n, "ywc_dmg_school_pending_event", eid) for n, eid in zip(range(49, 55), range(1120, 1126))]
+                  + [(n, "ywc_dmg_market_pending_event", eid) for n, eid in zip(range(55, 63), range(1100, 1108))]
+                  + [(n, "ywc_dmg_crown_pending_event", eid) for n, eid in zip(range(63, 73), range(1110, 1120))])
+        for ident, queue, event_number in middle:
+            value_name = f"ywc_v03_dmg_inline_c{ident}_{queue.removeprefix('ywc_dmg_')}_value"
+            present_name = f"ywc_v03_dmg_inline_c{ident}_{queue.removeprefix('ywc_dmg_')}_present"
+            dispatch = next(line for line in rendered["triggers"].splitlines()
+                            if line.startswith(f"ywc_v03_dmg_inline_dispatch_{ident} = {{"))
+            candidate = next(line for line in rendered["triggers"].splitlines()
+                             if line.startswith(f"ywc_v03_dmg_inline_candidate_{ident} = {{"))
+            self.assertIn(f"has_variable = {present_name}", dispatch)
+            self.assertIn(f"has_variable = {value_name}", dispatch)
+            self.assertIn(f"var:{queue} = var:{value_name}", dispatch)
+            self.assertIn(f"var:{queue} = {event_number}", candidate)
 
 
 if __name__ == "__main__":
