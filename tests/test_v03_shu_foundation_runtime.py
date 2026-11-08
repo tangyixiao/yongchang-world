@@ -1,5 +1,6 @@
 """Drive the SHU foundation authored JE/event scripts through the offline Clausewitz subset."""
 import json
+import hashlib
 import sys
 import unittest
 from pathlib import Path
@@ -35,6 +36,13 @@ def facts_only(nodes):
                 result.append(("NOT", "=", body))
             else:
                 result.append(("AND", "=", body))
+        elif key == "any_scope_state":
+            building = next((str(bv).split(":")[-1] for k, _, v in value if k == "any_scope_building" for bk, _, bv in v if bk == "is_building_type"), None)
+            fact = "test_owned_building_" + building if building else "test_owned_state"
+            result.append(("has_variable", "=", fact))
+        elif key == "any_scope_building":
+            building = next((str(v).split(":")[-1] for k, _, v in value if k == "is_building_type"), None)
+            result.append(("has_variable", "=", "test_owned_building_" + building if building else "test_real_building"))
         elif key in world_leaf_names:
             fact = world_leaf_names[key]
             if fact is None:
@@ -63,6 +71,9 @@ class ShuRuntime:
             "bureaucracy": 1000,
             "test_owned_state": 1,
             "test_real_building": 1,
+            "test_owned_building_building_barrack": 1,
+            "test_owned_building_building_government_administration": 1,
+            "test_owned_building_building_port": 1,
             "test_law_law_professional_army": 1,
             "test_law_law_mercantilism": 1,
             "test_law_law_protectionism": 1,
@@ -219,7 +230,7 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
                 self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), route)
                 if route == 1:
                     self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_cost_paid"), 1)
-                    self.assertEqual(runtime.world.treasury["SHU"], -1000)
+                    self.assertEqual(runtime.world.treasury["SHU"], -500)
                 runtime.dispatch_until("ywc_shu.1014")
                 runtime.choose("ywc_shu.1014", "check_supply")
                 runtime.dispatch_until("ywc_shu.1015")
@@ -256,8 +267,195 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
         self.assertNotIn("ywc_shu_service_cost_paid", runtime.state["SHU"])
         self.assertNotIn("ywc_shu_service_route", runtime.state["SHU"])
-        self.assertNotIn("ywc_shu_service_pending_event", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1013)
         self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_1011_verify_payroll_uses_full_price_without_route_candidate(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        runtime.dispatch_until("ywc_shu.1010"); runtime.choose("ywc_shu.1010", "court_seal")
+        runtime.dispatch_until("ywc_shu.1011")
+        option = next(o for o in runtime.event_map["ywc_shu.1011"]["options"] if o["key"] == "verify_payroll")
+        self.assertNotIn("ywc_shu_service_route_candidate", runtime.state["SHU"])
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.choose("ywc_shu.1011", "verify_payroll")
+        self.assertEqual(runtime.world.treasury["SHU"], -1000)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_cost_paid"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_payroll_checked"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1012)
+
+    def test_1011_full_payment_fulfills_later_professional_fee_without_recharge(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        runtime.dispatch_until("ywc_shu.1010"); runtime.choose("ywc_shu.1010", "court_seal")
+        runtime.dispatch_until("ywc_shu.1011"); runtime.choose("ywc_shu.1011", "verify_payroll")
+        runtime.dispatch_until("ywc_shu.1012"); runtime.choose("ywc_shu.1012", "professional_list")
+        runtime.dispatch_until("ywc_shu.1013")
+        runtime.state["SHU"]["gold_reserves"] = 0
+        option = next(o for o in runtime.event_map["ywc_shu.1013"]["options"] if o["key"] == "professional")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.choose("ywc_shu.1013", "professional")
+        self.assertEqual(runtime.world.treasury["SHU"], -1000)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1014)
+
+    def test_prepaid_professional_rechecks_current_choice_eligibility_after_popup(self):
+        for invalidation in ("default", "bankruptcy", "negative_income", "professional_qualification"):
+            with self.subTest(invalidation=invalidation):
+                runtime = ShuRuntime("v03_shu_service_compact", {
+                    "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                    "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+                    "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+                    "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+                    "ywc_shu_v03_pilot_state": 1,
+                })
+                runtime.open()
+                runtime.dispatch_until("ywc_shu.1010"); runtime.choose("ywc_shu.1010", "court_seal")
+                runtime.dispatch_until("ywc_shu.1011"); runtime.choose("ywc_shu.1011", "verify_payroll")
+                runtime.dispatch_until("ywc_shu.1012"); runtime.choose("ywc_shu.1012", "professional_list")
+                runtime.dispatch_until("ywc_shu.1013")
+                runtime.state["SHU"]["gold_reserves"] = 0
+                option = next(o for o in runtime.event_map["ywc_shu.1013"]["options"] if o["key"] == "professional")
+                self.assertTrue(runtime.cond(option["trigger"]))
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_cost_paid"), 1)
+                if invalidation == "default": runtime.state["SHU"]["in_default"] = 1
+                elif invalidation == "bankruptcy": runtime.world.modifiers.append(("SHU", {"modifier": "declared_bankruptcy"}))
+                elif invalidation == "negative_income": runtime.state["SHU"]["net_fixed_income"] = -1
+                else:
+                    runtime.state["SHU"].pop("test_law_law_professional_army", None)
+                    runtime.state["SHU"].pop("test_owned_building_building_barrack", None)
+                runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+                self.assertNotIn("ywc_shu_service_route", runtime.state["SHU"])
+                self.assertNotIn("ywc_shu_service_route_candidate", runtime.state["SHU"])
+                self.assertNotEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1014)
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1013)
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_cost_paid"), 1)
+                self.assertEqual(runtime.world.treasury["SHU"], -1000)
+
+    def test_full_register_share_returns_to_real_fee_payment_before_observation(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1022")
+        self.assertTrue(runtime.cond(next(o["trigger"] for o in runtime.event_map["ywc_shu.1022"]["options"] if o["key"] == "register_share")))
+        runtime.choose("ywc_shu.1022", "register_share")
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_pending_event"), 1022)
+        self.assertNotIn("ywc_shu_port_receipts_checked", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_arrears_open"), 1)
+        self.assertNotIn("ywc_shu_port_fee_paid", runtime.state["SHU"])
+        runtime.dispatch_until("ywc_shu.1022")
+        runtime.choose("ywc_shu.1022", "pay_verification")
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_fee_paid"), 1)
+        self.assertEqual(runtime.world.treasury["SHU"], -1000)
+        runtime.dispatch_until("ywc_shu.1023"); runtime.choose("ywc_shu.1023", "central_form")
+        runtime.dispatch_until("ywc_shu.1024"); runtime.choose("ywc_shu.1024", "central_burden")
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        runtime.advance_review(179)
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        runtime.advance_review(1); runtime.pulse()
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_review_mature"), 1)
+        runtime.dispatch_until("ywc_shu.1025")
+        option = next(o for o in runtime.event_map["ywc_shu.1025"]["options"] if o["key"] == "settle_unified")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        for key, helper in (("settle_unified", "ywc_shu_port_terminal_unified_ready"),
+                            ("settle_share", "ywc_shu_port_terminal_shared_ready"),
+                            ("settle_legacy", "ywc_shu_port_terminal_limited_ready")):
+            terminal = next(o for o in runtime.event_map["ywc_shu.1025"]["options"] if o["key"] == key)
+            self.assertEqual(terminal["trigger"].strip(), "{\n" + helper + " = yes\n}")
+        runtime.choose("ywc_shu.1025", "settle_unified")
+        self.assertEqual(runtime.state["SHU"].get("ywc_v03_shu_v03_shu_port_treasury_outcome"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_arrears_open"), 1)
+
+    def test_waived_compact_is_eligible_at_zero_cash_from_existing_report(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "garrison_seal"), ("ywc_shu.1011", "local_ledger"),
+                              ("ywc_shu.1012", "professional_list")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1013")
+        runtime.state["SHU"]["gold_reserves"] = 0
+        option = next(o for o in runtime.event_map["ywc_shu.1013"]["options"] if o["key"] == "provincial_compact")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.choose("ywc_shu.1013", "provincial_compact")
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_compact_fee_waived"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 2)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1014)
+        self.assertNotIn("ywc_shu_service_cost_paid", runtime.state["SHU"])
+        self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_waiver_effect_time_default_requeues_without_new_route_markers(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "garrison_seal"), ("ywc_shu.1011", "local_ledger"),
+                              ("ywc_shu.1012", "professional_list")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1013")
+        option = next(o for o in runtime.event_map["ywc_shu.1013"]["options"] if o["key"] == "provincial_compact")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.state["SHU"]["in_default"] = True
+        runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+        self.assertNotIn("ywc_shu_service_route", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_service_compact_fee_waived", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_service_cost_paid", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1013)
+        self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_waiver_effect_time_bankruptcy_and_negative_income_do_not_progress(self):
+        for failure in ("bankruptcy", "negative_income"):
+            with self.subTest(failure=failure):
+                runtime = ShuRuntime("v03_shu_service_compact", {
+                    "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                    "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+                    "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+                    "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+                    "ywc_shu_v03_pilot_state": 1,
+                })
+                runtime.open()
+                for event, option in (("ywc_shu.1010", "garrison_seal"), ("ywc_shu.1011", "local_ledger"),
+                                      ("ywc_shu.1012", "professional_list")):
+                    runtime.dispatch_until(event); runtime.choose(event, option)
+                runtime.dispatch_until("ywc_shu.1013")
+                option = next(o for o in runtime.event_map["ywc_shu.1013"]["options"] if o["key"] == "provincial_compact")
+                self.assertTrue(runtime.cond(option["trigger"]))
+                if failure == "bankruptcy": runtime.world.modifiers.append(("SHU", {"modifier": "declared_bankruptcy"}))
+                else: runtime.state["SHU"]["net_fixed_income"] = -1
+                runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+                self.assertNotIn("ywc_shu_service_route", runtime.state["SHU"])
+                self.assertNotIn("ywc_shu_service_compact_fee_waived", runtime.state["SHU"])
+                self.assertNotIn("ywc_shu_service_cost_paid", runtime.state["SHU"])
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1013)
+                self.assertEqual(runtime.world.treasury["SHU"], 0)
 
     def test_stale_port_payment_option_cannot_mark_receipts_or_advance(self):
         runtime = ShuRuntime("v03_shu_port_treasury", {
@@ -278,7 +476,7 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
         self.assertNotIn("ywc_shu_port_fee_paid", runtime.state["SHU"])
         self.assertNotIn("ywc_shu_port_receipts_checked", runtime.state["SHU"])
-        self.assertNotIn("ywc_shu_port_pending_event", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_pending_event"), 1022)
         self.assertEqual(runtime.world.treasury["SHU"], 0)
 
     def test_service_loss_restarts_real_180_day_clock_and_withdrawal_exits_as_failure(self):
@@ -372,6 +570,353 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
         self.assertIn("ywc_shu.1016",runtime.pulse())
         self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_block_36_prompted"),1)
 
+    def test_port_stale_success_effect_rechecks_owned_port_target(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review"),
+                              ("ywc_shu.1022", "pay_verification"), ("ywc_shu.1023", "central_form"),
+                              ("ywc_shu.1024", "central_burden")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.advance_review(180); runtime.dispatch_until("ywc_shu.1025")
+        option = next(o for o in runtime.event_map["ywc_shu.1025"]["options"] if o["key"] == "settle_unified")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.state["SHU"].pop("test_owned_building_building_port", None)
+        self.assertFalse(runtime.cond(option["trigger"]))
+        runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+        self.assertNotIn("ywc_v03_shu_v03_shu_port_treasury_outcome", runtime.state["SHU"])
+        self.assertNotIn("ywc_v03_shu_v03_shu_port_treasury_settled", runtime.state["SHU"])
+
+    def test_port_reduced_target_uses_real_inland_office_after_port_loss(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review"),
+                              ("ywc_shu.1022", "pay_verification"), ("ywc_shu.1023", "central_form")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1024")
+        runtime.state["SHU"].pop("test_owned_building_building_port", None)
+        self.assertTrue(runtime.cond(next(o["trigger"] for o in runtime.event_map["ywc_shu.1024"]["options"] if o["key"]=="reduce_burden")))
+        runtime.choose("ywc_shu.1024", "reduce_burden")
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_route"), 4)
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_port_review_interrupted", runtime.state["SHU"])
+        runtime.advance_review(179)
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        runtime.advance_review(1); runtime.pulse()
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_review_mature"), 1)
+        self.assertTrue(runtime.cond("{ ywc_shu_v03_port_execution_ready = yes }"))
+        runtime.dispatch_until("ywc_shu.1025")
+        runtime.choose("ywc_shu.1025", "settle_legacy")
+        self.assertEqual(runtime.state["SHU"].get("ywc_v03_shu_v03_shu_port_treasury_outcome"), 3)
+
+    def test_register_share_lower_target_reaches_real_limited_terminal(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "legacy_collection"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1022")
+        runtime.choose("ywc_shu.1022", "register_share")
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_arrears_open"), 1)
+        self.assertNotIn("ywc_shu_port_fee_paid", runtime.state["SHU"])
+        self.assertEqual(runtime.world.treasury["SHU"], 0)
+        runtime.dispatch_until("ywc_shu.1023"); runtime.choose("ywc_shu.1023", "legacy_form")
+        runtime.dispatch_until("ywc_shu.1024"); runtime.choose("ywc_shu.1024", "central_burden")
+        runtime.advance_review(180); runtime.dispatch_until("ywc_shu.1025")
+        option = next(o for o in runtime.event_map["ywc_shu.1025"]["options"] if o["key"] == "settle_legacy")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.choose("ywc_shu.1025", "settle_legacy")
+        self.assertEqual(runtime.state["SHU"].get("ywc_v03_shu_v03_shu_port_treasury_outcome"), 3)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_arrears_open"), 1)
+
+    def test_recovered_port_does_not_break_paid_inland_narrow_watch(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review"),
+                              ("ywc_shu.1022", "pay_verification"), ("ywc_shu.1023", "central_form")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1024")
+        runtime.state["SHU"].pop("test_owned_building_building_port", None)
+        runtime.choose("ywc_shu.1024", "reduce_burden")
+        runtime.advance_review(90)
+        runtime.state["SHU"]["test_owned_building_building_port"] = 1
+        runtime.pulse()
+        self.assertNotIn("ywc_shu_port_review_interrupted", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        runtime.advance_review(89)
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        runtime.advance_review(1); runtime.pulse()
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_review_mature"), 1)
+        runtime.dispatch_until("ywc_shu.1025"); runtime.choose("ywc_shu.1025", "settle_legacy")
+        self.assertEqual(runtime.state["SHU"].get("ywc_v03_shu_v03_shu_port_treasury_outcome"), 3)
+
+    def test_losing_inland_office_clears_narrow_maturity_without_upgrading_route(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review"),
+                              ("ywc_shu.1022", "pay_verification"), ("ywc_shu.1023", "central_form")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1024")
+        runtime.state["SHU"].pop("test_owned_building_building_port", None)
+        runtime.choose("ywc_shu.1024", "reduce_burden")
+        runtime.advance_review(180); runtime.pulse()
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_review_mature"), 1)
+        runtime.state["SHU"].pop("test_owned_building_building_government_administration", None)
+        runtime.pulse()
+        self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_review_interrupted"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_route"), 4)
+
+    def test_1011_stale_full_price_finance_failure_retries_without_payment_markers(self):
+        for failure in ("cash", "default", "negative_income"):
+            with self.subTest(failure=failure):
+                runtime = ShuRuntime("v03_shu_service_compact", {
+                    "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                    "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+                    "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+                    "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+                    "ywc_shu_v03_pilot_state": 1,
+                })
+                runtime.open()
+                runtime.dispatch_until("ywc_shu.1010"); runtime.choose("ywc_shu.1010", "court_seal")
+                runtime.dispatch_until("ywc_shu.1011")
+                option = next(o for o in runtime.event_map["ywc_shu.1011"]["options"] if o["key"] == "verify_payroll")
+                self.assertTrue(runtime.cond(option["trigger"]))
+                if failure == "cash": runtime.state["SHU"]["gold_reserves"] = 0
+                elif failure == "default": runtime.state["SHU"]["in_default"] = True
+                else: runtime.state["SHU"]["net_fixed_income"] = -1
+                runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+                self.assertNotIn("ywc_shu_service_cost_paid", runtime.state["SHU"])
+                self.assertNotIn("ywc_shu_service_payroll_checked", runtime.state["SHU"])
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1011)
+                self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_1022_verification_uses_full_fee_when_no_prior_fee_paid(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1022")
+        option = next(o for o in runtime.event_map["ywc_shu.1022"]["options"] if o["key"] == "pay_verification")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.choose("ywc_shu.1022", "pay_verification")
+        self.assertEqual(runtime.world.treasury["SHU"], -1000)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_fee_amount"), 1000)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_receipts_checked"), 1)
+        runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+        self.assertEqual(runtime.world.treasury["SHU"], -1000)
+
+    def test_1020_consult_half_fee_fulfills_same_obligation_without_second_charge(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1020"); runtime.choose("ywc_shu.1020", "consult_only")
+        self.assertEqual(runtime.world.treasury["SHU"], -500)
+        runtime.dispatch_until("ywc_shu.1021"); runtime.choose("ywc_shu.1021", "current_law_review")
+        runtime.dispatch_until("ywc_shu.1022"); runtime.choose("ywc_shu.1022", "pay_verification")
+        self.assertEqual(runtime.world.treasury["SHU"], -500)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_fee_amount"), 500)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_receipts_checked"), 1)
+
+    def test_1020_consult_half_fee_stale_finance_failure_retries(self):
+        for failure in ("cash", "default", "negative_income"):
+            with self.subTest(failure=failure):
+                runtime = ShuRuntime("v03_shu_port_treasury", {
+                    "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                    "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+                    "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+                    "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+                })
+                runtime.open()
+                runtime.dispatch_until("ywc_shu.1018"); runtime.choose("ywc_shu.1018", "unified_customs")
+                runtime.dispatch_until("ywc_shu.1019"); runtime.choose("ywc_shu.1019", "publish_books")
+                runtime.dispatch_until("ywc_shu.1020")
+                option = next(o for o in runtime.event_map["ywc_shu.1020"]["options"] if o["key"] == "consult_only")
+                self.assertTrue(runtime.cond(option["trigger"]))
+                if failure == "cash": runtime.state["SHU"]["gold_reserves"] = 0
+                elif failure == "default": runtime.state["SHU"]["in_default"] = True
+                else: runtime.state["SHU"]["net_fixed_income"] = -1
+                runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+                self.assertNotIn("ywc_shu_port_fee_paid", runtime.state["SHU"])
+                self.assertNotIn("ywc_shu_port_fee_amount", runtime.state["SHU"])
+                self.assertNotIn("ywc_shu_port_merchant_review", runtime.state["SHU"])
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_pending_event"), 1020)
+                self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_1022_full_fee_stale_default_retries_without_receipt_flag(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit"), ("ywc_shu.1021", "current_law_review")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1022")
+        option = next(o for o in runtime.event_map["ywc_shu.1022"]["options"] if o["key"] == "pay_verification")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.state["SHU"]["in_default"] = True
+        runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+        self.assertNotIn("ywc_shu_port_fee_paid", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_port_receipts_checked", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_pending_event"), 1022)
+        self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_service_nonwaived_provincial_route_pays_quarter_fee(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "court_seal"), ("ywc_shu.1011", "cap_arrears"),
+                              ("ywc_shu.1012", "professional_list")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1013")
+        runtime.choose("ywc_shu.1013", "provincial_compact")
+        self.assertEqual(runtime.world.treasury["SHU"], -250)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_paid_amount"), 250)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 2)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_cost_paid"), 1)
+
+    def test_local_review_waives_only_provincial_route_not_professional(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "garrison_seal"), ("ywc_shu.1011", "local_ledger"),
+                              ("ywc_shu.1012", "professional_list")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1013")
+        runtime.choose("ywc_shu.1013", "professional")
+        self.assertEqual(runtime.world.treasury["SHU"], -500)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 1)
+        self.assertNotIn("ywc_shu_service_compact_fee_waived", runtime.state["SHU"])
+
+    def test_stale_professional_qualification_cannot_buy_full_price_and_can_retry(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "court_seal"), ("ywc_shu.1011", "cap_arrears"),
+                              ("ywc_shu.1012", "professional_list")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1013")
+        option = next(o for o in runtime.event_map["ywc_shu.1013"]["options"] if o["key"] == "professional")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.state["SHU"].pop("test_law_law_professional_army", None)
+        runtime.state["SHU"].pop("test_owned_building_building_barrack", None)
+        runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+        self.assertNotIn("ywc_shu_service_cost_paid", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_service_route", runtime.state["SHU"])
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_pending_event"), 1013)
+        self.assertEqual(runtime.world.treasury["SHU"], 0)
+
+    def test_service_waived_provincial_route_does_not_debit(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "garrison_seal"), ("ywc_shu.1011", "local_ledger"),
+                              ("ywc_shu.1012", "professional_list")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1013")
+        runtime.choose("ywc_shu.1013", "provincial_compact")
+        self.assertEqual(runtime.world.treasury["SHU"], 0)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_compact_fee_waived"), 1)
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_route"), 2)
+
+    def test_m1_fiscal_catalog_arc_matches_reviewfix_before_snapshot(self):
+        current_arc = next(a for a in CATALOG["arcs"] if a["slug"] == "v03_shu_fiscal_register")
+        canonical = json.dumps(current_arc, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "c9d2097f2d67b9a1ad0781cac6f047ab07372db905c0fcf83fe860f5ed75da92")
+
+    def test_service_healthy_over_36_months_then_loss_starts_fresh_clock(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "court_seal"), ("ywc_shu.1011", "cap_arrears"),
+                              ("ywc_shu.1012", "professional_list"), ("ywc_shu.1013", "professional"),
+                              ("ywc_shu.1014", "check_supply"), ("ywc_shu.1015", "accept_appointments")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        for day in range(1200):
+            runtime.world.advance_days(1)
+            if day % 30 == 29:
+                runtime.pulse()
+        self.assertNotIn("ywc_shu_service_block_36_started", runtime.state["SHU"])
+        self.assertNotIn("ywc_shu_service_block_36_prompted", runtime.state["SHU"])
+        runtime.state["SHU"].pop("test_owned_building_building_government_administration", None)
+        runtime.pulse()
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_block_12_started"), 1)
+        self.assertNotIn("ywc_shu_service_block_12_prompted", runtime.state["SHU"])
+        for day in range(364):
+            runtime.world.advance_days(1)
+            if day % 30 == 29: runtime.pulse()
+        self.assertNotIn("ywc_shu_service_block_12_prompted", runtime.state["SHU"])
+        runtime.world.advance_days(1); runtime.pulse()
+        self.assertEqual(runtime.state["SHU"].get("ywc_shu_service_block_12_prompted"), 1)
+
     def test_parallel_service_and_port_entries_keep_independent_queues_and_shared_slots(self):
         runtime=ShuRuntime("v03_shu_service_compact",{
             "ywc_v03_initialized":1,"ywc_v03_release_version":3,
@@ -434,6 +979,7 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
                 runtime.choose("ywc_shu.1021", "current_law_review")
                 runtime.dispatch_until("ywc_shu.1022")
                 runtime.choose("ywc_shu.1022", "pay_verification")
+                self.assertEqual(runtime.world.treasury["SHU"], -1000)
                 runtime.dispatch_until("ywc_shu.1023")
                 runtime.choose("ywc_shu.1023", "central_form")
                 runtime.dispatch_until("ywc_shu.1024")
@@ -445,6 +991,61 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
                 self.assertTrue(runtime.cond(runtime.active["goal"]))
                 self.assertFalse(runtime.cond(runtime.active["exit_conditions"]))
                 self.assertEqual(runtime.state["SHU"].get("ywc_v03_shu_v03_shu_port_treasury_outcome"), expected)
+
+    def test_service_stale_success_effect_rechecks_terminal_eligibility(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_v03_pilot_state": 1,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1010", "court_seal"), ("ywc_shu.1011", "cap_arrears"),
+                              ("ywc_shu.1012", "professional_list"), ("ywc_shu.1013", "professional"),
+                              ("ywc_shu.1014", "check_supply"), ("ywc_shu.1015", "accept_appointments")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.advance_review(180); runtime.dispatch_until("ywc_shu.1017")
+        option = next(o for o in runtime.event_map["ywc_shu.1017"]["options"] if o["key"] == "settle_service")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.state["SHU"]["in_default"] = True
+        self.assertFalse(runtime.cond(option["trigger"]))
+        runtime.world.execute(facts_only(parse(option["effect"][1:-1])), "SHU")
+        self.assertNotIn("ywc_v03_shu_v03_shu_service_compact_outcome", runtime.state["SHU"])
+        self.assertNotIn("ywc_v03_shu_v03_shu_service_compact_settled", runtime.state["SHU"])
+
+    def test_port_narrow_target_is_real_inland_route_and_resets_watch(self):
+        trigger = TRIGGERS["ywc_shu_v03_port_execution_ready"]
+        rendered = str(trigger)
+        self.assertIn("ywc_shu_v03_inland_office_ready", rendered)
+        self.assertIn("ywc_shu_v03_port_narrow_ready", rendered)
+        helper = TRIGGERS["ywc_shu_v03_inland_office_ready"]
+        self.assertIn("building_government_administration", str(helper))
+        self.assertIn("occupancy", str(helper))
+
+    def test_overdue_notice_preempts_repeated_normal_defer(self):
+        runtime = ShuRuntime("v03_shu_port_treasury", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+        })
+        runtime.open()
+        for event, option in (("ywc_shu.1018", "unified_customs"), ("ywc_shu.1019", "publish_books"),
+                              ("ywc_shu.1020", "refuse_credit")):
+            runtime.dispatch_until(event); runtime.choose(event, option)
+        runtime.dispatch_until("ywc_shu.1021")
+        runtime.state["SHU"].pop("test_law_law_mercantilism", None)
+        runtime.state["SHU"].pop("test_law_law_protectionism", None)
+        runtime.state["SHU"].pop("test_law_law_free_trade", None)
+        runtime.choose("ywc_shu.1021", "wait_law")
+        for day in range(1200):
+            runtime.world.advance_days(1)
+            if day % 30 == 29:
+                fired = runtime.pulse()
+                if "ywc_shu.1021" in fired:
+                    runtime.choose("ywc_shu.1021", "wait_law")
+        self.assertGreaterEqual(runtime.delivered.count("ywc_shu.1024"), 2)
 
 
 if __name__ == "__main__":
