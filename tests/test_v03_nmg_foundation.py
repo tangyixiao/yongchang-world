@@ -257,11 +257,11 @@ class NmgFoundationContractTest(unittest.TestCase):
         total = sum(len(arc["events"]) for arc in self.catalog["arcs"])
         foundation = foundation_catalog()
         self.assertEqual(sum(len(arc["events"]) for arc in foundation["arcs"]), 28)
-        self.assertEqual(total, 36)
+        self.assertEqual(total, 45)
         # The four added protocol events do not replace the ten narrative cards.
         self.assertEqual(len([e for e in self.revenue["events"] if e["id"] not in PROTOCOL_EVENTS]), 10)
         self.assertEqual(sum(len(arc["journals"]) for arc in foundation["arcs"]), 6)
-        self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 8)
+        self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 10)
 
     def test_foundation_arcs_keep_the_locked_card_shape(self):
         for arc in (self.land, self.office, self.revenue):
@@ -489,13 +489,15 @@ class NmgFoundationContractTest(unittest.TestCase):
             encoding="utf-8-sig"
         )
         rendered = re.findall(r"(?m)^ywc_nmg\.(\d{4}) = \{", events_text)
-        self.assertEqual(len(rendered), 36)
+        self.assertEqual(len(rendered), 45)
         rendered_ids = {"ywc_nmg." + number for number in rendered}
         school_ids = {f"ywc_nmg.{n}" for n in range(1110, 1118)}
+        bay_ids = {f"ywc_nmg.{n}" for n in range(1100, 1109)}
         self.assertEqual(rendered_ids, {e["id"] for a in self.catalog["arcs"] for e in a["events"]})
         self.assertEqual(rendered_ids & school_ids, school_ids)
+        self.assertEqual(rendered_ids & bay_ids, bay_ids)
         self.assertEqual(
-            sorted(rendered_ids - school_ids),
+            sorted(rendered_ids - school_ids - bay_ids),
             sorted(LAND_EVENTS + OFFICE_EVENTS + REVENUE_EVENTS),
         )
 

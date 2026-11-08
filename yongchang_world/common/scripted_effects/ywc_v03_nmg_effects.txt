@@ -1669,3 +1669,284 @@ ywc_nmg_school_monthly_review = {
   }
  }
 }
+
+# Independently authored bay account; it never consumes the older NMG protocols.
+ywc_nmg_bay_claim = {
+ ywc_v03_initialize_country = yes
+ if = {
+  limit = { NOT = { has_variable = ywc_v03_nmg_v03_nmg_bay_ports_started } NOT = { has_variable = ywc_v03_nmg_v03_nmg_bay_ports_settled } ywc_v03_has_capacity = yes any_scope_state = { owner = ROOT } }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_bay_ports_started value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = 1 }
+  change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  set_variable = { name = ywc_nmg_bay_budget value = yearly_gross_income }
+  change_variable = { name = ywc_nmg_bay_budget divide = 52 }
+  clamp_variable = { name = ywc_nmg_bay_budget min = 100 max = 1000000000 }
+  every_scope_state = { limit = { owner = c:NMG NOT = { exists = scope:ywc_nmg_bay_first_pilot } } save_scope_as = ywc_nmg_bay_first_pilot }
+  if = { limit = { exists = scope:ywc_nmg_bay_first_pilot } set_variable = { name = ywc_nmg_bay_pilot value = scope:ywc_nmg_bay_first_pilot } }
+  set_variable = { name = ywc_nmg_bay_phase value = 1 }
+  set_variable = { name = ywc_nmg_bay_popup_epoch value = 0 }
+  set_variable = { name = ywc_nmg_bay_stage value = 1100 }
+  set_variable = { name = ywc_nmg_bay_pending_event value = 1100 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_bay_ports_last_event value = 0 }
+ }
+}
+
+ywc_nmg_bay_cancel_unsigned = {
+ if = { limit = { has_variable = ywc_nmg_bay_request_timer NOT = { has_variable = ywc_nmg_bay_debt_generation } }
+  remove_variable = ywc_nmg_bay_request_timer
+  change_variable = { name = ywc_nmg_bay_serial add = 1 }
+  if = { limit = { ywc_nmg_bay_open = yes var:ywc_nmg_bay_stage = 1101 } set_variable = { name = ywc_nmg_bay_pending_event value = 1101 } }
+ }
+}
+
+ywc_nmg_bay_send_request = {
+ if = { limit = { ywc_nmg_bay_at_1101 = yes var:ywc_nmg_bay_mode = 2 var:ywc_nmg_bay_target = 1 ywc_nmg_bay_lease_current = yes ywc_nmg_bay_candidate_current = yes NOT = { has_variable = ywc_nmg_bay_request_timer } NOT = { has_variable = ywc_nmg_bay_debt_generation } }
+  if = { limit = { NOT = { has_variable = ywc_nmg_bay_generation } } set_variable = { name = ywc_nmg_bay_generation value = 0 } }
+  if = { limit = { NOT = { has_variable = ywc_nmg_bay_serial } } set_variable = { name = ywc_nmg_bay_serial value = 0 } }
+  change_variable = { name = ywc_nmg_bay_generation add = 1 }
+  change_variable = { name = ywc_nmg_bay_serial add = 1 }
+  set_variable = { name = ywc_nmg_bay_partner value = scope:ywc_nmg_bay_selected_partner }
+  set_variable = { name = ywc_nmg_bay_quote_principal value = var:ywc_nmg_bay_budget }
+  change_variable = { name = ywc_nmg_bay_quote_principal multiply = 12 }
+  set_variable = { name = ywc_nmg_bay_quote_term value = 12 }
+  set_variable = { name = ywc_nmg_bay_quote_scope_kind value = 1 }
+  set_variable = { name = ywc_nmg_bay_request_timer value = 1 months = 3 }
+  remove_variable = ywc_nmg_bay_timeout_recorded
+  save_scope_as = ywc_nmg_bay_requester
+  scope:ywc_nmg_bay_selected_partner = { save_scope_as = ywc_nmg_bay_request_partner }
+  var:ywc_nmg_bay_pilot = { save_scope_as = ywc_nmg_bay_request_pilot }
+  save_scope_value_as = { name = ywc_nmg_bay_request_generation value = var:ywc_nmg_bay_generation }
+  save_scope_value_as = { name = ywc_nmg_bay_request_serial value = var:ywc_nmg_bay_serial }
+  save_scope_value_as = { name = ywc_nmg_bay_request_principal value = var:ywc_nmg_bay_quote_principal }
+  save_scope_value_as = { name = ywc_nmg_bay_request_term value = var:ywc_nmg_bay_quote_term }
+  save_scope_value_as = { name = ywc_nmg_bay_request_mode value = var:ywc_nmg_bay_mode }
+  save_scope_value_as = { name = ywc_nmg_bay_request_target value = var:ywc_nmg_bay_target }
+  save_scope_value_as = { name = ywc_nmg_bay_request_scope_kind value = var:ywc_nmg_bay_quote_scope_kind }
+  scope:ywc_nmg_bay_request_partner = { trigger_event = { id = ywc_nmg.1108 } }
+ }
+}
+
+ywc_nmg_bay_accept_advance = {
+ if = { limit = { ywc_nmg_bay_accept_affordable = yes }
+  # Both treasury movements and both mirrored receipts occur in this one guard.
+  add_treasury = { value = scope:ywc_nmg_bay_request_principal multiply = -1 }
+  set_variable = { name = ywc_nmg_bay_creditor_borrower value = scope:ywc_nmg_bay_requester }
+  set_variable = { name = ywc_nmg_bay_creditor_generation value = scope:ywc_nmg_bay_request_generation }
+  set_variable = { name = ywc_nmg_bay_creditor_principal value = scope:ywc_nmg_bay_request_principal }
+  set_variable = { name = ywc_nmg_bay_creditor_disbursed value = scope:ywc_nmg_bay_request_principal }
+  set_variable = { name = ywc_nmg_bay_creditor_repaid_total value = 0 }
+  set_variable = { name = ywc_nmg_bay_creditor_offer_serial value = scope:ywc_nmg_bay_request_serial }
+  set_variable = { name = ywc_nmg_bay_creditor_term value = scope:ywc_nmg_bay_request_term }
+  set_variable = { name = ywc_nmg_bay_creditor_pilot value = scope:ywc_nmg_bay_request_pilot }
+  set_variable = { name = ywc_nmg_bay_creditor_mode value = scope:ywc_nmg_bay_request_mode }
+  set_variable = { name = ywc_nmg_bay_creditor_target value = scope:ywc_nmg_bay_request_target }
+  set_variable = { name = ywc_nmg_bay_creditor_scope_kind value = scope:ywc_nmg_bay_request_scope_kind }
+  set_variable = { name = ywc_nmg_bay_creditor_start_month value = ywc_nmg_current_calendar_month }
+  scope:ywc_nmg_bay_requester = {
+   add_treasury = scope:ywc_nmg_bay_request_principal
+   set_variable = { name = ywc_nmg_bay_creditor value = scope:ywc_nmg_bay_request_partner }
+   set_variable = { name = ywc_nmg_bay_debt_generation value = scope:ywc_nmg_bay_request_generation }
+   set_variable = { name = ywc_nmg_bay_principal value = scope:ywc_nmg_bay_request_principal }
+   set_variable = { name = ywc_nmg_bay_disbursed value = scope:ywc_nmg_bay_request_principal }
+   set_variable = { name = ywc_nmg_bay_repaid_total value = 0 }
+   set_variable = { name = ywc_nmg_bay_scheduled_total value = 0 }
+   set_variable = { name = ywc_nmg_bay_loan_start_month value = ywc_nmg_current_calendar_month }
+   set_variable = { name = ywc_nmg_bay_debt_offer_serial value = scope:ywc_nmg_bay_request_serial }
+   set_variable = { name = ywc_nmg_bay_debt_term value = scope:ywc_nmg_bay_request_term }
+   set_variable = { name = ywc_nmg_bay_debt_pilot value = scope:ywc_nmg_bay_request_pilot }
+   set_variable = { name = ywc_nmg_bay_debt_mode value = scope:ywc_nmg_bay_request_mode }
+   set_variable = { name = ywc_nmg_bay_debt_target value = scope:ywc_nmg_bay_request_target }
+   set_variable = { name = ywc_nmg_bay_debt_scope_kind value = scope:ywc_nmg_bay_request_scope_kind }
+   remove_variable = ywc_nmg_bay_request_timer
+   change_variable = { name = ywc_nmg_bay_serial add = 1 }
+   set_variable = { name = ywc_nmg_bay_stage value = 1102 }
+   set_variable = { name = ywc_nmg_bay_pending_event value = 1102 }
+  }
+ }
+}
+
+ywc_nmg_bay_refuse = {
+ if = { limit = { ywc_nmg_bay_reply_current = yes }
+  scope:ywc_nmg_bay_requester = { ywc_nmg_bay_cancel_unsigned = yes set_variable = { name = ywc_nmg_bay_refused value = 1 } }
+ }
+}
+
+ywc_nmg_bay_pay_charter = {
+ if = { limit = { ywc_nmg_bay_at_1102 = yes ywc_nmg_bay_fee_affordable = yes NOT = { has_variable = ywc_nmg_bay_charter_paid } }
+  set_variable = { name = ywc_nmg_bay_charter_paid_amount value = var:ywc_nmg_bay_budget }
+  if = { limit = { var:ywc_nmg_bay_mode = 3 var:ywc_nmg_bay_target = 1 } change_variable = { name = ywc_nmg_bay_charter_paid_amount multiply = 0.5 } }
+  else_if = { limit = { var:ywc_nmg_bay_target = 2 } change_variable = { name = ywc_nmg_bay_charter_paid_amount multiply = 0.25 } }
+  add_treasury = { value = var:ywc_nmg_bay_charter_paid_amount multiply = -1 }
+  set_variable = { name = ywc_nmg_bay_charter_paid value = 1 }
+  set_variable = { name = ywc_nmg_bay_charter_mode value = var:ywc_nmg_bay_mode }
+  set_variable = { name = ywc_nmg_bay_charter_target value = var:ywc_nmg_bay_target }
+  set_variable = { name = ywc_nmg_bay_charter_pilot value = var:ywc_nmg_bay_pilot }
+  set_variable = { name = ywc_nmg_bay_stage value = 1103 } set_variable = { name = ywc_nmg_bay_pending_event value = 1103 }
+ }
+}
+
+ywc_nmg_bay_sign = {
+ if = { limit = { ywc_nmg_bay_at_1103 = yes ywc_nmg_bay_first_paid = yes ywc_nmg_bay_selected_current = yes NOT = { has_variable = ywc_nmg_bay_signed } }
+  set_variable = { name = ywc_nmg_bay_signed_mode value = var:ywc_nmg_bay_mode }
+  set_variable = { name = ywc_nmg_bay_signed_target value = var:ywc_nmg_bay_target }
+  set_variable = { name = ywc_nmg_bay_signed_pilot value = var:ywc_nmg_bay_pilot }
+  set_variable = { name = ywc_nmg_bay_signed value = 1 }
+  set_variable = { name = ywc_nmg_bay_phase value = 2 }
+  set_variable = { name = ywc_nmg_bay_stage value = 1104 } set_variable = { name = ywc_nmg_bay_pending_event value = 1104 }
+ }
+}
+
+ywc_nmg_bay_pay_maintenance = {
+ if = { limit = { ywc_nmg_bay_at_1104 = yes ywc_nmg_bay_first_paid = yes ywc_nmg_bay_signed_current = yes ywc_nmg_bay_fee_affordable = yes NOT = { has_variable = ywc_nmg_bay_maintenance_paid } }
+  set_variable = { name = ywc_nmg_bay_maintenance_paid_amount value = var:ywc_nmg_bay_budget }
+  if = { limit = { var:ywc_nmg_bay_mode = 3 var:ywc_nmg_bay_target = 1 } change_variable = { name = ywc_nmg_bay_maintenance_paid_amount multiply = 0.5 } }
+  else_if = { limit = { var:ywc_nmg_bay_target = 2 } change_variable = { name = ywc_nmg_bay_maintenance_paid_amount multiply = 0.25 } }
+  add_treasury = { value = var:ywc_nmg_bay_maintenance_paid_amount multiply = -1 }
+  set_variable = { name = ywc_nmg_bay_maintenance_paid value = 1 }
+  set_variable = { name = ywc_nmg_bay_accepted_mode value = var:ywc_nmg_bay_mode }
+  set_variable = { name = ywc_nmg_bay_accepted_target value = var:ywc_nmg_bay_target }
+  set_variable = { name = ywc_nmg_bay_accepted_pilot value = var:ywc_nmg_bay_pilot }
+  set_variable = { name = ywc_nmg_bay_accepted value = 1 }
+  set_variable = { name = ywc_nmg_bay_review_streak value = 0 }
+  set_variable = { name = ywc_nmg_bay_review_last_month value = ywc_nmg_current_calendar_month }
+  set_variable = { name = ywc_nmg_bay_review_running value = 1 }
+  remove_variable = ywc_nmg_bay_review_mature remove_variable = ywc_nmg_bay_review_interrupted
+  set_variable = { name = ywc_nmg_bay_stage value = 1105 }
+  remove_variable = ywc_nmg_bay_pending_event
+ }
+}
+
+ywc_nmg_bay_restart = {
+ if = { limit = { ywc_nmg_bay_at_1105 = yes ywc_nmg_bay_restart_ready = yes }
+  set_variable = { name = ywc_nmg_bay_review_streak value = 0 } set_variable = { name = ywc_nmg_bay_review_last_month value = ywc_nmg_current_calendar_month }
+  set_variable = { name = ywc_nmg_bay_review_running value = 1 } remove_variable = ywc_nmg_bay_review_mature remove_variable = ywc_nmg_bay_review_interrupted remove_variable = ywc_nmg_bay_pending_event
+ }
+}
+
+ywc_nmg_bay_narrow_preaccept = {
+ if = { limit = { OR = { ywc_nmg_bay_at_1102 = yes AND = { ywc_nmg_bay_at_1103 = yes ywc_nmg_bay_first_paid = yes } AND = { ywc_nmg_bay_at_1104 = yes ywc_nmg_bay_first_paid = yes ywc_nmg_bay_signed_current = yes } } var:ywc_nmg_bay_mode = 2 has_variable = ywc_nmg_bay_debt_generation NOT = { has_variable = ywc_nmg_bay_maintenance_paid } ywc_nmg_bay_finite_current = yes }
+  set_variable = { name = ywc_nmg_bay_mode value = 3 } set_variable = { name = ywc_nmg_bay_target value = 2 }
+  if = { limit = { has_variable = ywc_nmg_bay_charter_paid }
+   set_variable = { name = ywc_nmg_bay_charter_mode value = 3 } set_variable = { name = ywc_nmg_bay_charter_target value = 2 } set_variable = { name = ywc_nmg_bay_charter_pilot value = var:ywc_nmg_bay_pilot }
+  }
+  if = { limit = { has_variable = ywc_nmg_bay_signed }
+   set_variable = { name = ywc_nmg_bay_signed_mode value = 3 } set_variable = { name = ywc_nmg_bay_signed_target value = 2 } set_variable = { name = ywc_nmg_bay_signed_pilot value = var:ywc_nmg_bay_pilot }
+  }
+  set_variable = { name = ywc_nmg_bay_pending_event value = var:ywc_nmg_bay_stage }
+ }
+}
+
+ywc_nmg_bay_narrow_and_recount = {
+ if = { limit = { OR = { ywc_nmg_bay_at_1105 = yes ywc_nmg_bay_at_1106 = yes ywc_nmg_bay_at_1107 = yes } ywc_nmg_bay_narrow_ready = yes }
+  set_variable = { name = ywc_nmg_bay_mode value = 3 } set_variable = { name = ywc_nmg_bay_target value = 2 }
+  set_variable = { name = ywc_nmg_bay_charter_mode value = 3 } set_variable = { name = ywc_nmg_bay_charter_target value = 2 } set_variable = { name = ywc_nmg_bay_charter_pilot value = var:ywc_nmg_bay_pilot }
+  set_variable = { name = ywc_nmg_bay_signed_mode value = 3 } set_variable = { name = ywc_nmg_bay_signed_target value = 2 } set_variable = { name = ywc_nmg_bay_signed_pilot value = var:ywc_nmg_bay_pilot } set_variable = { name = ywc_nmg_bay_signed value = 1 }
+  set_variable = { name = ywc_nmg_bay_accepted_mode value = 3 } set_variable = { name = ywc_nmg_bay_accepted_target value = 2 } set_variable = { name = ywc_nmg_bay_accepted_pilot value = var:ywc_nmg_bay_pilot } set_variable = { name = ywc_nmg_bay_accepted value = 1 }
+  remove_variable = ywc_nmg_bay_requested_outcome remove_variable = ywc_nmg_bay_review_mature remove_variable = ywc_nmg_bay_review_interrupted
+  set_variable = { name = ywc_nmg_bay_review_streak value = 0 } set_variable = { name = ywc_nmg_bay_review_running value = 1 } set_variable = { name = ywc_nmg_bay_review_last_month value = ywc_nmg_current_calendar_month }
+  set_variable = { name = ywc_nmg_bay_stage value = 1105 } remove_variable = ywc_nmg_bay_pending_event
+ }
+}
+
+ywc_nmg_bay_recount = {
+ if = { limit = { OR = { ywc_nmg_bay_at_1106 = yes ywc_nmg_bay_at_1107 = yes } ywc_nmg_bay_historical = yes ywc_nmg_bay_selected_current = yes }
+  remove_variable = ywc_nmg_bay_requested_outcome remove_variable = ywc_nmg_bay_review_mature remove_variable = ywc_nmg_bay_review_interrupted
+  set_variable = { name = ywc_nmg_bay_review_streak value = 0 } set_variable = { name = ywc_nmg_bay_review_running value = 1 } set_variable = { name = ywc_nmg_bay_review_last_month value = ywc_nmg_current_calendar_month }
+  set_variable = { name = ywc_nmg_bay_stage value = 1105 } remove_variable = ywc_nmg_bay_pending_event
+ }
+}
+
+# A completed local operating arrangement supplies a bounded, state-scoped
+# benefit. It is not a construction order, a private investment or a grant of
+# foreign rights. The state-change hook and monthly recheck remove it on loss.
+ywc_nmg_bay_apply_benefit = {
+ if = { limit = { ywc_nmg_bay_at_1107 = yes ywc_nmg_bay_full_ready = yes NOT = { has_variable = ywc_nmg_bay_benefit_active } }
+  set_variable = { name = ywc_nmg_bay_benefit_pilot value = var:ywc_nmg_bay_pilot }
+  set_variable = { name = ywc_nmg_bay_benefit_mode value = var:ywc_nmg_bay_mode }
+  set_variable = { name = ywc_nmg_bay_benefit_active value = 1 }
+  set_variable = { name = ywc_nmg_bay_benefit_timer value = 1 months = 24 }
+  if = { limit = { var:ywc_nmg_bay_mode = 1 } var:ywc_nmg_bay_pilot = { add_modifier = { name = ywc_nmg_bay_public_port months = 24 } } }
+  else_if = { limit = { var:ywc_nmg_bay_mode = 2 } var:ywc_nmg_bay_pilot = { add_modifier = { name = ywc_nmg_bay_supervised_port months = 24 } } }
+  else_if = { limit = { var:ywc_nmg_bay_mode = 3 } var:ywc_nmg_bay_pilot = { add_modifier = { name = ywc_nmg_bay_reduced_port months = 24 } } }
+ }
+}
+
+ywc_nmg_bay_remove_benefit = {
+ if = { limit = { exists = var:ywc_nmg_bay_benefit_pilot }
+  var:ywc_nmg_bay_benefit_pilot = { remove_modifier = ywc_nmg_bay_public_port remove_modifier = ywc_nmg_bay_supervised_port remove_modifier = ywc_nmg_bay_reduced_port }
+ }
+ remove_variable = ywc_nmg_bay_benefit_active remove_variable = ywc_nmg_bay_benefit_timer
+}
+
+# Receipt release has no effect on debt, old account callbacks or other queues.
+ywc_nmg_bay_release = {
+ if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bay_ports_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bay_ports_settled } has_variable = ywc_nmg_bay_outcome var:ywc_nmg_bay_outcome > 0 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_bay_ports_settled value = 1 }
+  set_variable = { name = ywc_v03_nmg_v03_nmg_bay_ports_outcome value = var:ywc_nmg_bay_outcome }
+  remove_variable = ywc_nmg_bay_pending_event remove_variable = ywc_nmg_bay_review_running
+  change_variable = { name = ywc_v03_active_arc_count add = -1 }
+  change_variable = { name = ywc_v03_visible_task_count add = -1 }
+  clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+  clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ }
+}
+
+# The lender does not initiate payments. Loss of the original borrower is
+# recorded against this lender slot; it never credits anyone by itself.
+ywc_nmg_bay_creditor_monthly = {
+ if = { limit = { has_variable = ywc_nmg_bay_creditor_generation NOT = { exists = var:ywc_nmg_bay_creditor_borrower } } set_variable = { name = ywc_nmg_bay_creditor_borrower_lost value = 1 } }
+}
+
+ywc_nmg_bay_monthly = {
+ if = { limit = { has_variable = ywc_nmg_bay_benefit_active OR = { NOT = { has_variable = ywc_nmg_bay_benefit_timer } NOT = { ywc_nmg_bay_benefit_current = yes } } } ywc_nmg_bay_remove_benefit = yes }
+ if = { limit = { has_variable = ywc_nmg_bay_generation NOT = { has_variable = ywc_nmg_bay_debt_generation } NOT = { has_variable = ywc_nmg_bay_request_timer } ywc_nmg_bay_open = yes var:ywc_nmg_bay_stage = 1101 }
+  # A timed-out offer is invalidated once; a fresh offer earns a new serial.
+  if = { limit = { NOT = { has_variable = ywc_nmg_bay_timeout_recorded } } change_variable = { name = ywc_nmg_bay_serial add = 1 } set_variable = { name = ywc_nmg_bay_timeout_recorded value = 1 } set_variable = { name = ywc_nmg_bay_pending_event value = 1101 } }
+ }
+ if = { limit = { has_variable = ywc_nmg_bay_request_timer NOT = { ywc_nmg_bay_partner_current = yes } } ywc_nmg_bay_cancel_unsigned = yes }
+ if = { limit = { has_variable = ywc_nmg_bay_debt_generation }
+  if = { limit = { OR = { NOT = { exists = var:ywc_nmg_bay_creditor } var:ywc_nmg_bay_creditor = { is_country_alive = no } } } set_variable = { name = ywc_nmg_bay_creditor_lost value = 1 } }
+  if = { limit = { OR = { has_variable = ywc_nmg_bay_creditor_lost ywc_nmg_bay_mirror_current = yes } NOT = { var:ywc_nmg_bay_last_loan_month ?= ywc_nmg_current_calendar_month } }
+   save_scope_as = ywc_nmg_bay_debtor
+   set_variable = { name = ywc_nmg_bay_current_month value = ywc_nmg_current_calendar_month }
+   set_variable = { name = ywc_nmg_bay_last_loan_month value = var:ywc_nmg_bay_current_month }
+   set_variable = { name = ywc_nmg_bay_elapsed_months value = var:ywc_nmg_bay_current_month }
+   change_variable = { name = ywc_nmg_bay_elapsed_months add = { value = var:ywc_nmg_bay_loan_start_month multiply = -1 } }
+   clamp_variable = { name = ywc_nmg_bay_elapsed_months min = 0 max = 12 }
+   set_variable = { name = ywc_nmg_bay_scheduled_total value = var:ywc_nmg_bay_principal }
+   change_variable = { name = ywc_nmg_bay_scheduled_total multiply = var:ywc_nmg_bay_elapsed_months }
+   change_variable = { name = ywc_nmg_bay_scheduled_total divide = 12 }
+   if = { limit = { ywc_nmg_bay_mirror_current = yes NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } var:ywc_nmg_bay_scheduled_total > var:ywc_nmg_bay_repaid_total }
+    set_variable = { name = ywc_nmg_bay_due value = var:ywc_nmg_bay_scheduled_total }
+    change_variable = { name = ywc_nmg_bay_due add = { value = var:ywc_nmg_bay_repaid_total multiply = -1 } }
+    if = { limit = { gold_reserves < var:ywc_nmg_bay_due }
+     set_variable = { name = ywc_nmg_bay_one_period value = var:ywc_nmg_bay_principal }
+     change_variable = { name = ywc_nmg_bay_one_period divide = 12 }
+     if = { limit = { var:ywc_nmg_bay_one_period < var:ywc_nmg_bay_due } set_variable = { name = ywc_nmg_bay_due value = var:ywc_nmg_bay_one_period } }
+    }
+    if = { limit = { var:ywc_nmg_bay_due > 0 gold_reserves >= var:ywc_nmg_bay_due ywc_nmg_bay_mirror_current = yes }
+     add_treasury = { value = var:ywc_nmg_bay_due multiply = -1 }
+     var:ywc_nmg_bay_creditor = { add_treasury = scope:ywc_nmg_bay_debtor.var:ywc_nmg_bay_due change_variable = { name = ywc_nmg_bay_creditor_repaid_total add = scope:ywc_nmg_bay_debtor.var:ywc_nmg_bay_due } }
+     change_variable = { name = ywc_nmg_bay_repaid_total add = var:ywc_nmg_bay_due }
+    }
+   }
+  }
+ }
+ # Operating observation starts only after the second administrative fee;
+ # it never reads elapsed loan periods.
+ if = { limit = { ywc_nmg_bay_open = yes var:ywc_nmg_bay_stage = 1105 OR = { has_variable = ywc_nmg_bay_review_running has_variable = ywc_nmg_bay_review_mature } }
+  set_variable = { name = ywc_nmg_bay_review_current_month value = ywc_nmg_current_calendar_month }
+  if = { limit = { NOT = { var:ywc_nmg_bay_review_last_month ?= var:ywc_nmg_bay_review_current_month } }
+   set_variable = { name = ywc_nmg_bay_review_last_month value = var:ywc_nmg_bay_review_current_month }
+   if = { limit = { OR = { NOT = { ywc_nmg_bay_selected_current = yes } NOT = { ywc_nmg_bay_signed_current = yes } NOT = { ywc_nmg_bay_accepted_current = yes } NOT = { ywc_nmg_bay_first_paid = yes } NOT = { var:ywc_nmg_bay_maintenance_paid ?= 1 } } }
+    set_variable = { name = ywc_nmg_bay_review_streak value = 0 } remove_variable = ywc_nmg_bay_review_running remove_variable = ywc_nmg_bay_review_mature set_variable = { name = ywc_nmg_bay_review_interrupted value = 1 } set_variable = { name = ywc_nmg_bay_pending_event value = 1105 }
+   }
+   else_if = { limit = { has_variable = ywc_nmg_bay_review_running }
+    change_variable = { name = ywc_nmg_bay_review_streak add = 1 }
+    if = { limit = { OR = { AND = { var:ywc_nmg_bay_target = 1 var:ywc_nmg_bay_review_streak >= 12 } AND = { var:ywc_nmg_bay_target = 2 var:ywc_nmg_bay_review_streak >= 6 } } }
+     remove_variable = ywc_nmg_bay_review_running set_variable = { name = ywc_nmg_bay_review_mature value = 1 } set_variable = { name = ywc_nmg_bay_pending_event value = 1105 }
+    }
+   }
+  }
+ }
+}
