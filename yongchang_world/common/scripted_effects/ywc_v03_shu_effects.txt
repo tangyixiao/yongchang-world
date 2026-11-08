@@ -1231,3 +1231,299 @@ if = { limit = { has_variable = ywc_v03_shu_v03_shu_public_deliberation_started 
  remove_variable = ywc_shu_delib_pending_event
 }
 }
+
+# M4 SHU rural workshop: source-owned helpers for 1110..1117. Two real national
+# fees only (1111 admin register, 1115 survey review); B is captured once at
+# claim from yearly_gross_income / 52, clamped 100..1e9, never recomputed on
+# popups. Both fees are national administrative/survey expenditure: they are
+# never factory capital, private credit or a transfer to any building. The
+# original state is captured exactly once as a real state object.
+
+ywc_v03_claim_arc_shu_v03_shu_rural_workshop = {
+ ywc_v03_initialize_country = yes
+ if = { limit = {
+  NOT = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_started }
+  NOT = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_settled }
+  var:ywc_v03_active_arc_count < 3
+  var:ywc_v03_visible_task_count < 6 }
+  set_variable = { name = ywc_v03_shu_v03_shu_rural_workshop_started value = 1 }
+  change_variable = { name = ywc_v03_active_arc_count add = 1 }
+  change_variable = { name = ywc_v03_visible_task_count add = 1 }
+  ywc_shu_workshop_capture_cost_base = yes
+ }
+}
+
+# The exact original state is saved once as a real state object on ROOT via
+# value = PREV inside the actual state scope; no region token 1..4, no index
+# and no same-region substitute is ever written. Later every duty read happens
+# inside this exact object.
+ywc_shu_workshop_open_once = {
+if = { limit = { ywc_shu_v03_workshop_open = yes NOT = { has_variable = ywc_shu_workshop_stage } }
+ set_variable = { name = ywc_shu_workshop_popup_epoch value = 0 }
+ set_variable = { name = ywc_shu_workshop_stage value = 1110 }
+ set_variable = { name = ywc_shu_workshop_phase value = 1 }
+ set_variable = { name = ywc_shu_workshop_pending_event value = 1110 }
+}
+if = { limit = { ywc_shu_v03_workshop_open = yes NOT = { has_variable = ywc_shu_workshop_pilot } }
+ every_scope_state = {
+  limit = { owner = ROOT ROOT = { NOT = { has_variable = ywc_shu_workshop_pilot } } }
+  ROOT = { set_variable = { name = ywc_shu_workshop_pilot value = PREV } }
+ }
+}
+}
+
+ywc_shu_workshop_capture_cost_base = {
+if = { limit = { NOT = { has_variable = ywc_shu_workshop_cost_captured } }
+ set_variable = { name = ywc_shu_workshop_cost value = yearly_gross_income }
+ change_variable = { name = ywc_shu_workshop_cost divide = 52 }
+ clamp_variable = { name = ywc_shu_workshop_cost min = 100 max = 1000000000 }
+ set_variable = { name = ywc_shu_workshop_cost_captured value = 1 }
+}
+}
+
+# Price of the CURRENT responsibility: a full policy pays B, the explicit
+# finite local preparation pays .5B. The stale due is removed after each use.
+ywc_shu_workshop_price_once = {
+if = { limit = { has_variable = ywc_shu_workshop_kind var:ywc_shu_workshop_kind = 2 }
+ set_variable = { name = ywc_shu_workshop_fee_due value = var:ywc_shu_workshop_cost }
+ change_variable = { name = ywc_shu_workshop_fee_due multiply = 0.5 }
+}
+else_if = { limit = { has_variable = ywc_shu_workshop_kind }
+ set_variable = { name = ywc_shu_workshop_fee_due value = var:ywc_shu_workshop_cost }
+}
+}
+
+# 1111: deduct first, then record paid=1 with the positive amount and the real
+# handler responsibility snapshot (kind/mode/target/actual pilot). The payment
+# is a national register expense, nothing is lent or invested anywhere.
+ywc_shu_workshop_pay_admin_once = {
+if = { limit = { ywc_shu_v03_workshop_admin_pay_ready = yes }
+ ywc_shu_workshop_price_once = yes
+ if = { limit = { has_variable = ywc_shu_workshop_fee_due var:ywc_shu_workshop_fee_due > 0 }
+  add_treasury = { value = var:ywc_shu_workshop_fee_due multiply = -1 }
+  set_variable = { name = ywc_shu_workshop_admin_paid value = 1 }
+  set_variable = { name = ywc_shu_workshop_admin_paid_amount value = var:ywc_shu_workshop_fee_due }
+  set_variable = { name = ywc_shu_workshop_handler_kind value = var:ywc_shu_workshop_kind }
+  set_variable = { name = ywc_shu_workshop_handler_mode value = var:ywc_shu_workshop_mode }
+  set_variable = { name = ywc_shu_workshop_handler_target value = var:ywc_shu_workshop_target }
+  set_variable = { name = ywc_shu_workshop_handler_pilot value = var:ywc_shu_workshop_pilot }
+ }
+ remove_variable = ywc_shu_workshop_fee_due
+}
+}
+
+# 1115: the survey fee follows the same discipline; paying it earns the review
+# responsibility snapshot. An already paid recount never pays here again and
+# the recorded amount is never refunded, topped up or rewritten.
+ywc_shu_workshop_pay_survey_once = {
+if = { limit = { ywc_shu_v03_workshop_survey_pay_ready = yes }
+ ywc_shu_workshop_price_once = yes
+ if = { limit = { has_variable = ywc_shu_workshop_fee_due var:ywc_shu_workshop_fee_due > 0 }
+  add_treasury = { value = var:ywc_shu_workshop_fee_due multiply = -1 }
+  set_variable = { name = ywc_shu_workshop_survey_paid value = 1 }
+  set_variable = { name = ywc_shu_workshop_survey_paid_amount value = var:ywc_shu_workshop_fee_due }
+  set_variable = { name = ywc_shu_workshop_review_kind value = var:ywc_shu_workshop_kind }
+  set_variable = { name = ywc_shu_workshop_review_mode value = var:ywc_shu_workshop_mode }
+  set_variable = { name = ywc_shu_workshop_review_target value = var:ywc_shu_workshop_target }
+  set_variable = { name = ywc_shu_workshop_review_pilot value = var:ywc_shu_workshop_pilot }
+ }
+ remove_variable = ywc_shu_workshop_fee_due
+}
+}
+
+ywc_shu_workshop_write_register_phase = {
+if = { limit = { var:ywc_shu_workshop_stage = 1110 OR = { NOT = { has_variable = ywc_shu_workshop_pending_event } var:ywc_shu_workshop_pending_event = 1110 } ywc_shu_v03_workshop_open = yes }
+ set_variable = { name = ywc_shu_workshop_pending_event value = var:ywc_shu_workshop_stage }
+}
+}
+
+# Fresh observation: running with streak 0 and the one-day expiry latch that
+# blocks same-day double counting when a newly added JE pulses again. The fresh
+# start also captures the current global calendar month, so the creation month
+# itself never counts as an observed duty month.
+ywc_shu_workshop_start_review = {
+if = { limit = { ywc_shu_v03_workshop_open = yes }
+ set_variable = { name = ywc_shu_workshop_review_running value = 1 }
+ set_variable = { name = ywc_shu_workshop_review_streak value = 0 }
+ set_variable = { name = ywc_shu_workshop_review_ticked value = 1 days = 1 }
+ set_variable = { name = ywc_shu_workshop_review_month value = ywc_nmg_current_calendar_month }
+ remove_variable = ywc_shu_workshop_review_mature
+ remove_variable = ywc_shu_workshop_review_interrupted
+}
+}
+
+# Six real calendar months mature; five is never six. Each pulse runs the
+# current-condition interruption check first, so even a repeated same-month
+# callback can never bypass a real current loss. The counting branch then adds
+# at most one observation per DISTINCT global calendar month: the month read
+# from the existing shared scalar ywc_nmg_current_calendar_month must differ
+# from the month captured at the fresh start (or at the last counted month),
+# so same-month repeated callbacks never earn extra observations. The counting
+# branch has no NOT-paid gate, so a paid recount or a finite re-sign still
+# counts six genuinely fresh months. A mature but still unpaid contract keeps
+# being watched: losing any current duty downgrades it to an honest
+# interruption while an already paid maturity keeps its history.
+ywc_shu_workshop_track_review = {
+if = { limit = { ywc_shu_v03_workshop_open = yes var:ywc_shu_workshop_stage = 1115 has_variable = ywc_shu_workshop_review_running }
+ if = { limit = { ywc_shu_v03_workshop_current_broken = yes }
+  set_variable = { name = ywc_shu_workshop_review_streak value = 0 }
+  remove_variable = ywc_shu_workshop_review_mature
+  remove_variable = ywc_shu_workshop_review_running
+  set_variable = { name = ywc_shu_workshop_review_interrupted value = 1 }
+ }
+ else_if = { limit = { NOT = { has_variable = ywc_shu_workshop_review_ticked } }
+  set_variable = { name = ywc_shu_workshop_review_ticked value = 1 days = 1 }
+  if = { limit = { NOT = { has_variable = ywc_shu_workshop_review_month } }
+   set_variable = { name = ywc_shu_workshop_review_month value = ywc_nmg_current_calendar_month }
+  }
+  if = { limit = { NOT = { has_variable = ywc_shu_workshop_review_mature } NOT = { var:ywc_shu_workshop_review_month = ywc_nmg_current_calendar_month } }
+   set_variable = { name = ywc_shu_workshop_review_month value = ywc_nmg_current_calendar_month }
+   change_variable = { name = ywc_shu_workshop_review_streak add = 1 }
+   if = { limit = { var:ywc_shu_workshop_review_streak >= 6 }
+    set_variable = { name = ywc_shu_workshop_review_mature value = 1 }
+    remove_variable = ywc_shu_workshop_review_running
+   }
+  }
+ }
+}
+if = { limit = { ywc_shu_v03_workshop_open = yes var:ywc_shu_workshop_stage = 1115 has_variable = ywc_shu_workshop_review_mature NOT = { has_variable = ywc_shu_workshop_survey_paid } }
+ if = { limit = { ywc_shu_v03_workshop_current_broken = yes }
+  set_variable = { name = ywc_shu_workshop_review_streak value = 0 }
+  remove_variable = ywc_shu_workshop_review_mature
+  set_variable = { name = ywc_shu_workshop_review_interrupted value = 1 }
+ }
+}
+}
+
+# Interrupted observation restarts from zero with six new months only when the
+# earned contract and every current duty genuinely hold again. The restart also
+# restores THIS line's own pending 1115 marker, so the monthly queue can
+# actually re-deliver the survey node once the six fresh months matured; no
+# other line's queue, reservation or state is touched.
+ywc_shu_workshop_restart_review = {
+if = { limit = { ywc_shu_v03_workshop_restart_ready = yes }
+ remove_variable = ywc_shu_workshop_review_interrupted
+ ywc_shu_workshop_start_review = yes
+ set_variable = { name = ywc_shu_workshop_pending_event value = 1115 }
+}
+}
+
+# Explicit finite re-sign: rewrites the real policy to mode3/target2 and ALL
+# responsibility snapshots to the new local roles, removes the old source
+# reference and every old request/mature/streak marker, preserves the original
+# fee records, and starts six fresh months. Payments are never refunded or
+# recharged on the recount.
+ywc_shu_workshop_narrow_and_recount = {
+if = { limit = { ywc_shu_v03_workshop_narrow_ready = yes }
+ set_variable = { name = ywc_shu_workshop_mode value = 3 }
+ set_variable = { name = ywc_shu_workshop_target value = 2 }
+ set_variable = { name = ywc_shu_workshop_kind value = 2 }
+ set_variable = { name = ywc_shu_workshop_handler_kind value = 2 }
+ set_variable = { name = ywc_shu_workshop_handler_mode value = 3 }
+ set_variable = { name = ywc_shu_workshop_handler_target value = 2 }
+ set_variable = { name = ywc_shu_workshop_witness_source value = 4 }
+ set_variable = { name = ywc_shu_workshop_witness_mode value = 3 }
+ set_variable = { name = ywc_shu_workshop_witness_target value = 2 }
+ set_variable = { name = ywc_shu_workshop_sign_mode value = 3 }
+ set_variable = { name = ywc_shu_workshop_sign_target value = 2 }
+ set_variable = { name = ywc_shu_workshop_accept_kind value = 2 }
+ set_variable = { name = ywc_shu_workshop_accept_mode value = 3 }
+ set_variable = { name = ywc_shu_workshop_accept_target value = 2 }
+ if = { limit = { has_variable = ywc_shu_workshop_review_kind }
+  set_variable = { name = ywc_shu_workshop_review_kind value = 2 }
+  set_variable = { name = ywc_shu_workshop_review_mode value = 3 }
+  set_variable = { name = ywc_shu_workshop_review_target value = 2 }
+ }
+ remove_variable = ywc_shu_workshop_request
+ remove_variable = ywc_shu_workshop_review_mature
+ remove_variable = ywc_shu_workshop_review_streak
+ remove_variable = ywc_shu_workshop_review_interrupted
+ remove_variable = ywc_shu_workshop_review_running
+ remove_variable = ywc_shu_workshop_pending_event
+ set_variable = { name = ywc_shu_workshop_stage value = 1115 }
+ set_variable = { name = ywc_shu_workshop_pending_event value = 1115 }
+ ywc_shu_workshop_start_review = yes
+}
+}
+
+# Recount from a terminal request stage back to 1115: keeps both real paid
+# amounts and the exact pilot, discards the request, and counts six fresh
+# months before anything can be requested again.
+ywc_shu_workshop_recount_to_1115 = {
+if = { limit = { ywc_shu_v03_workshop_recount_ready = yes }
+ remove_variable = ywc_shu_workshop_request
+ remove_variable = ywc_shu_workshop_review_mature
+ remove_variable = ywc_shu_workshop_review_streak
+ remove_variable = ywc_shu_workshop_review_interrupted
+ remove_variable = ywc_shu_workshop_review_running
+ remove_variable = ywc_shu_workshop_pending_event
+ set_variable = { name = ywc_shu_workshop_stage value = 1115 }
+ set_variable = { name = ywc_shu_workshop_pending_event value = 1115 }
+ ywc_shu_workshop_start_review = yes
+}
+}
+
+# Free UI advance after a paid recount matured again: no cash gate, no second
+# charge, current facts and all earned identities must genuinely hold.
+ywc_shu_workshop_advance_paid_review = {
+if = { limit = { ywc_shu_v03_workshop_paid_advance_ready = yes }
+ remove_variable = ywc_shu_workshop_pending_event
+ set_variable = { name = ywc_shu_workshop_stage value = 1116 }
+ set_variable = { name = ywc_shu_workshop_pending_event value = 1116 }
+}
+}
+
+ywc_shu_workshop_close_full = {
+if = { limit = { ywc_shu_v03_workshop_close_full_ready = yes }
+ set_variable = { name = ywc_shu_workshop_outcome value = 1 }
+ ywc_v03_release_arc_shu_v03_shu_rural_workshop = yes
+}
+}
+
+ywc_shu_workshop_close_limited = {
+if = { limit = { ywc_shu_v03_workshop_close_limited_ready = yes }
+ set_variable = { name = ywc_shu_workshop_outcome value = 2 }
+ ywc_v03_release_arc_shu_v03_shu_rural_workshop = yes
+}
+}
+
+ywc_shu_workshop_close_setback = {
+if = { limit = { ywc_shu_v03_workshop_close_setback_ready = yes }
+ set_variable = { name = ywc_shu_workshop_outcome value = 3 }
+ ywc_v03_release_arc_shu_v03_shu_rural_workshop = yes
+}
+}
+
+# Release exactly once, on this arc's own outcome variable; only this line's
+# own slot, queue and stage variables are touched and old fees or old debts of
+# other contracts are never refunded or forgiven.
+ywc_v03_release_arc_shu_v03_shu_rural_workshop = {
+if = { limit = {
+ has_variable = ywc_v03_shu_v03_shu_rural_workshop_started
+ NOT = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_settled }
+ has_variable = ywc_shu_workshop_outcome
+ var:ywc_shu_workshop_outcome > 0 }
+ set_variable = { name = ywc_v03_shu_v03_shu_rural_workshop_outcome value = var:ywc_shu_workshop_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_rural_workshop_settled value = 1 }
+ remove_variable = ywc_shu_workshop_pending_event
+ remove_variable = ywc_shu_workshop_review_running
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+}
+}
+
+ywc_shu_workshop_close_withdrawn = {
+if = { limit = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_started NOT = { has_variable = ywc_v03_shu_v03_shu_rural_workshop_settled } }
+ set_variable = { name = ywc_shu_workshop_withdrawn value = 1 }
+ if = { limit = { NOT = { has_variable = ywc_shu_workshop_outcome } } set_variable = { name = ywc_shu_workshop_outcome value = 4 } }
+ set_variable = { name = ywc_v03_shu_v03_shu_rural_workshop_outcome value = var:ywc_shu_workshop_outcome }
+ set_variable = { name = ywc_v03_shu_v03_shu_rural_workshop_settled value = 1 }
+ change_variable = { name = ywc_v03_active_arc_count add = -1 }
+ change_variable = { name = ywc_v03_visible_task_count add = -1 }
+ clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+ clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+ remove_variable = ywc_shu_workshop_pending_event
+}
+}
