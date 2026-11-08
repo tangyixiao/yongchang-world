@@ -1637,3 +1637,520 @@ ywc_kor_procurement_choose_retry_jhg = {
 		ywc_kor_procurement_send_jhg = yes
 	}
 }
+
+# M3 KOR provincial revenue effects (v03_kor_provincial_revenue). Append-only.
+# Claim once captures B = opening yearly_gross_income / 52 (min 100) and the pilot.
+ywc_kor_revenue_claim_once = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started }
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+			ywc_kor_revenue_has_any_owned_state = yes
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		set_variable = { name = ywc_kor_revenue_budget value = yearly_gross_income }
+		change_variable = { name = ywc_kor_revenue_budget divide = 52 }
+		clamp_variable = { name = ywc_kor_revenue_budget min = 100 max = 1000000000 }
+		set_variable = { name = ywc_kor_revenue_stage value = 1100 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1100 }
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_phase value = 1 }
+	}
+}
+
+# 1100: capture the one currently owned KOR pilot state object and choose a mode
+# and target. The pending event is consumed here through stage advancement.
+ywc_kor_revenue_set_pilot_and_mode = {
+	if = {
+		limit = { ywc_kor_revenue_at_1100 = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }
+		every_scope_state = {
+			limit = { owner = c:KOR }
+			save_scope_as = ywc_kor_revenue_pilot_state
+		}
+		if = {
+			limit = { exists = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_pilot_state value = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_target value = 1 }
+			if = { limit = { var:ywc_kor_revenue_mode_choice = 1 } set_variable = { name = ywc_kor_revenue_mode value = 1 } }
+			else_if = { limit = { var:ywc_kor_revenue_mode_choice = 2 } set_variable = { name = ywc_kor_revenue_mode value = 2 } }
+			else_if = { limit = { var:ywc_kor_revenue_mode_choice = 3 } set_variable = { name = ywc_kor_revenue_mode value = 3 } }
+			set_variable = { name = ywc_kor_revenue_stage value = 1101 }
+			set_variable = { name = ywc_kor_revenue_pending_event value = 1101 }
+			remove_variable = ywc_kor_revenue_mode_choice
+		}
+	}
+}
+
+# 1100 finite choice: set an explicit base mode 3 (project grants) so mode/target
+# always carry exact values; target 2 then overrides the full project taxes, sponsor
+# and farmland as the conservative finite goal. No mode 0 / missing variable.
+ywc_kor_revenue_set_pilot_finite = {
+	if = {
+		limit = { ywc_kor_revenue_at_1100 = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }
+		every_scope_state = {
+			limit = { owner = c:KOR }
+			save_scope_as = ywc_kor_revenue_pilot_state
+		}
+		if = {
+			limit = { exists = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_pilot_state value = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_mode value = 3 }
+			set_variable = { name = ywc_kor_revenue_target value = 2 }
+			set_variable = { name = ywc_kor_revenue_finite_chosen value = 1 }
+			set_variable = { name = ywc_kor_revenue_stage value = 1101 }
+			set_variable = { name = ywc_kor_revenue_pending_event value = 1101 }
+		}
+	}
+}
+
+# 1100 wait keeps the pending event and consumes nothing.
+ywc_kor_revenue_wait_1100 = {
+	if = { limit = { ywc_kor_revenue_at_1100 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1101 charter fee: atomic recheck of current cash/default/bankruptcy, then real debit.
+# Only a completed debit writes paid + positive amount. Never refunded, never recharged.
+ywc_kor_revenue_pay_charter_once = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1101 = yes
+			NOT = { has_variable = ywc_kor_revenue_charter_paid }
+			ywc_kor_revenue_can_pay_charter = yes
+		}
+		set_variable = { name = ywc_kor_revenue_charter_paid_amount value = var:ywc_kor_revenue_budget }
+		if = { limit = { ywc_kor_revenue_charter_half = yes } change_variable = { name = ywc_kor_revenue_charter_paid_amount multiply = 0.5 } }
+		if = { limit = { var:ywc_kor_revenue_mode = 2 } change_variable = { name = ywc_kor_revenue_charter_paid_amount multiply = 2 } }
+		add_treasury = { value = var:ywc_kor_revenue_charter_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_revenue_charter_paid value = 1 }
+		set_variable = { name = ywc_kor_revenue_charter_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_charter_mode value = var:ywc_kor_revenue_mode }
+		set_variable = { name = ywc_kor_revenue_charter_target value = var:ywc_kor_revenue_target }
+		if = { limit = { ywc_kor_revenue_prior_provincial_contract = yes } set_variable = { name = ywc_kor_revenue_charter_source_provincial value = 1 } }
+		if = { limit = { ywc_kor_revenue_prior_court_contract = yes } set_variable = { name = ywc_kor_revenue_charter_source_court value = 1 } }
+		set_variable = { name = ywc_kor_revenue_stage value = 1102 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1102 }
+	}
+}
+
+ywc_kor_revenue_wait_1101 = {
+	if = { limit = { ywc_kor_revenue_at_1101 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1102: settle the real reviewer / responsibility terms by current mode, recording
+# which source contract was read without granting new funding. Under the explicit
+# finite target only the fresh current local office (4) may audit; a historical
+# school/port role is never adopted for target2.
+ywc_kor_revenue_choose_reviewer = {
+	if = {
+		limit = { ywc_kor_revenue_at_1102 = yes ywc_kor_revenue_reviewer_office = yes }
+		if = { limit = { var:ywc_kor_revenue_target = 2 } set_variable = { name = ywc_kor_revenue_reviewer value = 4 } }
+		else_if = { limit = { ywc_kor_revenue_prior_school = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 1 } }
+		else_if = { limit = { ywc_kor_revenue_prior_ports = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 2 } }
+		else_if = { limit = { ywc_kor_revenue_prior_provincial_contract = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 3 } }
+		else = { set_variable = { name = ywc_kor_revenue_reviewer value = 4 } }
+		set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_stage value = 1103 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1103 }
+	}
+}
+
+# Current reviewer/source duty revalidation at any later node. The recorded
+# reviewer must still hold its genuinely earned CURRENT qualification (1 school,
+# 2 ports, 3 provincial, 4 the fresh current local office); a cached role whose
+# old contract lost its live posts/route is defunct and cannot remain the adopted
+# responsibility source. Calling this where an old privilege silently persisted
+# rebinds to the real reviewer 4 at the same pilot; nothing is granted for free.
+ywc_kor_revenue_pick_current_reviewer = {
+	if = { limit = { var:ywc_kor_revenue_reviewer = 1 ywc_kor_revenue_prior_school = yes } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+	else_if = { limit = { var:ywc_kor_revenue_reviewer = 2 ywc_kor_revenue_prior_ports = yes } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+	else_if = { limit = { var:ywc_kor_revenue_reviewer = 3 ywc_kor_revenue_prior_provincial_contract = yes } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+	else_if = { limit = { ywc_kor_revenue_reviewer_office = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 4 } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+}
+
+# Explicit return to 1102 when the adopted reviewer's current duty was lost before
+# the seal. It changes no bill and no paid amount: it only reopens the reviewer
+# choice so a genuinely present source, or the fresh current local office (4), can
+# be selected again. Working wait/withdraw stay available in 1103 itself.
+ywc_kor_revenue_reselect_reviewer = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1103 = yes
+			var:ywc_kor_revenue_phase = 1
+			has_variable = ywc_kor_revenue_charter_paid
+			var:ywc_kor_revenue_charter_paid_amount > 0
+			has_variable = ywc_kor_revenue_reviewer
+			NOT = { ywc_kor_revenue_reviewer_current_duty = yes }
+		}
+		set_variable = { name = ywc_kor_revenue_stage value = 1102 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1102 }
+	}
+}
+
+ywc_kor_revenue_wait_1102 = {
+	if = { limit = { ywc_kor_revenue_at_1102 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1103: sign against the CURRENT selected policy, reviewer terms and paid charter,
+# with exact mode/target/pilot snapshots and phase 1. If the selected policy has just
+# lost its law or duties, signing is not allowed. Valid signing sets phase 2 and hands
+# off to JE2; losing state afterwards must still admit JE2/exit (JE2 is not gated on
+# current ownership or capacity).
+ywc_kor_revenue_sign = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1103 = yes
+			var:ywc_kor_revenue_phase = 1
+			has_variable = ywc_kor_revenue_charter_paid
+			var:ywc_kor_revenue_charter_paid_amount > 0
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_mode_chosen = yes
+			ywc_kor_revenue_target_chosen = yes
+			ywc_kor_revenue_pilot_owned = yes
+			ywc_kor_revenue_reviewer_office = yes
+			ywc_kor_revenue_selected_current_ready = yes
+			ywc_kor_revenue_both_snapshots_match = yes
+		}
+		ywc_kor_revenue_pick_current_reviewer = yes
+		set_variable = { name = ywc_kor_revenue_phase value = 2 }
+		set_variable = { name = ywc_kor_revenue_sign_mode value = var:ywc_kor_revenue_mode }
+		set_variable = { name = ywc_kor_revenue_sign_target value = var:ywc_kor_revenue_target }
+		set_variable = { name = ywc_kor_revenue_sign_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_settlement_ready value = 1 }
+		ywc_kor_revenue_begin_review = yes
+		add_journal_entry = { type = ywc_je_v03_kor_provincial_revenue_review }
+	}
+}
+
+# Completes JE1 by opening the review journal once, after 1103 actually signed.
+ywc_kor_revenue_open_review_once = {
+	if = {
+		limit = {
+			ywc_kor_revenue_open = yes
+			has_variable = ywc_kor_revenue_settlement_ready
+			NOT = { has_journal_entry = ywc_je_v03_kor_provincial_revenue_review }
+		}
+		add_journal_entry = { type = ywc_je_v03_kor_provincial_revenue_review }
+	}
+}
+
+# JE2 entry guard: only start the run if 1103 did not already begin it. Never
+# resets an already-running or matured review.
+ywc_kor_revenue_review_claimed_once = {
+	if = {
+		limit = {
+			ywc_kor_revenue_open = yes
+			has_variable = ywc_kor_revenue_settlement_ready
+			NOT = { has_variable = ywc_kor_revenue_review_running }
+			NOT = { has_variable = ywc_kor_revenue_review_mature }
+		}
+		ywc_kor_revenue_begin_review = yes
+	}
+}
+
+ywc_kor_revenue_wait_1103 = {
+	if = { limit = { ywc_kor_revenue_at_1103 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# Starts JE2's running observation. A one-day tick guards a same-day duplicate.
+ywc_kor_revenue_begin_review = {
+	set_variable = { name = ywc_kor_revenue_phase value = 2 }
+	set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+	set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+	set_variable = { name = ywc_kor_revenue_review_started value = 1 }
+	remove_variable = ywc_kor_revenue_review_mature
+	remove_variable = ywc_kor_revenue_review_interrupted
+	remove_variable = ywc_kor_revenue_review_ticked
+	set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+	set_variable = { name = ywc_kor_revenue_stage value = 1104 }
+	set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+}
+
+# Monthly observation. Only while 1104 and running, and only one tick per day.
+# Any failed current condition clears streak/mature/running and marks interrupted.
+ywc_kor_revenue_track_review = {
+	if = {
+		limit = { ywc_kor_revenue_open = yes var:ywc_kor_revenue_stage = 1104 has_variable = ywc_kor_revenue_review_running NOT = { has_variable = ywc_kor_revenue_review_ticked } }
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+		if = {
+			limit = {
+				OR = {
+					NOT = { ywc_kor_revenue_selected_current_ready = yes }
+					NOT = { ywc_kor_revenue_reviewer_current_duty = yes }
+				}
+			}
+			set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+			remove_variable = ywc_kor_revenue_review_mature
+			remove_variable = ywc_kor_revenue_review_running
+			set_variable = { name = ywc_kor_revenue_review_interrupted value = 1 }
+		}
+		else_if = {
+			limit = { NOT = { has_variable = ywc_kor_revenue_review_mature } }
+			change_variable = { name = ywc_kor_revenue_review_streak add = 1 }
+			if = { limit = { var:ywc_kor_revenue_review_streak >= 6 } set_variable = { name = ywc_kor_revenue_review_mature value = 1 } }
+		}
+	}
+}
+
+# 1104: bill the real review fee only after the genuine six-month maturity. Paying
+# must NOT reset the run: keep mature/streak, stop running, and advance to submit.
+ywc_kor_revenue_pay_review_and_run = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			NOT = { has_variable = ywc_kor_revenue_review_paid }
+			ywc_kor_revenue_can_pay_review = yes
+		}
+		set_variable = { name = ywc_kor_revenue_review_paid_amount value = var:ywc_kor_revenue_budget }
+		if = { limit = { var:ywc_kor_revenue_target = 2 } change_variable = { name = ywc_kor_revenue_review_paid_amount multiply = 0.5 } }
+		else_if = { limit = { var:ywc_kor_revenue_mode = 3 } change_variable = { name = ywc_kor_revenue_review_paid_amount multiply = 0.5 } }
+		else_if = { limit = { var:ywc_kor_revenue_mode = 2 } change_variable = { name = ywc_kor_revenue_review_paid_amount multiply = 1.5 } }
+		if = { limit = { var:ywc_kor_revenue_mode = 2 var:ywc_kor_revenue_target = 1 ywc_kor_revenue_prior_court_contract = yes } set_variable = { name = ywc_kor_revenue_review_paid_amount value = var:ywc_kor_revenue_budget } }
+		add_treasury = { value = var:ywc_kor_revenue_review_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_revenue_review_paid value = 1 }
+		set_variable = { name = ywc_kor_revenue_review_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_review_mode value = var:ywc_kor_revenue_mode }
+		set_variable = { name = ywc_kor_revenue_review_target value = var:ywc_kor_revenue_target }
+		if = { limit = { ywc_kor_revenue_prior_court_contract = yes } set_variable = { name = ywc_kor_revenue_review_source_court value = 1 } }
+		remove_variable = ywc_kor_revenue_review_running
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+	}
+}
+
+# Explicit restart after an interruption. It does NOT require the future review bill
+# (impossible before first maturity); it requires the real charter, a signed selection
+# and reviewer bound to the same pilot/mode/target, and currently valid duties. It
+# clears old maturity/request/streak and starts six fresh, preserving any real paid bill.
+ywc_kor_revenue_restart_review = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			has_variable = ywc_kor_revenue_charter_paid
+			var:ywc_kor_revenue_charter_paid_amount > 0
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_mode_chosen = yes
+			ywc_kor_revenue_target_chosen = yes
+			ywc_kor_revenue_both_snapshots_match = yes
+			ywc_kor_revenue_selected_current_ready = yes
+			ywc_kor_revenue_finance_safe = yes
+		}
+		ywc_kor_revenue_pick_current_reviewer = yes
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+		remove_variable = ywc_kor_revenue_review_mature
+		remove_variable = ywc_kor_revenue_review_interrupted
+		remove_variable = ywc_kor_revenue_requested
+		remove_variable = ywc_kor_revenue_review_ticked
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+	}
+}
+
+ywc_kor_revenue_wait_1104 = {
+	if = { limit = { ywc_kor_revenue_at_1104 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1104 submit: requires both real fees already paid and the same matured proof and
+# current selected duties. Stop running and advance to 1105 without re-charging.
+ywc_kor_revenue_submit_review = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			ywc_kor_revenue_both_fees_paid = yes
+			has_variable = ywc_kor_revenue_review_mature
+			var:ywc_kor_revenue_review_streak >= 6
+			NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+			ywc_kor_revenue_both_snapshots_match = yes
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_reviewer_current_duty = yes
+		}
+		remove_variable = ywc_kor_revenue_review_running
+		set_variable = { name = ywc_kor_revenue_stage value = 1105 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1105 }
+	}
+}
+
+# Narrow a full policy to the explicit finite target AFTER maturity. This is a real
+# re-sign: it binds target 2 with the current local finite reviewer/snapshot, keeps both
+# actual paid bills (no second bill, no refund), clears requested/streak/mature/
+# interrupted, returns to phase 2 stage 1104 running behind the creation-day tick, and
+# requires six FRESH monthly observations. It does NOT advance to 1105, so an old cached
+# full request can never settle the new finite goal.
+ywc_kor_revenue_narrow_to_finite = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			ywc_kor_revenue_both_fees_paid = yes
+			has_variable = ywc_kor_revenue_review_mature
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_finance_safe = yes
+		}
+		set_variable = { name = ywc_kor_revenue_target value = 2 }
+		set_variable = { name = ywc_kor_revenue_finite_chosen value = 1 }
+		set_variable = { name = ywc_kor_revenue_charter_target value = 2 }
+		set_variable = { name = ywc_kor_revenue_review_target value = 2 }
+		set_variable = { name = ywc_kor_revenue_reviewer value = 4 }
+		set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_phase value = 2 }
+		remove_variable = ywc_kor_revenue_requested
+		remove_variable = ywc_kor_revenue_review_mature
+		remove_variable = ywc_kor_revenue_review_interrupted
+		remove_variable = ywc_kor_revenue_review_ticked
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_revenue_stage value = 1104 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+	}
+}
+
+# 1105: reread current law/government groups/posts/turmoil and the current
+# reviewer/source duty, recording public responsibility without changing it. A
+# reviewer whose old contract has since lost its live posts/route is defunct: the
+# real current local office (4) audits at the same pilot instead; if no current
+# duty remains, responsibility is the genuine setback class.
+ywc_kor_revenue_review_responsibility = {
+	if = {
+		limit = { ywc_kor_revenue_at_1105 = yes }
+		ywc_kor_revenue_pick_current_reviewer = yes
+		if = { limit = { ywc_kor_revenue_reviewer_current_duty = yes ywc_kor_revenue_full_conditions = yes } set_variable = { name = ywc_kor_revenue_responsibility value = 1 } }
+		else_if = { limit = { ywc_kor_revenue_reviewer_current_duty = yes ywc_kor_revenue_target2_finite = yes } set_variable = { name = ywc_kor_revenue_responsibility value = 2 } }
+		else = { set_variable = { name = ywc_kor_revenue_responsibility value = 3 } }
+		set_variable = { name = ywc_kor_revenue_stage value = 1106 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1106 }
+	}
+}
+
+ywc_kor_revenue_wait_1105 = {
+	if = { limit = { ywc_kor_revenue_at_1105 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1106: verify paid accounts, responsibility source and current state; a recount
+# returns to 1104 without charging either fee again. A defunct reviewer is rebound
+# to the real current local office (4) at the same pilot before proceeding.
+ywc_kor_revenue_verify_and_close = {
+	if = {
+		limit = { ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes }
+		ywc_kor_revenue_pick_current_reviewer = yes
+		set_variable = { name = ywc_kor_revenue_stage value = 1107 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1107 }
+	}
+}
+
+ywc_kor_revenue_recount = {
+	if = {
+		limit = { ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes }
+		remove_variable = ywc_kor_revenue_review_mature
+		remove_variable = ywc_kor_revenue_review_interrupted
+		remove_variable = ywc_kor_revenue_requested
+		remove_variable = ywc_kor_revenue_review_ticked
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_revenue_stage value = 1104 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+	}
+}
+
+ywc_kor_revenue_wait_1106 = {
+	if = { limit = { ywc_kor_revenue_at_1106 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1107 terminal settling. Each request records the intent AND, after rechecking the
+# same current facts at execution time, immediately runs the matching close. This is
+# the single reachable UI sequence: one guarded choice settles the arc. A stale intent
+# whose facts no longer hold close nothing (so a recovered setback stays inert).
+ywc_kor_revenue_request_full = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_full = yes }
+		set_variable = { name = ywc_kor_revenue_requested value = 1 }
+		ywc_kor_revenue_close_full = yes
+	}
+}
+ywc_kor_revenue_request_finite = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_finite = yes }
+		set_variable = { name = ywc_kor_revenue_requested value = 2 }
+		ywc_kor_revenue_close_finite = yes
+	}
+}
+ywc_kor_revenue_request_setback = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_setback = yes }
+		set_variable = { name = ywc_kor_revenue_requested value = 3 }
+		ywc_kor_revenue_close_setback = yes
+	}
+}
+
+ywc_kor_revenue_close_full = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes has_variable = ywc_kor_revenue_requested var:ywc_kor_revenue_requested = 1 ywc_kor_revenue_terminal_full = yes }
+		set_variable = { name = ywc_kor_revenue_outcome value = 1 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+ywc_kor_revenue_close_finite = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes has_variable = ywc_kor_revenue_requested var:ywc_kor_revenue_requested = 2 ywc_kor_revenue_terminal_finite = yes }
+		set_variable = { name = ywc_kor_revenue_outcome value = 2 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+ywc_kor_revenue_close_setback = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes has_variable = ywc_kor_revenue_requested var:ywc_kor_revenue_requested = 3 ywc_kor_revenue_terminal_setback = yes }
+		set_variable = { name = ywc_kor_revenue_outcome value = 3 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+
+ywc_kor_revenue_wait_1107 = {
+	if = { limit = { ywc_kor_revenue_at_1107 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# Active voluntary exit: legal at any live stage of this arc, records outcome 4,
+# releases exactly this arc's slots once.
+ywc_kor_revenue_withdraw = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+			ywc_kor_revenue_live_stage = yes
+		}
+		set_variable = { name = ywc_kor_revenue_outcome value = 4 }
+		set_variable = { name = ywc_kor_revenue_withdrawn value = 1 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+
+# Release is idempotent and touches only this arc. Paid fees and old contracts are
+# preserved; it never clears generated witnesses, reservations or other queues.
+ywc_kor_revenue_release_once = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+			has_variable = ywc_kor_revenue_outcome
+			var:ywc_kor_revenue_outcome > 0
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_settled value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_outcome value = var:ywc_kor_revenue_outcome }
+		remove_variable = ywc_kor_revenue_pending_event
+		remove_variable = ywc_kor_revenue_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+# Queue preparation: only advance the stage-bound event when nothing is pending.
+ywc_kor_revenue_prepare_queue = {
+	if = {
+		limit = { ywc_kor_revenue_open = yes NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_stage >= 1100 var:ywc_kor_revenue_stage <= 1107 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = var:ywc_kor_revenue_stage }
+	}
+}
