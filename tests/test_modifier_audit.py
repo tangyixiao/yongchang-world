@@ -97,6 +97,54 @@ class ModifierAuditTest(unittest.TestCase):
             report = audit(mod, game)
             self.assertEqual(report["undeclared_modifier_references"], [])
 
+    def test_add_modifier_rejects_invalid_modifier_argument(self):
+        with tempfile.TemporaryDirectory() as directory:
+            mod, game = build_fixture(
+                pathlib.Path(directory) / "bad-effect",
+                "ywc_test = {\n\tcountry_authority_mult = 0.05\n}\n",
+                {"events/ywc_test_events.txt": "ywc_test.1 = {\n"
+                    " option = { add_modifier = { modifier = ywc_test months = 12 } }\n"
+                    " option = { add_modifier = { months = 24 modifier = ywc_test } }\n"
+                    " option = { add_modifier = { name = ywc_test months = 12 } }\n"
+                    " # add_modifier = { modifier = ywc_test }\n}\n"},
+            )
+            report = audit(mod, game)
+            invalid = report["invalid_add_modifier_arguments"]
+            self.assertEqual(len(invalid), 2)
+            self.assertIn(":2:", invalid[0])
+            self.assertIn(":3:", invalid[1])
+            self.assertTrue(any("invalid add_modifier" in item for item in validate(mod, game)))
+
+    def test_add_modifier_audit_handles_strings_comments_and_nested_arguments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            text = (
+                'title = "# inside quote" add_modifier = { modifier = ywc_test months = 12 }\n'
+                'add_modifier = { multiplier = { value = 1 } modifier = ywc_test }\n'
+                'add_modifier = { name = ywc_test multiplier = { modifier = 2 } }\n'
+                '# add_modifier = { modifier = ywc_test }\n'
+                r'title = "escaped \" # still quoted" add_modifier = { modifier = ywc_test }' '\n'
+            )
+            mod, game = build_fixture(
+                pathlib.Path(directory) / "nested",
+                "ywc_test = {\n country_authority_mult = 0.05\n}\n",
+                {"events/ywc_test_events.txt": text},
+            )
+            invalid = audit(mod, game)["invalid_add_modifier_arguments"]
+            self.assertEqual(len(invalid), 3, invalid)
+            self.assertIn(":1:", invalid[0])
+            self.assertIn(":2:", invalid[1])
+            self.assertIn(":5:", invalid[2])
+
+    def test_pulse_world_rejects_legacy_modifier_field_and_handles_native_name(self):
+        from tests.clausewitz_harness import PulseWorld, parse
+        world = PulseWorld("", {"SHU": {}})
+        with self.assertRaises(ValueError):
+            world.execute(parse("add_modifier = { modifier = ywc_test months = 12 }"), "SHU")
+        world.execute(parse("add_modifier = { name = ywc_test months = 12 }"), "SHU")
+        self.assertTrue(world.condition(("has_modifier", "=", "ywc_test"), "SHU"))
+        world.execute(parse("remove_modifier = ywc_test"), "SHU")
+        self.assertFalse(world.condition(("has_modifier", "=", "ywc_test"), "SHU"))
+
     def test_cli_reports_missing_definition_directory(self):
         with tempfile.TemporaryDirectory() as directory:
             result = subprocess.run(
@@ -137,6 +185,7 @@ class ModifierAuditTest(unittest.TestCase):
         report = audit(MOD_ROOT, GAME_ROOT)
         self.assertEqual(report["unknown_modifier_types"], [])
         self.assertEqual(report["undeclared_modifier_references"], [])
+        self.assertEqual(report["invalid_add_modifier_arguments"], [])
         self.assertGreater(report["checked_keys"], 100)
 
 

@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REL = Path("data/content/v03/quota_exclusions.json")
 KNOWN_PROTOCOLS = {
     "ywc_jhg.1030", "ywc_kor.1030", "ywc_kor.1031", "ywc_kor.1033", "ywc_kor.1034",
-    "ywc_nmg.1030", "ywc_nmg.1032", "ywc_nmg.1033", "ywc_nqg.1028", "ywc_nqg.1030", "ywc_nqg.1031",
+    "ywc_nmg.1030", "ywc_nmg.1032", "ywc_nmg.1033", "ywc_nmg.1108", "ywc_nqg.1028", "ywc_nqg.1030", "ywc_nqg.1031",
 }
 
 
@@ -115,19 +115,20 @@ class QuotaAccountingTests(unittest.TestCase):
         self.assertFalse(any("quota_exclusions" in error for error in errors))
 
     def test_omitting_a_known_protocol_is_reported_but_empty_fixture_is_valid(self):
-        for include_protocol in (False, True):
-            catalogs = fixture()
-            if include_protocol:
-                catalogs["regional_demo"]["arcs"][0]["events"].append({"id": "ywc_nmg.1032"})
-            with self.subTest(include_protocol=include_protocol), tempfile.TemporaryDirectory() as directory, \
-                 patch("tools.ywc_v03_check.read_manifest", return_value={}), \
-                 patch("tools.ywc_v03_check.load_catalogs", return_value=catalogs), \
-                 patch("tools.ywc_v03_check.validate_catalogs_at", return_value=[]), \
-                 patch("tools.ywc_v03_check.check_outputs", return_value=[]):
-                write_metadata(directory, {"schema_version": 1, "exclusions": []})
-                errors = check_root(Path(directory), require_complete=True)
-                found = [error for error in errors if "quota_exclusions" in error and "ywc_nmg.1032" in error]
-                self.assertEqual(bool(found), include_protocol, found)
+        for protocol_id in ("ywc_nmg.1032", "ywc_nmg.1108"):
+            for include_protocol in (False, True):
+                catalogs = fixture()
+                if include_protocol:
+                    catalogs["regional_demo"]["arcs"][0]["events"].append({"id": protocol_id})
+                with self.subTest(protocol_id=protocol_id, include_protocol=include_protocol), tempfile.TemporaryDirectory() as directory, \
+                     patch("tools.ywc_v03_check.read_manifest", return_value={}), \
+                     patch("tools.ywc_v03_check.load_catalogs", return_value=catalogs), \
+                     patch("tools.ywc_v03_check.validate_catalogs_at", return_value=[]), \
+                     patch("tools.ywc_v03_check.check_outputs", return_value=[]):
+                    write_metadata(directory, {"schema_version": 1, "exclusions": []})
+                    errors = check_root(Path(directory), require_complete=True)
+                    found = [error for error in errors if "quota_exclusions" in error and protocol_id in error]
+                    self.assertEqual(bool(found), include_protocol, found)
 
     def test_current_protocol_events_are_explicitly_excluded_with_reasons(self):
         metadata = json.loads((ROOT / REL).read_text(encoding="utf-8"))

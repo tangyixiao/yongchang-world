@@ -20,16 +20,26 @@ from shu_kor_strict_review_runtime import Strict, facts, field
 from test_v03_shu_merchant_obligations import reached_offer
 
 ROOT = Path(__file__).resolve().parents[1]
-# DMG retains its nine foundation predicates and adds six school queries, each
-# nested in the selected owned state before entering pop/workplace scope.
-# Eight more selected-state predicates belong to the market card; PHI's own
-# border predicate uses c:PHI and cannot count as one of ROOT's eight.
-# Crown appends eight used selected-state predicates; the original 23 remain intact.
-# Revenue adds one candidate-state query and one typed saved-state owner check.
-# Public deliberation appends sixteen state-owner reads; the old44 remain intact.
-# School appends seven original-pilot owner reads; the old six remain intact.
-# Court public adds the same two shapes with its own saved StateRef variable.
-COUNTS = dict(dmg=31, jhg=4, kor=10, shu=60, oir=9, nmg=13, tib=8, nqg=1, lan=9)
+# Documented "owner = ROOT" inventory per country trigger file. Unchanged:
+# DMG 31, OIR 9, NMG 13, NQG 1. The new middle cards add exact saved-state owner
+# reads whose pilots are each stored once as a native StateRef: JHG dock +2
+# (4 -> 6), KOR workshops +6 (10 -> 16), SHU rural workshop +10 (60 -> 70),
+# TIB public revenue +4 (8 -> 12), LAN gold +2 (9 -> 11). Court public, school,
+# revenue and public-deliberation reads stay inside those totals.
+COUNTS = dict(dmg=31, jhg=6, kor=16, shu=70, oir=9, nmg=13, tib=12, nqg=1, lan=11)
+
+# Only these exact variables are saved as native StateRefs in the shipped
+# effects/triggers. Every other var:/scope:/ROOT.var: form keeps the country rule.
+STATE_REF_KEYS = frozenset({
+    "var:ywc_kor_revenue_pilot_state",
+    "var:ywc_kor_public_pilot_state",
+    "var:ywc_nmg_school_pilot",
+    "ROOT.var:ywc_jhg_dock_pilot",
+    "ROOT.var:ywc_shu_workshop_pilot",
+    "var:ywc_kor_workshops_pilot",
+    "var:ywc_tib_revenue_pilot",
+    "var:ywc_lan_gold_pilot_state",
+})
 
 
 def source(path):
@@ -51,15 +61,11 @@ def walk(nodes, scope="country"):
                 next_scope = "building"
             elif key in ("any_scope_pop", "every_scope_pop"):
                 next_scope = "pop"
-            elif key in ("var:ywc_kor_revenue_pilot_state", "var:ywc_kor_public_pilot_state"):
+            elif key in STATE_REF_KEYS:
                 # Only these exact native StateRef variables cross into state
-                # scope; all other var:/scope: forms keep the country rule.
+                # scope; all other var:/scope:/ROOT.var: forms keep the country rule.
                 next_scope = "state"
-            elif key == "var:ywc_nmg_school_pilot":
-                # The school claim stores a native StateRef once; literal
-                # runtime tests prove its identity and current ownership.
-                next_scope = "state"
-            elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
+            elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:", "ROOT.var:")):
                 next_scope = "country"
             yield from walk(value, next_scope)
 
@@ -75,7 +81,7 @@ class StateOwnerVocabularyTests(unittest.TestCase):
 
     def test_inventory_rejects_owner_after_non_state_scope_transition(self):
         for nested in ("any_scope_building", "any_scope_pop", "c:SHU", "scope:ywc_kor_requester",
-                       "var:unknown_country_var"):
+                       "var:unknown_country_var", "ROOT.var:unknown_rooted_var"):
             with self.subTest(nested=nested):
                 script = f"any_scope_state = {{ {nested} = {{ owner = ROOT }} }}"
                 owner = [row for row in walk(parse(script)) if row[0] == "owner"]
@@ -90,7 +96,7 @@ class StateOwnerVocabularyTests(unittest.TestCase):
         for country, count in COUNTS.items():
             with self.subTest(country=country):
                 self.assert_source_owners(trigger_source(country), count)
-        self.assert_source_owners(source("yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt"), 1)
+        self.assert_source_owners(source("yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt"), 2)
         # Foundation keeps 12 source-owner predicates. The middle arc's four
         # pilot choices each check ownership in both display and execution.
         self.assert_source_owners(source("yongchang_world/events/ywc_v03_country_shu_events.txt"), 20)
@@ -101,7 +107,7 @@ class StateOwnerVocabularyTests(unittest.TestCase):
                 for child in value: yield from strings(child)
             elif isinstance(value, dict):
                 for child in value.values(): yield from strings(child)
-        for era, count in (("foundation", 12), ("middle", 8)):
+        for era, count in (("foundation", 12), ("middle", 9)):
             era_scripts = [text for arc in catalog["arcs"] if arc["era"] == era
                            for text in strings(arc)]
             self.assertEqual(sum(text.count("owner = ROOT") for text in era_scripts), count)
@@ -151,6 +157,7 @@ class StateOwnerVocabularyTests(unittest.TestCase):
             checkpoint = w._scope_checkpoint()
             w.execute([native], tag)
             expected = dict((k, v) for k, _, v in field(native[2], "add_modifier"))
+            expected["modifier"] = expected["name"]
             self.assertEqual(w.modifiers[before:], [(tag, expected)] * 2)
             self.assertEqual(w._scope_checkpoint(), checkpoint)
             for state in states[2:]:
