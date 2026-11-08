@@ -2,6 +2,8 @@
 keep the arc from handing out mines, laws or free legitimacy."""
 
 import json
+import copy
+import operator
 import re
 import unittest
 from pathlib import Path
@@ -97,6 +99,90 @@ class LanRuntimeWorld(PulseWorld):
         if key == "has_law_or_variant":
             law_id = value.removeprefix("law_type:")
             return law_id in self.countries[tag].get("test_laws", set())
+        return super().condition(node, tag)
+
+
+class StrictLanRuntimeWorld(LanRuntimeWorld):
+    """Fail closed on every LAN condition, including short-circuited children."""
+
+    _numeric_conditions = {
+        "net_fixed_income", "bureaucracy", "gold_reserves", "yearly_gross_income",
+        "scaled_debt", "in_default", "is_at_war",
+    }
+    _comparators = {
+        "=": operator.eq, ">=": operator.ge, "<=": operator.le,
+        ">": operator.gt, "<": operator.lt, "!=": operator.ne,
+    }
+
+    def validate_condition(self, node, seen=frozenset()):
+        key, comparison, value = node
+        if key in {"AND", "OR", "NOT", "NOR"}:
+            assert comparison == "=" and isinstance(value, list), node
+            for child in value:
+                self.validate_condition(child, seen)
+        elif key in self.trigger_defs:
+            assert comparison == "=" and value == "yes" and key not in seen, node
+            for child in self.trigger_defs[key]:
+                self.validate_condition(child, seen | {key})
+        elif key == "any_scope_building":
+            assert comparison == "=" and isinstance(value, list), node
+            for field, op, expected in value:
+                if field in ("level", "occupancy"):
+                    assert op in self._comparators, (field, op, expected)
+                elif field in ("is_building_type", "is_building_group", "building_has_goods_shortage"):
+                    assert op == "=", (field, op, expected)
+                    if field == "building_has_goods_shortage":
+                        assert expected in ("yes", "no"), (field, op, expected)
+                else:
+                    raise AssertionError(("unsupported LAN building condition", field, op, expected))
+        elif key in ("has_variable", "has_modifier", "has_law_or_variant", "exists", "always"):
+            assert comparison == "=" and isinstance(value, str), node
+            if key == "has_variable":
+                assert value not in ("yes", "no"), node
+            elif key == "always":
+                assert value in ("yes", "no"), node
+        elif key.startswith("c:"):
+            assert comparison == "?=", node
+            if isinstance(value, list):
+                for child in value:
+                    self.validate_condition(child, seen)
+            else:
+                assert value == "this", node
+        elif key.startswith("var:") or key in self._numeric_conditions:
+            if key in ("in_default", "is_at_war"):
+                assert comparison in ("=", "!=") and value in ("yes", "no"), node
+            else:
+                assert comparison in self._comparators, node
+            if isinstance(value, list):
+                fields = {name: child for name, op, child in value if op == "="}
+                assert len(fields) == len(value) and set(fields) <= {"value", "multiply"}, node
+                assert "value" in fields, node
+        else:
+            raise AssertionError(("unsupported LAN condition", node))
+
+    def conditions(self, nodes, tag):
+        for node in nodes:
+            self.validate_condition(node)
+        return super().conditions(nodes, tag)
+
+    def condition(self, node, tag):
+        self.validate_condition(node)
+        key, comparison, value = node
+        if key == "any_scope_building":
+            def matches(building):
+                for field, op, expected in value:
+                    if field == "is_building_type":
+                        matched = building.get("type") == expected
+                    elif field == "is_building_group":
+                        matched = expected in building.get("groups", set())
+                    elif field == "building_has_goods_shortage":
+                        matched = bool(building.get("shortage", False)) == (expected == "yes")
+                    else:
+                        matched = self._comparators[op](float(building.get(field, 0)), float(expected))
+                    if not matched:
+                        return False
+                return True
+            return any(matches(building) for building in self.countries[tag].get("test_buildings", []))
         return super().condition(node, tag)
 
 
@@ -217,6 +303,197 @@ class LanCatalogShapeTest(unittest.TestCase):
                 self.assertIn("c:LAN ?= this", event["trigger"])
 
 
+class LanContextContractRegressionTest(unittest.TestCase):
+    def test_context_claims_match_recorded_flags_and_one_time_costs(self):
+        events = {event["id"]: event for arc in _catalog()["arcs"] for event in arc["events"]}
+        self.assertEqual(len(events), 24)
+
+        def option(event_id, key):
+            return next(item for item in events[event_id]["options"] if item["key"] == key)
+
+        unsupported = (
+            "monthly contribution", "monthly contributions", "living standard", "living standards",
+            "tax base", "tax-base", "月缴", "生活水平", "税基",
+            "lowest administrative cost", "cheapest", "public revenue grows", "revenue gain",
+            "unrest falls", "unrest stays", "output is forgone", "output rises", "low public spending",
+            "payout gap", "行政成本最低", "成本最低", "公共收入增长", "动荡下降", "产出上升",
+            "放弃部分产出", "公共支出低",
+        )
+        for event in events.values():
+            for language in ("en", "zh"):
+                self.assertTrue(event["title"].get(language), (event["id"], "title", language))
+                self.assertTrue(event["desc"].get(language), (event["id"], "desc", language))
+            narrative = " ".join(event.get("title", {}).values()) + " " + " ".join(
+                event.get("desc", {}).values()
+            )
+            self.assertIsNone(re.search(r"\b(?:flags?|markers?|variables?|AST)\b|变量|标记|程序标记", narrative, re.I),
+                              f"implementation wording in {event['id']}")
+            for claim in unsupported:
+                self.assertNotIn(claim, narrative.lower(), f"unsupported narrative in {event['id']}")
+            for item in event["options"]:
+                for language in ("en", "zh"):
+                    for field in ("label", "cost_note", "consequence_note"):
+                        self.assertTrue(item[field].get(language), (event["id"], item["key"], field, language))
+                text = " ".join(item.get("label", {}).values()) + " " + " ".join(
+                    item.get("cost_note", {}).values()
+                ) + " " + " ".join(item.get("consequence_note", {}).values())
+                self.assertIsNone(re.search(r"\b(?:flags?|markers?|variables?|AST)\b|变量|标记|程序标记", text, re.I),
+                                  f"implementation wording in {event['id']}.{item['key']}")
+                for claim in unsupported:
+                    self.assertNotIn(claim, text.lower(), f"unsupported claim in {event['id']}.{item['key']}")
+
+        self.assertIn("charter for reconciling shipping accounts", events["ywc_lan.1003"]["desc"]["en"])
+        self.assertIn("combined or separate books", events["ywc_lan.1004"]["desc"]["en"])
+        self.assertIn("third one-time reserve charge", events["ywc_lan.1025"]["desc"]["en"])
+        self.assertIn("checks no live diplomatic relation", events["ywc_lan.1012"]["desc"]["en"])
+        self.assertNotIn("current revenue", events["ywc_lan.1007"]["desc"]["en"])
+        self.assertNotIn("unrest", events["ywc_lan.1016"]["desc"]["en"].lower())
+        self.assertNotIn("output", events["ywc_lan.1017"]["desc"]["en"].lower())
+        self.assertNotIn("administration costs are read", events["ywc_lan.1025"]["desc"]["en"].lower())
+        self.assertNotIn("payout", events["ywc_lan.1027"]["title"]["en"].lower())
+
+        notice = option("ywc_lan.1012", "notify_neighbour")
+        notice_text = " ".join(notice["cost_note"].values()) + " " + " ".join(notice["consequence_note"].values())
+        self.assertIn("deed was checked", notice_text)
+        self.assertIn("does not check diplomatic relations", notice_text)
+        self.assertIn("不检查外交关系", notice_text)
+        self.assertIn("不代表对方同意", notice_text)
+        river_card = events["ywc_lan.1012"]["desc"]
+        self.assertIn("checks no live diplomatic relation", river_card["en"])
+        self.assertIn("不检查现实外交关系", river_card["zh"])
+
+    def test_strict_fixture_validates_all_children_and_building_comparators(self):
+        triggers = (TRIGGERS_PATH.read_text(encoding="utf-8-sig") + "\n"
+                    + SHARED_TRIGGERS_PATH.read_text(encoding="utf-8-sig"))
+        world = StrictLanRuntimeWorld(EFFECTS_PATH.read_text(encoding="utf-8-sig"), triggers, {"LAN": {
+            "present_but_zero": 0,
+            "test_buildings": [{"type": "building_government_administration", "groups": set(),
+                                "level": 2, "occupancy": 0.75, "shortage": False}],
+        }})
+        self.assertTrue(world.conditions(parse("condition = { has_variable = present_but_zero }")[0][2], "LAN"))
+        below = parse("condition = { any_scope_building = { is_building_type = building_government_administration occupancy < 0.8 } }")[0][2]
+        self.assertTrue(world.conditions(below, "LAN"), "the authored < comparator must remain a true less-than check")
+        self.assertFalse(world.conditions(parse("condition = { any_scope_building = { is_building_type = building_government_administration occupancy < 0.7 } }")[0][2], "LAN"))
+        for block in (
+            "{ always = no unknown_lan_condition = yes }",
+            "{ OR = { always = no unknown_lan_condition = yes } }",
+            "{ OR = { AND = { always = no unknown_lan_condition = yes } always = yes } }",
+            "{ has_variable > present_but_zero }",
+            "{ ywc_lan_mine_can_pay > yes }",
+            "{ any_scope_building = { building_has_goods_shortage > no } }",
+        ):
+            with self.subTest(block=block), self.assertRaises(AssertionError):
+                world.conditions(parse("condition = " + block)[0][2], "LAN")
+
+    def test_opening_paid_options_require_fee_or_receipt_and_keep_free_choices(self):
+        expected = {
+            ("ywc_lan.1000", "public_audit"): ("ywc_lan_mine", "ywc_lan_mine_fee", 1.0, 1000),
+            ("ywc_lan.1000", "shareholder_farm"): ("ywc_lan_mine", "ywc_lan_mine_fee", 0.7, 700),
+            ("ywc_lan.1000", "limited_liability"): ("ywc_lan_mine", "ywc_lan_mine_fee", 0.5, 500),
+            ("ywc_lan.1010", "compensate"): ("ywc_lan_river", "ywc_lan_river_fee", 1.0, 1000),
+            ("ywc_lan.1010", "restrict"): ("ywc_lan_river", "ywc_lan_river_fee", 0.5, 500),
+            ("ywc_lan.1010", "guards"): ("ywc_lan_river", "ywc_lan_river_fee", 0.4, 400),
+            ("ywc_lan.1020", "mutual_fund"): ("ywc_lan_fund", "ywc_lan_fund_fee", 1.0, 1000),
+            ("ywc_lan.1020", "company_insurance"): ("ywc_lan_fund", "ywc_lan_fund_fee", 0.7, 700),
+        }
+        events = {event["id"]: event for arc in _catalog()["arcs"] for event in arc["events"]}
+        triggers = (TRIGGERS_PATH.read_text(encoding="utf-8-sig") + "\n"
+                    + SHARED_TRIGGERS_PATH.read_text(encoding="utf-8-sig"))
+        for (event_id, key), (prefix, fee, rate, amount) in expected.items():
+            item = next(option for option in events[event_id]["options"] if option["key"] == key)
+            ast = parse("condition = " + item["trigger"])[0][2]
+            gate = next((body for name, _, body in ast if name == "OR"), None)
+            self.assertIsNotNone(gate, f"{event_id}.{key} has no paid-or-affordable gate")
+            receipt = prefix + "_filing_fee_paid"
+            self.assertIn(("has_variable", "=", receipt), gate)
+            self.assertIn((prefix + "_can_pay", "=", "yes"), ast)
+            affordability = next(node for node in gate if node[0] == "AND") if rate < 1 else None
+            if rate < 1:
+                self.assertIn(("gold_reserves", ">=", "100"), affordability[2])
+                self.assertIn(("gold_reserves", ">=", [("value", "=", "var:" + fee),
+                                                        ("multiply", "=", str(rate))]), affordability[2])
+            else:
+                self.assertIn(("gold_reserves", ">=", "var:" + fee), gate)
+
+            # Exercise every actual option gate at fee-1, exact fee and default.
+            for cash, in_default, legal in (
+                (amount - 1, False, False),
+                (amount, False, True),
+                (amount, True, False),
+            ):
+                country = {
+                    fee: 1000,
+                    "gold_reserves": cash,
+                    "in_default": in_default,
+                    "test_buildings": LanLifecycleRegressionTest._buildings(),
+                    "test_laws": {"law_poor_laws"},
+                }
+                world = StrictLanRuntimeWorld(EFFECTS_PATH.read_text(encoding="utf-8-sig"), triggers, {"LAN": country})
+                with self.subTest(event=event_id, option=key, cash=cash, default=in_default):
+                    self.assertEqual(world.conditions(ast, "LAN"), legal)
+            if rate < 1:
+                for cash, legal in ((99, False), (100, True)):
+                    country = {
+                        fee: 100,
+                        "gold_reserves": cash,
+                        "test_buildings": LanLifecycleRegressionTest._buildings(),
+                        "test_laws": {"law_poor_laws"},
+                    }
+                    world = StrictLanRuntimeWorld(EFFECTS_PATH.read_text(encoding="utf-8-sig"), triggers, {"LAN": country})
+                    with self.subTest(event=event_id, option=key, base_fee=100, cash=cash):
+                        self.assertEqual(world.conditions(ast, "LAN"), legal)
+
+        for event_id, free_keys in {
+            "ywc_lan.1000": ("defer", "withdraw"),
+            "ywc_lan.1010": ("defer", "withdraw"),
+            "ywc_lan.1020": ("private_relief", "defer", "withdraw"),
+        }.items():
+            for key in free_keys:
+                item = next(option for option in events[event_id]["options"] if option["key"] == key)
+                self.assertIn("always = yes", item.get("trigger", ""))
+                self.assertNotIn("gold_reserves", item.get("trigger", ""))
+
+    def test_all_eight_paid_opening_effects_use_real_entry_and_payment_receipt(self):
+        cases = (
+            ("v03_lan_mine_accounts", "ywc_lan.1000", "public_audit", "ywc_lan_mine", "ywc_lan_mine_fee", "ywc_lan_mine_route", 1, 1000),
+            ("v03_lan_mine_accounts", "ywc_lan.1000", "shareholder_farm", "ywc_lan_mine", "ywc_lan_mine_fee", "ywc_lan_mine_route", 2, 700),
+            ("v03_lan_mine_accounts", "ywc_lan.1000", "limited_liability", "ywc_lan_mine", "ywc_lan_mine_fee", "ywc_lan_mine_route", 3, 500),
+            ("v03_lan_river_compacts", "ywc_lan.1010", "compensate", "ywc_lan_river", "ywc_lan_river_fee", "ywc_lan_river_route", 1, 1000),
+            ("v03_lan_river_compacts", "ywc_lan.1010", "restrict", "ywc_lan_river", "ywc_lan_river_fee", "ywc_lan_river_route", 2, 500),
+            ("v03_lan_river_compacts", "ywc_lan.1010", "guards", "ywc_lan_river", "ywc_lan_river_fee", "ywc_lan_river_route", 3, 400),
+            ("v03_lan_work_accident_fund", "ywc_lan.1020", "mutual_fund", "ywc_lan_fund", "ywc_lan_fund_fee", "ywc_lan_fund_route", 1, 1000),
+            ("v03_lan_work_accident_fund", "ywc_lan.1020", "company_insurance", "ywc_lan_fund", "ywc_lan_fund_fee", "ywc_lan_fund_route", 2, 700),
+        )
+        lifecycle = LanLifecycleRegressionTest()
+        lifecycle.catalog = _catalog()
+        for slug, event_id, key, prefix, fee_var, route_var, route, amount in cases:
+            arc = _arc(lifecycle.catalog, slug)
+            world = lifecycle._world(amount, strict=True)
+            world.active_journals = {"LAN": None}
+            world.journal_states = {"LAN": {}}
+            world.journal_add_cursor = {"LAN": 0}
+            country = world.countries["LAN"]
+            country["test_laws"] = {"law_poor_laws", "law_commercialized_agriculture"}
+            lifecycle._admit_entry(world, arc["journals"][0])
+            self.assertEqual(country[fee_var], 1000)
+            self.assertEqual(lifecycle._dispatch_queued_event(world, arc), _number(event_id))
+            lifecycle._take_event_option(world, arc, _number(event_id), key)
+            receipt = prefix + "_filing_fee_paid"
+            opening = next(e for e in arc["events"] if e["id"] == event_id)
+            option = next(o for o in opening["options"] if o["key"] == key)
+            trigger = parse("condition = " + option["trigger"])[0][2]
+            with self.subTest(event=event_id, option=key):
+                self.assertEqual(country[route_var], route)
+                self.assertEqual(country[receipt], 1)
+                self.assertEqual(country["gold_reserves"], 0)
+                self.assertEqual(world.treasury["LAN"], -amount)
+                self.assertTrue(world.conditions(trigger, "LAN"), "earned receipt keeps the opening option legal at cash zero")
+                before_replay = copy.deepcopy(country)
+                world.execute(parse("effect = " + option["effect"])[0][2], "LAN")
+                self.assertEqual(country, before_replay, "the complete option effect cannot charge twice or alter the chosen route")
+                self.assertEqual(world.treasury["LAN"], -amount)
+
+
 class LanScriptResolutionTest(unittest.TestCase):
     def test_every_called_helper_is_defined(self):
         catalog = _catalog()
@@ -301,11 +578,12 @@ class LanLifecycleRegressionTest(unittest.TestCase):
         building = next(b for b in country["test_buildings"] if b["type"] == building_type)
         building.update(changes)
 
-    def _world(self, cash=0):
+    def _world(self, cash=0, strict=False):
         triggers = (TRIGGERS_PATH.read_text(encoding="utf-8-sig")
                     + "\n" + SHARED_TRIGGERS_PATH.read_text(encoding="utf-8-sig"))
         effects = EFFECTS_PATH.read_text(encoding="utf-8-sig") + "\n" + SHARED_EFFECTS_PATH.read_text(encoding="utf-8-sig")
-        return LanRuntimeWorld(effects, triggers, {"LAN": {
+        world_class = StrictLanRuntimeWorld if strict else LanRuntimeWorld
+        return world_class(effects, triggers, {"LAN": {
             "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
             "ywc_v03_active_arc_count": 0, "ywc_v03_visible_task_count": 0,
             "ywc_campaign_lan_c1_outcome": 3,
@@ -510,6 +788,61 @@ class LanLifecycleRegressionTest(unittest.TestCase):
         self._take_event_option(world, arc, terminal_event, "settle_compromise")
         self.assertTrue(world.countries["LAN"].get("ywc_lan_mine_compromise"))
         self._assert_terminal_history(world, arc, "mine", 2)
+
+    def test_real_public_audit_full_mine_chain_without_port_laws_or_foreign_countries(self):
+        arc = _arc(self.catalog, "v03_lan_mine_accounts")
+        world = self._world(cash=2000, strict=True)
+        country = world.countries["LAN"]
+        country["test_laws"] = set()
+        country["test_buildings"] = self._buildings(port=False)
+        self.assertEqual(set(world.countries), {"LAN"})
+        self.assertFalse(any(b["type"] == "building_port" for b in country["test_buildings"]))
+        self.assertEqual(country["test_laws"], set())
+        self.assertNotIn("ywc_lan_mine_route", country)
+        self.assertNotIn("ywc_lan_mine_filing_fee_paid", country)
+        self.assertNotIn("ywc_lan_mine_six_months_complete", country)
+        self.assertNotIn("ywc_v03_lan_v03_lan_mine_accounts_outcome", country)
+
+        world.active_journals = {"LAN": None}
+        world.journal_states = {"LAN": {j["id"]: "inactive" for j in arc["journals"]}}
+        world.journal_add_cursor = {"LAN": 0}
+        first, second = arc["journals"]
+        self.assertTrue(self._shown(first, world))
+        self.assertTrue(world.conditions(self._journal_block(first, "possible"), "LAN"))
+        self._admit_entry(world, first)
+
+        choices = [(1000, "public_audit"), (1001, "staff_audit"),
+                   (1002, "public_share_first"), (1003, "use_shipping"),
+                   (1004, "merge_customs")]
+        for event_id, key in choices:
+            self.assertEqual(self._dispatch_queued_event(world, arc), event_id)
+            reserves_before = world.countries["LAN"]["gold_reserves"]
+            self._take_event_option(world, arc, event_id, key)
+            if event_id == 1000:
+                self.assertEqual(reserves_before, 2000)
+                self.assertEqual(country["gold_reserves"], 1000)
+                self.assertEqual(country["ywc_lan_mine_filing_fee_paid"], 1)
+                self.assertEqual(world.treasury["LAN"], -1000)
+        self.assertEqual(world.active_journals["LAN"], second["id"])
+        self.assertEqual(self._dispatch_queued_event(world, arc), 1005)
+        self._take_event_option(world, arc, 1005, "fund_audit")
+        self.assertEqual(country["ywc_lan_mine_reserve_paid"], 1)
+        self.assertEqual(country["gold_reserves"], 0)
+        self.assertEqual(world.treasury["LAN"], -2000)
+
+        for _ in range(8):
+            self.assertEqual(self._dispatch_queued_event(world, arc), 1006)
+            if country.get("ywc_lan_mine_six_months_complete"):
+                break
+            self._take_event_option(world, arc, 1006, "defer")
+        self.assertTrue(country.get("ywc_lan_mine_six_months_complete"))
+        self._take_event_option(world, arc, 1006, "begin_review")
+        self.assertEqual(self._dispatch_queued_event(world, arc), 1007)
+        self.assertTrue(_script_condition(world, next(o for o in arc["events"][-1]["options"]
+                                                      if o["key"] == "settle_full")["trigger"], "LAN"))
+        self._take_event_option(world, arc, 1007, "settle_full")
+        self.assertTrue(country.get("ywc_lan_mine_established"))
+        self._assert_terminal_history(world, arc, "mine", 1)
 
     def test_real_mine_public_route_reaches_full_terminal(self):
         world, arc, terminal_event = self._run_route("v03_lan_mine_accounts", [

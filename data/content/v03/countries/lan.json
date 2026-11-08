@@ -55,8 +55,8 @@
             "en": "Three Ledgers the Guilds Report"
           },
           "desc": {
-            "zh": "矿场按生产规模登记，公会只交一本自报账。防务、官署与救济的缺口要有人认账。本线只读真实矿场就业、税收法律与预算，不会凭空造矿或赠送工业。 矿业就业须达到60%占用率且无投入品短缺；公共行政办公室须达到80%占用率且无投入品短缺。",
-            "en": "Mines register by production scale while the guilds hand over a single self-reported book. Defence, administration and relief all show a gap. This line reads real mine employment, tax law and the budget; it never creates mines or grants industry. A working mine counts only at 60% occupancy with no input shortage; staffed public offices require 80% occupancy with no input shortage."
+            "zh": "矿业账目从登记路线开始，不会凭空造矿。后续资格检查读取真实矿工就业与矿业规模；公共审计路线还要求有岗官署。一次性登记费按本日志开启时捕获的年总收入计算。",
+            "en": "The mine audit starts with a recorded route, not a new mine. Later eligibility checks use actual mine employment and scale, and the audit route also requires a staffed public office. The one-time filing fee uses annual gross income captured when this journal begins."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -70,38 +70,38 @@
               "effect": "{ ywc_lan_choose_mine_audit = yes if = { limit = { has_variable = ywc_lan_mine_audit_chosen } set_variable = { name = ywc_lan_mine_pending_event value = 1001 } } else = { set_variable = { name = ywc_lan_mine_pending_event value = 1000 } } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；并按基础费率实付；另需有岗官署。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; charged at the base rate; requires a government office at 80% occupancy with no input shortage."
+                "zh": "一次登记费按开启时年总收入÷52快照，按基础费率收取；另需有岗官署。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52 at the base rate; a staffed public office is also required."
               },
               "consequence_note": {
-                "zh": "税源上升，但股东不满；后续需维持官署就业与矿业规模。",
-                "en": "Tax base rises while shareholders resent it; later nodes check office staffing and mine scale."
+                "zh": "记录审计路线；后续检查读取该选择及真实官署、矿场条件。",
+                "en": "Records the audit route. Later checks use the recorded choice and actual office and mine conditions."
               },
-              "trigger": "{ ywc_lan_mine_audit_ready = yes ywc_lan_mine_can_pay = yes }"
+              "trigger": "{ ywc_lan_mine_audit_ready = yes ywc_lan_mine_can_pay = yes OR = { has_variable = ywc_lan_mine_filing_fee_paid gold_reserves >= var:ywc_lan_mine_fee } }"
             },
             {
               "key": "shareholder_farm",
               "label": {
-                "zh": "股东包税：公会按额上缴",
-                "en": "Shareholder farming: the guild pays a fixed sum"
+                "zh": "选择公会定额账册路线",
+                "en": "Choose the guild's fixed-sum ledger route"
               },
               "effect": "{ ywc_lan_choose_mine_farm = yes if = { limit = { has_variable = ywc_lan_mine_farm_chosen } set_variable = { name = ywc_lan_mine_pending_event value = 1001 } } else = { set_variable = { name = ywc_lan_mine_pending_event value = 1000 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；按七折费率收取；行政成本最低。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; charged at 70% of base; lowest administrative cost."
+                "zh": "一次登记费按开启时年总收入÷52快照，按七折费率收取。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52 at 70% of the base rate."
               },
               "consequence_note": {
-                "zh": "短期钱多、行政便宜，长期税基被侵蚀，后续分红门槛更低。",
-                "en": "Money now and cheap to run, but the long-run tax base erodes and later dividend gates are weaker."
+                "zh": "登记公会路线；后续资格仍要求真实矿业规模。",
+                "en": "Records the guild route; later eligibility requires real mine scale."
               },
-              "trigger": "{ always = yes ywc_lan_mine_can_pay = yes }"
+              "trigger": "{ always = yes ywc_lan_mine_can_pay = yes OR = { has_variable = ywc_lan_mine_filing_fee_paid AND = { gold_reserves >= 100 gold_reserves >= { value = var:ywc_lan_mine_fee multiply = 0.7 } } } }"
             },
             {
               "key": "limited_liability",
               "label": {
-                "zh": "自报加限责：不改制度只加抽查",
-                "en": "Self-report plus limited liability"
+                "zh": "选择自报账册与限责路线",
+                "en": "Choose the self-report and limited-liability route"
               },
               "effect": "{ ywc_lan_choose_mine_limited = yes if = { limit = { has_variable = ywc_lan_mine_limited_chosen } set_variable = { name = ywc_lan_mine_pending_event value = 1001 } } else = { set_variable = { name = ywc_lan_mine_pending_event value = 1000 } } }",
               "ai_chance": "{ base = 25 }",
@@ -110,10 +110,10 @@
                 "en": "One-time filing fee snapshots opening annual gross income / 52; charged at half the base rate; registers liability and audits only."
               },
               "consequence_note": {
-                "zh": "成本最低，但公共收入增长有限，只能走低目标结局。",
-                "en": "Cheapest, but public revenue grows only marginally and only the narrow ending is reachable."
+                "zh": "记录有限责任与抽查路线；该路线只符合窄目标结局。",
+                "en": "Records the limited-liability and audit route; this route qualifies only for the narrow ending."
               },
-              "trigger": "{ always = yes ywc_lan_mine_can_pay = yes }"
+              "trigger": "{ always = yes ywc_lan_mine_can_pay = yes OR = { has_variable = ywc_lan_mine_filing_fee_paid AND = { gold_reserves >= 100 gold_reserves >= { value = var:ywc_lan_mine_fee multiply = 0.5 } } } }"
             },
             {
               "key": "defer",
@@ -153,8 +153,8 @@
             }
           ],
           "purpose": {
-            "zh": "三条真实财政路线：公共审计、股东包税、自报加限责，各有不同的行政与税源后果。",
-            "en": "Three real fiscal routes with different administrative and revenue consequences."
+            "en": "Three recorded mining-account routes with different eligibility requirements.",
+            "zh": "三种矿业账册路线各有不同的资格条件。"
           },
           "reads": [
             "mine_building_scale",
@@ -177,8 +177,8 @@
             "en": "The Clerks Want Into the Mining District"
           },
           "desc": {
-            "zh": "政府行政建筑须达到80%占用率且无投入品短缺，才算有真实在岗人员。矿业就业须达到60%占用率且无投入品短缺。资金不足时本事件不收费，也不推进。",
-            "en": "A government administration building counts as staffed only at 80% occupancy with no input shortage. Real mine employment requires 60% occupancy and no input shortage. Without funds this event charges nothing and advances nothing."
+            "zh": "政府行政建筑须达到80%占用率且无投入品短缺，才算有岗官署。矿业就业须达到60%占用率且无投入品短缺。",
+            "en": "A government administration building counts as staffed at 80% occupancy with no input shortage. Mine employment requires 60% occupancy with no input shortage."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -192,12 +192,12 @@
               "effect": "{ ywc_lan_mine_open_ledger = yes set_variable = { name = ywc_lan_mine_pending_event value = 1002 } }",
               "ai_chance": "{ base = 40 }",
               "cost_note": {
-                "zh": "不新增一次性费；官署工资本身由预算承担。",
-                "en": "No new one-time fee; office wages stay on the budget."
+                "zh": "不新增费用；记录官署会计岗位选择。",
+                "en": "No new fee; records the public office clerk choice."
               },
               "consequence_note": {
-                "zh": "后续节点读取官署就业与会计岗位是否仍在。",
-                "en": "Later nodes read whether the office and clerks remain."
+                "zh": "后续资格检查读取真实官署就业与本次审计选择。",
+                "en": "Later eligibility uses actual office employment and this audit choice."
               },
               "trigger": "{ ywc_lan_mine_office_ready = yes }"
             },
@@ -210,12 +210,12 @@
               "effect": "{ ywc_lan_mine_open_guild_ledger = yes set_variable = { name = ywc_lan_mine_pending_event value = 1002 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；抽查频率下降。",
-                "en": "No new fee; audit frequency falls."
+                "zh": "不新增费用；记录公会账册路线。",
+                "en": "No new fee; records the guild-ledger route."
               },
               "consequence_note": {
-                "zh": "公共收入增长受限，只能走向窄结局。",
-                "en": "Public revenue grows only marginally and only the narrow ending opens."
+                "zh": "登记公会账册选择；该路线只符合窄目标结局。",
+                "en": "Records the guild-ledger choice; it qualifies only for the narrow target."
               },
               "trigger": "{ ywc_lan_mine_guild_ready = yes }"
             },
@@ -277,8 +277,8 @@
             "en": "Shareholders Want a Dividend, the Public Purse Wants a Share"
           },
           "desc": {
-            "zh": "按股分红会挤掉公共防务与救济。三种登记路径在这里第一次被真实读取。",
-            "en": "Dividends by share crowd out public defence and relief. This is where the three registered routes are first read against real conditions."
+            "zh": "本节点登记账册中哪项索款优先，不实际转移税收或支付分红；后续目标取决于所选路线与真实矿业条件。",
+            "en": "These options record which claim has priority in the ledger. They do not transfer revenue or pay dividends; later targets depend on the recorded route and actual mine conditions."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -286,36 +286,36 @@
             {
               "key": "public_share_first",
               "label": {
-                "zh": "公款优先：先留防务与救济",
-                "en": "Public purse first: defence and relief before dividends"
+                "zh": "选择公款索取优先路线",
+                "en": "Choose the public-claim-first route"
               },
               "effect": "{ ywc_lan_mine_public_share = yes set_variable = { name = ywc_lan_mine_pending_event value = 1003 } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "不新增费用；分红延后。",
-                "en": "No new fee; the dividend is deferred."
+                "zh": "不新增费用；登记公款索取优先的选择。",
+                "en": "No new fee; records the public-claim-first choice."
               },
               "consequence_note": {
-                "zh": "股东不满，后续需要真实限责或审计支撑。",
-                "en": "Shareholders resent it; later nodes need real liability or audit backing."
+                "zh": "后续资格按登记的优先顺序与路线条件判定。",
+                "en": "Later eligibility follows the recorded priority and the route conditions."
               },
               "trigger": "{ ywc_lan_mine_route_ready = yes }"
             },
             {
               "key": "dividend_first",
               "label": {
-                "zh": "股东优先：按股先分",
-                "en": "Shareholders first: dividends by share"
+                "zh": "选择分红优先路线",
+                "en": "Choose the dividend-first route"
               },
               "effect": "{ ywc_lan_mine_dividend_share = yes set_variable = { name = ywc_lan_mine_pending_event value = 1003 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；公共进项较低。",
-                "en": "No new fee; the public take is lower."
+                "zh": "不新增费用；登记分红优先的选择。",
+                "en": "No new fee; records the dividend-first choice."
               },
               "consequence_note": {
-                "zh": "公共收入目标下调，结局不能冒充高标。",
-                "en": "The public revenue target drops and the ending cannot claim the high standard."
+                "zh": "该路线后续只符合较窄目标。",
+                "en": "Later targets on this route are narrower."
               },
               "trigger": "{ ywc_lan_mine_route_ready = yes }"
             },
@@ -373,12 +373,12 @@
         {
           "id": "ywc_lan.1003",
           "title": {
-            "zh": "船运公司送来对账单",
-            "en": "The Shipping Firm Sends Its Reconciliation"
+            "zh": "选择如何核对运输账目",
+            "en": "Choosing How to Reconcile the Freight"
           },
           "desc": {
-            "zh": "JHG 船运对账能证明矿石真的出港。外部伙伴缺席时，本线只核内部产量与库存，不虚构伙伴。",
-            "en": "A JHG shipping reconciliation can prove ore actually left the port. Without a real partner this line only checks internal output; it invents no partner."
+            "en": "Set the charter for reconciling shipping accounts; later completion still depends on the recorded route and actual office and mine conditions.",
+            "zh": "本次确定船运账册的核对章程；后续结项仍看已选路线及官署、矿业的实际条件。"
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -386,26 +386,26 @@
             {
               "key": "use_shipping",
               "label": {
-                "zh": "采用船运对账单核对出港量",
-                "en": "Adopt the shipping reconciliation"
+                "zh": "选择船运对账路线",
+                "en": "Choose the shipping-reconciliation route"
               },
               "effect": "{ ywc_lan_mine_use_freight = yes set_variable = { name = ywc_lan_mine_pending_event value = 1004 } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "不新增费用；只读真实港口与生产关系。",
-                "en": "No new fee; reads real ports and production only."
+                "zh": "不新增费用。",
+                "en": "No new fee."
               },
               "consequence_note": {
-                "zh": "矿账与出港量对不上时后续不能确立。",
-                "en": "A mismatch between ledger and shipments blocks later establishment."
+                "zh": "后续检查读取本路线与真实矿业规模，不核验港口或出货量。",
+                "en": "Later checks use this route and actual mine scale; they do not check ports or shipment volume."
               },
               "trigger": "{ ywc_lan_mine_freight_ready = yes }"
             },
             {
               "key": "internal_only",
               "label": {
-                "zh": "只核内部产量与库存",
-                "en": "Reconcile internally only"
+                "zh": "选择仅内部核算路线",
+                "en": "Choose the internal-only route"
               },
               "effect": "{ ywc_lan_mine_internal_only = yes set_variable = { name = ywc_lan_mine_pending_event value = 1004 } }",
               "ai_chance": "{ base = 25 }",
@@ -414,8 +414,8 @@
                 "en": "No new fee; the target drops."
               },
               "consequence_note": {
-                "zh": "不冒称外部核验已完成。",
-                "en": "Does not claim external verification was completed."
+                "zh": "该路线不声称已完成外部船运核验。",
+                "en": "This route does not claim that outside shipping was verified."
               },
               "trigger": "{ always = yes }"
             },
@@ -457,8 +457,8 @@
             }
           ],
           "purpose": {
-            "zh": "把对账落到真实港口与产量上，不虚构贸易伙伴。",
-            "en": "Grounds reconciliation in real ports and output without inventing partners."
+            "en": "Two recorded reconciliation routes; no port call or outside partner is checked.",
+            "zh": "两种对账路线均只登记选择；不核验港口停靠或外部伙伴。"
           },
           "reads": [
             "staffed_port",
@@ -471,12 +471,12 @@
         {
           "id": "ywc_lan.1004",
           "title": {
-            "zh": "海关要把矿账并进关单",
-            "en": "Customs Wants the Mine Ledger on Its Own Slips"
+            "zh": "选择海关账册如何登记矿账",
+            "en": "Choosing How Customs Handles the Mine Ledger"
           },
           "desc": {
-            "zh": "SHU 海关账目能交叉核对税额。贸易法律与真实港务岗位决定这条路是否可行。",
-            "en": "SHU customs accounting can cross-check the assessed tax. Trade law and staffed ports decide whether that route is open."
+            "en": "Choose whether customs and mine accounts use combined or separate books; completion still requires the actual office and mine conditions.",
+            "zh": "选择关务与矿账合账或分账，作为后续核算办法；结项仍需满足官署与矿场的实际条件。"
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -484,18 +484,18 @@
             {
               "key": "merge_customs",
               "label": {
-                "zh": "并入关单，接受交叉核对",
-                "en": "Merge into customs and accept cross-checks"
+                "zh": "选择并账路线",
+                "en": "Choose the combined-ledger route"
               },
               "effect": "{ ywc_lan_mine_merge_customs = yes ywc_lan_start_mine_settlement = yes }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；须现有港口与贸易法。",
-                "en": "No new fee; needs an existing port and trade law."
+                "zh": "不新增费用；登记并账选择。",
+                "en": "No new fee; records the combined-ledger choice."
               },
               "consequence_note": {
-                "zh": "税源更实，但公会抵触加深。",
-                "en": "A firmer tax base, but guild resistance deepens."
+                "zh": "后续检查按已选路线及真实矿场、官署条件进行。",
+                "en": "Later checks use the recorded route and actual mine and office conditions."
               },
               "trigger": "{ ywc_lan_mine_customs_ready = yes }"
             },
@@ -508,12 +508,12 @@
               "effect": "{ ywc_lan_mine_separate_books = yes ywc_lan_start_mine_settlement = yes }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用，交叉核对缺失。",
-                "en": "No new fee; the cross-check is absent."
+                "zh": "不新增费用；记录分账路线。",
+                "en": "No new fee; records the separate-ledger route."
               },
               "consequence_note": {
-                "zh": "只能走窄目标结局。",
-                "en": "Only the narrow ending remains reachable."
+                "zh": "登记分账选择；该路线只符合窄目标。",
+                "en": "Records the separate-books choice; this route qualifies only for the narrow target."
               },
               "trigger": "{ always = yes }"
             },
@@ -555,8 +555,8 @@
             }
           ],
           "purpose": {
-            "zh": "海关并账是真实可选项，但取决于贸易法与港务岗位。",
-            "en": "Customs merging is real but depends on trade law and staffed ports."
+            "en": "The combined or separate ledger choice is recorded; no port or trade law is read.",
+            "zh": "登记并账或分账选择；不读取港口或贸易法。"
           },
           "reads": [
             "trade_law",
@@ -593,22 +593,22 @@
                 "en": "One-time filing fee snapshots opening annual gross income / 52; second audit reserve."
               },
               "consequence_note": {
-                "zh": "税源上升最实，成本也最高。",
-                "en": "The firmest revenue gain, at the highest cost."
+                "zh": "记录审计准备金路线；结项仍须满足真实目标与连续观察条件。",
+                "en": "Records the audit-reserve route; settlement still requires the real target and continuous observation."
               },
               "trigger": "{ ywc_lan_mine_route_ready = yes ywc_lan_mine_can_pay = yes }"
             },
             {
               "key": "cap_public_claim",
               "label": {
-                "zh": "压低公共索款，换公会配合",
-                "en": "Cap the public claim to keep the guild onside"
+                "zh": "选择公共索款封顶路线",
+                "en": "Choose the capped public-claim route"
               },
               "effect": "{ ywc_lan_mine_cap_claim = yes set_variable = { name = ywc_lan_mine_pending_event value = 1006 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；公共进项封顶。",
-                "en": "No new fee; the public take is capped."
+                "zh": "不新增费用；登记公共索款封顶选择。",
+                "en": "No new fee; records the capped-claim choice."
               },
               "consequence_note": {
                 "zh": "只能走低目标结局。",
@@ -674,8 +674,8 @@
             "en": "Three Ledgers After Six Months"
           },
           "desc": {
-            "zh": "只有连续六个月公共款项真实进账，才可进入结项复核。任何坏月立即清零。",
-            "en": "Only six consecutive months of real public receipts open the settlement review. Any bad month clears the timer."
+            "zh": "连续六个月记录实际条件，坏月清零后重启观察。",
+            "en": "Six consecutive months record the actual conditions; a bad month clears the observation and restarts it."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -828,8 +828,8 @@
             "en": "Which Ledger the Public Purse Follows"
           },
           "desc": {
-            "zh": "结项读取当前税源、官署就业、矿业规模与路线。低目标成熟后不能跳成高标准结局。",
-            "en": "Settlement reads current revenue, office employment, mine scale and the registered route. A mature narrow target cannot jump to the high standard."
+            "zh": "结项检查已选路线、真实官署与矿业条件，以及高目标是否连续达标。窄目标成熟后仍不能改判为高标准结局。",
+            "en": "Settlement checks the recorded route, actual office and mine conditions, and whether the high target held continuously. A mature narrow target cannot qualify for the high-standard ending."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -843,8 +843,8 @@
               "effect": "{ ywc_lan_close_mine_as_established = yes }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "无结局奖金；经常性支出仍由预算承担。",
-                "en": "No closing bonus; recurring costs stay on the budget."
+                "zh": "无结项奖金或新增收费；此前选择的支出已按实际选项处理。",
+                "en": "No closing bonus or new fee; earlier costs were handled by the selected options."
               },
               "consequence_note": {
                 "zh": "只在真实高目标连续合格时成立。",
@@ -987,8 +987,8 @@
             "en": "The Waterway After the Settlements"
           },
           "desc": {
-            "zh": "连续观察动荡与真实产出，再按档结项。责任不能既不付钱也不承担动荡。",
-            "en": "Continuous observation of unrest and real output, then tiered settlement. Responsibility can be neither unpaid nor unrest-free."
+            "en": "Six months of route conditions precede settlement. Co-management needs its one-time reserve; restricted and guard routes have narrower outcomes.",
+            "zh": "路线条件须连续观察六个月后才能结项。共管路线需缴纳一次性准备金；限区与私卫路线的结局较窄。"
           },
           "script": "{ is_shown_when_inactive = { c:LAN ?= this has_variable = ywc_v03_initialized has_variable = ywc_v03_lan_v03_lan_river_compacts_started has_variable = ywc_lan_river_phase_one_complete NOT = { has_variable = ywc_v03_lan_v03_lan_river_compacts_settled } } possible = { c:LAN ?= this has_variable = ywc_v03_initialized has_variable = ywc_v03_lan_v03_lan_river_compacts_started has_variable = ywc_lan_river_phase_one_complete NOT = { has_variable = ywc_v03_lan_v03_lan_river_compacts_settled } } immediate = { set_variable = { name = ywc_lan_river_phase_two_started value = 1 } set_variable = { name = ywc_lan_river_pending_event value = 1016 } } on_fail = { ywc_lan_close_river_as_breach = yes } on_monthly_pulse = { effect = { ywc_lan_river_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_river_notice_event = 12 } remove_variable = ywc_lan_river_notice_event set_variable = { name = ywc_lan_river_notice_current value = 12 } set_variable = { name = ywc_lan_river_notice12_sent value = 1 } trigger_event = { id = ywc_lan.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_river_notice_event = 36 } remove_variable = ywc_lan_river_notice_event set_variable = { name = ywc_lan_river_notice_current value = 36 } set_variable = { name = ywc_lan_river_notice36_sent value = 1 } trigger_event = { id = ywc_lan.1017 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_river_pending_event = 1016 } remove_variable = ywc_lan_river_pending_event trigger_event = { id = ywc_lan.1016 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_river_pending_event = 1017 } remove_variable = ywc_lan_river_pending_event trigger_event = { id = ywc_lan.1017 } } } } }",
           "goal": "{ AND = { OR = { has_variable = ywc_lan_river_established has_variable = ywc_lan_river_compromise } NOT = { has_variable = ywc_lan_river_breach } } }",
@@ -1003,8 +1003,8 @@
             "en": "The Waterway Crosses Ground Already Occupied"
           },
           "desc": {
-            "zh": "矿业与运输扩张画出新的区块，区块里有既存的聚落与耕地。土地法决定谁有权谈，基础设施决定这条路值不值得修。",
-            "en": "Mining and transport expansion draws new blocks over existing settlements and farmland. Land law decides who may negotiate and infrastructure decides whether the works are worth it."
+            "zh": "可选择河道补偿、限区或私卫路线。共管还要求有岗官署并在后续缴纳一次性准备金；各结项路线都要求完成契约核验并有真实河道基础设施。",
+            "en": "Choose a river-compensation, restricted-area or guard route. Co-management requires a staffed public office and a later one-time reserve charge; all settlement routes also require a checked deed and real river infrastructure."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1012,56 +1012,56 @@
             {
               "key": "compensate",
               "label": {
-                "zh": "赔偿共管：付钱并设共管机构",
-                "en": "Compensate and co-manage"
+                "zh": "选择共管路线",
+                "en": "Choose the co-management route"
               },
               "effect": "{ ywc_lan_choose_river_compensate = yes if = { limit = { has_variable = ywc_lan_river_board_chosen } set_variable = { name = ywc_lan_river_pending_event value = 1011 } } else = { set_variable = { name = ywc_lan_river_pending_event value = 1010 } } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；并按赔偿标准实付；需真实官署承接。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; plus compensation; needs a real staffed office."
+                "zh": "一次登记费按开启时年总收入÷52快照；按基础费率收取；需真实官署。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52 at the base rate; a real public office is required."
               },
               "consequence_note": {
-                "zh": "动荡下降，成本最高。",
-                "en": "Unrest falls at the highest cost."
+                "zh": "登记该路线；不改变动荡或外交关系。",
+                "en": "Records this route; it does not alter unrest or diplomatic relations."
               },
-              "trigger": "{ ywc_lan_river_compensate_ready = yes ywc_lan_river_can_pay = yes }"
+              "trigger": "{ ywc_lan_river_compensate_ready = yes ywc_lan_river_can_pay = yes OR = { has_variable = ywc_lan_river_filing_fee_paid gold_reserves >= var:ywc_lan_river_fee } }"
             },
             {
               "key": "restrict",
               "label": {
-                "zh": "限区开采：缩小区块",
-                "en": "Restrict the blocks"
+                "zh": "选择限区路线",
+                "en": "Choose the restricted-area route"
               },
               "effect": "{ ywc_lan_choose_river_restrict = yes if = { limit = { has_variable = ywc_lan_river_restrict_chosen } set_variable = { name = ywc_lan_river_pending_event value = 1011 } } else = { set_variable = { name = ywc_lan_river_pending_event value = 1010 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；按半价费率收取；放弃部分产出。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; charged at half rate; output is forgone."
+                "zh": "一次登记费按开启时年总收入÷52快照；按半价费率收取。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52 at half the base rate."
               },
               "consequence_note": {
-                "zh": "动荡可控，产出目标降低。",
-                "en": "Unrest stays contained and the output target drops."
+                "zh": "记录限区路线；该路线只符合窄目标结局，不改变实际产出。",
+                "en": "Records the restricted-area route; it qualifies only for the narrow ending and does not change actual output."
               },
-              "trigger": "{ ywc_lan_river_restrict_ready = yes ywc_lan_river_can_pay = yes }"
+              "trigger": "{ ywc_lan_river_restrict_ready = yes ywc_lan_river_can_pay = yes OR = { has_variable = ywc_lan_river_filing_fee_paid AND = { gold_reserves >= 100 gold_reserves >= { value = var:ywc_lan_river_fee multiply = 0.5 } } } }"
             },
             {
               "key": "guards",
               "label": {
-                "zh": "私卫执行：成本低见效快",
-                "en": "Private guards: cheap and fast"
+                "zh": "选择私卫路线",
+                "en": "Choose the private-guard route"
               },
               "effect": "{ ywc_lan_choose_river_guards = yes if = { limit = { has_variable = ywc_lan_river_guards_chosen } set_variable = { name = ywc_lan_river_pending_event value = 1011 } } else = { set_variable = { name = ywc_lan_river_pending_event value = 1010 } } }",
               "ai_chance": "{ base = 25 }",
               "cost_note": {
-                "zh": "一次性申报费为基础额的40%；雇用私卫会真实增加动荡并损害合法性。",
-                "en": "One-time filing fee at 40% of base; staffed private guards carry a real unrest and legitimacy burden."
+                "zh": "一次登记费按开启时年总收入÷52快照；按四折费率收取。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52 at 40% of the base rate."
               },
               "consequence_note": {
-                "zh": "真实增加激进派并损失合法性，不能既不付钱也不承担动荡。",
-                "en": "Really adds radicals and costs legitimacy; responsibility cannot be both unpaid and unrest-free."
+                "zh": "记录私卫路线；之后雇用私卫时才施加时限修正项。",
+                "en": "Records the guard route; the timed modifier is applied only if guards are hired later."
               },
-              "trigger": "{ ywc_lan_river_guards_ready = yes ywc_lan_river_can_pay = yes }"
+              "trigger": "{ ywc_lan_river_guards_ready = yes ywc_lan_river_can_pay = yes OR = { has_variable = ywc_lan_river_filing_fee_paid AND = { gold_reserves >= 100 gold_reserves >= { value = var:ywc_lan_river_fee multiply = 0.4 } } } }"
             },
             {
               "key": "defer",
@@ -1101,8 +1101,8 @@
             }
           ],
           "purpose": {
-            "zh": "三条路线各有真实的钱与动荡代价。",
-            "en": "Each route carries real money and unrest costs."
+            "en": "Three river routes with different one-time charges and eligibility conditions.",
+            "zh": "三种河道路线各有不同的一次性收费与资格条件。"
           },
           "reads": [
             "land_law",
@@ -1119,12 +1119,12 @@
         {
           "id": "ywc_lan.1011",
           "title": {
-            "zh": "聚落代表带着旧地契",
-            "en": "Settlement Delegates Bring Old Deeds"
+            "zh": "地契需要核验",
+            "en": "The Deeds Must Be Checked"
           },
           "desc": {
-            "zh": "土地法决定旧地契是否被承认。共管需要真实官署，限区需要真实矿业规模。",
-            "en": "Land law decides whether old deeds count. Co-management needs a staffed office; restriction needs real mine scale."
+            "zh": "现行商业化农业法下可选择契约核验；缺少该法律时仍可走仅测绘路线。共管要求有岗官署，限区要求真实矿业规模。",
+            "en": "The deed-review choice is available under commercialized agriculture. If that law is absent, the survey-only route remains. Co-management requires a staffed office; restriction requires real mine scale."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1132,8 +1132,8 @@
             {
               "key": "deed_review",
               "label": {
-                "zh": "按现行土地法复核旧地契",
-                "en": "Review the deeds under current land law"
+                "zh": "按现行土地法登记契约核验",
+                "en": "Record a deed review under current land law"
               },
               "effect": "{ ywc_lan_river_deed_review = yes set_variable = { name = ywc_lan_river_pending_event value = 1012 } }",
               "ai_chance": "{ base = 40 }",
@@ -1142,16 +1142,16 @@
                 "en": "No new fee."
               },
               "consequence_note": {
-                "zh": "后续节点再读一次同一土地法。",
-                "en": "A later node reads the same land law again."
+                "zh": "后续河道资格要求完成此项契约核验，并具备真实河道基础设施。",
+                "en": "Later river eligibility requires this deed-check choice and real river infrastructure."
               },
               "trigger": "{ ywc_lan_river_deed_ready = yes }"
             },
             {
               "key": "survey_only",
               "label": {
-                "zh": "只登记测绘，不确认权利",
-                "en": "Survey only, no rights confirmed"
+                "zh": "选择仅测绘路线",
+                "en": "Choose the survey-only route"
               },
               "effect": "{ ywc_lan_river_survey_only = yes set_variable = { name = ywc_lan_river_pending_event value = 1012 } }",
               "ai_chance": "{ base = 25 }",
@@ -1160,8 +1160,8 @@
                 "en": "No new fee; the target drops."
               },
               "consequence_note": {
-                "zh": "只能走向窄结局。",
-                "en": "Only the narrow ending remains."
+                "zh": "河道目标要取得资格，仍须完成契约核验。",
+                "en": "A deed check is still required before the river target can qualify."
               },
               "trigger": "{ always = yes }"
             },
@@ -1217,12 +1217,12 @@
         {
           "id": "ywc_lan.1012",
           "title": {
-            "zh": "邻国问这条河归谁管",
-            "en": "The Neighbour Asks Who Runs the River"
+            "zh": "河道由谁治理",
+            "en": "A Question of Who Governs the River"
           },
           "desc": {
-            "zh": "婆罗洲邻国与荷兰都会问同一件事。本事件只登记真实外交关系，不虚构伙伴。",
-            "en": "Borneo neighbours and the Dutch ask the same question. This event records real diplomatic relations only and invents no partner."
+            "zh": "登记已核验地契是否配套邻国照会安排，或采用单方面路线。本选择不检查现实外交关系，也不代表对方同意。",
+            "en": "Record whether the checked deed is paired with a neighbour notice or a unilateral route. This choice checks no live diplomatic relation and does not represent foreign consent."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1230,18 +1230,18 @@
             {
               "key": "notify_neighbour",
               "label": {
-                "zh": "照会真实邻国并登记边界安排",
-                "en": "Notify the real neighbour and register the arrangement"
+                "zh": "将邻国照会列入安排",
+                "en": "Record a neighbour notice in the plan"
               },
               "effect": "{ ywc_lan_river_notify_neighbour = yes set_variable = { name = ywc_lan_river_pending_event value = 1013 } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "不新增费用；须真实接壤或已建立关系。",
-                "en": "No new fee; needs a real border or established relation."
+                "zh": "不新增费用；登记已完成契约核验。",
+                "en": "No new fee; records that the deed was checked."
               },
               "consequence_note": {
-                "zh": "后续节点读取同一关系。",
-                "en": "A later node reads the same relation."
+                "zh": "只登记照会选择；不检查外交关系，也不代表对方同意。",
+                "en": "Records the notice choice only; it does not check diplomatic relations or represent consent."
               },
               "trigger": "{ ywc_lan_river_neighbour_ready = yes }"
             },
@@ -1254,12 +1254,12 @@
               "effect": "{ ywc_lan_river_unilateral = yes set_variable = { name = ywc_lan_river_pending_event value = 1013 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；外交代价后置。",
-                "en": "No new fee; the diplomatic cost is deferred."
+                "zh": "不新增费用；记录单方推进路线。",
+                "en": "No new fee; records the unilateral route."
               },
               "consequence_note": {
-                "zh": "邻国关系不改善，动荡门槛更高。",
-                "en": "Neighbour relations do not improve and the unrest gate is higher."
+                "zh": "登记单方面路线；不改变邻国关系或动荡。",
+                "en": "Records the unilateral choice; it does not change neighbour relations or unrest."
               },
               "trigger": "{ always = yes }"
             },
@@ -1301,8 +1301,8 @@
             }
           ],
           "purpose": {
-            "zh": "外部关系只在真实存在时被读取。",
-            "en": "External relations are read only where they really exist."
+            "en": "The deed check and notice choice are recorded; no foreign relation or consent is read.",
+            "zh": "登记契约核验与照会选择；不读取外部关系或同意。"
           },
           "reads": [
             "neighbour_relation",
@@ -1319,8 +1319,8 @@
             "en": "Compensation and Seats on the Board"
           },
           "desc": {
-            "zh": "赔偿共管需要真实官署与真实资金。付款失败不推进。",
-            "en": "Co-management needs a real office and real money. A failed payment advances nothing."
+            "zh": "共管路线要求有岗官署，并在此缴纳第二笔一次性准备金。付款失败时仍停留在此处；限区路线不新增费用。",
+            "en": "Co-management requires a staffed office and a second one-time reserve charge. If that payment fails, the choice remains here; the restricted-area route has no new charge."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1328,18 +1328,18 @@
             {
               "key": "fund_board",
               "label": {
-                "zh": "拨付赔偿金并设共管席位",
-                "en": "Fund compensation and open board seats"
+                "zh": "选择共管并缴纳补偿准备金",
+                "en": "Choose co-management and its compensation reserve"
               },
               "effect": "{ ywc_lan_river_fund_board = yes if = { limit = { has_variable = ywc_lan_river_board_reserve_paid } set_variable = { name = ywc_lan_river_pending_event value = 1014 } } else = { set_variable = { name = ywc_lan_river_pending_event value = 1013 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；赔偿准备金。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; compensation reserve."
+                "zh": "一次性准备金按开启时年总收入÷52快照，以基础费率收取。",
+                "en": "One-time reserve charge uses the opening annual gross-income / 52 snapshot at the base rate."
               },
               "consequence_note": {
-                "zh": "动荡下降最明显，成本最高。",
-                "en": "The clearest unrest reduction at the highest cost."
+                "zh": "登记已付准备金与共管路线；不改变动荡。",
+                "en": "Records the paid reserve and co-management route; it does not modify unrest."
               },
               "trigger": "{ ywc_lan_river_route_ready = yes ywc_lan_river_can_pay = yes }"
             },
@@ -1352,12 +1352,12 @@
               "effect": "{ ywc_lan_river_restrict_blocks = yes set_variable = { name = ywc_lan_river_pending_event value = 1014 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；产出目标下调。",
-                "en": "No new fee; the output target drops."
+                "zh": "不新增费用；记录限区路线。",
+                "en": "No new fee; records the restricted-area route."
               },
               "consequence_note": {
-                "zh": "结局只能是窄目标。",
-                "en": "Only the narrow ending remains."
+                "zh": "后续检查按窄目标进行；实际产出不变。",
+                "en": "Later checks use the narrow target; actual output is unchanged."
               },
               "trigger": "{ ywc_lan_river_route_ready = yes }"
             },
@@ -1419,8 +1419,8 @@
             "en": "Private Guards Enter the Riverside"
           },
           "desc": {
-            "zh": "私卫最便宜也最快，但真实增加激进派并损失合法性。这是不能既不付钱也不承担动荡的那条路。",
-            "en": "Private guards are cheapest and fastest, but really add radicals and cost legitimacy. This is the route that cannot be both unpaid and unrest-free."
+            "zh": "选择雇用私卫需另付一次登记费，并施加1095日修正项：合法性基础值−10，政治运动激进派系数+0.25。",
+            "en": "Hiring guards requires one additional one-time fee and applies a 1095-day modifier: legitimacy base −10 and political-movement radicalism multiplier +0.25."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1434,30 +1434,30 @@
               "effect": "{ ywc_lan_river_hire_guards = yes if = { limit = { has_variable = ywc_lan_river_guard_fee_paid } set_variable = { name = ywc_lan_river_pending_event value = 1015 } } else = { set_variable = { name = ywc_lan_river_pending_event value = 1014 } } }",
               "ai_chance": "{ base = 25 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；私卫佣金；真实扣款。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; guard fees, really charged."
+                "zh": "一次性雇卫费按开启时年总收入÷52快照并全额收取；施加1095日修正项。",
+                "en": "The one-time guard-hiring fee uses the opening annual gross-income / 52 snapshot at the full rate; a 1095-day modifier is applied."
               },
               "consequence_note": {
-                "zh": "真实增加激进派并损失合法性，后续动荡门槛更高。",
-                "en": "Really adds radicals and legitimacy loss; the later unrest gate is higher."
+                "zh": "修正项使合法性基础值−10，政治运动激进派系数+0.25。",
+                "en": "The modifier changes legitimacy base by −10 and the political-movement radicalism multiplier by +0.25."
               },
               "trigger": "{ ywc_lan_river_guards_ready = yes ywc_lan_river_can_pay = yes }"
             },
             {
               "key": "convert_to_board",
               "label": {
-                "zh": "改为赔偿共管，撤回私卫",
-                "en": "Convert to co-management and stand the guards down"
+                "zh": "付费登记改走共管的选择",
+                "en": "Pay to record a co-management conversion choice"
               },
               "effect": "{ ywc_lan_river_convert_board = yes if = { limit = { has_variable = ywc_lan_river_board_conversion_paid } set_variable = { name = ywc_lan_river_pending_event value = 1015 } } else = { set_variable = { name = ywc_lan_river_pending_event value = 1014 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；赔偿准备金替代私卫佣金。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; compensation reserve replaces guard fees."
+                "zh": "转换为共管时另收一次全额登记费，金额取开启时快照。",
+                "en": "Converting to co-management charges one additional full one-time fee using the opening snapshot."
               },
               "consequence_note": {
-                "zh": "动荡下降但成本上升。",
-                "en": "Unrest falls while the cost rises."
+                "zh": "登记转换选择；私卫路线与其限时修正项仍然生效。",
+                "en": "Records the conversion choice; the guard route and its timed modifier remain in effect."
               },
               "trigger": "{ ywc_lan_river_compensate_ready = yes ywc_lan_river_can_pay = yes }"
             },
@@ -1474,8 +1474,8 @@
                 "en": "No new fee; the output target drops."
               },
               "consequence_note": {
-                "zh": "不动荡加剧，但结局只能是窄目标。",
-                "en": "Unrest does not spike, but only the narrow ending remains."
+                "zh": "记录限区选择；后续只符合窄目标结局。",
+                "en": "Records the restricted-area choice; later only the narrow ending is available."
               },
               "trigger": "{ always = yes }"
             },
@@ -1533,12 +1533,12 @@
         {
           "id": "ywc_lan.1015",
           "title": {
-            "zh": "矿场规模还要不要再扩",
-            "en": "Does the Mine Scale Expand Again"
+            "zh": "河道方案是否考虑矿业规模",
+            "en": "Does the River Plan Account for Mine Scale"
           },
           "desc": {
-            "zh": "扩张与否在这里第二次改变条件与成本。不扩张不送工业，也不凭空造矿。",
-            "en": "Expansion changes conditions and costs a second time. Not expanding grants no industry and creates no mine."
+            "zh": "选择登记扩展路线或维持规模路线。两项选择都不改变矿业规模或产出；结局仍由先前河道路线及其当前条件决定。",
+            "en": "Choose whether the record follows the expansion or hold-scale route. Neither choice changes mine scale or production; the ending still depends on the earlier river route and its live conditions."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1546,8 +1546,8 @@
             {
               "key": "expand_blocks",
               "label": {
-                "zh": "按限区方案小幅扩产",
-                "en": "Expand modestly inside the restricted blocks"
+                "zh": "在真实矿业规模条件下选择扩展路线",
+                "en": "Choose the expansion route within the real mine-scale condition"
               },
               "effect": "{ ywc_lan_river_expand_blocks = yes ywc_lan_start_river_settlement = yes }",
               "ai_chance": "{ base = 30 }",
@@ -1556,8 +1556,8 @@
                 "en": "No new fee; needs real mine scale to back it."
               },
               "consequence_note": {
-                "zh": "产出上升但动荡门槛不降。",
-                "en": "Output rises while the unrest gate does not fall."
+                "zh": "登记扩展选择；矿业规模与实际产出不变。",
+                "en": "Records the expansion choice; mine scale and actual output do not change."
               },
               "trigger": "{ ywc_lan_river_expand_ready = yes }"
             },
@@ -1574,8 +1574,8 @@
                 "en": "No new fee."
               },
               "consequence_note": {
-                "zh": "只能走窄目标结局。",
-                "en": "Only the narrow ending remains."
+                "zh": "登记维持规模选择；资格仍按所选河道路线判定。",
+                "en": "Records the hold-scale choice; eligibility remains governed by the selected river route."
               },
               "trigger": "{ always = yes }"
             },
@@ -1617,8 +1617,8 @@
             }
           ],
           "purpose": {
-            "zh": "第二次读取真实矿业规模。",
-            "en": "The second read of real mine scale."
+            "en": "Records an expansion or hold-scale choice; mine scale remains a real eligibility condition.",
+            "zh": "登记扩展或维持规模的选择；真实矿业规模仍是资格条件。"
           },
           "reads": [
             "mine_building_scale",
@@ -1631,12 +1631,12 @@
         {
           "id": "ywc_lan.1016",
           "title": {
-            "zh": "六个月里有没有人再被赶走",
-            "en": "Did Anyone Else Get Moved in Those Six Months"
+            "zh": "河道约定下的六个月",
+            "en": "Six Months Under the River Compact"
           },
           "desc": {
-            "zh": "连续六个月观察动荡与产出。坏月清零，限区成熟后不能跳成共管结局。",
-            "en": "Six consecutive months of unrest and output. A bad month zeroes it; a mature restriction cannot jump to the co-managed ending."
+            "zh": "所选路线须连续六个月满足真实资格条件。任一月未达标都会重置观察；较窄目标不能转成共管结局。",
+            "en": "The selected route must meet its actual eligibility conditions for six consecutive months. A failed month resets observation; a narrower target cannot become the co-management ending."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1662,8 +1662,8 @@
             {
               "key": "narrow_or_wait",
               "label": {
-                "zh": "缩限或等待动荡回落",
-                "en": "Narrow or wait for unrest to fall"
+                "zh": "缩限目标或等待所需条件恢复",
+                "en": "Narrow the target or wait for its conditions to recover"
               },
               "effect": "{ ywc_lan_river_narrow_target = yes set_variable = { name = ywc_lan_river_pending_event value = 1016 } }",
               "ai_chance": "{ base = 25 }",
@@ -1789,8 +1789,8 @@
             "en": "Which Compact the River Follows"
           },
           "desc": {
-            "zh": "结项读取土地法、动荡、真实产出与已登记路线。",
-            "en": "Settlement reads land law, unrest, real output and the registered route."
+            "zh": "结项取决于所选路线、契约核验选择、真实河道基础设施及该路线连续六个月的资格条件。",
+            "en": "Settlement depends on the selected route, the deed-check choice, real river infrastructure and the route-specific requirements over six months."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1804,8 +1804,8 @@
               "effect": "{ ywc_lan_close_river_as_established = yes }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "无结局奖金；经常性赔偿仍由预算承担。",
-                "en": "No closing bonus; recurring payments stay on the budget."
+                "zh": "无结项奖金或新增收费；既有一次性准备金不再重复扣除。",
+                "en": "No closing bonus or new fee; previously paid one-time reserves are not charged again."
               },
               "consequence_note": {
                 "zh": "只在真实高目标连续合格时成立。",
@@ -1887,8 +1887,8 @@
             }
           ],
           "purpose": {
-            "zh": "结局按真实条件分档。",
-            "en": "Endings are tiered by real conditions."
+            "en": "Ending tiers follow the selected route and its actual six-month conditions.",
+            "zh": "结局档次按所选路线及其真实六个月条件判定。"
           },
           "reads": [
             "land_law",
@@ -1948,8 +1948,8 @@
             "en": "What Remains After the Payout"
           },
           "desc": {
-            "zh": "工钱与缴费、连续观察与按档结项。责任不能既不付钱也不承担动荡。",
-            "en": "Wages and contributions, continuous observation, tiered settlement. Responsibility cannot be unpaid and unrest-free at once."
+            "en": "Settlement follows the selected path and its route-specific conditions over six months; a lower target cannot become the mutual-fund ending.",
+            "zh": "按所选路径及其路线条件连续观察六个月后结项；较低目标不能改成互助基金结局。"
           },
           "script": "{ is_shown_when_inactive = { c:LAN ?= this has_variable = ywc_v03_initialized has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started has_variable = ywc_lan_fund_phase_one_complete NOT = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_settled } } possible = { c:LAN ?= this has_variable = ywc_v03_initialized has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started has_variable = ywc_lan_fund_phase_one_complete NOT = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_settled } } immediate = { set_variable = { name = ywc_lan_fund_phase_two_started value = 1 } set_variable = { name = ywc_lan_fund_pending_event value = 1025 } } on_fail = { ywc_lan_close_fund_as_breach = yes } on_monthly_pulse = { effect = { ywc_lan_fund_monthly_review = yes if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_fund_notice_event = 12 } remove_variable = ywc_lan_fund_notice_event set_variable = { name = ywc_lan_fund_notice_current value = 12 } set_variable = { name = ywc_lan_fund_notice12_sent value = 1 } trigger_event = { id = ywc_lan.1026 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_fund_notice_event = 36 } remove_variable = ywc_lan_fund_notice_event set_variable = { name = ywc_lan_fund_notice_current value = 36 } set_variable = { name = ywc_lan_fund_notice36_sent value = 1 } trigger_event = { id = ywc_lan.1027 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_fund_pending_event = 1025 } remove_variable = ywc_lan_fund_pending_event trigger_event = { id = ywc_lan.1025 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_fund_pending_event = 1026 } remove_variable = ywc_lan_fund_pending_event trigger_event = { id = ywc_lan.1026 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_lan_fund_pending_event = 1027 } remove_variable = ywc_lan_fund_pending_event trigger_event = { id = ywc_lan.1027 } } } } }",
           "goal": "{ AND = { OR = { has_variable = ywc_lan_fund_established has_variable = ywc_lan_fund_compromise } NOT = { has_variable = ywc_lan_fund_breach } } }",
@@ -1964,8 +1964,8 @@
             "en": "Who Pays After the Shift"
           },
           "desc": {
-            "zh": "伤病、工钱与移民债务由谁承担。劳动与福利法律、真实矿工就业与预算决定可选路线。",
-            "en": "Who carries injury, wages and migration debt. Labour and welfare law, real mine employment and the budget decide which routes are open."
+            "zh": "互助基金选项要求现行贫困法律并有足够资金支付开办费；公司路线也收一次性费用。私人救济无需缴纳申报费。后续目标还要求完成路线选择，部分路线另需真实矿工或官署就业。",
+            "en": "The mutual-fund option requires poor laws and enough cash for its opening fee; the company route also has a one-time fee. Private relief remains available without a filing fee. Later targets require route-specific choices and, on some routes, real mine or office employment."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -1973,20 +1973,20 @@
             {
               "key": "mutual_fund",
               "label": {
-                "zh": "互助基金：先付启动金再按月缴",
-                "en": "Mutual fund: seed money then monthly contributions"
+                "zh": "选择互助基金路线",
+                "en": "Choose the mutual-fund route"
               },
               "effect": "{ ywc_lan_choose_fund_mutual = yes if = { limit = { has_variable = ywc_lan_fund_mutual_chosen } set_variable = { name = ywc_lan_fund_pending_event value = 1021 } } else = { set_variable = { name = ywc_lan_fund_pending_event value = 1020 } } }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；并按月缴费，启动金较高。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; plus monthly contributions; high seed cost."
+                "zh": "一次性开办费按年总收入÷52快照；不会产生持续缴费。",
+                "en": "One-time opening fee uses the annual gross-income / 52 snapshot; this is not a recurring contribution."
               },
               "consequence_note": {
-                "zh": "生活水平上升，股东成本上升。",
-                "en": "Living standards rise and shareholder costs rise."
+                "zh": "登记互助基金路线；此步骤不支付索赔或缴入额外准备金。",
+                "en": "Records the mutual-fund route; no claim payment or additional reserve is made at this step."
               },
-              "trigger": "{ has_law_or_variant = law_poor_laws ywc_lan_fund_can_pay = yes }"
+              "trigger": "{ has_law_or_variant = law_poor_laws ywc_lan_fund_can_pay = yes OR = { has_variable = ywc_lan_fund_filing_fee_paid gold_reserves >= var:ywc_lan_fund_fee } }"
             },
             {
               "key": "company_insurance",
@@ -1997,30 +1997,30 @@
               "effect": "{ ywc_lan_choose_fund_company = yes if = { limit = { has_variable = ywc_lan_fund_company_chosen } set_variable = { name = ywc_lan_fund_pending_event value = 1021 } } else = { set_variable = { name = ywc_lan_fund_pending_event value = 1020 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；按七折费率收取；公共支出低。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; charged at 70% of base; low public spending."
+                "zh": "一次登记费按开启时年总收入÷52快照，按七折费率收取。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52 at 70% of the base rate."
               },
               "consequence_note": {
-                "zh": "企业破产时出现赔付缺口。",
-                "en": "A payout gap opens if the firm fails."
+                "zh": "记录企业保险路线；不自动创设破产赔付或准备金效果。",
+                "en": "Records the company-insurance route; it does not create an automatic bankruptcy payout or reserve effect."
               },
-              "trigger": "{ always = yes ywc_lan_fund_can_pay = yes }"
+              "trigger": "{ always = yes ywc_lan_fund_can_pay = yes OR = { has_variable = ywc_lan_fund_filing_fee_paid AND = { gold_reserves >= 100 gold_reserves >= { value = var:ywc_lan_fund_fee multiply = 0.7 } } } }"
             },
             {
               "key": "private_relief",
               "label": {
-                "zh": "私人救济：几乎不花钱",
-                "en": "Private relief: almost no public money"
+                "zh": "选择免申报费的私人救济路线",
+                "en": "Choose private relief without the filing fee"
               },
               "effect": "{ ywc_lan_choose_fund_private = yes set_variable = { name = ywc_lan_fund_pending_event value = 1021 } }",
               "ai_chance": "{ base = 20 }",
               "cost_note": {
-                "zh": "无需新费用；私人救济路线不缴申报费，但会形成救济缺口。",
-                "en": "No new fee; this private route is genuinely unfunded and creates a relief gap."
+                "zh": "不新增费用；私人救济路线不缴申报费，并记录救济缺口。",
+                "en": "No new fee; this private route does not pay the filing fee and records a relief gap."
               },
               "consequence_note": {
-                "zh": "生活水平与动荡恶化，不能既不付钱也不承担动荡。",
-                "en": "Living standards and unrest deteriorate; it cannot be both unpaid and unrest-free."
+                "zh": "施加1095日救济缺口效果；不会支付索赔。",
+                "en": "A 1095-day relief-gap effect is applied; it does not make claim payments."
               },
               "trigger": "{ always = yes }"
             },
@@ -2062,8 +2062,8 @@
             }
           ],
           "purpose": {
-            "zh": "三条责任路线各有真实出资与动荡后果。",
-            "en": "Three liability routes with real funding and unrest consequences."
+            "en": "Three recorded liability routes with distinct fees and eligibility conditions.",
+            "zh": "三种责任路线各有不同的费用与资格条件。"
           },
           "reads": [
             "labour_law",
@@ -2081,8 +2081,8 @@
         {
           "id": "ywc_lan.1021",
           "title": {
-            "zh": "缴费名册上的第一个名字",
-            "en": "The First Name on the Contribution Roll"
+            "zh": "矿工名册上的第一个名字",
+            "en": "The First Name on the Miners’ Roll"
           },
           "desc": {
             "zh": "真实矿业就业须达到60%占用率且无投入品短缺。矿工未达到该就业条件时，只能登记较小目标。",
@@ -2100,12 +2100,12 @@
               "effect": "{ ywc_lan_fund_enrol_mine = yes set_variable = { name = ywc_lan_fund_pending_event value = 1022 } }",
               "ai_chance": "{ base = 40 }",
               "cost_note": {
-                "zh": "不新增一次性费；月度缴费开始计。",
-                "en": "No new one-time fee; monthly contributions start."
+                "zh": "不新增费用；记录矿场纳入情况供后续资格检查。",
+                "en": "No new fee; records mine enrolment for the next eligibility check."
               },
               "consequence_note": {
-                "zh": "后续节点读取同一就业与生活水平。",
-                "en": "A later node reads the same employment and living standards."
+                "zh": "后续检查读取真实矿业就业与纳入选择。",
+                "en": "Later checks read actual mine employment and the recorded enrolment."
               },
               "trigger": "{ ywc_lan_fund_mine_ready = yes }"
             },
@@ -2183,8 +2183,8 @@
             "en": "Debt the Migrant Workers Brought"
           },
           "desc": {
-            "zh": "移民工人的旧债与公司垫付纠缠。本事件只读真实法律与预算，不发明债务体系。",
-            "en": "Migrant debt entangles with company advances. This event reads real law and the budget only."
+            "zh": "在互助路线中选择承接债务会收取一次性准备金；公司持有路线登记另一种责任安排。两项选择都不会产生持续扣款。",
+            "en": "On the mutual route, choosing to assume the debt charges a one-time reserve; the company-held route records a different liability choice. Neither option creates a recurring payment."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -2192,36 +2192,36 @@
             {
               "key": "assume_debt",
               "label": {
-                "zh": "由基金承接旧债",
-                "en": "Let the fund assume the old debt"
+                "zh": "选择基金承接债务路线",
+                "en": "Choose the fund debt-assumption route"
               },
               "effect": "{ ywc_lan_fund_assume_debt = yes if = { limit = { has_variable = ywc_lan_fund_assumption_fee_paid } set_variable = { name = ywc_lan_fund_pending_event value = 1023 } } else = { set_variable = { name = ywc_lan_fund_pending_event value = 1022 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；承接准备金。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; assumption reserve."
+                "zh": "一次登记费按开启时年总收入÷52快照；一次性缴纳承接准备金。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52; a one-time assumption reserve is charged."
               },
               "consequence_note": {
-                "zh": "生活水平改善，成本上升。",
-                "en": "Living standards improve while costs rise."
+                "zh": "记录债务承接选择与准备金。",
+                "en": "Records the debt-assumption choice and reserve."
               },
               "trigger": "{ ywc_lan_fund_debt_ready = yes ywc_lan_fund_can_pay = yes }"
             },
             {
               "key": "company_holds",
               "label": {
-                "zh": "由公司持有旧债",
-                "en": "Leave the debt with the company"
+                "zh": "选择公司持有债务路线",
+                "en": "Choose the company-held debt route"
               },
               "effect": "{ ywc_lan_fund_company_debt = yes set_variable = { name = ywc_lan_fund_pending_event value = 1023 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；企业破产时出现缺口。",
-                "en": "No new fee; a gap opens if the firm fails."
+                "zh": "不新增费用；记录企业自保路线。",
+                "en": "No new fee; records the firm self-insurance route."
               },
               "consequence_note": {
-                "zh": "只能走中档或窄结局。",
-                "en": "Only the middle or narrow ending remains."
+                "zh": "登记公司路线；该路线只符合中档或窄目标。",
+                "en": "Records the firm route; it qualifies only for the middle or narrow target."
               },
               "trigger": "{ OR = { ywc_lan_fund_company_ready = yes ywc_lan_fund_private_ready = yes } }"
             },
@@ -2263,8 +2263,8 @@
             }
           ],
           "purpose": {
-            "zh": "债务归属在真实法律下登记。",
-            "en": "Debt liability is registered under real law."
+            "en": "Records a debt-liability choice; the mutual route charges a one-time assumption reserve.",
+            "zh": "登记债务责任选择；互助路线收取一次性承接准备金。"
           },
           "reads": [
             "labour_law",
@@ -2282,8 +2282,8 @@
             "en": "The Fund or the Firm's Own Reserve"
           },
           "desc": {
-            "zh": "福利法律与真实机构决定基金能否成立。付款失败只保留退路。",
-            "en": "Welfare law and real institutions decide whether the fund can exist. A failed payment only preserves the retreat."
+            "zh": "贫困法律下的互助路线才可缴入互助准备金，并收取一次性费用。公司准备安排不新增费用，也不会自动产生破产赔付。",
+            "en": "The mutual reserve option is available only on the mutual route under poor laws and charges a one-time fee. The company reserve choice adds no fee and does not create an automatic bankruptcy payout."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -2291,36 +2291,36 @@
             {
               "key": "fund",
               "label": {
-                "zh": "按现行福利法律成立互助基金",
-                "en": "Charter the fund under current welfare law"
+                "zh": "在贫困法律下选择互助基金准备金路线",
+                "en": "Choose the mutual-fund reserve route under poor laws"
               },
               "effect": "{ ywc_lan_fund_open_mutual = yes if = { limit = { has_variable = ywc_lan_fund_mutual_reserve_paid } set_variable = { name = ywc_lan_fund_pending_event value = 1024 } } else = { set_variable = { name = ywc_lan_fund_pending_event value = 1023 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；第二期启动准备金。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; second seed reserve."
+                "zh": "一次登记费按开启时年总收入÷52快照；第二笔准备金一次性缴入。",
+                "en": "One-time filing fee snapshots opening annual gross income / 52; the second reserve is funded once."
               },
               "consequence_note": {
-                "zh": "生活水平上升最实，成本最高。",
-                "en": "The firmest living-standard gain at the highest cost."
+                "zh": "登记准备金收费与路线选择；不会产生持续扣款。",
+                "en": "Records the reserve charge and route choice; no ongoing payment is created."
               },
               "trigger": "{ ywc_lan_fund_mutual_ready = yes ywc_lan_fund_can_pay = yes }"
             },
             {
               "key": "firm_reserve",
               "label": {
-                "zh": "由公司自设赔付准备",
-                "en": "Let the firm self-reserve"
+                "zh": "登记公司准备金安排",
+                "en": "Record the firm-reserve arrangement"
               },
               "effect": "{ ywc_lan_fund_firm_reserve = yes set_variable = { name = ywc_lan_fund_pending_event value = 1024 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；公共支出低。",
-                "en": "No new fee; low public spending."
+                "zh": "不新增费用；记录企业准备金路线。",
+                "en": "No new fee; records the firm-reserve route."
               },
               "consequence_note": {
-                "zh": "破产时赔付缺口真实存在。",
-                "en": "A payout gap really exists on bankruptcy."
+                "zh": "登记公司准备安排；不自动产生破产赔付。",
+                "en": "Records the firm-reserve choice; it does not create an automatic bankruptcy payout."
               },
               "trigger": "{ OR = { ywc_lan_fund_company_ready = yes ywc_lan_fund_private_ready = yes } }"
             },
@@ -2382,8 +2382,8 @@
             "en": "The Savings Society Knocks"
           },
           "desc": {
-            "zh": "NMG 的互助传统可作参照，但不会凭空造出伙伴或免费保护。",
-            "en": "NMG's mutual traditions are a reference, but no partner or free protection is created."
+            "zh": "可选择自主管理的缴款实践路线；不会建立外部伙伴、持续缴费或自动保障。",
+            "en": "A self-managed payment practice is available as a route choice. No outside partner, recurring contribution or automatic protection is created."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -2391,18 +2391,18 @@
             {
               "key": "borrow_practice",
               "label": {
-                "zh": "参照做法，自筹自管",
-                "en": "Borrow the practice, self-managed"
+                "zh": "选择自主管理的缴款实践",
+                "en": "Choose a self-managed payment practice"
               },
               "effect": "{ ywc_lan_fund_borrow_practice = yes ywc_lan_start_fund_settlement = yes }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "不新增费用；成本摊在月度缴费里。",
-                "en": "No new fee; costs sit in monthly contributions."
+                "zh": "不新增费用；记录缴款实践选择，不设置持续扣款。",
+                "en": "No new fee; records the payment-practice choice without a recurring charge."
               },
               "consequence_note": {
-                "zh": "后续节点读取月度缴费是否连续。",
-                "en": "A later node reads whether contributions stayed continuous."
+                "zh": "不新增费用；记录缴款实践选择，不设置持续扣款。",
+                "en": "No new fee; records the payment-practice choice without an ongoing charge."
               },
               "trigger": "{ ywc_lan_fund_practice_ready = yes }"
             },
@@ -2476,12 +2476,12 @@
         {
           "id": "ywc_lan.1025",
           "title": {
-            "zh": "工钱与缴费要同时发",
-            "en": "Wages and Contributions Fall Due Together"
+            "zh": "准备金与责任如何分担",
+            "en": "How the Reserve and Liability Are Shared"
           },
           "desc": {
-            "zh": "真实预算决定能否同时支付。公务员与官僚成本也在这里被真实读取。",
-            "en": "The real budget decides whether both can be paid. Administration costs are read here too."
+            "en": "Choose whether the mutual plan pays its third one-time reserve charge or records a wages-first arrangement; settlement still depends on the chosen route and six months of actual conditions.",
+            "zh": "互助方案在此选择是否缴纳第三笔一次性准备金，或登记工钱优先安排；结项仍取决于已选路线及六个月内的实际条件。"
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -2489,36 +2489,36 @@
             {
               "key": "pay_both",
               "label": {
-                "zh": "工钱与缴费一起发",
-                "en": "Pay wages and contributions together"
+                "zh": "选择互助基金全额准备金路线",
+                "en": "Choose the full mutual-fund reserve route"
               },
               "effect": "{ ywc_lan_fund_pay_both = yes if = { limit = { has_variable = ywc_lan_fund_pay_both_reserve_paid } set_variable = { name = ywc_lan_fund_pending_event value = 1026 } } else = { set_variable = { name = ywc_lan_fund_pending_event value = 1025 } } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "一次登记费按开启时年总收入÷52快照；第三期准备金。",
-                "en": "One-time filing fee snapshots opening annual gross income / 52; third reserve."
+                "zh": "第三笔一次性准备金按开启时年总收入÷52快照，以基础费率收取。",
+                "en": "Third one-time reserve charge uses the opening annual gross-income / 52 snapshot at the base rate."
               },
               "consequence_note": {
-                "zh": "生活水平与动荡同时改善，成本最高。",
-                "en": "Living standards and unrest both improve at the highest cost."
+                "zh": "登记已缴准备金路线；不会产生持续缴费。",
+                "en": "Records the funded route; no ongoing payment is created."
               },
               "trigger": "{ ywc_lan_fund_route_ready = yes ywc_lan_fund_can_pay = yes }"
             },
             {
               "key": "pay_wages_first",
               "label": {
-                "zh": "先发工钱，缴费延后",
-                "en": "Pay wages first and defer contributions"
+                "zh": "选择工钱优先安排",
+                "en": "Choose the wages-first plan"
               },
               "effect": "{ ywc_lan_fund_pay_wages = yes set_variable = { name = ywc_lan_fund_pending_event value = 1026 } }",
               "ai_chance": "{ base = 30 }",
               "cost_note": {
-                "zh": "不新增费用；覆盖缺口保留。",
-                "en": "No new fee; the coverage gap remains."
+                "zh": "不新增费用；本节点只登记工钱优先安排，不支付工钱。",
+                "en": "No new fee; records the wages-first plan without a wage payment here."
               },
               "consequence_note": {
-                "zh": "只能走窄结局。",
-                "en": "Only the narrow ending remains."
+                "zh": "该路线只能按窄目标结项。",
+                "en": "This route can conclude only on the narrow target."
               },
               "trigger": "{ ywc_lan_fund_route_ready = yes }"
             },
@@ -2560,8 +2560,8 @@
             }
           ],
           "purpose": {
-            "zh": "预算同时支撑工钱与缴费才推进。",
-            "en": "The budget must sustain both wages and contributions."
+            "en": "Records the third reserve charge or the wages-first plan; neither creates monthly contributions.",
+            "zh": "登记第三笔准备金收费或工钱优先安排；均不产生月缴款。"
           },
           "reads": [
             "net_fixed_income",
@@ -2579,8 +2579,8 @@
             "en": "Did Anyone Else Claim in Those Six Months"
           },
           "desc": {
-            "zh": "连续六个月观察生活水平与缴费。坏月清零，私人救济不能跳成互助基金结局。",
-            "en": "Six consecutive months of living standards and contributions. A bad month zeroes it, and private relief cannot jump to the mutual-fund ending."
+            "zh": "连续六个月观察路线要求的真实条件。坏月清零；私人救济不能跳成互助基金结局。",
+            "en": "Six consecutive months observe the actual conditions required by the route. A bad month clears the count; private relief cannot jump to the mutual-fund ending."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -2729,12 +2729,12 @@
         {
           "id": "ywc_lan.1027",
           "title": {
-            "zh": "赔付之后的责任归谁",
-            "en": "Who Holds the Liability After the Payout"
+            "zh": "结项时由谁承担责任",
+            "en": "Who Holds Liability at Settlement"
           },
           "desc": {
-            "zh": "结项读取法律、生活水平、真实缴费与已登记路线，按档结局。",
-            "en": "Settlement reads law, living standards, real contributions and the registered route, tiered."
+            "zh": "所选路线、已缴一次性费用与真实目标条件决定可登记的结局。本次结项不会自动支付索赔。",
+            "en": "The selected route, its one-time charges and the actual target conditions determine which ending can be recorded. This conclusion does not pay claims automatically."
           },
           "trigger": "{ c:LAN ?= this ywc_v03_can_deliver_major = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes }",
@@ -2748,12 +2748,12 @@
               "effect": "{ ywc_lan_close_fund_as_established = yes }",
               "ai_chance": "{ base = 35 }",
               "cost_note": {
-                "zh": "无结局奖金；月度缴费继续。",
-                "en": "No closing bonus; monthly contributions continue."
+                "zh": "不发结项奖金或新增收费；结项登记合格路线与结局。",
+                "en": "No closing bonus or new charge; settlement records the qualifying route and outcome."
               },
               "consequence_note": {
-                "zh": "只在真实高目标连续合格时成立。",
-                "en": "Only holds when the real high target held continuously."
+                "zh": "不发结项奖金或新增收费；结项登记合格路线与结局。",
+                "en": "No closing bonus or new charge; settlement records the qualifying route and outcome."
               },
               "trigger": "{ ywc_lan_fund_full_ready = yes NOT = { has_variable = ywc_lan_fund_notice_current } }"
             },
@@ -2831,8 +2831,8 @@
             }
           ],
           "purpose": {
-            "zh": "结局按真实条件分档。",
-            "en": "Endings are tiered by real conditions."
+            "en": "Ending tiers follow the selected route and its actual target conditions.",
+            "zh": "结局档次按所选路线及其真实目标条件判定。"
           },
           "reads": [
             "welfare_law",
