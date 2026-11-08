@@ -17,9 +17,10 @@ from tests.test_v03_oir_foundation import OIRWorld
 from tests.test_v03_dmg_foundation_lifecycle import DmgWorld
 from tests.test_v03_tib_school_ai import StrictSchoolWorld
 from shu_kor_strict_review_runtime import Strict, facts, field
+from test_v03_shu_merchant_obligations import reached_offer
 
 ROOT = Path(__file__).resolve().parents[1]
-COUNTS = dict(dmg=9, jhg=4, kor=6, shu=20, oir=9, nmg=6, tib=8, nqg=1)
+COUNTS = dict(dmg=9, jhg=4, kor=6, shu=24, oir=9, nmg=6, tib=8, nqg=1)
 
 
 def source(path):
@@ -72,7 +73,9 @@ class StateOwnerVocabularyTests(unittest.TestCase):
             with self.subTest(country=country):
                 self.assert_source_owners(trigger_source(country), count)
         self.assert_source_owners(source("yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt"), 1)
-        self.assert_source_owners(source("yongchang_world/events/ywc_v03_country_shu_events.txt"), 14)
+        # Merchant source ownership now lives in its named source triggers;
+        # the service funding helpers also add four real state predicates.
+        self.assert_source_owners(source("yongchang_world/events/ywc_v03_country_shu_events.txt"), 12)
         catalog = json.loads(source("data/content/v03/countries/shu.json"))
         def strings(value):
             if isinstance(value, str): yield value
@@ -81,7 +84,7 @@ class StateOwnerVocabularyTests(unittest.TestCase):
             elif isinstance(value, dict):
                 for child in value.values(): yield from strings(child)
         scripts = [text for text in strings(catalog) if "owner = ROOT" in text or "is_owned_by" in text]
-        self.assertEqual(sum(text.count("owner = ROOT") for text in scripts), 14)
+        self.assertEqual(sum(text.count("owner = ROOT") for text in scripts), 12)
         for text in scripts:
             self.assert_source_owners(text.strip()[1:-1], text.count("owner = ROOT"))
 
@@ -160,27 +163,41 @@ class StateOwnerVocabularyTests(unittest.TestCase):
         w = Strict("shu")
         option = next(v for k, _, v in w.event_defs["ywc_shu.1000"] if k == "option" and field(v, "name").endswith(".pilot_state_sichuan"))
         merchant = next(v for k, _, v in w.event_defs["ywc_shu.1005"] if k == "option" and any(n[0] == "if" and "ywc_shu_accept_merchant_advance" in str(n) for n in v))
-        branches = [n for n in merchant if n[0] == "if"]
-        self.assertEqual(len(branches), 2)
-        self.assertNotEqual(field(branches[0][2], "limit"), field(branches[1][2], "limit"))
+        source_names = ("ywc_shu_merchant_port_source", "ywc_shu_merchant_farm_source")
+        branches = [(key, field(body, "limit")) for key, _, body, _ in walk(merchant)
+                    if key in ("if", "else_if") and isinstance(body, list)
+                    and any(node[0] in source_names for node in (field(body, "limit") or []))]
+        self.assertEqual(branches, [("if", [(source_names[0], "=", "yes")]),
+                                    ("else_if", [(source_names[1], "=", "yes")])])
         self.assertEqual(len([n for n in walk(merchant) if n[0] == "ywc_shu_accept_merchant_advance"]), 2)
-        for owner in ("SHU", "KOR", None):
-            state = facts()
-            state["states"][0]["owner"] = owner
-            w.countries["SHU"] = state
-            w.treasury["SHU"] = 0
-            self.assertEqual(w.conditions(field(option, "trigger"), "SHU"), owner == "SHU")
-            self.assertEqual([w.conditions(field(n[2], "limit"), "SHU") for n in branches], [owner == "SHU", owner != "SHU"])
-            w.execute([n for n in merchant if n[0] not in ("name", "trigger", "ai_chance", "custom_tooltip")], "SHU")
-            self.assertEqual(state.get("ywc_shu_pending_event"), 1006)
-            self.assertEqual(state.get("ywc_shu_merchant_advance"), 1)
-            self.assertEqual(state.get("ywc_shu_merchant_advance_unpaid"), 1)
-            self.assertGreater(state.get("ywc_shu_merchant_principal", 0), 0)
-            self.assertEqual(w.treasury["SHU"], state["ywc_shu_merchant_principal"])
-            self.assertEqual(state.get("ywc_shu_merchant_repayment_months"), 0)
-            self.assertEqual(state.get("ywc_shu_merchant_consultation"), 1)
-            self.assertEqual(state.get("ywc_shu_local_prepayment_offer", 0), int(owner != "SHU"))
-            self.assertIsNone(w.state_scope)
+        for kind in ("port", "farm"):
+            for owner in ("SHU", "KOR", None):
+                with self.subTest(source=kind, owner=owner):
+                    w, _, _ = reached_offer(kind)
+                    state = w.countries["SHU"]
+                    state["states"][0].update(owner=owner, owned=owner == "SHU")
+                    before = w.treasury["SHU"]
+                    previous_queue = state.get("ywc_shu_pending_event")
+                    self.assertEqual(w.conditions(field(option, "trigger"), "SHU"), owner == "SHU")
+                    self.assertEqual([w.conditions(limit, "SHU") for _, limit in branches],
+                                     [owner == "SHU" and kind == "port", owner == "SHU" and kind == "farm"])
+                    w.execute([n for n in merchant if n[0] not in ("name", "trigger", "ai_chance", "custom_tooltip")], "SHU")
+                    if owner == "SHU":
+                        self.assertEqual(state.get("ywc_shu_pending_event"), 1006)
+                        self.assertEqual(state.get("ywc_shu_merchant_advance_unpaid"), 1)
+                        self.assertGreater(state.get("ywc_shu_merchant_principal", 0), 0)
+                        self.assertEqual(w.treasury["SHU"] - before, state["ywc_shu_merchant_principal"])
+                        self.assertEqual(state.get("ywc_shu_merchant_repayment_months"), 0)
+                        self.assertEqual(state.get("ywc_shu_merchant_consultation"), 1)
+                        self.assertEqual(state.get("ywc_shu_local_prepayment_offer", 0), int(kind == "farm"))
+                    else:
+                        # Losing the pilot itself invalidates the whole offer;
+                        # neither a loan nor a replacement queue may be made.
+                        self.assertEqual(state.get("ywc_shu_pending_event"), previous_queue)
+                        self.assertNotIn("ywc_shu_merchant_advance", state)
+                        self.assertNotIn("ywc_shu_merchant_advance_unpaid", state)
+                        self.assertEqual(w.treasury["SHU"], before)
+                    self.assertIsNone(w.state_scope)
 
     def test_documented_owner_rejects_unsupported_target_operator_block_and_scope(self):
         w = _initial_world()
