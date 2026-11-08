@@ -20,10 +20,10 @@ except ModuleNotFoundError:
 
 try:
     from tools.v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
-    from tools.v03_inline_delivery_adapter import validate_inline_catalog, render_inline_country_adapters
+    from tools.v03_inline_delivery_adapter import validate_inline_catalog, validate_nqg_native_helper_source, render_inline_country_adapters
 except ModuleNotFoundError:
     from v03_delivery_scheduler import validate_catalogue_adapters, render_country_adapters
-    from v03_inline_delivery_adapter import validate_inline_catalog, render_inline_country_adapters
+    from v03_inline_delivery_adapter import validate_inline_catalog, validate_nqg_native_helper_source, render_inline_country_adapters
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -288,13 +288,18 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
                 except ValueError as exc:
                     errors.append(f"{where}.delivery_adapter: {exc}")
         if any("inline_delivery_adapter" in arc for arc in catalog.get("arcs", [])):
-            if key not in {"country_dmg", "country_kor"}:
+            if key not in {"country_dmg", "country_kor", "country_nqg"}:
                 errors.append(f"{where}.inline_delivery_adapter is not registered for {key}")
             else:
                 try:
                     validate_inline_catalog(catalog)
+                    if key == "country_nqg":
+                        native_effects = _safe_relative(root, "yongchang_world/common/scripted_effects/ywc_v03_nqg_effects.txt")
+                        validate_nqg_native_helper_source(catalog, native_effects.read_text(encoding="utf-8"))
                 except ValueError as exc:
                     errors.append(f"{where}.inline_delivery_adapter: {exc}")
+                except OSError as exc:
+                    errors.append(f"{where}.inline_delivery_adapter: cannot read native NQG helper source: {exc}")
         layer = catalog.get("layer")
         if key != mapping_key:
             errors.append(f"{where}.key must match its catalog map key")
@@ -319,7 +324,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             if not isinstance(arc, dict):
                 errors.append(f"{arc_where} must be an object")
                 continue
-            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor"} else set())
+            arc_optional = {"owner"} | ({"delivery_adapter"} if key == "country_oir" else set()) | ({"inline_delivery_adapter"} if key in {"country_dmg", "country_kor", "country_nqg"} else set())
             _fields(arc, {"slug", "era", "participants", "depends_on", "journals", "events", "outcomes", "legacy_links"}, arc_where, errors, optional=arc_optional)
             owner = arc_owner(layer, arc, tags)
             if layer == "country":
@@ -541,7 +546,7 @@ def _outputs_for(key: str, *, adapter: bool = False) -> list[Path]:
         Path(f"localization/english/ywc_v03_{key}_l_english.yml"),
     ]
     if adapter:
-        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else None
+        country = "oir" if key == "country_oir" else "dmg" if key == "country_dmg" else "kor" if key == "country_kor" else "nqg" if key == "country_nqg" else None
         if not country: raise ValueError(f"no registered adapter output namespace for {key}")
         paths.extend((Path(f"common/scripted_effects/ywc_v03_delivery_{country}_effects.txt"),
                       Path(f"common/scripted_triggers/ywc_v03_delivery_{country}_triggers.txt")))
@@ -570,6 +575,15 @@ def _append_to_named_block(block: str, field: str, insertion: str) -> str:
                 if depth == 0:
                     return block[:i].rstrip() + " " + insertion + " " + block[i:]
     raise ValueError(f"unbalanced {field} block")
+
+
+def _append_or_add_named_block(block: str, field: str, insertion: str) -> str:
+    if re.search(rf"(?<![a-z0-9_]){re.escape(field)}\s*=\s*\{{", block):
+        return _append_to_named_block(block, field, insertion)
+    value = block.rstrip()
+    if not value.endswith("}"):
+        raise ValueError(f"cannot add {field} to an unbalanced source block")
+    return value[:-1].rstrip() + f" {field} = {{ {insertion} }} " + value[-1:] + ("\n" if block.endswith("\n") else "")
 
 
 def _quote(text: str) -> str:
@@ -673,7 +687,7 @@ def _render_journal_file(catalog: dict, adapter: dict | None = None) -> str:
                     script = re.sub(rf"\b{re.escape(old_dispatch)}\s*=\s*yes", f"{caller} = yes", script, count=1)
                 elif journal["id"] not in (adapter or {}).get("journal_scripts", {}):
                     raise ValueError(f"adapter cannot bind source journal for {journal['id']}")
-                script = _append_to_named_block(script, "immediate", f"set_variable = {{ name = {witness} value = 1 }}")
+                script = _append_or_add_named_block(script, "immediate", f"set_variable = {{ name = {witness} value = 1 }}")
                 if re.search(r"(?<![a-z0-9_])on_fail\s*=\s*\{", script):
                     script = _append_to_named_block(script, "on_fail", f"remove_variable = {witness}")
                 else:
@@ -745,7 +759,7 @@ def render_all(root: Path) -> dict[Path, str]:
                 rendered += ["# Generated OIR scheduler scripted effects.\n\n" + adapter["effects"],
                              "# Generated OIR scheduler scripted triggers.\n\n" + adapter["triggers"]]
             else:
-                country = "KOR" if key == "country_kor" else "DMG"
+                country = "KOR" if key == "country_kor" else "NQG" if key == "country_nqg" else "DMG"
                 rendered += [f"# Generated {country} inline delivery scheduler scripted effects.\n\n" + adapter["effects"],
                              f"# Generated {country} inline delivery scheduler scripted triggers.\n\n" + adapter["triggers"]]
         outputs.update(zip(paths, rendered))
