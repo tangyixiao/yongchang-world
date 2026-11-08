@@ -30,8 +30,8 @@ REVENUE_SLUG = "v03_nmg_autonomy_revenue"
 
 LAND_EVENTS = [f"ywc_nmg.{number}" for number in range(1000, 1008)]
 OFFICE_EVENTS = [f"ywc_nmg.{number}" for number in range(1010, 1016)]
-REVENUE_EVENTS = [f"ywc_nmg.{number}" for number in range(1020, 1032)]
-FOREIGN_EVENTS = {"ywc_nmg.1030", "ywc_nmg.1031"}
+REVENUE_EVENTS = [f"ywc_nmg.{number}" for number in range(1020, 1033)]
+PROTOCOL_EVENTS = {"ywc_nmg.1030", "ywc_nmg.1031", "ywc_nmg.1032"}
 
 LAND_JES = ["ywc_je_v03_nmg_land_arbitration", "ywc_je_v03_nmg_land_settlement"]
 OFFICE_JES = ["ywc_je_v03_nmg_bilingual_office"]
@@ -76,7 +76,9 @@ REQUIRED_EFFECTS = [
     "ywc_nmg_choose_office_local",
     "ywc_nmg_choose_office_single",
     "ywc_nmg_choose_revenue_fixed",
-    "ywc_nmg_choose_revenue_joint",
+    "ywc_nmg_jointproject_choose",
+    "ywc_nmg_jointproject_choose_mex",
+    "ywc_nmg_jointproject_choose_jhg",
     "ywc_nmg_choose_revenue_arrears",
     "ywc_nmg_close_land_as_established",
     "ywc_nmg_close_land_as_compromise",
@@ -114,7 +116,6 @@ REQUIRED_TRIGGERS = [
     "ywc_nmg_office_ig_support",
     "ywc_nmg_office_school_investment",
     "ywc_nmg_revenue_real_subject",
-    "ywc_nmg_revenue_overlord_present",
     "ywc_nmg_revenue_relations_ok",
     "ywc_nmg_revenue_defense_present",
     "ywc_nmg_revenue_tax_base",
@@ -132,7 +133,7 @@ ROUTE_CHOICES = {
     "ywc_nmg_choose_office_local": ("office", "2"),
     "ywc_nmg_choose_office_single": ("office", "3"),
     "ywc_nmg_choose_revenue_fixed": ("revenue", "1"),
-    "ywc_nmg_choose_revenue_joint": ("revenue", "2"),
+    "ywc_nmg_jointproject_choose": ("revenue", "2"),
     "ywc_nmg_choose_revenue_arrears": ("revenue", "3"),
 }
 
@@ -248,12 +249,12 @@ class NmgFoundationContractTest(unittest.TestCase):
         for arc, events, journals in (
             (self.land, 8, 2),
             (self.office, 6, 1),
-            (self.revenue, 12, 3),
+            (self.revenue, 13, 3),
         ):
             self.assertEqual(len(arc["events"]), events, arc["slug"])
             self.assertEqual(len(arc["journals"]), journals, arc["slug"])
         total = sum(len(arc["events"]) for arc in self.catalog["arcs"])
-        self.assertEqual(total, 26)
+        self.assertEqual(total, 27)
         self.assertEqual(sum(len(arc["journals"]) for arc in self.catalog["arcs"]), 6)
 
     def test_foundation_arcs_keep_the_locked_card_shape(self):
@@ -331,11 +332,15 @@ class NmgFoundationContractTest(unittest.TestCase):
     def test_every_foundation_event_is_gated_on_real_delivery_state(self):
         for arc in (self.land, self.office, self.revenue):
             for event in arc["events"]:
-                if event["id"] in FOREIGN_EVENTS:
+                if event["id"] in PROTOCOL_EVENTS:
                     if event["id"] == "ywc_nmg.1030":
                         self.assertIn("ywc_nmg_mexshare_offer_matches = yes", event["trigger"])
-                    else:
+                        self.assertIn("ywc_nmg_jointproject_offer_matches = yes", event["trigger"])
+                    elif event["id"] == "ywc_nmg.1031":
                         self.assertIn("ywc_nmg_mexshare_contract_generation", event["trigger"])
+                        self.assertIn("ywc_nmg_jointproject_contract_generation", event["trigger"])
+                    else:
+                        self.assertIn("ywc_nmg_partner_renewal_menu_current = yes", event["trigger"])
                     continue
                 self.assertIn("c:NMG ?= this", event["trigger"], event["id"])
                 self.assertIn("ywc_v03_can_deliver_major = yes", event["trigger"], event["id"])
@@ -435,8 +440,8 @@ class NmgFoundationContractTest(unittest.TestCase):
         self.assertIn("is_subject = yes", body)
         self.assertIn("is_subject_of = c:MEX", body)
         self.assertNotIn("has_variable", body)
-        overlord = _helper_body(self.triggers, "ywc_nmg_revenue_overlord_present")
-        self.assertIn("overlord ?= {", overlord)
+        overlord = _helper_body(self.triggers, "ywc_nmg_mexshare_link_intact")
+        self.assertIn("overlord ?= c:MEX", overlord)
         relations = _helper_body(self.triggers, "ywc_nmg_revenue_relations_ok")
         self.assertIn("relations:root", relations)
         self.assertIn("relations_threshold:", relations)
@@ -476,7 +481,7 @@ class NmgFoundationContractTest(unittest.TestCase):
             encoding="utf-8-sig"
         )
         rendered = re.findall(r"(?m)^ywc_nmg\.(\d{4}) = \{", events_text)
-        self.assertEqual(len(rendered), 26)
+        self.assertEqual(len(rendered), 27)
         self.assertEqual(
             sorted("ywc_nmg." + number for number in rendered),
             sorted(LAND_EVENTS + OFFICE_EVENTS + REVENUE_EVENTS),

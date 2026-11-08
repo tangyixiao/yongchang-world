@@ -1,5 +1,6 @@
 """Actual NMG partner responses and fiscal obligations, offline source model."""
 import copy
+import math
 import unittest
 from datetime import date
 from pathlib import Path
@@ -33,6 +34,11 @@ class NmgPartnerWorld(PartnerWorld):
     def _value(self, token, *, optional=False):
         if token == "relations_threshold:poor":
             return -50  # explicit bounded fixture for the engine-owned threshold
+        if isinstance(token, list) and any(key == "floor" for key, _, _ in token):
+            floors = [node for node in token if node[0] == "floor"]
+            if floors != [("floor", "=", "yes")] or token[-1] != floors[0]:
+                raise AssertionError(("unsupported floor value", token))
+            return math.floor(super()._value(token[:-1], optional=optional))
         return super()._value(token, optional=optional)
 
     def condition(self, node, tag):
@@ -83,9 +89,11 @@ def live_revenue_world(countries=None):
     return world, arc
 
 
-def run_live_month(world, arc, handled, select):
+def run_live_month(world, arc, handled, select, extra_monthlies=()):
     """Pulse the authored JE and deliver actual jobs, including foreign answers."""
     world.run_country_monthly("NMG")
+    for tag in extra_monthlies:
+        world.run_country_monthly(tag)
     world.pulse(arc)
     index = 0
     while index < len(world.jobs):
@@ -93,8 +101,12 @@ def run_live_month(world, arc, handled, select):
         if job.serial in handled or not world.display_job(job):
             continue
         handled.add(job.serial)
+        if field(world.event_defs[job.event_id], "hidden") == "yes":
+            continue
         choices = world.job_options(job)
         key = select(world, job, choices)
+        if key is None:  # Explicitly hold a displayed popup for stale-choice tests.
+            continue
         assert choices.get(key), (world.elapsed_months, job.event_id, key, choices)
         world.choose_job(job, key)
     world.refresh(arc)

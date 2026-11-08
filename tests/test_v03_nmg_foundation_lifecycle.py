@@ -40,7 +40,10 @@ class NmgWorld(PulseWorld):
     # recipients or incarnation-bound country scopes.  It must fail closed
     # at that boundary; test_v03_nmg_partner_response exercises the real
     # protocol with a multi-country interpreter and no fabricated acceptance.
-    FOREIGN_PROTOCOL_BOUNDARIES = {"ywc_nmg_mexshare_can_offer", "ywc_nmg_mexshare_agreement_current"}
+    FOREIGN_PROTOCOL_BOUNDARIES = {"ywc_nmg_mexshare_can_offer", "ywc_nmg_mexshare_agreement_current",
+                                   "ywc_nmg_jointproject_mex_eligible", "ywc_nmg_jointproject_jhg_eligible",
+                                   "ywc_nmg_jointproject_agreement_current", "ywc_nmg_partner_renewal_available",
+                                   "ywc_nmg_partner_renewal_menu_current"}
     SUPPORTED_CONDITION_PRIMITIVES = {
         "has_variable", "has_modifier", "exists", "always", "net_fixed_income",
         "bureaucracy", "gold_reserves", "yearly_gross_income", "scaled_debt",
@@ -567,14 +570,14 @@ class NmgLifecycleTest(unittest.TestCase):
              lambda v:v["fixture_buildings"].pop("building_government_administration"),
              lambda v:v["fixture_buildings"].update(building_government_administration=0.8),
              "ywc_nmg_office_fee_paid"),
-            (2,"revenue","ywc_nmg.1020","joint","ywc_nmg.1028","own_arrears",
+            (2,"revenue","ywc_nmg.1020","domestic","ywc_nmg.1028","own_arrears",
              lambda v:v["fixture_buildings"].pop("building_barrack"),
              lambda v:v["fixture_buildings"].update(building_barrack=0.8),
              "ywc_nmg_revenue_quota_paid"),
         )
         replay_choices={1001:"rule_register",1002:"half_survey",1003:"keep_old",1004:"keep_recording",1005:"old_assessment",
                         1011:"hire_thin",1012:"court_parish",1013:"borrow_staff",1014:"keep_route",
-                        1020:"joint",1021:"audit_strict",1022:"reopen",1023:"accept_floor",1024:"defer",
+                        1020:"domestic",1021:"audit_strict",1022:"reopen",1023:"local_plan",1024:"defer",
                         1025:"defer",1026:"defer"}
         for arc_index,lane,opening,first_choice,notice,ack,lose,restore,paid_var in cases:
             with self.subTest(lane=lane):
@@ -777,7 +780,7 @@ class NmgLifecycleTest(unittest.TestCase):
         arc = CATALOG["arcs"][2]
         order = [j["id"] for j in arc["journals"]]
         self.activate(world, order[0])
-        for choice_index, key in enumerate(("joint", "audit_strict", "reopen")):
+        for choice_index, key in enumerate(("domestic", "audit_strict", "reopen")):
             active = world.active_journal
             eid = self.pulse_until_event(world, active)
             self.assertEqual(eid, f"ywc_nmg.{1020 + choice_index}")
@@ -786,7 +789,7 @@ class NmgLifecycleTest(unittest.TestCase):
                 self.activate(world, order[len(world.completed_journals)])
         v = world.countries["NMG"]
         self.assertEqual(v.get("ywc_nmg_revenue_pending"), 1020)
-        self.assertEqual(v.get("ywc_nmg_revenue_route"), 2)
+        self.assertEqual(v.get("ywc_nmg_revenue_route"), 4)
         self.assertNotIn("ywc_nmg_revenue_stage2", v)
         self.assertEqual(v.get("ywc_nmg_revenue_quota_paid"), 1)
         paid_cash = v.get("gold_reserves")
@@ -916,7 +919,7 @@ class NmgLifecycleTest(unittest.TestCase):
             (1, 1, ["bilingual", "hire_full", "court_parish", "fund_schools", "keep_route", "wait_retry", "close_full"]),
             (1, 2, ["local", "hire_thin", "court_parish", "fund_schools", "switch_local", "wait_retry", "wait_retry", "close_full"]),
             (2, 4, ["domestic", "audit_strict", "close_account_domestic", "local_plan", "local_record", "retain_local_budget", "conclude", "wait_retry", "wait_retry", "settle_full"]),
-            (2, 2, ["joint", "audit_strict", "close_account_joint", "accept_floor", "escalate", "share_even", "conclude", "wait_retry", "wait_retry", "settle_full"]),
+            (2, 3, ["arrears", "audit_strict", "close_account_arrears", "accept_floor", "escalate", "share_even", "conclude", "defer", "own_arrears", "wait_retry", "wait_retry", "close_partial"]),
         )
         terminal = ("ywc_v03_nmg_v03_nmg_land_arbitration_settled",
                     "ywc_v03_nmg_v03_nmg_bilingual_office_settled",
@@ -934,7 +937,7 @@ class NmgLifecycleTest(unittest.TestCase):
                 self.assertEqual(world.active_journal, None)
                 expected_paid = {(0, 1): -2000, (0, 2): -2000,
                                  (1, 1): -2000, (1, 2): -1000,
-                                 (2, 4): -1000, (2, 2): -1000}[(arc, route)]
+                                 (2, 4): -1000, (2, 3): -1000}[(arc, route)]
                 self.assertEqual(world.treasury["NMG"], expected_paid)
                 self.assertEqual(v["gold_reserves"], 100000 + world.treasury["NMG"])
 
@@ -1018,15 +1021,15 @@ class NmgLifecycleTest(unittest.TestCase):
         self.assertEqual(v.get("ywc_v03_visible_task_count"), 3)
 
     def test_real_paid_revenue_route_withdraws_after_live_12_and_36_month_notices(self):
-        # Route 2 is admitted and paid through the actual opening and two real JE handoffs.
-        world = self.finish_path(2, 2, ["joint", "audit_strict", "close_account_joint",
-                                        "accept_floor", "escalate", "share_even", "conclude"])
+        # The domestic route is admitted and paid through the actual opening and two real JE handoffs.
+        world = self.finish_path(2, 4, ["domestic", "audit_strict", "close_account_domestic",
+                                        "local_plan", "local_record", "retain_local_budget", "conclude"])
         self.assertEqual(world.completed_journals, [
             "ywc_je_v03_nmg_revenue_opening", "ywc_je_v03_nmg_revenue_negotiation"])
         settlement = "ywc_je_v03_nmg_revenue_settlement"
         self.activate(world, settlement)
         v = world.countries["NMG"]
-        self.assertEqual(v.get("ywc_nmg_revenue_route"), 2)
+        self.assertEqual(v.get("ywc_nmg_revenue_route"), 4)
         self.assertEqual(v.get("ywc_nmg_revenue_quota_paid"), 1)
         self.assertEqual(world.treasury["NMG"], -1000)
         paid = world.treasury["NMG"]

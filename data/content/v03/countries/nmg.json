@@ -2202,8 +2202,8 @@
             "en": "The Bill from Mexico City"
           },
           "desc": {
-            "zh": "新明审议税务与港防账目：可询问墨西哥实际宗主国是否同意固定汇款，也可考虑现有共同项目账目、旧额欠账或纯本地方案。选择须支付一次立案费；已经签署的义务不会因换方案消失。",
-            "en": "Xinming reviews its fiscal and port accounts. It can ask its actual Mexican overlord to accept fixed remittances, consider the existing joint-project account or arrears, or choose a domestic plan. The chosen route pays one filing fee; changing plans does not erase signed obligations."
+            "zh": "新明审议税务与港防账目：固定分担须询问真实墨西哥宗主国；共同项目可明确选择墨西哥或靖海及分担比例。也可选择旧额欠账或纯本地方案。选择须支付一次立案费；已签义务不会因换方案消失。",
+            "en": "Xinming reviews its fiscal and port accounts. Fixed remittances require the actual Mexican overlord’s response; a joint project lets Xinming choose Mexico or Jinghai and the burden split. Arrears and domestic plans remain available. A route pays one filing fee; signed obligations survive a change of plan."
           },
           "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1020 } }",
@@ -2217,8 +2217,8 @@
               "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_choose_revenue_fixed = yes}",
               "ai_chance": "{ base = 45 }",
               "cost_note": {
-                "zh": "除一次立案费外，如墨西哥接受，按立案费的三十分之一每月汇款一次，共 60 个月；未付的到期款保留为欠款。",
-                "en": "In addition to the one-time filing fee, Mexican acceptance creates 60 monthly remittances, each one-thirtieth of the filing fee; missed due payments remain arrears."
+                "zh": "除一次立案费外，如墨西哥接受，60 个月内每月汇款一次；月额为立案费除以 30 后向下取整。未付到期款保留为欠款。",
+                "en": "In addition to the one-time filing fee, Mexican acceptance creates 60 monthly remittances. Each is the filing fee divided by 30 and rounded down to whole currency; missed payments remain arrears."
               },
               "consequence_note": {
                 "zh": "向实际墨西哥宗主国发出询问；已拒绝或过期且无旧欠款时，可不再交立案费重新询问。每月核验协议与汇款，合格时本地港务预算经办权提供 +5 行政力；变更属国关系立即移除，其他条件变化在下次月检处理。",
@@ -2229,20 +2229,20 @@
             {
               "key": "joint",
               "label": {
-                "zh": "提议共同项目",
-                "en": "Propose a joint project"
+                "zh": "邀请墨西哥均分项目费用",
+                "en": "Invite Mexico to an equal project"
               },
-              "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_choose_revenue_joint = yes}",
+              "trigger": "{ OR = { var:ywc_nmg_revenue_route ?= 0 var:ywc_nmg_revenue_route ?= 2 } ywc_nmg_jointproject_mex_eligible = yes OR = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_quota_affordable = yes } }",
+              "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_jointproject_choose_mex = yes }",
               "ai_chance": "{ base = 40 }",
               "cost_note": {
-                "zh": "支付一次立案费；这是国内共同项目账目提案，依据现有宗主关系核验，不代表宗主另行同意或转入资金。",
-                "en": "Pays one filing fee; this is a domestic joint-project accounting proposal checked against the existing overlord relationship, not new consent or an incoming transfer."
+                "zh": "支付一次立案费；若墨西哥接受，基础月额为立案费除以 60 后向下取整。60 个月内新明每月支付基础月额，对方每月支付基础月额。两方各自实际出资，拖欠保留。",
+                "en": "Pays one filing fee. If Mexico accepts, the base monthly amount is the filing fee divided by 60 and rounded down to whole currency. For 60 months Xinming pays the base monthly amount monthly and the partner pays the base amount; each pays its own expense and arrears remain due."
               },
               "consequence_note": {
-                "zh": "共同项目账目使官署行政力增加1点，持续十年；不转移港口、驻军或主权。",
-                "en": "Joint-project accounting adds 1 bureaucracy for ten years; it transfers no port, garrison, or sovereignty."
-              },
-              "trigger": "{ AND = { ywc_nmg_revenue_joint_ready = yes OR = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_quota_affordable = yes } } }"
+                "zh": "向实际墨西哥询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Mexican government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
             },
             {
               "key": "arrears",
@@ -2296,6 +2296,78 @@
               "consequence_note": {
                 "zh": "使用新明本地税基和港防设施，不要求外国答复；已有签署义务仍须履行。",
                 "en": "Uses Xinming’s own tax base and port or garrison without a foreign reply; existing signed obligations remain due."
+              }
+            },
+            {
+              "key": "joint_heavy",
+              "label": {
+                "zh": "邀请墨西哥，新明承担较重份额",
+                "en": "Invite Mexico with a heavier Xinming share"
+              },
+              "trigger": "{ OR = { var:ywc_nmg_revenue_route ?= 0 var:ywc_nmg_revenue_route ?= 2 } ywc_nmg_jointproject_mex_eligible = yes OR = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_quota_affordable = yes } }",
+              "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_jointproject_choose_mex_heavy = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "支付一次立案费；若墨西哥接受，基础月额为立案费除以 60 后向下取整。60 个月内新明每月支付两倍基础月额，对方每月支付基础月额。两方各自实际出资，拖欠保留。",
+                "en": "Pays one filing fee. If Mexico accepts, the base monthly amount is the filing fee divided by 60 and rounded down to whole currency. For 60 months Xinming pays twice the base monthly amount monthly and the partner pays the base amount; each pays its own expense and arrears remain due."
+              },
+              "consequence_note": {
+                "zh": "向实际墨西哥询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Mexican government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "joint_jhg",
+              "label": {
+                "zh": "邀请靖海均分项目费用",
+                "en": "Invite Jinghai to an equal project"
+              },
+              "trigger": "{ OR = { var:ywc_nmg_revenue_route ?= 0 var:ywc_nmg_revenue_route ?= 2 } ywc_nmg_jointproject_jhg_eligible = yes OR = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_quota_affordable = yes } }",
+              "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_jointproject_choose_jhg = yes }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "支付一次立案费；若靖海接受，基础月额为立案费除以 60 后向下取整。60 个月内新明每月支付基础月额，对方每月支付基础月额。两方各自实际出资，拖欠保留。",
+                "en": "Pays one filing fee. If Jinghai accepts, the base monthly amount is the filing fee divided by 60 and rounded down to whole currency. For 60 months Xinming pays the base monthly amount monthly and the partner pays the base amount; each pays its own expense and arrears remain due."
+              },
+              "consequence_note": {
+                "zh": "向实际靖海询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Jinghai government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "joint_jhg_heavy",
+              "label": {
+                "zh": "邀请靖海，新明承担较重份额",
+                "en": "Invite Jinghai with a heavier Xinming share"
+              },
+              "trigger": "{ OR = { var:ywc_nmg_revenue_route ?= 0 var:ywc_nmg_revenue_route ?= 2 } ywc_nmg_jointproject_jhg_eligible = yes OR = { has_variable = ywc_nmg_revenue_quota_paid ywc_nmg_revenue_quota_affordable = yes } }",
+              "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_jointproject_choose_jhg_heavy = yes }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "支付一次立案费；若靖海接受，基础月额为立案费除以 60 后向下取整。60 个月内新明每月支付两倍基础月额，对方每月支付基础月额。两方各自实际出资，拖欠保留。",
+                "en": "Pays one filing fee. If Jinghai accepts, the base monthly amount is the filing fee divided by 60 and rounded down to whole currency. For 60 months Xinming pays twice the base monthly amount monthly and the partner pays the base amount; each pays its own expense and arrears remain due."
+              },
+              "consequence_note": {
+                "zh": "向实际靖海询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Jinghai government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "resume_joint",
+              "label": {
+                "zh": "继续当前项目账目",
+                "en": "Continue the current project account"
+              },
+              "trigger": "{ var:ywc_nmg_revenue_route = 2 has_variable = ywc_nmg_revenue_quota_paid }",
+              "effect": "{ ywc_nmg_jointproject_resume = yes }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "不重复支付立案费。",
+                "en": "No second filing fee."
+              },
+              "consequence_note": {
+                "zh": "继续当前等待或已签项目；如对方拒绝，可选择伙伴与份额重新询问。",
+                "en": "Continue the pending or signed project; after refusal, choose a partner and share to ask again."
               }
             }
           ],
@@ -2403,8 +2475,8 @@
             "en": "Opening the Account: Quota and Project Accounts"
           },
           "desc": {
-            "zh": "账目进入下一阶段。固定分担须等待墨西哥实际同意且没有拖欠；也可以改用纯本地预算方案。切换不退还已付费用，也不会解除已签汇款。",
-            "en": "The account moves toward negotiation. Fixed remittances require an actual Mexican acceptance and no arrears. Xinming may instead use a domestic budget plan; changing plans refunds no fee and does not cancel a signed remittance."
+            "zh": "账目进入下一阶段。固定分担和共同项目必须分别获得实际伙伴同意，并按各自条款付款；也可以改用纯本地预算。切换不退还费用，也不会解除已签义务。",
+            "en": "The account moves toward negotiation. Fixed remittances and joint projects each require an actual partner acceptance and payments under the agreed terms. Xinming may switch to a domestic budget without a fee refund or cancelling signed obligations."
           },
           "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1022 } }",
@@ -2433,15 +2505,15 @@
                 "zh": "开账完毕（联合项目）",
                 "en": "Close the account (joint project)"
               },
-              "effect": "{ if = { limit = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes } remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_negotiation = yes } else = { set_variable = { name = ywc_nmg_revenue_pending value = 1022 } } }",
+              "effect": "{ if = { limit = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes } remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_negotiation = yes } else = { if = { limit = { var:ywc_nmg_revenue_route = 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1022 } } } }",
               "ai_chance": "{ base = 50 }",
               "cost_note": {
                 "zh": "不再另收。",
                 "en": "No further charge."
               },
               "consequence_note": {
-                "zh": "按既有宗主关系条件进入谈判记录；此选择不会取得新的宗主答复或同意。",
-                "en": "Records entry into negotiation under the existing overlord relationship; this choice obtains no new overlord reply or consent."
+                "zh": "只有所选伙伴实际同意、双方本月均已出资且没有拖欠时才能继续。",
+                "en": "Continue only after the selected partner has actually accepted and both sides are current on their monthly contributions."
               },
               "trigger": "{ var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes }"
             },
@@ -2616,6 +2688,42 @@
                 "zh": "如之前尚未核账，将先按现有税基核账；不表示外国同意。",
                 "en": "If no audit was recorded earlier, audit the existing local tax base first; this does not imply foreign consent."
               }
+            },
+            {
+              "key": "project_plan",
+              "label": {
+                "zh": "按已签项目安排议事",
+                "en": "Review the signed project"
+              },
+              "trigger": "{ var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes }",
+              "effect": "{ if = { limit = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes } remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_accept value = 1 } set_variable = { name = ywc_nmg_revenue_pending value = 1024 } } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费，已签项目月额仍须支付。",
+                "en": "No extra fee; signed project expenses remain due."
+              },
+              "consequence_note": {
+                "zh": "核对所选伙伴的已签分担，不假称墨西哥额外答复。",
+                "en": "Review the chosen partner’s signed split without implying an extra Mexican reply."
+              }
+            },
+            {
+              "key": "renew_agreement",
+              "label": {
+                "zh": "重新询问协议伙伴",
+                "en": "Ask a partner about a new agreement"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_available = yes }",
+              "effect": "{ ywc_nmg_partner_open_renewal = yes  }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不再交立案费；旧欠款须结清后才能发起。",
+                "en": "No second filing fee; old arrears must be settled before a new offer."
+              },
+              "consequence_note": {
+                "zh": "在当前阶段打开询问菜单；旧协议不会被新条款改写，原有排队事项保留。",
+                "en": "Open the inquiry menu in the current stage; old agreements are not overwritten and the existing queue is preserved."
+              }
             }
           ],
           "purpose": {
@@ -2716,6 +2824,42 @@
                 "zh": "继续核对港防账目。",
                 "en": "Continue to the port and garrison accounts."
               }
+            },
+            {
+              "key": "project_record",
+              "label": {
+                "zh": "记录共同项目条款",
+                "en": "Record the joint-project terms"
+              },
+              "trigger": "{ var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes }",
+              "effect": "{ if = { limit = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes } remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_pending value = 1025 } } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "不另收费，已签项目月额仍须支付。",
+                "en": "No extra fee; signed project expenses remain due."
+              },
+              "consequence_note": {
+                "zh": "记录现有协议，不改变外国关系。",
+                "en": "Record the existing agreement without changing foreign relations."
+              }
+            },
+            {
+              "key": "renew_agreement",
+              "label": {
+                "zh": "重新询问协议伙伴",
+                "en": "Ask a partner about a new agreement"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_available = yes }",
+              "effect": "{ ywc_nmg_partner_open_renewal = yes  }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不再交立案费；旧欠款须结清后才能发起。",
+                "en": "No second filing fee; old arrears must be settled before a new offer."
+              },
+              "consequence_note": {
+                "zh": "在当前阶段打开询问菜单；旧协议不会被新条款改写，原有排队事项保留。",
+                "en": "Open the inquiry menu in the current stage; old agreements are not overwritten and the existing queue is preserved."
+              }
             }
           ],
           "purpose": {
@@ -2737,8 +2881,8 @@
             "en": "Port and Garrison Accounts"
           },
           "desc": {
-            "zh": "核对港口和驻军账目。固定分担路线可支付额外本地整备费；本地预算可保留本地账目。汇款金额以已经签署的条款为准，本步骤不能单方面改动。",
-            "en": "Review the port and garrison accounts. The fixed-share route may pay an additional domestic preparation fee; the domestic plan retains its own budget. Signed remittance amounts remain the agreed amounts and cannot be changed here."
+            "zh": "核对港口和驻军账目。共同项目沿用对方实际接受的分担；固定分担路线可支付额外本地整备费；本地预算保留本地账目。此处不能单方面改动已签金额。",
+            "en": "Review the port and garrison accounts. A joint project keeps its accepted split; the fixed-share route may pay an additional local preparation fee, and a domestic plan retains its own budget. Signed amounts cannot be changed here."
           },
           "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1025 } }",
@@ -2746,20 +2890,20 @@
             {
               "key": "share_even",
               "label": {
-                "zh": "对半分摊",
-                "en": "Split it evenly"
+                "zh": "确认当前项目或旧额账目",
+                "en": "Confirm the current project or arrears account"
               },
-              "effect": "{ if = { limit = { OR = { var:ywc_nmg_revenue_route = 2 var:ywc_nmg_revenue_route = 3 } ywc_nmg_revenue_defense_present = yes }  remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_share value = 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 } } }",
+              "effect": "{ if = { limit = { OR = { AND = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes } AND = { var:ywc_nmg_revenue_route = 3 ywc_nmg_revenue_defense_present = yes } } } remove_variable = ywc_nmg_revenue_blocked_defer set_variable = { name = ywc_nmg_revenue_share value = 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 } } }",
               "ai_chance": "{ base = 50 }",
               "cost_note": {
-                "zh": "不扣款；只记录新明国内分摊值2。",
-                "en": "No payment; records a domestic Xinming share value of 2."
+                "zh": "不另收费；项目双方继续按已签月额各自支付。",
+                "en": "No extra charge; both project participants continue paying their signed monthly expenses."
               },
               "consequence_note": {
-                "zh": "只调整国内账目，不转移资金或分割决策权。",
-                "en": "Changes domestic accounting only; it transfers no funds or decision-making authority."
+                "zh": "确认既有项目条款或旧额记录，不单方面修改已签分担。",
+                "en": "Confirm the signed project terms or arrears record; this does not change the agreed split."
               },
-              "trigger": "{ OR = { var:ywc_nmg_revenue_route = 2 var:ywc_nmg_revenue_route = 3 } ywc_nmg_revenue_defense_present = yes }"
+              "trigger": "{ OR = { AND = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes } AND = { var:ywc_nmg_revenue_route = 3 ywc_nmg_revenue_defense_present = yes } } }"
             },
             {
               "key": "carry_heavy",
@@ -2814,6 +2958,24 @@
                 "zh": "先记录本地预算；结案仍要求实际税基与港口或兵营。此记录不产生外国出资或新权利。",
                 "en": "Record the budget now; settlement still requires the real tax base and a port or garrison. This creates no foreign contribution or new right."
               }
+            },
+            {
+              "key": "renew_agreement",
+              "label": {
+                "zh": "重新询问协议伙伴",
+                "en": "Ask a partner about a new agreement"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_available = yes }",
+              "effect": "{ ywc_nmg_partner_open_renewal = yes  }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不再交立案费；旧欠款须结清后才能发起。",
+                "en": "No second filing fee; old arrears must be settled before a new offer."
+              },
+              "consequence_note": {
+                "zh": "在当前阶段打开询问菜单；旧协议不会被新条款改写，原有排队事项保留。",
+                "en": "Open the inquiry menu in the current stage; old agreements are not overwritten and the existing queue is preserved."
+              }
             }
           ],
           "purpose": {
@@ -2835,8 +2997,8 @@
             "en": "Negotiation Concluded"
           },
           "desc": {
-            "zh": "固定汇款以实际签署的金额和期限执行；本地预算不产生外国出资。此处推进最终审议，不结清或免除任何欠款。",
-            "en": "Fixed remittances follow their signed amount and term; the domestic budget creates no foreign contribution. This choice advances the review and neither pays nor forgives arrears."
+            "zh": "固定汇款与共同项目均按实际签署金额和期限执行；本地预算不产生外国出资。此处推进最终审议，不结清或免除欠款。",
+            "en": "Fixed remittances and joint projects follow their signed amounts and terms; a domestic budget creates no foreign contribution. This advances the review and neither pays nor forgives arrears."
           },
           "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1026 } }",
@@ -2847,7 +3009,7 @@
                 "zh": "定稿，转入结算",
                 "en": "Conclude and move to settlement"
               },
-              "effect": "{ remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_settlement = yes}",
+              "effect": "{ if = { limit = { OR = { NOT = { var:ywc_nmg_revenue_route ?= 2 } ywc_nmg_revenue_joint_ready = yes } } remove_variable = ywc_nmg_revenue_blocked_defer ywc_nmg_revenue_open_settlement = yes } else = { if = { limit = { var:ywc_nmg_revenue_route ?= 2 } set_variable = { name = ywc_nmg_revenue_pending value = 1026 } } } }",
               "ai_chance": "{ base = 60 }",
               "cost_note": {
                 "zh": "不再另收。",
@@ -2857,7 +3019,7 @@
                 "zh": "进入结算阶段，第二阶段日志完成。",
                 "en": "Enters settlement; the second journal entry completes."
               },
-              "trigger": "{ always = yes }"
+              "trigger": "{ OR = { NOT = { var:ywc_nmg_revenue_route ?= 2 } ywc_nmg_revenue_joint_ready = yes } }"
             },
             {
               "key": "walk_out",
@@ -2894,6 +3056,24 @@
                 "en": "The negotiation record remains open; this choice adds no interest."
               },
               "trigger": "{ always = yes }"
+            },
+            {
+              "key": "renew_agreement",
+              "label": {
+                "zh": "重新询问协议伙伴",
+                "en": "Ask a partner about a new agreement"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_available = yes }",
+              "effect": "{ ywc_nmg_partner_open_renewal = yes  }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不再交立案费；旧欠款须结清后才能发起。",
+                "en": "No second filing fee; old arrears must be settled before a new offer."
+              },
+              "consequence_note": {
+                "zh": "在当前阶段打开询问菜单；旧协议不会被新条款改写，原有排队事项保留。",
+                "en": "Open the inquiry menu in the current stage; old agreements are not overwritten and the existing queue is preserved."
+              }
             }
           ],
           "purpose": {
@@ -2916,8 +3096,8 @@
             "en": "Settlement Day"
           },
           "desc": {
-            "zh": "最终审议核对预算与港防记录。固定分担须保持真实协议有效且汇款无拖欠；本地方案使用本国账目。已签义务不会因结案或换方案消失。",
-            "en": "The final review checks the budget and port or garrison accounts. Fixed-share settlement requires a current agreement with no arrears; the domestic plan uses local accounts. Signed obligations survive settlement and changes of plan."
+            "zh": "最终审议核对预算与港防记录。固定分担须保持协议有效且汇款无拖欠；共同项目须双方按约出资；本地方案使用本国账目。已签义务不会因结案或换方案消失。",
+            "en": "The final review checks budget and port or garrison accounts. Fixed remittances require a current agreement with no arrears; a joint project requires both parties to pay their agreed expenses. Signed obligations survive settlement and changes of plan."
           },
           "trigger": "{ c:NMG ?= this ywc_v03_can_deliver_major = yes ywc_nmg_revenue_unsettled = yes }",
           "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_nmg_revenue_last_event value = 1027 } }",
@@ -3028,6 +3208,24 @@
               "consequence_note": {
                 "zh": "核对现有本地税基，并从新的六个月观察开始。",
                 "en": "Audit the existing local tax base and begin a fresh six-month review."
+              }
+            },
+            {
+              "key": "renew_agreement",
+              "label": {
+                "zh": "重新询问协议伙伴",
+                "en": "Ask a partner about a new agreement"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_available = yes }",
+              "effect": "{ ywc_nmg_partner_open_renewal = yes  }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不再交立案费；旧欠款须结清后才能发起。",
+                "en": "No second filing fee; old arrears must be settled before a new offer."
+              },
+              "consequence_note": {
+                "zh": "在当前阶段打开询问菜单；旧协议不会被新条款改写，原有排队事项保留。",
+                "en": "Open the inquiry menu in the current stage; old agreements are not overwritten and the existing queue is preserved."
               }
             }
           ],
@@ -3247,6 +3445,24 @@
                 "zh": "转入旧额有限方案并开始新的六个月观察；观察成熟后再次确认才能结案。",
                 "en": "Select the limited arrears plan and begin a fresh six-month observation; after it matures, confirm to close."
               }
+            },
+            {
+              "key": "renew_agreement",
+              "label": {
+                "zh": "重新询问协议伙伴",
+                "en": "Ask a partner about a new agreement"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_available = yes }",
+              "effect": "{ ywc_nmg_partner_open_renewal = yes if = { limit = { has_variable = ywc_nmg_revenue_notice_response_context has_variable = ywc_nmg_revenue_notice_return_event NOT = { has_variable = ywc_nmg_revenue_pending } NOT = { has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_settled } NOT = { has_variable = ywc_nmg_revenue_withdrawn } } set_variable = { name = ywc_nmg_revenue_pending value = var:ywc_nmg_revenue_notice_return_event } } remove_variable = ywc_nmg_revenue_notice_response_context remove_variable = ywc_nmg_revenue_notice_return_event  }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "不再交立案费；旧欠款须结清后才能发起。",
+                "en": "No second filing fee; old arrears must be settled before a new offer."
+              },
+              "consequence_note": {
+                "zh": "在当前阶段打开询问菜单；旧协议不会被新条款改写，原有排队事项保留。",
+                "en": "Open the inquiry menu in the current stage; old agreements are not overwritten and the existing queue is preserved."
+              }
             }
           ],
           "purpose": {
@@ -3268,31 +3484,31 @@
         {
           "id": "ywc_nmg.1030",
           "title": {
-            "zh": "墨城对汇缴与港务的回函",
-            "en": "Mexico Answers the Remittance Proposal"
+            "zh": "对新明协议提案的答复",
+            "en": "Answer New Ming’s Agreement Proposal"
           },
           "desc": {
-            "zh": "新明提出为期 [SCOPE.GetValue('ywc_nmg_mexshare_request_term')|0v] 个月的协议，每月汇款 @money![SCOPE.GetValue('ywc_nmg_mexshare_request_monthly')|0v]。每月核验协议和欠款，符合条件时本地港务预算经办权提供 +5 行政力；属国关系变更时立即移除，其他变化在下次月检处理。协议不改变属国法或免除已有付款。",
-            "en": "New Ming proposes a [SCOPE.GetValue('ywc_nmg_mexshare_request_term')|0v]-month agreement with a monthly remittance of @money![SCOPE.GetValue('ywc_nmg_mexshare_request_monthly')|0v]. A monthly check grants +5 bureaucracy for local port-budget administration while eligible; subject changes remove it immediately, other changes at the next check. Existing subject laws and payments remain."
+            "zh": "新明提出一项有明确期限、金额和用途的协议。可用答复列出了本次实际收到的条款；接受后双方须依约履行。",
+            "en": "New Ming has proposed an agreement with a defined term, amount and purpose. The available response lists the actual captured terms; acceptance binds the parties to them."
           },
-          "trigger": "{ ywc_nmg_mexshare_offer_matches = yes }",
+          "trigger": "{ OR = { ywc_nmg_mexshare_offer_matches = yes ywc_nmg_jointproject_offer_matches = yes } }",
           "immediate": "{ }",
           "options": [
             {
               "key": "accept",
               "label": {
-                "zh": "接受固定汇缴与本地预算经办权",
-                "en": "Accept the fixed remittance and local budget right"
+                "zh": "接受固定汇款协议",
+                "en": "Accept the fixed-remittance agreement"
               },
               "effect": "{ ywc_nmg_mexshare_authorize_accept = yes }",
               "ai_chance": "{ base = 50 modifier = { trigger = { relations:scope:ywc_nmg_mexshare_requester >= 50 } add = 20 } modifier = { trigger = { net_fixed_income < 0 } add = -20 } }",
               "cost_note": {
-                "zh": "不直接扣除墨西哥国库；新明按期汇款，未付金额保留。",
-                "en": "No immediate Mexican treasury debit; New Ming remits monthly, and missed payments remain due."
+                "zh": "新明每月向墨西哥汇款 @money![SCOPE.GetValue('ywc_nmg_mexshare_request_monthly')|0v]，共 [SCOPE.GetValue('ywc_nmg_mexshare_request_term')|0v] 个月；欠款保留。",
+                "en": "New Ming remits @money![SCOPE.GetValue('ywc_nmg_mexshare_request_monthly')|0v] monthly to Mexico for [SCOPE.GetValue('ywc_nmg_mexshare_request_term')|0v] months; arrears remain due."
               },
               "consequence_note": {
-                "zh": "签署捕获的金额、期限和本地预算经办权，不改附属关系。",
-                "en": "Signs the captured amount, term and local budget right without changing subject status."
+                "zh": "每月核验合格时新明获得 +5 行政力；变更属国关系立即移除，其他变化在下次月检处理。不改变属国法。",
+                "en": "Monthly eligibility checks grant New Ming +5 bureaucracy; subject changes remove it immediately and other changes are checked next month. Subject law is unchanged."
               },
               "trigger": "{ ywc_nmg_mexshare_authorizable = yes }"
             },
@@ -3302,17 +3518,17 @@
                 "zh": "拒绝该分担方案",
                 "en": "Refuse the proposed share"
               },
-              "effect": "{ ywc_nmg_mexshare_refuse = yes }",
+              "effect": "{ if = { limit = { ywc_nmg_mexshare_authorizable = yes } ywc_nmg_mexshare_refuse = yes } if = { limit = { ywc_nmg_jointproject_authorizable = yes } ywc_nmg_jointproject_refuse = yes } }",
               "ai_chance": "{ base = 30 modifier = { trigger = { net_fixed_income < 0 } add = 20 } }",
               "cost_note": {
                 "zh": "不产生新的汇款或费用。",
                 "en": "No new remittance or cost is created."
               },
               "consequence_note": {
-                "zh": "新明可等待或选择本国方案，已付立案费不退。",
-                "en": "New Ming may wait or choose a domestic plan; its filing fee remains paid."
+                "zh": "新明可等待、重新询问或改用本地方案；已付立案费保留。",
+                "en": "New Ming may wait, ask again, or choose a domestic plan; its filing fee remains paid."
               },
-              "trigger": "{ ywc_nmg_mexshare_authorizable = yes }"
+              "trigger": "{ OR = { ywc_nmg_mexshare_authorizable = yes ywc_nmg_jointproject_authorizable = yes } }"
             },
             {
               "key": "stale_dismiss",
@@ -3331,40 +3547,57 @@
                 "en": "An old answer cannot change a later agreement."
               },
               "trigger": "{ always = yes }"
+            },
+            {
+              "key": "accept_joint",
+              "label": {
+                "zh": "接受共同项目分担",
+                "en": "Accept the joint-project split"
+              },
+              "trigger": "{ ywc_nmg_jointproject_authorizable = yes }",
+              "effect": "{ ywc_nmg_jointproject_authorize_accept = yes }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "未来 [SCOPE.GetValue('ywc_nmg_jointproject_request_term')|0v] 个月，新明每月出资 @money![SCOPE.GetValue('ywc_nmg_jointproject_request_own')|0v]，本国每月出资 @money![SCOPE.GetValue('ywc_nmg_jointproject_request_partner_amount')|0v]；双方各自付款并保留欠款。",
+                "en": "For [SCOPE.GetValue('ywc_nmg_jointproject_request_term')|0v] months New Ming pays @money![SCOPE.GetValue('ywc_nmg_jointproject_request_own')|0v] monthly and this country pays @money![SCOPE.GetValue('ywc_nmg_jointproject_request_partner_amount')|0v] monthly; each pays its own expense and arrears remain due."
+              },
+              "consequence_note": {
+                "zh": "项目仅涵盖港防行政账目；双方月额结清后新明获得 +1 行政力，不自动建造或调遣军队。",
+                "en": "The project covers port-and-garrison administrative accounts; New Ming gains +1 bureaucracy when both monthly shares are current. No building or force is created."
+              }
             }
           ],
           "purpose": {
-            "zh": "由实际墨西哥宗主独立答复捕获的汇款与预算经办权。",
-            "en": "The actual Mexican overlord independently answers the captured remittance and budget-right terms."
+            "zh": "实际伙伴分别答复固定汇款或共同项目的捕获条款。",
+            "en": "The actual partner independently answers the captured fixed-remittance or joint-project terms."
           },
           "reads": [
-            "saved requester",
-            "saved Mexican partner",
+            "saved requester and partner",
             "generation and serial",
-            "captured amount, term and right"
+            "captured amounts, term and right or project scope"
           ],
           "writes": [
-            "Mexican answer",
-            "signed remittance agreement"
+            "partner answer",
+            "signed remittance or joint-project ledger"
           ]
         },
         {
           "id": "ywc_nmg.1031",
           "hidden": true,
           "title": {
-            "zh": "固定分担期限届满",
-            "en": "Fixed-Share Term Ends"
+            "zh": "税务或项目协议到期",
+            "en": "Fiscal or Project Agreement Ends"
           },
           "desc": {
-            "zh": "仅截止捕获代际的协议，已付记录与拖欠保留。",
+            "zh": "仅结束捕获的对应协议轮次；已付记录与欠款保留。",
             "en": "Ends only the captured agreement generation; paid history and arrears remain."
           },
-          "trigger": "{ c:NMG ?= this exists = scope:ywc_nmg_mexshare_end_owner scope:ywc_nmg_mexshare_end_owner ?= this has_variable = ywc_nmg_mexshare_contract_generation var:ywc_nmg_mexshare_contract_generation ?= scope:ywc_nmg_mexshare_end_generation }",
-          "immediate": "{ ywc_nmg_mexshare_end_agreement = yes }",
+          "trigger": "{ c:NMG ?= this OR = { AND = { exists = scope:ywc_nmg_mexshare_end_owner scope:ywc_nmg_mexshare_end_owner ?= this has_variable = ywc_nmg_mexshare_contract_generation var:ywc_nmg_mexshare_contract_generation ?= scope:ywc_nmg_mexshare_end_generation } AND = { exists = scope:ywc_nmg_jointproject_end_owner scope:ywc_nmg_jointproject_end_owner ?= this has_variable = ywc_nmg_jointproject_contract_generation var:ywc_nmg_jointproject_contract_generation ?= scope:ywc_nmg_jointproject_end_generation } } }",
+          "immediate": "{ ywc_nmg_mexshare_end_agreement = yes ywc_nmg_jointproject_end_agreement = yes }",
           "options": [],
           "purpose": {
-            "zh": "按准确代际结束固定分担，不免除旧欠款。",
-            "en": "End the exact fixed-share generation without forgiving arrears."
+            "zh": "准确结束对应税务或项目协议，不免除欠款。",
+            "en": "End the exact remittance or project generation without forgiving arrears."
           },
           "reads": [
             "saved owner",
@@ -3372,6 +3605,142 @@
           ],
           "writes": [
             "ended generation"
+          ]
+        },
+        {
+          "id": "ywc_nmg.1032",
+          "title": {
+            "zh": "重新选择协议条款",
+            "en": "Choose a New Agreement"
+          },
+          "desc": {
+            "zh": "当前没有可继续履行的旧协议，且旧欠款已结清。选择伙伴和明确分担，再由实际对方独立答复；也可不发出询问。",
+            "en": "No previous agreement can currently continue, and old arrears are settled. Choose the partner and burden split for a new independent response, or send no inquiry."
+          },
+          "trigger": "{ ywc_nmg_partner_renewal_menu_current = yes }",
+          "immediate": "{ }",
+          "options": [
+            {
+              "key": "fixed",
+              "label": {
+                "zh": "向墨西哥重提固定汇款",
+                "en": "Reoffer fixed remittances to Mexico"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 1 ywc_nmg_mexshare_can_offer = yes }",
+              "effect": "{ ywc_nmg_partner_renew_fixed = yes }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不再交立案费；提案月额为原立案费除以 30 向下取整，期限 60 个月。",
+                "en": "No new filing fee. The proposed monthly amount is the original filing fee divided by 30 and rounded down, for 60 months."
+              },
+              "consequence_note": {
+                "zh": "墨西哥收到新一轮独立询问；旧答复和旧到期事件不能签署或结束新协议。",
+                "en": "Mexico receives a new independent inquiry; old answers and old endpoint events cannot sign or end the new agreement."
+              }
+            },
+            {
+              "key": "joint",
+              "label": {
+                "zh": "邀请墨西哥均分项目费用",
+                "en": "Invite Mexico to an equal project"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_mex_eligible = yes }",
+              "effect": "{ if = { limit = { ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_mex_eligible = yes } ywc_nmg_jointproject_choose_mex = yes ywc_nmg_partner_bump_renewal_serial = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不再交立案费。基础月额为原立案费除以 60 向下取整；双方每月各付基础月额，共 60 个月。",
+                "en": "No new filing fee. The base monthly amount is the original filing fee divided by 60 and rounded down; each pays it monthly, for 60 months."
+              },
+              "consequence_note": {
+                "zh": "向实际墨西哥询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Mexican government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "joint_heavy",
+              "label": {
+                "zh": "邀请墨西哥，新明承担较重份额",
+                "en": "Invite Mexico with a heavier Xinming share"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_mex_eligible = yes }",
+              "effect": "{ if = { limit = { ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_mex_eligible = yes } ywc_nmg_jointproject_choose_mex_heavy = yes ywc_nmg_partner_bump_renewal_serial = yes } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再交立案费。基础月额为原立案费除以 60 向下取整；双方每月各付基础月额，新明改付两倍，共 60 个月。",
+                "en": "No new filing fee. The base monthly amount is the original filing fee divided by 60 and rounded down; each pays it monthly, with Xinming paying twice that amount, for 60 months."
+              },
+              "consequence_note": {
+                "zh": "向实际墨西哥询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Mexican government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "joint_jhg",
+              "label": {
+                "zh": "邀请靖海均分项目费用",
+                "en": "Invite Jinghai to an equal project"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_jhg_eligible = yes }",
+              "effect": "{ if = { limit = { ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_jhg_eligible = yes } ywc_nmg_jointproject_choose_jhg = yes ywc_nmg_partner_bump_renewal_serial = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "不再交立案费。基础月额为原立案费除以 60 向下取整；双方每月各付基础月额，共 60 个月。",
+                "en": "No new filing fee. The base monthly amount is the original filing fee divided by 60 and rounded down; each pays it monthly, for 60 months."
+              },
+              "consequence_note": {
+                "zh": "向实际靖海询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Jinghai government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "joint_jhg_heavy",
+              "label": {
+                "zh": "邀请靖海，新明承担较重份额",
+                "en": "Invite Jinghai with a heavier Xinming share"
+              },
+              "trigger": "{ ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_jhg_eligible = yes }",
+              "effect": "{ if = { limit = { ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 2 ywc_nmg_jointproject_jhg_eligible = yes } ywc_nmg_jointproject_choose_jhg_heavy = yes ywc_nmg_partner_bump_renewal_serial = yes } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "不再交立案费。基础月额为原立案费除以 60 向下取整；双方每月各付基础月额，新明改付两倍，共 60 个月。",
+                "en": "No new filing fee. The base monthly amount is the original filing fee divided by 60 and rounded down; each pays it monthly, with Xinming paying twice that amount, for 60 months."
+              },
+              "consequence_note": {
+                "zh": "向实际靖海询问港防行政账目项目；每月核验双方出资，均按时付清时新明获得 +1 行政力。不会自动兴建建筑或调遣军队。",
+                "en": "Ask the actual Jinghai government about a port-and-garrison administrative accounting project. Monthly checks grant Xinming +1 bureaucracy only when both sides are current; no building or force is created."
+              }
+            },
+            {
+              "key": "cancel",
+              "label": {
+                "zh": "暂不发出询问",
+                "en": "Do not send an inquiry"
+              },
+              "trigger": "{ always = yes }",
+              "effect": "{ if = { limit = { ywc_nmg_partner_renewal_menu_current = yes } ywc_nmg_partner_bump_renewal_serial = yes } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不收费。",
+                "en": "No charge."
+              },
+              "consequence_note": {
+                "zh": "保留当前阶段的普通排队事项。",
+                "en": "Preserve the current stage’s ordinary queue."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "在仍活跃的日志阶段选择新询问，同时保留普通队列。",
+            "en": "Choose a new inquiry in the active journal stage while preserving the ordinary queue."
+          },
+          "reads": [
+            "current route",
+            "paid filing fee",
+            "settled old ledgers",
+            "renewal serial and owner"
+          ],
+          "writes": [
+            "new inquiry or serial invalidation"
           ]
         }
       ],

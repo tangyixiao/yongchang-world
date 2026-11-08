@@ -498,16 +498,16 @@ class NmgInlineAdapterContract(unittest.TestCase):
             return matches[0]
 
         source_events = []
-        excluded_external = []
+        excluded_protocol_events = []
         for arc in base["arcs"]:
             for event in arc["events"]:
-                if event["id"] in {"ywc_nmg.1030", "ywc_nmg.1031"}:
-                    excluded_external.append(event["id"])
+                if event["id"] in {"ywc_nmg.1030", "ywc_nmg.1031", "ywc_nmg.1032"}:
+                    excluded_protocol_events.append(event["id"])
                     continue
                 if event.get("immediate"):
                     source_events.append((native_receipt_owner(event["immediate"], event["id"]),
                                           event["id"]))
-        self.assertEqual(excluded_external, ["ywc_nmg.1030", "ywc_nmg.1031"])
+        self.assertEqual(excluded_protocol_events, ["ywc_nmg.1030", "ywc_nmg.1031", "ywc_nmg.1032"])
         self.assertEqual(len(source_events), 24)
 
         def comment_variants(source, comment):

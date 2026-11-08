@@ -175,11 +175,6 @@ ywc_nmg_revenue_real_subject = {
 	is_subject_of = c:MEX
 }
 
-ywc_nmg_revenue_overlord_present = {
-	exists = c:MEX
-	overlord ?= { always = yes }
-}
-
 ywc_nmg_revenue_relations_ok = {
 	exists = c:MEX
 	overlord ?= { relations:root >= relations_threshold:poor }
@@ -213,8 +208,7 @@ ywc_nmg_revenue_fixed_ready = {
 
 ywc_nmg_revenue_joint_ready = {
 	ywc_nmg_revenue_fixed_ready = yes
-	ywc_nmg_revenue_overlord_present = yes
-	ywc_nmg_revenue_relations_ok = yes
+	ywc_nmg_jointproject_agreement_current = yes
 }
 
 ywc_nmg_revenue_arrears_ready = {
@@ -226,7 +220,7 @@ ywc_nmg_revenue_arrears_ready = {
 ywc_nmg_revenue_selected_target_ready = {
  OR = {
   AND = { var:ywc_nmg_revenue_route = 1 ywc_nmg_revenue_fixed_ready = yes ywc_nmg_mexshare_agreement_current = yes }
-  AND = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes ywc_nmg_revenue_real_subject = yes }
+  AND = { var:ywc_nmg_revenue_route = 2 ywc_nmg_revenue_joint_ready = yes }
   AND = { var:ywc_nmg_revenue_route = 3 ywc_nmg_revenue_arrears_ready = yes }
   AND = { var:ywc_nmg_revenue_route = 4 ywc_nmg_revenue_fixed_ready = yes }
  }
@@ -235,7 +229,7 @@ ywc_nmg_revenue_selected_target_ready = {
 ywc_nmg_revenue_route_ready = {
 	OR = {
 		AND = { var:ywc_nmg_revenue_route = 1 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_share var:ywc_nmg_revenue_share = 3 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_fixed_ready = yes ywc_nmg_mexshare_agreement_current = yes }
-		AND = { var:ywc_nmg_revenue_route = 2 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_share var:ywc_nmg_revenue_share = 2 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_joint_ready = yes ywc_nmg_revenue_real_subject = yes }
+		AND = { var:ywc_nmg_revenue_route = 2 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_share var:ywc_nmg_revenue_share = 2 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_joint_ready = yes }
 		AND = { var:ywc_nmg_revenue_route = 3 has_variable = ywc_nmg_revenue_quota_paid has_variable = ywc_nmg_revenue_accept has_variable = ywc_nmg_revenue_arrears_owned has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_arrears_ready = yes }
 		AND = { var:ywc_nmg_revenue_route = 4 has_variable = ywc_nmg_revenue_quota_paid OR = { has_variable = ywc_nmg_revenue_audit_strict has_variable = ywc_nmg_revenue_audit_public } var:ywc_nmg_revenue_share ?= 4 has_variable = ywc_nmg_revenue_stage3 ywc_nmg_revenue_fixed_ready = yes }
 	}
@@ -318,4 +312,131 @@ ywc_nmg_mexshare_agreement_current = {
 	NOT = { var:ywc_nmg_mexshare_ended_generation ?= var:ywc_nmg_mexshare_contract_generation }
 	NOT = { var:ywc_nmg_mexshare_creditor_invalid_generation ?= var:ywc_nmg_mexshare_contract_generation }
 	var:ywc_nmg_mexshare_earned_total ?= var:ywc_nmg_mexshare_paid_total
+}
+
+# A joint project has two independently paid expense ledgers. A local marker
+# is never proof that the selected partner accepted or funded the same terms.
+ywc_nmg_jointproject_slot_available = {
+	NOT = { var:ywc_nmg_jointproject_state ?= 1 }
+	NOT = { var:ywc_nmg_jointproject_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_nmg_jointproject_contract_generation }
+		AND = { OR = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation } var:ywc_nmg_jointproject_own_earned_total ?= var:ywc_nmg_jointproject_own_paid_total var:ywc_nmg_jointproject_partner_earned_total ?= var:ywc_nmg_jointproject_partner_paid_total }
+	}
+}
+
+ywc_nmg_jointproject_provider_slot_available = {
+	OR = {
+		NOT = { has_variable = ywc_nmg_jointproject_provider_generation }
+		AND = { OR = { var:ywc_nmg_jointproject_provider_ended_generation ?= var:ywc_nmg_jointproject_provider_generation var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation } var:ywc_nmg_jointproject_provider_earned_total ?= var:ywc_nmg_jointproject_provider_paid_total }
+	}
+}
+
+ywc_nmg_jointproject_mex_eligible = {
+	ywc_nmg_mexshare_link_intact = yes
+	ywc_nmg_revenue_fixed_ready = yes
+	has_variable = ywc_nmg_revenue_quota
+	ywc_nmg_jointproject_slot_available = yes
+	c:MEX = { ywc_nmg_jointproject_provider_slot_available = yes }
+}
+
+ywc_nmg_jointproject_jhg_eligible = {
+	c:NMG ?= this
+	is_country_alive = yes
+	ywc_nmg_revenue_fixed_ready = yes
+	has_variable = ywc_nmg_revenue_quota
+	ywc_nmg_jointproject_slot_available = yes
+	exists = c:JHG
+	c:JHG = { is_country_alive = yes relations:c:NMG >= 0 ywc_nmg_jointproject_provider_slot_available = yes }
+}
+
+ywc_nmg_jointproject_target_current = {
+	OR = {
+		AND = { var:ywc_nmg_jointproject_partner ?= c:MEX ywc_nmg_mexshare_link_intact = yes }
+		AND = { var:ywc_nmg_jointproject_partner ?= c:JHG c:NMG ?= this exists = c:JHG c:JHG = { is_country_alive = yes relations:c:NMG >= 0 } }
+	}
+}
+
+ywc_nmg_jointproject_offer_matches = {
+	exists = scope:ywc_nmg_jointproject_requester
+	exists = scope:ywc_nmg_jointproject_request_partner
+	scope:ywc_nmg_jointproject_request_partner ?= this
+	scope:ywc_nmg_jointproject_requester ?= c:NMG
+	scope:ywc_nmg_jointproject_requester = {
+		ywc_nmg_jointproject_target_current = yes
+		var:ywc_nmg_jointproject_partner ?= root
+		var:ywc_nmg_jointproject_state ?= 1
+		has_variable = ywc_nmg_jointproject_request_timer
+		var:ywc_nmg_jointproject_generation ?= scope:ywc_nmg_jointproject_request_generation
+		var:ywc_nmg_jointproject_serial ?= scope:ywc_nmg_jointproject_request_serial
+		var:ywc_nmg_jointproject_quote_serial ?= scope:ywc_nmg_jointproject_request_serial
+		var:ywc_nmg_jointproject_quote_own ?= scope:ywc_nmg_jointproject_request_own
+		var:ywc_nmg_jointproject_quote_partner ?= scope:ywc_nmg_jointproject_request_partner_amount
+		var:ywc_nmg_jointproject_quote_term ?= scope:ywc_nmg_jointproject_request_term
+		var:ywc_nmg_jointproject_quote_scope ?= scope:ywc_nmg_jointproject_request_scope
+	}
+}
+
+ywc_nmg_jointproject_authorizable = {
+	ywc_nmg_jointproject_offer_matches = yes
+	is_country_alive = yes
+	relations:scope:ywc_nmg_jointproject_requester >= 0
+	ywc_nmg_jointproject_provider_slot_available = yes
+}
+
+ywc_nmg_jointproject_accepted_current = {
+	ywc_nmg_jointproject_target_current = yes
+	var:ywc_nmg_jointproject_state ?= 2
+	has_variable = ywc_nmg_jointproject_request_timer
+	var:ywc_nmg_jointproject_quote_generation ?= var:ywc_nmg_jointproject_generation
+	var:ywc_nmg_jointproject_accept_generation ?= var:ywc_nmg_jointproject_quote_generation
+	var:ywc_nmg_jointproject_accept_serial ?= var:ywc_nmg_jointproject_quote_serial
+	var:ywc_nmg_jointproject_accept_own ?= var:ywc_nmg_jointproject_quote_own
+	var:ywc_nmg_jointproject_accept_partner ?= var:ywc_nmg_jointproject_quote_partner
+	var:ywc_nmg_jointproject_accept_term ?= var:ywc_nmg_jointproject_quote_term
+	var:ywc_nmg_jointproject_accept_scope ?= var:ywc_nmg_jointproject_quote_scope
+	var:ywc_nmg_jointproject_partner = { ywc_nmg_jointproject_provider_slot_available = yes }
+}
+
+ywc_nmg_jointproject_agreement_current = {
+	has_variable = ywc_nmg_jointproject_contract_generation
+	has_variable = ywc_nmg_jointproject_term_timer
+	exists = var:ywc_nmg_jointproject_contract_partner
+	NOT = { var:ywc_nmg_jointproject_ended_generation ?= var:ywc_nmg_jointproject_contract_generation }
+	NOT = { var:ywc_nmg_jointproject_partner_invalid_generation ?= var:ywc_nmg_jointproject_contract_generation }
+	var:ywc_nmg_jointproject_own_earned_total ?= var:ywc_nmg_jointproject_own_paid_total
+	var:ywc_nmg_jointproject_partner_earned_total ?= var:ywc_nmg_jointproject_partner_paid_total
+	var:ywc_nmg_jointproject_own_last_month ?= ywc_nmg_current_calendar_month
+	var:ywc_nmg_jointproject_contract_partner = {
+		is_country_alive = yes
+		var:ywc_nmg_jointproject_provider_owner ?= c:NMG
+		var:ywc_nmg_jointproject_provider_generation ?= prev.var:ywc_nmg_jointproject_contract_generation
+		NOT = { var:ywc_nmg_jointproject_provider_invalid_generation ?= var:ywc_nmg_jointproject_provider_generation }
+		var:ywc_nmg_jointproject_provider_earned_total ?= var:ywc_nmg_jointproject_provider_paid_total
+		var:ywc_nmg_jointproject_provider_last_month ?= ywc_nmg_current_calendar_month
+	}
+}
+
+ywc_nmg_partner_renewal_available = {
+	has_variable = ywc_v03_nmg_v03_nmg_autonomy_revenue_started
+	ywc_nmg_revenue_unsettled = yes
+	NOT = { has_variable = ywc_nmg_revenue_withdrawn }
+	has_variable = ywc_nmg_revenue_quota_paid
+	OR = {
+		AND = { var:ywc_nmg_revenue_route ?= 1 ywc_nmg_mexshare_can_offer = yes }
+		AND = { var:ywc_nmg_revenue_route ?= 2 OR = { ywc_nmg_jointproject_mex_eligible = yes ywc_nmg_jointproject_jhg_eligible = yes } }
+	}
+}
+
+ywc_nmg_partner_renewal_menu_current = {
+	c:NMG ?= this
+	exists = scope:ywc_nmg_partner_renewal_owner
+	scope:ywc_nmg_partner_renewal_owner ?= this
+	var:ywc_nmg_partner_renewal_serial ?= scope:ywc_nmg_partner_renewal_serial
+	OR = {
+		AND = { scope:ywc_nmg_partner_renewal_stage ?= 1 NOT = { has_variable = ywc_nmg_revenue_stage2 } NOT = { has_variable = ywc_nmg_revenue_stage3 } }
+		AND = { scope:ywc_nmg_partner_renewal_stage ?= 2 has_variable = ywc_nmg_revenue_stage2 NOT = { has_variable = ywc_nmg_revenue_stage3 } }
+		AND = { scope:ywc_nmg_partner_renewal_stage ?= 3 has_variable = ywc_nmg_revenue_stage3 }
+	}
+	ywc_nmg_partner_renewal_available = yes
 }
