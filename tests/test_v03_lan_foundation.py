@@ -151,6 +151,10 @@ class StrictLanRuntimeWorld(LanRuntimeWorld):
         elif key.startswith("var:") or key in self._numeric_conditions:
             if key in ("in_default", "is_at_war"):
                 assert comparison in ("=", "!=") and value in ("yes", "no"), node
+            elif comparison == "?=":
+                # PulseWorld already implements safe optional variable equality;
+                # retain the stricter numeric/building operator vocabulary.
+                assert key.startswith("var:") and isinstance(value, str), node
             else:
                 assert comparison in self._comparators, node
             if isinstance(value, list):
@@ -384,6 +388,25 @@ class LanContextContractRegressionTest(unittest.TestCase):
         ):
             with self.subTest(block=block), self.assertRaises(AssertionError):
                 world.conditions(parse("condition = " + block)[0][2], "LAN")
+
+    def test_optional_queue_equality_keeps_absence_zero_and_later_stage_distinct(self):
+        world = StrictLanRuntimeWorld("", "", {"LAN": {}})
+        state = world.countries["LAN"]
+        queue = "ywc_lan_river_pending_event"
+        for present, value, expected in ((False, None, False), (True, 0, False),
+                                         (True, 1014, True), (True, 1015, False)):
+            with self.subTest(present=present, value=value):
+                state.clear()
+                if present:
+                    state[queue] = value
+                self.assertEqual(world.conditions(parse(f"var:{queue} ?= 1014"), "LAN"), expected)
+        state.clear()
+        self.assertFalse(world.conditions(parse(f"var:{queue} ?= 0"), "LAN"))
+        state[queue] = 0
+        self.assertTrue(world.conditions(parse(f"var:{queue} ?= 0"), "LAN"))
+        for source in ("bureaucracy ?= 0", "any_scope_building = { occupancy ?= 0.8 }"):
+            with self.subTest(invalid=source), self.assertRaises(AssertionError):
+                world.conditions(parse(source), "LAN")
 
     def test_opening_paid_options_require_fee_or_receipt_and_keep_free_choices(self):
         expected = {
