@@ -1,5 +1,55 @@
-﻿# LAN foundation scripted effects. Hand-maintained; generated catalogs call into these.
+# LAN foundation scripted effects. Hand-maintained; generated catalogs call into these.
 # Engine interfaces used here are listed with file:line in lan-foundation-report.md.
+
+# Preserve authored legacy chapter results. New arc outcomes are separate and only bridge when absent.
+ywc_lan_mark_established_outcome = {
+	if = {
+		limit = { NOT = { has_variable = ywc_campaign_lan_c1_outcome } }
+		set_variable = { name = ywc_campaign_lan_c1_outcome value = 1 }
+	}
+}
+
+ywc_lan_mark_compromise_outcome = {
+	if = {
+		limit = { NOT = { has_variable = ywc_campaign_lan_c1_outcome } }
+		set_variable = { name = ywc_campaign_lan_c1_outcome value = 2 }
+	}
+}
+
+ywc_lan_mark_breach_outcome = {
+	if = {
+		limit = { NOT = { has_variable = ywc_campaign_lan_c1_outcome } }
+		set_variable = { name = ywc_campaign_lan_c1_outcome value = 4 }
+	}
+}
+
+ywc_lan_start_mine_settlement = {
+	if = {
+		limit = { NOT = { has_variable = ywc_lan_mine_phase_one_complete } }
+		set_variable = { name = ywc_lan_mine_phase_one_complete value = 1 }
+		add_journal_entry = { type = ywc_je_v03_lan_mine_settlement }
+	}
+	set_variable = { name = ywc_lan_mine_pending_event value = 1005 }
+}
+
+ywc_lan_start_river_settlement = {
+	if = {
+		limit = { NOT = { has_variable = ywc_lan_river_phase_one_complete } }
+		set_variable = { name = ywc_lan_river_phase_one_complete value = 1 }
+		add_journal_entry = { type = ywc_je_v03_lan_river_settlement }
+	}
+	set_variable = { name = ywc_lan_river_implementation_complete value = 1 }
+	set_variable = { name = ywc_lan_river_pending_event value = 1016 }
+}
+
+ywc_lan_start_fund_settlement = {
+	if = {
+		limit = { NOT = { has_variable = ywc_lan_fund_phase_one_complete } }
+		set_variable = { name = ywc_lan_fund_phase_one_complete value = 1 }
+		add_journal_entry = { type = ywc_je_v03_lan_fund_settlement }
+	}
+	set_variable = { name = ywc_lan_fund_pending_event value = 1025 }
+}
 
 ywc_lan_claim_mine_arc = {
 	if = {
@@ -8,90 +58,59 @@ ywc_lan_claim_mine_arc = {
 		change_variable = { name = ywc_lan_mine_fee divide = 52 }
 		clamp_variable = { name = ywc_lan_mine_fee min = 100 max = 1000000000 }
 	}
-	set_variable = { name = ywc_campaign_lan_c1_outcome value = 0 }
 }
 
 ywc_lan_choose_mine_audit = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
-			clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_mine_filing_fee_paid }
-		set_variable = { name = ywc_lan_mine_route value = 1 }
-		set_variable = { name = ywc_lan_mine_audit_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_started NOT = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_settled } NOT = { has_variable = ywc_lan_mine_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
+   set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
+   clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_mine_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_mine_filing_fee_paid }
+   set_variable = { name = ywc_lan_mine_route value = 1 }
+   set_variable = { name = ywc_lan_mine_audit_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_choose_mine_farm = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
-			change_variable = { name = ywc_lan_mine_fee_due multiply = 0.7 }
-			clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_mine_filing_fee_paid }
-		set_variable = { name = ywc_lan_mine_route value = 2 }
-		set_variable = { name = ywc_lan_mine_farm_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_started NOT = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_settled } NOT = { has_variable = ywc_lan_mine_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
+   set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
+   change_variable = { name = ywc_lan_mine_fee_due multiply = 0.7 }
+   clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_mine_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_mine_filing_fee_paid }
+   set_variable = { name = ywc_lan_mine_route value = 2 }
+   set_variable = { name = ywc_lan_mine_farm_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_choose_mine_limited = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
-			change_variable = { name = ywc_lan_mine_fee_due multiply = 0.5 }
-			clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_mine_filing_fee_paid }
-		set_variable = { name = ywc_lan_mine_route value = 3 }
-		set_variable = { name = ywc_lan_mine_limited_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_started NOT = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_settled } NOT = { has_variable = ywc_lan_mine_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
+   set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
+   change_variable = { name = ywc_lan_mine_fee_due multiply = 0.5 }
+   clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_mine_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_mine_filing_fee_paid }
+   set_variable = { name = ywc_lan_mine_route value = 3 }
+   set_variable = { name = ywc_lan_mine_limited_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_mine_open_ledger = {
@@ -131,78 +150,91 @@ ywc_lan_mine_separate_books = {
 }
 
 ywc_lan_mine_fund_audit = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_mine_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_mine_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
-			clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_mine_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_mine_filing_fee_paid }
-		set_variable = { name = ywc_lan_mine_route value = 1 }
-		set_variable = { name = ywc_lan_mine_funding_choice value = 1 }
-		set_variable = { name = ywc_lan_mine_reserve_paid value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_started var:ywc_lan_mine_route = 1 NOT = { has_variable = ywc_lan_mine_reserve_paid } }
+  set_variable = { name = ywc_lan_mine_fee_due value = var:ywc_lan_mine_fee }
+  clamp_variable = { name = ywc_lan_mine_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_mine_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_mine_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_mine_reserve_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_mine_reserve_paid }
+  set_variable = { name = ywc_lan_mine_funding_choice value = 1 }
+  set_variable = { name = ywc_lan_mine_implementation_complete value = 1 }
+ }
 }
 
 ywc_lan_mine_cap_claim = {
 	set_variable = { name = ywc_lan_mine_funding_choice value = 2 }
 	set_variable = { name = ywc_lan_mine_claim_capped value = 1 }
+	set_variable = { name = ywc_lan_mine_implementation_complete value = 1 }
 }
 
 ywc_lan_mine_begin_review = {
-	set_variable = { name = ywc_lan_mine_six_months_claimed value = 1 }
+	if = {
+		limit = { ywc_lan_mine_target_ready = yes has_variable = ywc_lan_mine_six_months_complete }
+		set_variable = { name = ywc_lan_mine_six_months_claimed value = 1 }
+		set_variable = { name = ywc_lan_mine_pending_event value = 1007 }
+	}
+	else = {
+		if = { limit = { NOT = { ywc_lan_mine_target_ready = yes } } remove_variable = ywc_lan_mine_observation_timer remove_variable = ywc_lan_mine_observation_started remove_variable = ywc_lan_mine_six_months_complete }
+		set_variable = { name = ywc_lan_mine_pending_event value = 1006 }
+	}
 }
 
 ywc_lan_mine_narrow_target = {
-	set_variable = { name = ywc_lan_mine_narrowed value = 1 }
+ set_variable = { name = ywc_lan_mine_narrowed value = 1 }
+ remove_variable = ywc_lan_mine_observation_timer
+ remove_variable = ywc_lan_mine_observation_started
+ remove_variable = ywc_lan_mine_six_months_complete
+ remove_variable = ywc_lan_mine_notice_current
+ remove_variable = ywc_lan_mine_blocked_months
+ remove_variable = ywc_lan_mine_notice_event
+ remove_variable = ywc_lan_mine_notice12_sent
+ remove_variable = ywc_lan_mine_notice36_sent
 }
 
 ywc_lan_mine_monthly_review = {
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_lan_mine_established }
-			NOT = { has_variable = ywc_lan_mine_compromise }
-			NOT = { has_variable = ywc_lan_mine_withdrawn }
-		}
-		if = {
-			limit = { ywc_lan_mine_route_ready = yes }
-			if = {
-				limit = {
-					has_variable = ywc_lan_mine_observation_started
-					NOT = { has_variable = ywc_lan_mine_observation_timer }
-				}
-				set_variable = { name = ywc_lan_mine_six_months_complete value = 1 }
-				remove_variable = ywc_lan_mine_observation_started
-			}
-			if = {
-				limit = {
-					NOT = { has_variable = ywc_lan_mine_observation_started }
-					NOT = { has_variable = ywc_lan_mine_six_months_complete }
-				}
-				set_variable = { name = ywc_lan_mine_observation_timer value = 1 months = 6 }
-				set_variable = { name = ywc_lan_mine_observation_started value = 1 }
-			}
-		}
-		else = {
-			remove_variable = ywc_lan_mine_observation_timer
-			remove_variable = ywc_lan_mine_observation_started
-			remove_variable = ywc_lan_mine_six_months_complete
-		}
+ if = { limit = { NOT = { has_variable = ywc_lan_mine_established } NOT = { has_variable = ywc_lan_mine_compromise } NOT = { has_variable = ywc_lan_mine_withdrawn } }
+  if = { limit = { ywc_lan_mine_target_ready = yes }
+   remove_variable = ywc_lan_mine_blocked_months
+   remove_variable = ywc_lan_mine_notice_event
+   remove_variable = ywc_lan_mine_notice12_sent
+   remove_variable = ywc_lan_mine_notice36_sent
+   remove_variable = ywc_lan_mine_notice_current
+   if = { limit = { has_variable = ywc_lan_mine_implementation_complete }
+    if = { limit = { has_variable = ywc_lan_mine_observation_started NOT = { has_variable = ywc_lan_mine_observation_timer } } set_variable = { name = ywc_lan_mine_six_months_complete value = 1 } remove_variable = ywc_lan_mine_observation_started }
+    if = { limit = { NOT = { has_variable = ywc_lan_mine_observation_started } NOT = { has_variable = ywc_lan_mine_six_months_complete } } set_variable = { name = ywc_lan_mine_observation_timer value = 1 months = 6 } set_variable = { name = ywc_lan_mine_observation_started value = 1 } }
+   }
+  }
+  else = {
+   remove_variable = ywc_lan_mine_observation_timer
+   remove_variable = ywc_lan_mine_observation_started
+   remove_variable = ywc_lan_mine_six_months_complete
+   if = { limit = { has_variable = ywc_lan_mine_current_deferred ywc_lan_mine_current_obligation_ready = yes ywc_lan_mine_can_pay = yes }
+    remove_variable = ywc_lan_mine_current_deferred
+    remove_variable = ywc_lan_mine_blocked_months
+    remove_variable = ywc_lan_mine_notice_event
+    remove_variable = ywc_lan_mine_notice12_sent
+    remove_variable = ywc_lan_mine_notice36_sent
+    remove_variable = ywc_lan_mine_notice_current
+   }
+   else_if = { limit = { OR = { has_variable = ywc_lan_mine_implementation_complete AND = { has_variable = ywc_lan_mine_filing_fee_paid NOT = { ywc_lan_mine_can_pay = yes } } ywc_lan_mine_current_obligation_blocked = yes } }
+    change_variable = { name = ywc_lan_mine_blocked_months add = 1 }
+    if = { limit = { var:ywc_lan_mine_blocked_months >= 12 NOT = { has_variable = ywc_lan_mine_notice12_sent } } set_variable = { name = ywc_lan_mine_notice_event value = 12 } }
+    if = { limit = { var:ywc_lan_mine_blocked_months >= 36 NOT = { has_variable = ywc_lan_mine_notice36_sent } } set_variable = { name = ywc_lan_mine_notice_event value = 36 } }
+   }
+   else = { remove_variable = ywc_lan_mine_blocked_months remove_variable = ywc_lan_mine_notice_event remove_variable = ywc_lan_mine_notice12_sent remove_variable = ywc_lan_mine_notice36_sent remove_variable = ywc_lan_mine_notice_current }
+  }
+ }
+}
+
+ywc_lan_mine_reject_stale_terminal = {
+	if = { limit = { has_variable = ywc_v03_lan_v03_lan_mine_accounts_started has_variable = ywc_lan_mine_phase_two_started NOT = { has_variable = ywc_lan_mine_settled } NOT = { has_variable = ywc_lan_mine_established } NOT = { has_variable = ywc_lan_mine_compromise } NOT = { has_variable = ywc_lan_mine_withdrawn } NOT = { ywc_lan_mine_target_ready = yes } OR = { NOT = { has_variable = ywc_lan_mine_pending_event } var:ywc_lan_mine_pending_event = 1006 } }
+		remove_variable = ywc_lan_mine_observation_timer
+		remove_variable = ywc_lan_mine_observation_started
+		remove_variable = ywc_lan_mine_six_months_complete
+		set_variable = { name = ywc_lan_mine_pending_event value = 1006 }
 	}
 }
 
@@ -230,9 +262,10 @@ ywc_lan_close_mine_as_established = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			established_outcome = yes
+			ywc_lan_mark_established_outcome = yes
 		}
 	}
+	ywc_lan_mine_reject_stale_terminal = yes
 }
 
 ywc_lan_close_mine_as_compromise = {
@@ -259,9 +292,10 @@ ywc_lan_close_mine_as_compromise = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			compromise_outcome = yes
+			ywc_lan_mark_compromise_outcome = yes
 		}
 	}
+	ywc_lan_mine_reject_stale_terminal = yes
 }
 
 ywc_lan_close_mine_as_breach = {
@@ -283,7 +317,7 @@ ywc_lan_close_mine_as_breach = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			breach_outcome = yes
+			ywc_lan_mark_breach_outcome = yes
 		}
 	}
 }
@@ -295,90 +329,59 @@ ywc_lan_claim_river_arc = {
 		change_variable = { name = ywc_lan_river_fee divide = 52 }
 		clamp_variable = { name = ywc_lan_river_fee min = 100 max = 1000000000 }
 	}
-	set_variable = { name = ywc_campaign_lan_c1_outcome value = 0 }
 }
 
 ywc_lan_choose_river_compensate = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
-			clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_river_filing_fee_paid }
-		set_variable = { name = ywc_lan_river_route value = 1 }
-		set_variable = { name = ywc_lan_river_board_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started NOT = { has_variable = ywc_v03_lan_v03_lan_river_compacts_settled } NOT = { has_variable = ywc_lan_river_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
+   set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
+   clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_river_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_river_filing_fee_paid }
+   set_variable = { name = ywc_lan_river_route value = 1 }
+   set_variable = { name = ywc_lan_river_board_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_choose_river_restrict = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
-			change_variable = { name = ywc_lan_river_fee_due multiply = 0.5 }
-			clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_river_filing_fee_paid }
-		set_variable = { name = ywc_lan_river_route value = 2 }
-		set_variable = { name = ywc_lan_river_restrict_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started NOT = { has_variable = ywc_v03_lan_v03_lan_river_compacts_settled } NOT = { has_variable = ywc_lan_river_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
+   set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
+   change_variable = { name = ywc_lan_river_fee_due multiply = 0.5 }
+   clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_river_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_river_filing_fee_paid }
+   set_variable = { name = ywc_lan_river_route value = 2 }
+   set_variable = { name = ywc_lan_river_restrict_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_choose_river_guards = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
-			change_variable = { name = ywc_lan_river_fee_due multiply = 0.4 }
-			clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_river_filing_fee_paid }
-		set_variable = { name = ywc_lan_river_route value = 3 }
-		set_variable = { name = ywc_lan_river_guards_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started NOT = { has_variable = ywc_v03_lan_v03_lan_river_compacts_settled } NOT = { has_variable = ywc_lan_river_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
+   set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
+   change_variable = { name = ywc_lan_river_fee_due multiply = 0.4 }
+   clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_river_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_river_filing_fee_paid }
+   set_variable = { name = ywc_lan_river_route value = 3 }
+   set_variable = { name = ywc_lan_river_guards_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_river_deed_review = {
@@ -398,31 +401,17 @@ ywc_lan_river_unilateral = {
 }
 
 ywc_lan_river_fund_board = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_river_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
-			clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_river_filing_fee_paid }
-		set_variable = { name = ywc_lan_river_route value = 1 }
-		set_variable = { name = ywc_lan_river_board_funded value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started var:ywc_lan_river_route = 1 NOT = { has_variable = ywc_lan_river_board_reserve_paid } }
+  set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
+  clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_river_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_river_board_reserve_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_river_board_reserve_paid }
+  set_variable = { name = ywc_lan_river_board_funded value = 1 }
+ }
 }
 
 ywc_lan_river_restrict_blocks = {
@@ -430,61 +419,32 @@ ywc_lan_river_restrict_blocks = {
 }
 
 ywc_lan_river_hire_guards = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_river_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
-			change_variable = { name = ywc_lan_river_fee_due multiply = 0.4 }
-			clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_river_filing_fee_paid }
-		set_variable = { name = ywc_lan_river_route value = 3 }
-		set_variable = { name = ywc_lan_river_guards_hired value = 1 }
-		add_modifier = { name = ywc_lan_guard_backlash days = 1095 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started var:ywc_lan_river_route = 3 NOT = { has_variable = ywc_lan_river_guard_fee_paid } }
+  set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
+  clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_river_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_river_guard_fee_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_river_guard_fee_paid }
+  set_variable = { name = ywc_lan_river_guards_hired value = 1 }
+  add_modifier = { name = ywc_lan_guard_backlash days = 1095 }
+ }
 }
 
 ywc_lan_river_convert_board = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_river_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_river_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
-			clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_river_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_river_filing_fee_paid }
-		set_variable = { name = ywc_lan_river_route value = 1 }
-		set_variable = { name = ywc_lan_river_converted_board value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started var:ywc_lan_river_route = 3 NOT = { has_variable = ywc_lan_river_board_conversion_paid } }
+  set_variable = { name = ywc_lan_river_fee_due value = var:ywc_lan_river_fee }
+  clamp_variable = { name = ywc_lan_river_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_river_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_river_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_river_board_conversion_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_river_board_conversion_paid }
+  set_variable = { name = ywc_lan_river_converted_board value = 1 }
+ }
 }
 
 ywc_lan_river_keep_restricted = {
@@ -500,44 +460,70 @@ ywc_lan_river_hold_scale = {
 }
 
 ywc_lan_river_begin_review = {
-	set_variable = { name = ywc_lan_river_six_months_claimed value = 1 }
+	if = {
+		limit = { ywc_lan_river_target_ready = yes has_variable = ywc_lan_river_six_months_complete }
+		set_variable = { name = ywc_lan_river_six_months_claimed value = 1 }
+		set_variable = { name = ywc_lan_river_pending_event value = 1017 }
+	}
+	else = {
+		if = { limit = { NOT = { ywc_lan_river_target_ready = yes } } remove_variable = ywc_lan_river_observation_timer remove_variable = ywc_lan_river_observation_started remove_variable = ywc_lan_river_six_months_complete }
+		set_variable = { name = ywc_lan_river_pending_event value = 1016 }
+	}
 }
 
 ywc_lan_river_narrow_target = {
-	set_variable = { name = ywc_lan_river_narrowed value = 1 }
+ set_variable = { name = ywc_lan_river_narrowed value = 1 }
+ remove_variable = ywc_lan_river_observation_timer
+ remove_variable = ywc_lan_river_observation_started
+ remove_variable = ywc_lan_river_six_months_complete
+ remove_variable = ywc_lan_river_notice_current
+ remove_variable = ywc_lan_river_blocked_months
+ remove_variable = ywc_lan_river_notice_event
+ remove_variable = ywc_lan_river_notice12_sent
+ remove_variable = ywc_lan_river_notice36_sent
 }
 
 ywc_lan_river_monthly_review = {
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_lan_river_established }
-			NOT = { has_variable = ywc_lan_river_compromise }
-			NOT = { has_variable = ywc_lan_river_withdrawn }
-		}
-		if = {
-			limit = { ywc_lan_river_route_ready = yes }
-			if = {
-				limit = {
-					has_variable = ywc_lan_river_observation_started
-					NOT = { has_variable = ywc_lan_river_observation_timer }
-				}
-				set_variable = { name = ywc_lan_river_six_months_complete value = 1 }
-				remove_variable = ywc_lan_river_observation_started
-			}
-			if = {
-				limit = {
-					NOT = { has_variable = ywc_lan_river_observation_started }
-					NOT = { has_variable = ywc_lan_river_six_months_complete }
-				}
-				set_variable = { name = ywc_lan_river_observation_timer value = 1 months = 6 }
-				set_variable = { name = ywc_lan_river_observation_started value = 1 }
-			}
-		}
-		else = {
-			remove_variable = ywc_lan_river_observation_timer
-			remove_variable = ywc_lan_river_observation_started
-			remove_variable = ywc_lan_river_six_months_complete
-		}
+ if = { limit = { NOT = { has_variable = ywc_lan_river_established } NOT = { has_variable = ywc_lan_river_compromise } NOT = { has_variable = ywc_lan_river_withdrawn } }
+  if = { limit = { ywc_lan_river_target_ready = yes }
+   remove_variable = ywc_lan_river_blocked_months
+   remove_variable = ywc_lan_river_notice_event
+   remove_variable = ywc_lan_river_notice12_sent
+   remove_variable = ywc_lan_river_notice36_sent
+   remove_variable = ywc_lan_river_notice_current
+   if = { limit = { has_variable = ywc_lan_river_implementation_complete }
+    if = { limit = { has_variable = ywc_lan_river_observation_started NOT = { has_variable = ywc_lan_river_observation_timer } } set_variable = { name = ywc_lan_river_six_months_complete value = 1 } remove_variable = ywc_lan_river_observation_started }
+    if = { limit = { NOT = { has_variable = ywc_lan_river_observation_started } NOT = { has_variable = ywc_lan_river_six_months_complete } } set_variable = { name = ywc_lan_river_observation_timer value = 1 months = 6 } set_variable = { name = ywc_lan_river_observation_started value = 1 } }
+   }
+  }
+  else = {
+   remove_variable = ywc_lan_river_observation_timer
+   remove_variable = ywc_lan_river_observation_started
+   remove_variable = ywc_lan_river_six_months_complete
+   if = { limit = { has_variable = ywc_lan_river_current_deferred ywc_lan_river_current_obligation_ready = yes ywc_lan_river_can_pay = yes }
+    remove_variable = ywc_lan_river_current_deferred
+    remove_variable = ywc_lan_river_blocked_months
+    remove_variable = ywc_lan_river_notice_event
+    remove_variable = ywc_lan_river_notice12_sent
+    remove_variable = ywc_lan_river_notice36_sent
+    remove_variable = ywc_lan_river_notice_current
+   }
+   else_if = { limit = { OR = { has_variable = ywc_lan_river_implementation_complete AND = { has_variable = ywc_lan_river_filing_fee_paid NOT = { ywc_lan_river_can_pay = yes } } ywc_lan_river_current_obligation_blocked = yes } }
+    change_variable = { name = ywc_lan_river_blocked_months add = 1 }
+    if = { limit = { var:ywc_lan_river_blocked_months >= 12 NOT = { has_variable = ywc_lan_river_notice12_sent } } set_variable = { name = ywc_lan_river_notice_event value = 12 } }
+    if = { limit = { var:ywc_lan_river_blocked_months >= 36 NOT = { has_variable = ywc_lan_river_notice36_sent } } set_variable = { name = ywc_lan_river_notice_event value = 36 } }
+   }
+   else = { remove_variable = ywc_lan_river_blocked_months remove_variable = ywc_lan_river_notice_event remove_variable = ywc_lan_river_notice12_sent remove_variable = ywc_lan_river_notice36_sent remove_variable = ywc_lan_river_notice_current }
+  }
+ }
+}
+
+ywc_lan_river_reject_stale_terminal = {
+	if = { limit = { has_variable = ywc_v03_lan_v03_lan_river_compacts_started has_variable = ywc_lan_river_phase_two_started NOT = { has_variable = ywc_lan_river_settled } NOT = { has_variable = ywc_lan_river_established } NOT = { has_variable = ywc_lan_river_compromise } NOT = { has_variable = ywc_lan_river_withdrawn } NOT = { ywc_lan_river_target_ready = yes } OR = { NOT = { has_variable = ywc_lan_river_pending_event } var:ywc_lan_river_pending_event = 1016 } }
+		remove_variable = ywc_lan_river_observation_timer
+		remove_variable = ywc_lan_river_observation_started
+		remove_variable = ywc_lan_river_six_months_complete
+		set_variable = { name = ywc_lan_river_pending_event value = 1016 }
 	}
 }
 
@@ -565,9 +551,10 @@ ywc_lan_close_river_as_established = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			established_outcome = yes
+			ywc_lan_mark_established_outcome = yes
 		}
 	}
+	ywc_lan_river_reject_stale_terminal = yes
 }
 
 ywc_lan_close_river_as_compromise = {
@@ -594,9 +581,10 @@ ywc_lan_close_river_as_compromise = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			compromise_outcome = yes
+			ywc_lan_mark_compromise_outcome = yes
 		}
 	}
+	ywc_lan_river_reject_stale_terminal = yes
 }
 
 ywc_lan_close_river_as_breach = {
@@ -618,7 +606,7 @@ ywc_lan_close_river_as_breach = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			breach_outcome = yes
+			ywc_lan_mark_breach_outcome = yes
 		}
 	}
 }
@@ -630,72 +618,50 @@ ywc_lan_claim_fund_arc = {
 		change_variable = { name = ywc_lan_fund_fee divide = 52 }
 		clamp_variable = { name = ywc_lan_fund_fee min = 100 max = 1000000000 }
 	}
-	set_variable = { name = ywc_campaign_lan_c1_outcome value = 0 }
 }
 
 ywc_lan_choose_fund_mutual = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
-			clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-		set_variable = { name = ywc_lan_fund_route value = 1 }
-		set_variable = { name = ywc_lan_fund_mutual_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started NOT = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_settled } NOT = { has_variable = ywc_lan_fund_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
+   set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
+   clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_fund_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_fund_filing_fee_paid }
+   set_variable = { name = ywc_lan_fund_route value = 1 }
+   set_variable = { name = ywc_lan_fund_mutual_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_choose_fund_company = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
-			change_variable = { name = ywc_lan_fund_fee_due multiply = 0.7 }
-			clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-		set_variable = { name = ywc_lan_fund_route value = 2 }
-		set_variable = { name = ywc_lan_fund_company_chosen value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started NOT = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_settled } NOT = { has_variable = ywc_lan_fund_route } }
+  if = { limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
+   set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
+   change_variable = { name = ywc_lan_fund_fee_due multiply = 0.7 }
+   clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
+   if = { limit = { gold_reserves >= var:ywc_lan_fund_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+    add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
+    set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
+   }
+  }
+  if = { limit = { has_variable = ywc_lan_fund_filing_fee_paid }
+   set_variable = { name = ywc_lan_fund_route value = 2 }
+   set_variable = { name = ywc_lan_fund_company_chosen value = 1 }
+  }
+ }
 }
 
 ywc_lan_choose_fund_private = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_fund_private_chosen } }
-		set_variable = { name = ywc_lan_fund_route value = 3 }
-		set_variable = { name = ywc_lan_fund_private_chosen value = 1 }
-		set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
-		add_modifier = { name = ywc_lan_relief_gap days = 1095 }
-	}
+ if = {
+  limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started NOT = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_settled } NOT = { has_variable = ywc_lan_fund_route } }
+  set_variable = { name = ywc_lan_fund_route value = 3 }
+  set_variable = { name = ywc_lan_fund_private_chosen value = 1 }
+  add_modifier = { name = ywc_lan_relief_gap days = 1095 }
+ }
 }
 
 ywc_lan_fund_enrol_mine = {
@@ -707,67 +673,39 @@ ywc_lan_fund_small_roll = {
 }
 
 ywc_lan_fund_assume_debt = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
-			clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-		set_variable = { name = ywc_lan_fund_route value = 1 }
-		set_variable = { name = ywc_lan_fund_debt_choice value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started var:ywc_lan_fund_route = 1 NOT = { has_variable = ywc_lan_fund_assumption_fee_paid } }
+  set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
+  clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_fund_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_fund_assumption_fee_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_fund_assumption_fee_paid }
+  set_variable = { name = ywc_lan_fund_debt_choice value = 1 }
+ }
 }
 
 ywc_lan_fund_company_debt = {
-	set_variable = { name = ywc_lan_fund_debt_choice value = 2 }
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started OR = { var:ywc_lan_fund_route = 2 var:ywc_lan_fund_route = 3 } } set_variable = { name = ywc_lan_fund_debt_choice value = 2 } }
 }
 
 ywc_lan_fund_open_mutual = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
-			clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-		set_variable = { name = ywc_lan_fund_route value = 1 }
-		set_variable = { name = ywc_lan_fund_mutual_opened value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started var:ywc_lan_fund_route = 1 NOT = { has_variable = ywc_lan_fund_mutual_reserve_paid } }
+  set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
+  clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_fund_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_fund_mutual_reserve_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_fund_mutual_reserve_paid }
+  set_variable = { name = ywc_lan_fund_mutual_opened value = 1 }
+ }
 }
 
 ywc_lan_fund_firm_reserve = {
-	set_variable = { name = ywc_lan_fund_firm_reserved value = 1 }
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started OR = { var:ywc_lan_fund_route = 2 var:ywc_lan_fund_route = 3 } has_variable = ywc_lan_fund_debt_choice } set_variable = { name = ywc_lan_fund_firm_reserved value = 1 } }
 }
 
 ywc_lan_fund_borrow_practice = {
@@ -779,76 +717,90 @@ ywc_lan_fund_decline_practice = {
 }
 
 ywc_lan_fund_pay_both = {
-	if = {
-		limit = { NOT = { has_variable = ywc_lan_fund_filing_fee_paid } }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-			}
-			set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
-			clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
-		if = {
-			limit = {
-				NOT = { in_default = yes }
-				NOT = { has_modifier = declared_bankruptcy }
-			}
-			add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
-			set_variable = { name = ywc_lan_fund_filing_fee_paid value = 1 }
-		}
-		}
-	}
-	if = {
-		limit = { has_variable = ywc_lan_fund_filing_fee_paid }
-		set_variable = { name = ywc_lan_fund_route value = 1 }
-		set_variable = { name = ywc_lan_fund_both_paid value = 1 }
-	}
+ if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started var:ywc_lan_fund_route = 1 NOT = { has_variable = ywc_lan_fund_pay_both_reserve_paid } }
+  set_variable = { name = ywc_lan_fund_fee_due value = var:ywc_lan_fund_fee }
+  clamp_variable = { name = ywc_lan_fund_fee_due min = 100 max = 1000000000 }
+  if = { limit = { gold_reserves >= var:ywc_lan_fund_fee_due in_default = no NOT = { has_modifier = declared_bankruptcy } }
+   add_treasury = { value = var:ywc_lan_fund_fee_due multiply = -1 }
+   set_variable = { name = ywc_lan_fund_pay_both_reserve_paid value = 1 }
+  }
+ }
+ if = { limit = { has_variable = ywc_lan_fund_pay_both_reserve_paid }
+  set_variable = { name = ywc_lan_fund_both_paid value = 1 }
+  set_variable = { name = ywc_lan_fund_implementation_complete value = 1 }
+ }
 }
 
 ywc_lan_fund_pay_wages = {
 	set_variable = { name = ywc_lan_fund_wages_first value = 1 }
+	set_variable = { name = ywc_lan_fund_implementation_complete value = 1 }
 }
 
 ywc_lan_fund_begin_review = {
-	set_variable = { name = ywc_lan_fund_six_months_claimed value = 1 }
+	if = {
+		limit = { ywc_lan_fund_target_ready = yes has_variable = ywc_lan_fund_six_months_complete }
+		set_variable = { name = ywc_lan_fund_six_months_claimed value = 1 }
+		set_variable = { name = ywc_lan_fund_pending_event value = 1027 }
+	}
+	else = {
+		if = { limit = { NOT = { ywc_lan_fund_target_ready = yes } } remove_variable = ywc_lan_fund_observation_timer remove_variable = ywc_lan_fund_observation_started remove_variable = ywc_lan_fund_six_months_complete }
+		set_variable = { name = ywc_lan_fund_pending_event value = 1026 }
+	}
 }
 
 ywc_lan_fund_narrow_target = {
-	set_variable = { name = ywc_lan_fund_narrowed value = 1 }
+ set_variable = { name = ywc_lan_fund_narrowed value = 1 }
+ remove_variable = ywc_lan_fund_observation_timer
+ remove_variable = ywc_lan_fund_observation_started
+ remove_variable = ywc_lan_fund_six_months_complete
+ remove_variable = ywc_lan_fund_notice_current
+ remove_variable = ywc_lan_fund_blocked_months
+ remove_variable = ywc_lan_fund_notice_event
+ remove_variable = ywc_lan_fund_notice12_sent
+ remove_variable = ywc_lan_fund_notice36_sent
 }
 
 ywc_lan_fund_monthly_review = {
-	if = {
-		limit = {
-			NOT = { has_variable = ywc_lan_fund_established }
-			NOT = { has_variable = ywc_lan_fund_compromise }
-			NOT = { has_variable = ywc_lan_fund_withdrawn }
-		}
-		if = {
-			limit = { ywc_lan_fund_route_ready = yes }
-			if = {
-				limit = {
-					has_variable = ywc_lan_fund_observation_started
-					NOT = { has_variable = ywc_lan_fund_observation_timer }
-				}
-				set_variable = { name = ywc_lan_fund_six_months_complete value = 1 }
-				remove_variable = ywc_lan_fund_observation_started
-			}
-			if = {
-				limit = {
-					NOT = { has_variable = ywc_lan_fund_observation_started }
-					NOT = { has_variable = ywc_lan_fund_six_months_complete }
-				}
-				set_variable = { name = ywc_lan_fund_observation_timer value = 1 months = 6 }
-				set_variable = { name = ywc_lan_fund_observation_started value = 1 }
-			}
-		}
-		else = {
-			remove_variable = ywc_lan_fund_observation_timer
-			remove_variable = ywc_lan_fund_observation_started
-			remove_variable = ywc_lan_fund_six_months_complete
-		}
+ if = { limit = { NOT = { has_variable = ywc_lan_fund_established } NOT = { has_variable = ywc_lan_fund_compromise } NOT = { has_variable = ywc_lan_fund_withdrawn } }
+  if = { limit = { ywc_lan_fund_target_ready = yes }
+   remove_variable = ywc_lan_fund_blocked_months
+   remove_variable = ywc_lan_fund_notice_event
+   remove_variable = ywc_lan_fund_notice12_sent
+   remove_variable = ywc_lan_fund_notice36_sent
+   remove_variable = ywc_lan_fund_notice_current
+   if = { limit = { has_variable = ywc_lan_fund_implementation_complete }
+    if = { limit = { has_variable = ywc_lan_fund_observation_started NOT = { has_variable = ywc_lan_fund_observation_timer } } set_variable = { name = ywc_lan_fund_six_months_complete value = 1 } remove_variable = ywc_lan_fund_observation_started }
+    if = { limit = { NOT = { has_variable = ywc_lan_fund_observation_started } NOT = { has_variable = ywc_lan_fund_six_months_complete } } set_variable = { name = ywc_lan_fund_observation_timer value = 1 months = 6 } set_variable = { name = ywc_lan_fund_observation_started value = 1 } }
+   }
+  }
+  else = {
+   remove_variable = ywc_lan_fund_observation_timer
+   remove_variable = ywc_lan_fund_observation_started
+   remove_variable = ywc_lan_fund_six_months_complete
+   if = { limit = { has_variable = ywc_lan_fund_current_deferred ywc_lan_fund_current_obligation_ready = yes ywc_lan_fund_can_pay = yes }
+    remove_variable = ywc_lan_fund_current_deferred
+    remove_variable = ywc_lan_fund_blocked_months
+    remove_variable = ywc_lan_fund_notice_event
+    remove_variable = ywc_lan_fund_notice12_sent
+    remove_variable = ywc_lan_fund_notice36_sent
+    remove_variable = ywc_lan_fund_notice_current
+   }
+   else_if = { limit = { OR = { has_variable = ywc_lan_fund_implementation_complete AND = { has_variable = ywc_lan_fund_filing_fee_paid NOT = { ywc_lan_fund_can_pay = yes } } ywc_lan_fund_current_obligation_blocked = yes } }
+    change_variable = { name = ywc_lan_fund_blocked_months add = 1 }
+    if = { limit = { var:ywc_lan_fund_blocked_months >= 12 NOT = { has_variable = ywc_lan_fund_notice12_sent } } set_variable = { name = ywc_lan_fund_notice_event value = 12 } }
+    if = { limit = { var:ywc_lan_fund_blocked_months >= 36 NOT = { has_variable = ywc_lan_fund_notice36_sent } } set_variable = { name = ywc_lan_fund_notice_event value = 36 } }
+   }
+   else = { remove_variable = ywc_lan_fund_blocked_months remove_variable = ywc_lan_fund_notice_event remove_variable = ywc_lan_fund_notice12_sent remove_variable = ywc_lan_fund_notice36_sent remove_variable = ywc_lan_fund_notice_current }
+  }
+ }
+}
+
+ywc_lan_fund_reject_stale_terminal = {
+	if = { limit = { has_variable = ywc_v03_lan_v03_lan_work_accident_fund_started has_variable = ywc_lan_fund_phase_two_started NOT = { has_variable = ywc_lan_fund_settled } NOT = { has_variable = ywc_lan_fund_established } NOT = { has_variable = ywc_lan_fund_compromise } NOT = { has_variable = ywc_lan_fund_withdrawn } NOT = { ywc_lan_fund_target_ready = yes } OR = { NOT = { has_variable = ywc_lan_fund_pending_event } var:ywc_lan_fund_pending_event = 1026 } }
+		remove_variable = ywc_lan_fund_observation_timer
+		remove_variable = ywc_lan_fund_observation_started
+		remove_variable = ywc_lan_fund_six_months_complete
+		set_variable = { name = ywc_lan_fund_pending_event value = 1026 }
 	}
 }
 
@@ -876,9 +828,10 @@ ywc_lan_close_fund_as_established = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			established_outcome = yes
+			ywc_lan_mark_established_outcome = yes
 		}
 	}
+	ywc_lan_fund_reject_stale_terminal = yes
 }
 
 ywc_lan_close_fund_as_compromise = {
@@ -905,9 +858,10 @@ ywc_lan_close_fund_as_compromise = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			compromise_outcome = yes
+			ywc_lan_mark_compromise_outcome = yes
 		}
 	}
+	ywc_lan_fund_reject_stale_terminal = yes
 }
 
 ywc_lan_close_fund_as_breach = {
@@ -929,7 +883,34 @@ ywc_lan_close_fund_as_breach = {
 			change_variable = { name = ywc_v03_visible_task_count add = -1 }
 			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
-			breach_outcome = yes
+			ywc_lan_mark_breach_outcome = yes
 		}
 	}
+}
+
+
+ywc_lan_mine_reconsider_notice = {
+ remove_variable = ywc_lan_mine_notice_current
+ remove_variable = ywc_lan_mine_notice_event
+ remove_variable = ywc_lan_mine_observation_timer
+ remove_variable = ywc_lan_mine_observation_started
+ remove_variable = ywc_lan_mine_six_months_complete
+}
+
+
+ywc_lan_river_reconsider_notice = {
+ remove_variable = ywc_lan_river_notice_current
+ remove_variable = ywc_lan_river_notice_event
+ remove_variable = ywc_lan_river_observation_timer
+ remove_variable = ywc_lan_river_observation_started
+ remove_variable = ywc_lan_river_six_months_complete
+}
+
+
+ywc_lan_fund_reconsider_notice = {
+ remove_variable = ywc_lan_fund_notice_current
+ remove_variable = ywc_lan_fund_notice_event
+ remove_variable = ywc_lan_fund_observation_timer
+ remove_variable = ywc_lan_fund_observation_started
+ remove_variable = ywc_lan_fund_six_months_complete
 }

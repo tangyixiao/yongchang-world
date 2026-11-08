@@ -1,10 +1,12 @@
-﻿# LAN foundation scripted triggers. Hand-maintained; generated catalogs call into these.
+# LAN foundation scripted triggers. Hand-maintained; generated catalogs call into these.
 # Engine interfaces used here are listed with file:line in lan-foundation-report.md.
 
 ywc_v03_lan_has_staffed_office = {
 	any_scope_building = {
 		is_building_type = building_government_administration
 		level >= 2
+		occupancy >= 0.8
+		building_has_goods_shortage = no
 	}
 }
 
@@ -12,6 +14,8 @@ ywc_v03_lan_has_mine_scale = {
 	any_scope_building = {
 		is_building_group = bg_mining
 		level >= 3
+		occupancy >= 0.6
+		building_has_goods_shortage = no
 	}
 }
 
@@ -19,6 +23,8 @@ ywc_v03_lan_has_mine_employment = {
 	any_scope_building = {
 		is_building_group = bg_mining
 		level >= 1
+		occupancy >= 0.6
+		building_has_goods_shortage = no
 	}
 }
 
@@ -30,7 +36,7 @@ ywc_v03_lan_has_river_infrastructure = {
 }
 
 ywc_lan_mine_guild_ready = {
-	has_variable = ywc_lan_mine_guild_ledger
+	var:ywc_lan_mine_route = 3
 }
 
 ywc_lan_mine_can_pay = {
@@ -49,7 +55,6 @@ ywc_lan_fund_can_pay = {
 }
 
 ywc_lan_mine_audit_ready = {
-	has_variable = ywc_lan_mine_clerks_kept
 	ywc_v03_lan_has_staffed_office = yes
 }
 
@@ -62,11 +67,53 @@ ywc_lan_mine_limited_ready = {
 }
 
 ywc_lan_mine_office_ready = {
-	has_variable = ywc_lan_mine_ledger_opened
+	ywc_v03_lan_has_staffed_office = yes
 }
 
 ywc_lan_mine_route_ready = {
 	has_variable = ywc_lan_mine_route
+}
+
+ywc_lan_mine_target_ready = {
+	OR = {
+		AND = {
+			var:ywc_lan_mine_route = 1
+			has_variable = ywc_lan_mine_audit_chosen
+			has_variable = ywc_lan_mine_clerks_kept
+			has_variable = ywc_lan_mine_share_choice
+			has_variable = ywc_lan_mine_freight_checked
+			has_variable = ywc_lan_mine_customs_merged
+			ywc_v03_lan_has_staffed_office = yes
+			ywc_v03_lan_has_mine_scale = yes
+		}
+		AND = {
+			var:ywc_lan_mine_route = 2
+			has_variable = ywc_lan_mine_farm_chosen
+			has_variable = ywc_lan_mine_share_choice
+			has_variable = ywc_lan_mine_freight_internal
+			has_variable = ywc_lan_mine_customs_separate
+			ywc_v03_lan_has_mine_scale = yes
+		}
+		AND = {
+			var:ywc_lan_mine_route = 3
+			has_variable = ywc_lan_mine_limited_chosen
+			has_variable = ywc_lan_mine_guild_ledger
+			has_variable = ywc_lan_mine_share_choice
+			has_variable = ywc_lan_mine_freight_internal
+			has_variable = ywc_lan_mine_customs_separate
+			ywc_v03_lan_has_mine_employment = yes
+		}
+		AND = {
+			has_variable = ywc_lan_mine_narrowed
+			has_variable = ywc_lan_mine_share_choice
+			has_variable = ywc_lan_mine_freight_checked
+			OR = {
+				has_variable = ywc_lan_mine_customs_merged
+				has_variable = ywc_lan_mine_customs_separate
+			}
+			ywc_v03_lan_has_mine_employment = yes
+		}
+	}
 }
 
 ywc_lan_mine_freight_ready = {
@@ -79,14 +126,23 @@ ywc_lan_mine_customs_ready = {
 
 ywc_lan_mine_full_ready = {
 	has_variable = ywc_lan_mine_six_months_complete
-	ywc_v03_lan_has_staffed_office = yes
-	ywc_v03_lan_has_mine_scale = yes
+	has_variable = ywc_lan_mine_implementation_complete
+	NOT = { has_variable = ywc_lan_mine_narrowed }
+	ywc_lan_mine_target_ready = yes
 	var:ywc_lan_mine_route = 1
+	has_variable = ywc_lan_mine_reserve_paid
 }
 
 ywc_lan_mine_compromise_ready = {
 	has_variable = ywc_lan_mine_six_months_complete
-	ywc_v03_lan_has_mine_scale = yes
+	has_variable = ywc_lan_mine_implementation_complete
+	ywc_lan_mine_target_ready = yes
+	OR = {
+		AND = { var:ywc_lan_mine_route = 1 has_variable = ywc_lan_mine_claim_capped }
+		AND = { var:ywc_lan_mine_route = 1 has_variable = ywc_lan_mine_narrowed }
+		var:ywc_lan_mine_route = 2
+		var:ywc_lan_mine_route = 3
+	}
 }
 
 ywc_lan_mine_six_months_done = {
@@ -94,20 +150,19 @@ ywc_lan_mine_six_months_done = {
 }
 
 ywc_lan_river_compensate_ready = {
-	has_variable = ywc_lan_river_board_chosen
 	ywc_v03_lan_has_staffed_office = yes
 }
 
 ywc_lan_river_restrict_ready = {
-	has_variable = ywc_lan_river_restrict_chosen
+	always = yes
 }
 
 ywc_lan_river_guards_ready = {
-	has_variable = ywc_lan_river_guards_chosen
+	always = yes
 }
 
 ywc_lan_river_deed_ready = {
-has_law_or_variant = law_commercialized_agriculture
+has_law_or_variant = law_type:law_commercialized_agriculture
 }
 
 ywc_lan_river_neighbour_ready = {
@@ -118,19 +173,38 @@ ywc_lan_river_route_ready = {
 	has_variable = ywc_lan_river_route
 }
 
+ywc_lan_river_target_ready = {
+	OR = {
+		AND = { var:ywc_lan_river_route = 1 has_variable = ywc_lan_river_board_chosen has_variable = ywc_lan_river_deed_checked has_variable = ywc_lan_river_neighbour_notified ywc_v03_lan_has_river_infrastructure = yes }
+		AND = { var:ywc_lan_river_route = 2 has_variable = ywc_lan_river_restrict_chosen has_variable = ywc_lan_river_blocks_restricted has_variable = ywc_lan_river_deed_checked ywc_v03_lan_has_river_infrastructure = yes }
+		AND = { var:ywc_lan_river_route = 3 has_variable = ywc_lan_river_guards_chosen has_variable = ywc_lan_river_guards_hired has_variable = ywc_lan_river_deed_checked has_modifier = ywc_lan_guard_backlash ywc_v03_lan_has_river_infrastructure = yes }
+		AND = { has_variable = ywc_lan_river_narrowed has_variable = ywc_lan_river_deed_checked ywc_v03_lan_has_river_infrastructure = yes }
+	}
+}
+
 ywc_lan_river_expand_ready = {
 	ywc_v03_lan_has_mine_scale = yes
 }
 
 ywc_lan_river_full_ready = {
 	has_variable = ywc_lan_river_six_months_complete
+	has_variable = ywc_lan_river_implementation_complete
+	NOT = { has_variable = ywc_lan_river_narrowed }
+	ywc_lan_river_target_ready = yes
 	var:ywc_lan_river_route = 1
+	has_variable = ywc_lan_river_board_funded
 	ywc_v03_lan_has_river_infrastructure = yes
 }
 
 ywc_lan_river_compromise_ready = {
 	has_variable = ywc_lan_river_six_months_complete
-	ywc_v03_lan_has_mine_scale = yes
+	has_variable = ywc_lan_river_implementation_complete
+	ywc_lan_river_target_ready = yes
+	OR = {
+		AND = { var:ywc_lan_river_route = 1 has_variable = ywc_lan_river_narrowed }
+		var:ywc_lan_river_route = 2
+		var:ywc_lan_river_route = 3
+	}
 }
 
 ywc_lan_river_six_months_done = {
@@ -139,11 +213,11 @@ ywc_lan_river_six_months_done = {
 
 ywc_lan_fund_mutual_ready = {
 	has_variable = ywc_lan_fund_mutual_chosen
-has_law_or_variant = law_poor_laws
+has_law_or_variant = law_type:law_poor_laws
 }
 
 ywc_lan_fund_company_ready = {
-	has_variable = ywc_lan_fund_company_chosen
+	OR = { has_variable = ywc_lan_fund_company_chosen var:ywc_lan_fund_route = 3 }
 }
 
 ywc_lan_fund_private_ready = {
@@ -159,7 +233,7 @@ ywc_lan_fund_office_ready = {
 }
 
 ywc_lan_fund_debt_ready = {
-	has_variable = ywc_lan_fund_filing_fee_paid
+	AND = { var:ywc_lan_fund_route = 1 has_variable = ywc_lan_fund_filing_fee_paid }
 }
 
 ywc_lan_fund_practice_ready = {
@@ -170,15 +244,65 @@ ywc_lan_fund_route_ready = {
 	has_variable = ywc_lan_fund_route
 }
 
+ywc_lan_fund_target_ready = {
+	OR = {
+		AND = { var:ywc_lan_fund_route = 1 has_variable = ywc_lan_fund_mutual_chosen has_variable = ywc_lan_fund_mutual_opened has_variable = ywc_lan_fund_both_paid has_variable = ywc_lan_fund_practice_adopted ywc_lan_fund_mine_ready = yes has_law_or_variant = law_type:law_poor_laws }
+		AND = { var:ywc_lan_fund_route = 2 has_variable = ywc_lan_fund_company_chosen has_variable = ywc_lan_fund_debt_choice has_variable = ywc_lan_fund_firm_reserved ywc_lan_fund_office_ready = yes }
+		AND = { var:ywc_lan_fund_route = 3 has_variable = ywc_lan_fund_private_chosen var:ywc_lan_fund_roll_size = 2 has_variable = ywc_lan_fund_debt_choice has_variable = ywc_lan_fund_firm_reserved has_variable = ywc_lan_fund_practice_declined has_variable = ywc_lan_fund_wages_first has_modifier = ywc_lan_relief_gap }
+		AND = { has_variable = ywc_lan_fund_narrowed var:ywc_lan_fund_route = 1 has_variable = ywc_lan_fund_mutual_opened var:ywc_lan_fund_roll_size = 1 ywc_lan_fund_mine_ready = yes }
+	}
+}
+
+ywc_lan_mine_current_obligation_ready = {
+	ywc_lan_mine_office_ready = yes
+}
+
+ywc_lan_river_current_obligation_ready = {
+	ywc_lan_river_deed_ready = yes
+}
+
+ywc_lan_fund_current_obligation_ready = {
+	ywc_lan_fund_mine_ready = yes
+	ywc_lan_fund_office_ready = yes
+}
+
+ywc_lan_mine_current_obligation_blocked = {
+	has_variable = ywc_lan_mine_current_deferred
+	var:ywc_lan_mine_pending_event = 1001
+	NOT = { ywc_lan_mine_current_obligation_ready = yes }
+}
+
+ywc_lan_river_current_obligation_blocked = {
+	has_variable = ywc_lan_river_current_deferred
+	var:ywc_lan_river_pending_event = 1011
+	NOT = { ywc_lan_river_current_obligation_ready = yes }
+}
+
+ywc_lan_fund_current_obligation_blocked = {
+	has_variable = ywc_lan_fund_current_deferred
+	var:ywc_lan_fund_pending_event = 1021
+	NOT = { ywc_lan_fund_current_obligation_ready = yes }
+}
+
 ywc_lan_fund_full_ready = {
 	has_variable = ywc_lan_fund_six_months_complete
+	has_variable = ywc_lan_fund_implementation_complete
+	NOT = { has_variable = ywc_lan_fund_narrowed }
+	ywc_lan_fund_target_ready = yes
 	var:ywc_lan_fund_route = 1
 	ywc_v03_lan_has_mine_employment = yes
+	has_law_or_variant = law_type:law_poor_laws
 }
 
 ywc_lan_fund_compromise_ready = {
 	has_variable = ywc_lan_fund_six_months_complete
-	ywc_v03_lan_has_mine_employment = yes
+	has_variable = ywc_lan_fund_implementation_complete
+	ywc_lan_fund_target_ready = yes
+	OR = {
+		AND = { var:ywc_lan_fund_route = 1 has_variable = ywc_lan_fund_narrowed }
+		var:ywc_lan_fund_route = 2
+		var:ywc_lan_fund_route = 3
+	}
 }
 
 ywc_lan_fund_six_months_done = {
