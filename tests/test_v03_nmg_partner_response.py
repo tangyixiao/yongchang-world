@@ -29,7 +29,11 @@ class NmgPartnerWorld(PartnerWorld):
                                  ("static_modifiers/ywc_v03_nmg_modifiers.txt", self.modifier_defs)):
             path = root / rel
             if path.exists():
-                destination.update({key: body for key, _, body in parse(path.read_text(encoding="utf-8-sig"))})
+                body = parse(path.read_text(encoding="utf-8-sig"))
+                if rel.startswith("on_actions/"):
+                    self.merge_on_actions(body)
+                else:
+                    destination.update({key: value for key, _, value in body})
 
     def _value(self, token, *, optional=False):
         if token == "relations_threshold:poor":
@@ -262,8 +266,7 @@ class NmgPartnerResponseTests(unittest.TestCase):
         choose(world, "ywc_nmg.1020", "fixed")
         offer = world.jobs[-1]; self.assertTrue(world.display_job(offer))
         countries["NMG"].update({"is_subject": False, "overlord": None})
-        action = field(world.on_actions["on_become_independent"], "effect")
-        world.execute(action, "NMG"); world.choose_job(offer, "accept")
+        world.run_on_action("on_become_independent", "NMG"); world.choose_job(offer, "accept")
         self.assertNotIn("ywc_nmg_mexshare_contract_generation", countries["NMG"])
 
         countries = base_countries(); world = NmgPartnerWorld(countries)
@@ -271,7 +274,7 @@ class NmgPartnerResponseTests(unittest.TestCase):
         world.run_country_monthly("NMG")
         self.assertTrue(any(row.get("name") == "ywc_nmg_local_port_budget_right" for _, row in world.modifiers))
         countries["NMG"].update({"is_subject": False, "overlord": None, "in_default": True})
-        world.execute(field(world.on_actions["on_become_independent"], "effect"), "NMG")
+        world.run_on_action("on_become_independent", "NMG")
         self.assertFalse(any(row.get("name") == "ywc_nmg_local_port_budget_right" for _, row in world.modifiers))
         world.advance_months(1); world.run_country_monthly("NMG")
         countries["NMG"]["in_default"] = False

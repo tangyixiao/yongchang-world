@@ -107,7 +107,7 @@ class NqgAidRegressions(unittest.TestCase):
         offer = send_inquiry(world)
         self.assertTrue(world.display_job(offer))
         countries["NQG"]["is_subject"] = True
-        world.execute(field(world.on_actions["on_become_subject"], "effect"), "NQG")
+        world.run_on_action("on_become_subject", "NQG")
         countries["NQG"]["is_subject"] = False
         world.choose_job(offer, "accept")
         self.assertNotIn("ywc_nqg_aid_contract_generation", countries["NQG"])
@@ -117,7 +117,7 @@ class NqgAidRegressions(unittest.TestCase):
         world, countries = signed_world()
         state = countries["NQG"]
         state["is_subject"] = True
-        world.execute(field(world.on_actions["on_become_subject"], "effect"), "NQG")
+        world.run_on_action("on_become_subject", "NQG")
         self.assertEqual(state["ywc_nqg_aid_contract_generation"], 1)
         world.run_country_monthly("NQG")
         self.assertEqual(state["ywc_nqg_aid_paid_total"], 300)

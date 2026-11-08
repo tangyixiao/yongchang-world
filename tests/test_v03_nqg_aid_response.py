@@ -52,9 +52,8 @@ class NqgAidWorld(PartnerWorld):
             path = ROOT / rel
             self.named_values.update({key: body for key, _, body in parse(path.read_text(encoding="utf-8-sig"))}
                                      if path.exists() else {})
-        self.on_actions.update({key: body for key, _, body
-                                in parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_nqg_accounts.txt")
-                                         .read_text(encoding="utf-8-sig"))})
+        self.merge_on_actions(parse((ROOT / "yongchang_world/common/on_actions/ywc_v03_nqg_accounts.txt")
+                                    .read_text(encoding="utf-8-sig")))
 
 
 def option_body(world, event_id, key):

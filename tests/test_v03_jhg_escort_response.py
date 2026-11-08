@@ -42,11 +42,11 @@ class JhgWorld(PartnerWorld):
         for rel in ("common/script_values/ywc_v03_jhg_values.txt",
                     "common/on_actions/ywc_v03_jhg_accounts.txt"):
             path = Path(ROOT_PATH) / rel
-            body = {key: value for key, _, value in parse(path.read_text(encoding="utf-8-sig"))}
+            body = parse(path.read_text(encoding="utf-8-sig"))
             if rel.endswith("values.txt"):
-                self.named_values.update(body)
+                self.named_values.update({key: value for key, _, value in body})
             else:
-                self.on_actions.update(body)
+                self.merge_on_actions(body)
 
 
 def option_body(world, event_id, key):

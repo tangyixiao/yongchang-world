@@ -276,7 +276,7 @@ class NmgJointResponseTests(unittest.TestCase):
         choose_legal(world, "ywc_nmg.1022", "switch_domestic")
         self.assertEqual(countries["NMG"]["ywc_nmg_revenue_route"], 4)
         countries["NMG"].update({"is_subject": False, "overlord": None})
-        world.execute(field(world.on_actions["on_become_independent"], "effect"), "NMG")
+        world.run_on_action("on_become_independent", "NMG")
         countries["MEX"]["in_default"] = False
         world.advance_months(1)
         for tag in ("NMG", "MEX"): world.run_country_monthly(tag)

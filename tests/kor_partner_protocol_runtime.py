@@ -121,7 +121,8 @@ class PartnerWorld(Strict):
         source = Path("yongchang_world/common/static_modifiers/ywc_v03_kor_modifiers.txt")
         self.modifier_defs = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))} if source.exists() else {}
         source = Path("yongchang_world/common/on_actions/ywc_v03_kor_accounts.txt")
-        self.on_actions = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))}
+        self.on_actions = {}
+        self.merge_on_actions(parse(source.read_text(encoding="utf-8-sig")))
         # Typed world objects: states get a world-unique identity that survives
         # ownership transfer; markets are distinct objects owned at world level.
         self.markets = {}
@@ -134,6 +135,50 @@ class PartnerWorld(Strict):
             if "_sid" not in state:
                 state["_sid"] = self._next_sid
                 self._next_sid += 1
+
+    def merge_on_actions(self, declarations):
+        """Merge append-only on_actions lists; duplicate effects fail loudly."""
+        for name, op, body in declarations:
+            if op != "=" or not isinstance(body, list):
+                raise UnsupportedSubset(f"unsupported on_action declaration: {name}")
+            existing = self.on_actions.setdefault(name, [])
+            for child in body:
+                if child[0] in ("effect", "trigger") and any(node[0] == child[0] for node in existing):
+                    raise UnsupportedSubset(f"duplicate {child[0]} block for on_action {name}")
+                existing.append(child)
+
+    def run_on_action(self, name, tag):
+        """Dispatch the supported effect/on_actions graph in a fresh country scope."""
+        with self._chain(self.country_ref(tag)):
+            self._run_on_action(name, tag, set())
+
+    def _run_on_action(self, name, tag, active):
+        if name in active or name not in self.on_actions:
+            raise UnsupportedSubset(f"recursive or missing on_action: {name}")
+        active = active | {name}
+        inherited_saved = dict(self._saved)
+        for key, op, body in self.on_actions[name]:
+            if op != "=" or not isinstance(body, list):
+                raise UnsupportedSubset(f"unsupported on_action body: {name}/{key}")
+            if key == "effect":
+                previous_saved = self._saved
+                self._saved = dict(inherited_saved)
+                try:
+                    self.execute(body, tag)
+                finally:
+                    self._saved = previous_saved
+            elif key == "on_actions":
+                for child, child_op, value in body:
+                    if child_op != "=" or value != "yes":
+                        raise UnsupportedSubset(f"unsupported on_action child: {name}/{child}")
+                    previous_saved = self._saved
+                    self._saved = dict(inherited_saved)
+                    try:
+                        self._run_on_action(child, tag, active)
+                    finally:
+                        self._saved = previous_saved
+            else:
+                raise UnsupportedSubset(f"unsupported on_action block: {name}/{key}")
 
     def _state_dict(self, sid):
         return self._state_location(sid)[0]
@@ -871,9 +916,7 @@ class PartnerWorld(Strict):
                 self._displayed[job] = tuple(sorted(self._saved.items()))
 
     def run_country_monthly(self, tag="KOR"):
-        action = self.on_actions["on_monthly_pulse_country"]
-        with self._chain(self.country_ref(tag)):
-            self.execute(field(action, "effect"), tag)
+        self.run_on_action("on_monthly_pulse_country", tag)
 
     def job_options(self, job):
         if job not in self._displayed or not self._alive(job.recipient):
