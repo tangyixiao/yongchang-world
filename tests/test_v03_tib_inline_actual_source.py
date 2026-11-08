@@ -501,8 +501,13 @@ def actual_tib_inline_world(strategy=1):
     legacy=_run_legacy_and_initialize(world); roots=_admit_roots(world)
     return world,{'legacy_events':legacy,'roots':roots}
 
-def pulse_inline_journals(world):
-    """Pulse each live native JE once; reconcile terminals and admit via authored gates."""
+def pulse_inline_journals(world,after_journal=None):
+    """Pulse each live JE once, optionally draining events after its full effect.
+
+    The callback receives (world, journal_id, emitted_rows). The sorted live
+    snapshot is fixed before callbacks run, so newly admitted members wait for
+    the next call. Default event-list and return semantics remain unchanged.
+    """
     if TAG not in world.active: raise AssertionError('missing active membership')
     emitted=[]
     for jid in list(world.active[TAG]):
@@ -526,7 +531,9 @@ def pulse_inline_journals(world):
         je=world.journal_defs[jid]
         if world.conditions(_field(je,'complete',[]),TAG) or world.conditions(_field(je,'fail',[]),TAG): continue
         before=len(world.events); world.execute(_field(_field(je,'on_monthly_pulse'),'effect'),TAG)
-        emitted.extend(world.events[before:]); del world.events[before:]
+        journal_events=list(world.events[before:])
+        emitted.extend(journal_events); del world.events[before:]
+        if after_journal is not None: after_journal(world,jid,journal_events)
     return emitted
 
 def run_inline_event_immediate(world,event_id):
