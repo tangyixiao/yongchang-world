@@ -36,6 +36,11 @@ def event_option(event_id, key):
 
 class NmgWorld(PulseWorld):
     """Interpret authored scripts; fixture only the engine-owned world facts."""
+    # This older single-country interpreter cannot represent foreign event
+    # recipients or incarnation-bound country scopes.  It must fail closed
+    # at that boundary; test_v03_nmg_partner_response exercises the real
+    # protocol with a multi-country interpreter and no fabricated acceptance.
+    FOREIGN_PROTOCOL_BOUNDARIES = {"ywc_nmg_mexshare_can_offer", "ywc_nmg_mexshare_agreement_current"}
     SUPPORTED_CONDITION_PRIMITIVES = {
         "has_variable", "has_modifier", "exists", "always", "net_fixed_income",
         "bureaucracy", "gold_reserves", "yearly_gross_income", "scaled_debt",
@@ -110,6 +115,10 @@ class NmgWorld(PulseWorld):
     def validate_condition(self, node, seen=frozenset()):
         """Validate all actual condition branches, including branches not taken."""
         key, comparison, value = node
+        if key in self.FOREIGN_PROTOCOL_BOUNDARIES:
+            if comparison != "=" or value not in ("yes", "no"):
+                raise AssertionError(("invalid_foreign_protocol_boundary", node))
+            return
         if key in {"AND", "OR", "NOT", "NOR"}:
             if comparison != "=" or not isinstance(value, list):
                 raise AssertionError(("invalid_boolean_condition", node))
@@ -185,6 +194,8 @@ class NmgWorld(PulseWorld):
         self.validate_condition(node)
         key, comparison, value = node
         v = self.countries[tag]
+        if key in self.FOREIGN_PROTOCOL_BOUNDARIES:
+            return value == "no"
         if key in self.trigger_defs:
             if key in self._trigger_stack:
                 raise AssertionError(("invalid_or_recursive_scripted_trigger", node))
@@ -387,8 +398,8 @@ class NmgLifecycleTest(unittest.TestCase):
             (1, "office", ["bilingual", "hire_full", "court_parish", "fund_schools", "keep_route", "wait_retry"],
              "ywc_nmg.1014", "ywc_nmg.1015", "keep_route", "close_partial",
              lambda v: v.update(literacy_rate=0.2), lambda v: v.update(literacy_rate=0.6), 3),
-            (2, "revenue", ["fixed", "audit_strict", "close_account", "press_quota", "use_temperature", "carry_heavy", "conclude", "wait_retry"],
-             "ywc_nmg.1028", "ywc_nmg.1029", "own_arrears", "close_partial",
+            (2, "revenue", ["domestic", "audit_strict", "close_account_domestic", "local_plan", "local_record", "retain_local_budget", "conclude", "wait_retry"],
+             "ywc_nmg.1028", "ywc_nmg.1029", "own_arrears", "select_arrears_limited",
              lambda v: v["fixture_buildings"].pop("building_barrack"),
              lambda v: v["fixture_buildings"].update(building_barrack=0.8), 3),
         )
@@ -672,7 +683,7 @@ class NmgLifecycleTest(unittest.TestCase):
         cases={
             "ywc_nmg.1007":("settle_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4"),
             "ywc_nmg.1015":("close_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4"),
-            "ywc_nmg.1029":("close_partial","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4")}
+            "ywc_nmg.1029":("select_arrears_limited","fresh six-month observation","after it matures, confirm","\u65b0\u7684\u516d\u4e2a\u6708\u89c2\u5bdf","\u89c2\u5bdf\u6210\u719f\u540e\u518d\u6b21\u786e\u8ba4")}
         eng=(MOD/"localization/english/ywc_v03_country_nmg_l_english.yml").read_text(encoding="utf-8-sig")
         zho=(MOD/"localization/simp_chinese/ywc_v03_country_nmg_l_simp_chinese.yml").read_text(encoding="utf-8-sig")
         for event_id,(option_key,first_phrase,mature_phrase,zh_first,zh_mature) in cases.items():
@@ -701,9 +712,9 @@ class NmgLifecycleTest(unittest.TestCase):
         self.assertIn(f'{key} "{note["zh"]}"',zho)
 
     def test_real_revenue_1027_compromise_uses_matured_paid_contract_and_retries_after_popup_loss(self):
-        prefix=["fixed","audit_strict","close_account","press_quota","use_temperature","carry_heavy","conclude","wait_retry"]
+        prefix=["domestic","audit_strict","close_account_domestic","local_plan","local_record","retain_local_budget","conclude","wait_retry"]
         def real_mature_popup():
-            world=self.finish_path(2,1,prefix)
+            world=self.finish_path(2,4,prefix)
             v=world.countries["NMG"]
             self.assertEqual(v.get("ywc_nmg_revenue_quota_paid"),1)
             for _ in range(20):
@@ -754,7 +765,7 @@ class NmgLifecycleTest(unittest.TestCase):
         effects=[n for n in wait if n[0] not in ("name","trigger","ai_chance","custom_tooltip")]
         world.execute(effects,"NMG")
         self.assertEqual(v.get("ywc_nmg_revenue_pending"),1027)
-        self.assertEqual(v.get("ywc_nmg_revenue_route"),1)
+        self.assertEqual(v.get("ywc_nmg_revenue_route"),4)
         self.assertEqual(v.get("ywc_nmg_revenue_quota_paid"),1)
         self.assertNotIn("ywc_v03_nmg_v03_nmg_autonomy_revenue_settled",v)
         self.assertEqual(v.get("ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome"),0)
@@ -904,7 +915,7 @@ class NmgLifecycleTest(unittest.TestCase):
             (0, 2, ["unified", "rule_custom", "finish_survey", "keep_old", "keep_recording", "new_assessment", "renegotiate", "wait_retry", "settle_full"]),
             (1, 1, ["bilingual", "hire_full", "court_parish", "fund_schools", "keep_route", "wait_retry", "close_full"]),
             (1, 2, ["local", "hire_thin", "court_parish", "fund_schools", "switch_local", "wait_retry", "wait_retry", "close_full"]),
-            (2, 1, ["fixed", "audit_strict", "close_account", "press_quota", "use_temperature", "carry_heavy", "conclude", "wait_retry", "wait_retry", "settle_full"]),
+            (2, 4, ["domestic", "audit_strict", "close_account_domestic", "local_plan", "local_record", "retain_local_budget", "conclude", "wait_retry", "wait_retry", "settle_full"]),
             (2, 2, ["joint", "audit_strict", "close_account_joint", "accept_floor", "escalate", "share_even", "conclude", "wait_retry", "wait_retry", "settle_full"]),
         )
         terminal = ("ywc_v03_nmg_v03_nmg_land_arbitration_settled",
@@ -923,9 +934,27 @@ class NmgLifecycleTest(unittest.TestCase):
                 self.assertEqual(world.active_journal, None)
                 expected_paid = {(0, 1): -2000, (0, 2): -2000,
                                  (1, 1): -2000, (1, 2): -1000,
-                                 (2, 1): -2000, (2, 2): -1000}[(arc, route)]
+                                 (2, 4): -1000, (2, 2): -1000}[(arc, route)]
                 self.assertEqual(world.treasury["NMG"], expected_paid)
                 self.assertEqual(v["gold_reserves"], 100000 + world.treasury["NMG"])
+
+    def test_paid_arrears_route_has_an_explicit_opening_handoff(self):
+        world = self.finish_path(2, 3, ["arrears", "audit_strict", "close_account_arrears"])
+        state = world.countries["NMG"]
+        self.assertEqual(state.get("ywc_nmg_revenue_route"), 3)
+        self.assertEqual(state.get("ywc_nmg_revenue_stage2"), 1)
+        self.assertEqual(state.get("ywc_nmg_revenue_pending"), 1023)
+        self.assertEqual(world.treasury["NMG"], -1000)
+
+    def test_paid_arrears_route_can_complete_all_three_authored_stages(self):
+        choices = ["arrears", "audit_strict", "close_account_arrears", "accept_floor", "escalate",
+                   "share_even", "conclude", "defer", "own_arrears", "wait_retry", "wait_retry", "close_partial"]
+        world = self.finish_path(2, 3, choices)
+        state = world.countries["NMG"]
+        self.assertEqual(state.get("ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome"), 2)
+        self.assertEqual(state.get("ywc_v03_nmg_v03_nmg_autonomy_revenue_settled"), 1)
+        self.assertEqual(world.completed_journals, [j["id"] for j in CATALOG["arcs"][2]["journals"]])
+        self.assertEqual(world.treasury["NMG"], -1000)
 
     def test_paid_contract_completes_after_exact_cash_is_spent(self):
         world = NmgWorld(fixture())

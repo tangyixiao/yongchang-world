@@ -303,11 +303,11 @@ def _natural_notice_world(slug, notice_kind):
         world.countries["NMG"]["literacy_rate"] = 0.2
         target_event = "ywc_nmg.1014" if notice_kind == "notice12" else "ywc_nmg.1015"
     else:
-        # Revenue: authored fixed route/audit/account sequence first, then an
+        # Revenue: authored domestic route/audit/account sequence first, then an
         # ordinary barracks loss while the paid route is open.
-        for event_id, option in (("ywc_nmg.1020", "fixed"),
+        for event_id, option in (("ywc_nmg.1020", "domestic"),
                                  ("ywc_nmg.1021", "audit_strict"),
-                                 ("ywc_nmg.1022", "close_account")):
+                                 ("ywc_nmg.1022", "close_account_domestic")):
             _pulse_all_until(world, order, slug, event_id, "normal", 18, counts)
             _receive(world, event_id, option)
         world.countries["NMG"]["fixture_buildings"].pop("building_barrack", None)

@@ -33,8 +33,8 @@ ROUTES = {
              "old_assessment", "renegotiate", "settle_partial"),
     "office": ("bilingual", "hire_full", "court_parish", "fund_schools", "keep_route",
                "wait_retry", "close_full"),
-    "revenue": ("fixed", "audit_strict", "close_account", "press_quota", "use_temperature",
-                "carry_heavy", "conclude", "wait_retry", "wait_retry", "settle_full"),
+    "revenue": ("domestic", "audit_strict", "close_account_domestic", "local_plan", "local_record",
+                "retain_local_budget", "conclude", "wait_retry", "wait_retry", "settle_full"),
 }
 NOTICE_OPTIONS = {
     ("land", 1006): "renegotiate", ("land", 1007): "settle_partial",
@@ -452,7 +452,7 @@ def run_nmg_story(order=ARCS, max_months=600, *, stop_at_five=False, block_facts
                 elif arc == "office":
                     country["fixture_buildings"].pop("building_government_administration", None)
                 elif arc == "revenue":
-                    # `1022 close_account` must be selected before removing barracks;
+                    # `1022 close_account_domestic` must be selected before removing barracks;
                     # this routine waits for that real source node to do so.
                     country["fixture_buildings"].pop("building_barrack", None)
                 blocked.add(arc)
