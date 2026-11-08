@@ -25,7 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 # Eight more selected-state predicates belong to the market card; PHI's own
 # border predicate uses c:PHI and cannot count as one of ROOT's eight.
 # Crown appends eight used selected-state predicates; the original 23 remain intact.
-COUNTS = dict(dmg=31, jhg=4, kor=6, shu=44, oir=9, nmg=6, tib=8, nqg=1, lan=9)
+# School appends seven original-pilot owner reads; the old six remain intact.
+COUNTS = dict(dmg=31, jhg=4, kor=6, shu=44, oir=9, nmg=13, tib=8, nqg=1, lan=9)
 
 
 def source(path):
@@ -47,6 +48,10 @@ def walk(nodes, scope="country"):
                 next_scope = "building"
             elif key in ("any_scope_pop", "every_scope_pop"):
                 next_scope = "pop"
+            elif key == "var:ywc_nmg_school_pilot":
+                # The school claim stores a native StateRef once; literal
+                # runtime tests prove its identity and current ownership.
+                next_scope = "state"
             elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
                 next_scope = "country"
             yield from walk(value, next_scope)
