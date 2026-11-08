@@ -51,9 +51,10 @@ class JHGContentContractTests(unittest.TestCase):
         cls.effects = blocks(EFFECTS.read_text(encoding="utf-8"))
         cls.triggers = blocks(TRIGGERS.read_text(encoding="utf-8"))
 
-    def test_all_24_cards_have_complete_bilingual_narrative(self):
+    def test_all_28_cards_have_complete_bilingual_narrative(self):
         events = [event for arc in self.catalog["arcs"] for event in arc["events"]]
-        self.assertEqual(len(events), 24)
+        self.assertEqual(len(events), 28)
+        self.assertEqual({event["id"] for event in events if event.get("hidden")}, {"ywc_jhg.1027", "ywc_jhg.1031"})
         journals = [journal for arc in self.catalog["arcs"] for journal in arc["journals"]]
         self.assertEqual(len(journals), 6)
         for journal in journals:
@@ -82,17 +83,23 @@ class JHGContentContractTests(unittest.TestCase):
                     # Partner language is supported only by reads in eligibility triggers.
                     partner_claim = any(word in (option["label"]["en"] + " " + option["cost_note"]["en"] + " " + option["consequence_note"]["en"]).lower() for word in ("partner", "ally", "allied"))
                     if partner_claim:
-                        self.assertTrue(trigger_helpers or "has_diplomatic_pact" in option.get("trigger", ""), key)
+                        if key == ("ywc_jhg.1030", "stale_dismiss"):
+                            self.assertEqual(option["trigger"], "{ always = yes }")
+                            self.assertEqual(option["effect"], "{ }")
+                        else:
+                            self.assertTrue(trigger_helpers or "has_diplomatic_pact" in option.get("trigger", ""), key)
                         self.assertNotRegex(trigger_closure, r"\b(?:add_diplomatic_pact|change_relations|add_relations|add_treasury)\s*=")
                         self.assertNotRegex(effect_closure, r"\b(?:add_diplomatic_pact|change_relations|add_relations|transfer_treasury)\s*=")
-                    # The JHG choice effects select a domestic route and queue domestic follow-up work.
-                    # They do not create modifiers, political changes, partner transfers, or deployed units.
+                    # Routes may now include an actual captured partnership and
+                    # transfer; they still cannot invent pacts or deploy fleets.
                     self.assertNotRegex(effect_closure, r"\b(?:add_modifier|add_timed_modifier|change_government_legitimacy|add_authority|add_diplomatic_pact|change_relations|add_relations|transfer_treasury|spawn_fleet|create_fleet)\s*=")
                     if "filing fee" in option["cost_note"]["en"].lower() or "one-time fee for this arc" in option["cost_note"]["en"].lower():
-                        self.assertIn(f"ywc_jhg_{family}_pay_filing_fee_once", option["effect"], key)
+                        if f"ywc_jhg_{family}_pay_filing_fee_once" not in option["effect"]:
+                            self.assertIn(f"has_variable = ywc_jhg_{family}_filing_fee_paid", option.get("trigger", ""), key)
+                            self.assertNotRegex(effect_closure, r"\badd_treasury\s*=")
 
     def test_action_labels_match_what_the_whole_option_does(self):
-        expected = {'ywc_jhg.1000:audit_contract': {'zh': '登记审账契约提案', 'en': 'Register the audit-contract proposal'}, 'ywc_jhg.1000:prince_guarantee': {'zh': '登记王府担保提案', 'en': 'Register the household guarantee proposal'}, 'ywc_jhg.1001:audit_contract': {'zh': '记下季度公开条款', 'en': 'Record quarterly-disclosure terms'}, 'ywc_jhg.1002:prince_guarantee': {'zh': '登记王府担保提案', 'en': 'Register the household guarantee proposal'}, 'ywc_jhg.1003:merchant_pool': {'zh': '登记优先报关提案', 'en': 'Register the priority-clearance proposal'}, 'ywc_jhg.1004:audit_contract': {'zh': '核验现有账房人员', 'en': 'Verify current clerk staffing'}, 'ywc_jhg.1005:prince_guarantee': {'zh': '按现行制度确认代表资格', 'en': 'Confirm representation under current law'}, 'ywc_jhg.1006:hold_course': {'zh': '继续观察现行安排', 'en': 'Continue observing the current arrangement'}, 'ywc_jhg.1007:settle_full': {'zh': '记录完整结案结果', 'en': 'Record the full domestic settlement'}, 'ywc_jhg.1007:settle_partial': {'zh': '记录妥协结案结果', 'en': 'Record a compromise settlement'}, 'ywc_jhg.1010:main_lane': {'zh': '登记主航线方案', 'en': 'Register a main-lane plan'}, 'ywc_jhg.1010:shared_escort': {'zh': '按现存盟约提出有限护航方案', 'en': 'Propose limited escort under the existing alliance'}, 'ywc_jhg.1011:main_lane': {'zh': '核验主航线港口现有人员', 'en': 'Check current staffing at main-lane ports'}, 'ywc_jhg.1012:shared_escort': {'zh': '提出盟约下分担护航方案', 'en': 'Propose shared escort under the existing alliance'}, 'ywc_jhg.1013:main_lane': {'zh': '登记主航线方案', 'en': 'Register a main-lane plan'}, 'ywc_jhg.1014:insurance': {'zh': '登记商业保险提案', 'en': 'Register a commercial-insurance proposal'}, 'ywc_jhg.1015:explain_limits': {'zh': '承认护航能力有限', 'en': 'Acknowledge the escort limit'}, 'ywc_jhg.1016:main_lane': {'zh': '按现行海军法登记主航线方案', 'en': 'Register a main-lane plan under current naval law'}, 'ywc_jhg.1017:hold_course': {'zh': '继续观察现有方案', 'en': 'Continue review under the current plan'}, 'ywc_jhg.1018:settle_full': {'zh': '记录完整结案结果', 'en': 'Record the full domestic result'}, 'ywc_jhg.1018:settle_partial': {'zh': '记录有限妥协结果', 'en': 'Record the limited compromise result'}, 'ywc_jhg.1020:fixed_share': {'zh': '提出固定份额方案', 'en': 'Propose a standing-share arrangement'}, 'ywc_jhg.1020:ambiguity': {'zh': '保留未定贡单条款', 'en': 'Leave the tribute terms open'}, 'ywc_jhg.1021:fixed_share': {'zh': '回信提出固定份额', 'en': 'Propose a fixed share in reply'}, 'ywc_jhg.1022:project_share': {'zh': '提出共同项目方案', 'en': 'Propose a joint-project arrangement'}, 'ywc_jhg.1023:ambiguity': {'zh': '保留未定贡单条款', 'en': 'Leave the tribute terms open'}, 'ywc_jhg.1025:settle_full': {'zh': '记录完整结案结果', 'en': 'Record the full domestic result'}, 'ywc_jhg.1025:settle_partial': {'zh': '记录妥协结案结果', 'en': 'Record a compromise settlement'}}
+        expected = {'ywc_jhg.1000:audit_contract': {'zh': '登记审账契约提案', 'en': 'Register the audit-contract proposal'}, 'ywc_jhg.1000:prince_guarantee': {'zh': '登记王府担保提案', 'en': 'Register the household guarantee proposal'}, 'ywc_jhg.1001:audit_contract': {'zh': '记下季度公开条款', 'en': 'Record quarterly-disclosure terms'}, 'ywc_jhg.1002:prince_guarantee': {'zh': '登记王府担保提案', 'en': 'Register the household guarantee proposal'}, 'ywc_jhg.1003:merchant_pool': {'zh': '登记优先报关提案', 'en': 'Register the priority-clearance proposal'}, 'ywc_jhg.1004:audit_contract': {'zh': '核验现有账房人员', 'en': 'Verify current clerk staffing'}, 'ywc_jhg.1005:prince_guarantee': {'zh': '按现行制度确认代表资格', 'en': 'Confirm representation under current law'}, 'ywc_jhg.1006:hold_course': {'zh': '继续观察现行安排', 'en': 'Continue observing the current arrangement'}, 'ywc_jhg.1007:settle_full': {'zh': '记录完整结案结果', 'en': 'Record the full domestic settlement'}, 'ywc_jhg.1007:settle_partial': {'zh': '记录妥协结案结果', 'en': 'Record a compromise settlement'}, 'ywc_jhg.1010:main_lane': {'zh': '登记主航线方案', 'en': 'Register a main-lane plan'}, 'ywc_jhg.1010:shared_escort': {'zh': '邀请兰芳分摊护航', 'en': 'Invite Lanfang to share the escort'}, 'ywc_jhg.1011:main_lane': {'zh': '核验主航线港口现有人员', 'en': 'Check current staffing at main-lane ports'}, 'ywc_jhg.1012:shared_escort': {'zh': '按已签护航合伙继续', 'en': 'Continue under the signed escort partnership'}, 'ywc_jhg.1013:main_lane': {'zh': '登记主航线方案', 'en': 'Register a main-lane plan'}, 'ywc_jhg.1014:insurance': {'zh': '登记商业保险提案', 'en': 'Register a commercial-insurance proposal'}, 'ywc_jhg.1015:explain_limits': {'zh': '承认护航能力有限', 'en': 'Acknowledge the escort limit'}, 'ywc_jhg.1016:main_lane': {'zh': '按现行海军法登记主航线方案', 'en': 'Register a main-lane plan under current naval law'}, 'ywc_jhg.1017:hold_course': {'zh': '继续观察现有方案', 'en': 'Continue review under the current plan'}, 'ywc_jhg.1018:settle_full': {'zh': '记录完整结案结果', 'en': 'Record the full domestic result'}, 'ywc_jhg.1018:settle_partial': {'zh': '记录有限妥协结果', 'en': 'Record the limited compromise result'}, 'ywc_jhg.1020:fixed_share': {'zh': '提出固定份额方案', 'en': 'Propose a standing-share arrangement'}, 'ywc_jhg.1020:ambiguity': {'zh': '保留未定贡单条款', 'en': 'Leave the tribute terms open'}, 'ywc_jhg.1021:fixed_share': {'zh': '回信提出固定份额', 'en': 'Propose a fixed share in reply'}, 'ywc_jhg.1022:project_share': {'zh': '按已签共同项目继续', 'en': 'Continue with the signed joint project'}, 'ywc_jhg.1023:ambiguity': {'zh': '保留未定贡单条款', 'en': 'Leave the tribute terms open'}, 'ywc_jhg.1025:settle_full': {'zh': '记录完整结案结果', 'en': 'Record the full domestic result'}, 'ywc_jhg.1025:settle_partial': {'zh': '记录妥协结案结果', 'en': 'Record a compromise settlement'}}
         events = {event["id"]: event for arc in self.catalog["arcs"] for event in arc["events"]}
         for key, label in expected.items():
             event_id, option_key = key.split(":", 1)
@@ -102,13 +109,13 @@ class JHGContentContractTests(unittest.TestCase):
                 if option_key not in ("hold_course", "settle_full", "settle_partial", "explain_limits"):
                     self.assertIn("pending_event", option["effect"])
 
-    def test_return1_narrative_uses_contract_voice(self):
+    def test_escort_narrative_describes_the_actual_partner_reply(self):
         journals = {journal["id"]: journal for arc in self.catalog["arcs"] for journal in arc["journals"]}
         event = next(event for arc in self.catalog["arcs"] for event in arc["events"] if event["id"] == "ywc_jhg.1012")
         self.assertIn("The clerks spread six months of ledgers", journals["ywc_je_v03_jhg_court_settlement"]["desc"]["en"])
-        self.assertIn("lays the escort proposal beside the alliance papers", journals["ywc_je_v03_jhg_convoy_partner_watch"]["desc"]["en"])
-        self.assertIn("brings the household a limited escort proposal", event["desc"]["en"])
-        self.assertIn("It remains a domestic proposal for discussion", event["desc"]["en"])
+        self.assertIn("partner's answer", journals["ywc_je_v03_jhg_convoy_partner_watch"]["desc"]["en"])
+        self.assertIn("actual reply", event["desc"]["en"])
+        self.assertNotIn("It remains a domestic proposal for discussion", event["desc"]["en"])
 
     def test_overclaims_removed_from_all_user_facing_card_fields(self):
         events = [event for arc in self.catalog["arcs"] for event in arc["events"]]

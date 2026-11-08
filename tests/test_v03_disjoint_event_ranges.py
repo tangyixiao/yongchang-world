@@ -34,9 +34,12 @@ class V03DisjointEventRangeTests(unittest.TestCase):
             self.assertEqual(validate_catalogs_at(root, {"country_shu": catalog()}), [])
             self.assertEqual(render_all(root), before)
 
-    def test_new_kor_and_nqg_segment_boundaries_are_accepted_and_built(self):
-        for tag, slug in (("KOR", "v03_kor_military_accounts"), ("NQG", "v03_nqg_winter_court")):
-            for number in (1000, 1009, 1030, 1039):
+    def test_new_kor_nqg_and_jhg_segment_boundaries_are_accepted_and_built(self):
+        segments = (("KOR", "v03_kor_military_accounts", 1000, 1009, 1030, 1039),
+                    ("NQG", "v03_nqg_winter_court", 1000, 1009, 1030, 1039),
+                    ("JHG", "v03_jhg_convoy_capacity", 1010, 1019, 1030, 1032))
+        for tag, slug, primary_start, primary_end, extra_start, extra_end in segments:
+            for number in (primary_start, primary_end, extra_start, extra_end):
                 with self.subTest(tag=tag, number=number), tempfile.TemporaryDirectory() as temp:
                     root = pathlib.Path(temp)
                     write_fixture(root)
@@ -51,7 +54,8 @@ class V03DisjointEventRangeTests(unittest.TestCase):
                     registry = read_registry(root)
                     registry["reservations"][0].update(key=key, namespace=namespace)
                     registry["arc_ranges"][0].update(catalog_key=key, slug=slug, namespace=namespace,
-                                                    additional_ranges=[{"start": 1030, "end": 1039}])
+                                                    start=primary_start, end=primary_end,
+                                                    additional_ranges=[{"start": extra_start, "end": extra_end}])
                     write_registry(root, registry)
                     # The existing fixture manifest deliberately still points at shu.json.
                     (root / "data/content/v03/countries/shu.json").write_text(json.dumps(value), encoding="utf-8")
@@ -70,15 +74,17 @@ class V03DisjointEventRangeTests(unittest.TestCase):
         registry = read_registry(ROOT)
         historical = json.loads((ROOT / "tests/fixtures/v03_foundation_id_registry.json").read_text(encoding="utf-8"))
         foundation = copy.deepcopy(registry["arc_ranges"][:30])
-        expected = {("country_kor", "v03_kor_military_accounts"): "ywc_kor",
-                    ("country_nqg", "v03_nqg_winter_court"): "ywc_nqg"}
+        expected = {("country_kor", "v03_kor_military_accounts"): ("ywc_kor", 1039),
+                    ("country_nqg", "v03_nqg_winter_court"): ("ywc_nqg", 1039),
+                    ("country_jhg", "v03_jhg_convoy_capacity"): ("ywc_jhg", 1032)}
         actual = {(row["catalog_key"], row["slug"]): row for row in registry["arc_ranges"] if "additional_ranges" in row}
         self.assertEqual(set(actual), set(expected))
         for row in foundation:
             pair = (row["catalog_key"], row["slug"])
             if pair in expected:
-                self.assertEqual(row["namespace"], expected[pair])
-                self.assertEqual(row.pop("additional_ranges"), [{"start": 1030, "end": 1039}])
+                namespace, end = expected[pair]
+                self.assertEqual(row["namespace"], namespace)
+                self.assertEqual(row.pop("additional_ranges"), [{"start": 1030, "end": end}])
         self.assertEqual(foundation, historical["arc_ranges"])
         self.assertEqual(registry["namespace_limits"], historical["namespace_limits"])
         self.assertEqual(registry["reservations"], historical["reservations"])

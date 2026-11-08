@@ -53,7 +53,39 @@ class _ActualJhgWorld(foundation.JhgTerminalWorld):
         self._owned_ack_observer=None
         self._owned_ack_after_observer=None
         self._effect_run_observer=None
+        self.escort_partner_world=None
         self.events=_ScopedDispatchList(self)
+
+    def attach_escort_partner_world(self):
+        """Add the typed foreign-country interpreter for the JHG story only.
+
+        Both interpreters share the same JHG state; the original source driver
+        still owns its journal scheduler and dispatch/receipt observations.
+        """
+        if self.escort_partner_world is not None:
+            raise AssertionError('escort partner model already attached')
+        import sys
+        sys.path.insert(0, str(ROOT/'tests'))
+        from test_v03_jhg_escort_response import JhgWorld, base_countries
+        countries=base_countries()
+        countries['SHU']=copy.deepcopy(countries[TAG])
+        state=self.countries[TAG]
+        for key,value in countries[TAG].items():
+            if not key.startswith('ywc_') and key not in state:
+                state[key]=copy.deepcopy(value)
+        state['is_subject']=bool(state.get('engine_is_subject',False))
+        if state['is_subject']:
+            state['overlord']='SHU'
+        countries[TAG]=state
+        self.escort_partner_world=JhgWorld(countries)
+        self.escort_partner_world.treasury[TAG]=self.treasury[TAG]
+
+    def _run_escort_partner_effect(self,name,tag):
+        partner=self.escort_partner_world
+        partner.treasury[tag]=self.treasury[tag]
+        result=partner.run(name,tag)
+        self.treasury[tag]=partner.treasury[tag]
+        return result
     @contextmanager
     def invocation(self, frozen=None):
         prior=self.scope_context
@@ -64,6 +96,10 @@ class _ActualJhgWorld(foundation.JhgTerminalWorld):
     def run(self,name,tag=TAG):
         if self._effect_run_observer is not None:
             self._effect_run_observer(self,name,tag)
+        if (self.escort_partner_world is not None and name in
+                {'ywc_jhg_escort_send_lan','ywc_jhg_escort_send_dmg','ywc_jhg_escort_cancel_unsigned',
+                 'ywc_jhg_share_send_shu','ywc_jhg_share_cancel_unsigned'}):
+            return self._run_escort_partner_effect(name,tag)
         owned=isinstance(name,str) and name.startswith('ywc_v03_jhg_inline_ack_')
         if owned and self._owned_ack_observer is not None:
             self._owned_ack_observer(self,name,tag)
@@ -75,6 +111,30 @@ class _ActualJhgWorld(foundation.JhgTerminalWorld):
         # Only the documented scope-value subset is modeled here. All other
         # predicates retain the strict native-source harness behavior.
         key,comparison,value=node
+        if (self.escort_partner_world is not None and key in
+                {'ywc_jhg_escort_can_offer_lan','ywc_jhg_escort_can_offer_dmg',
+                 'ywc_jhg_escort_contract_active','ywc_jhg_share_can_offer',
+                 'ywc_jhg_share_contract_active'} and
+                comparison=='=' and value in ('yes','no')):
+            partner=self.escort_partner_world
+            partner.treasury[tag]=self.treasury[tag]
+            result=partner.conditions(partner.trigger_defs[key],tag)
+            return result == (value=='yes')
+        if isinstance(key,str) and key.startswith('var:') and comparison=='?=':
+            state=self.countries[tag]
+            left=state.get(key[4:])
+            if left is None:
+                return False
+            if isinstance(value,str) and value.startswith('var:'):
+                right=state.get(value[4:])
+                if right is None:
+                    return False
+            else:
+                try: right=float(value)
+                except (TypeError,ValueError) as exc: raise AssertionError(('unsupported optional variable comparison',node)) from exc
+            if type(left) not in (int,float) or type(right) not in (int,float) or not math.isfinite(left) or not math.isfinite(right):
+                raise AssertionError(('non-numeric optional variable comparison',node))
+            return left==right
         if key=='exists' and isinstance(value,str) and value.startswith('scope:'):
             if comparison!='=': raise AssertionError(('unsupported scope exists operator',node))
             return value[6:] in self.scope_context

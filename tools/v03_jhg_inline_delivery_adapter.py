@@ -16,8 +16,8 @@ EXPECTED_ARCS = {
     "v03_jhg_convoy_capacity",
     "v03_jhg_tribute_autonomy",
 }
-EFFECTS_AST_SHA256 = "dd50a96e65591e2f79abf657fbc94ca00a5479237db0fbc165cb41b1e34aeab7"
-TRIGGERS_AST_SHA256 = "f20895a3fe05a8a13b1c9b24111380e462442962e61ed6f9692283e0a5cb7aa0"
+EFFECTS_AST_SHA256 = "136b24e521dfa78709ee29589d3f3d0f5eb8bbb516c445841db3bc64978445ef"
+TRIGGERS_AST_SHA256 = "dd38d0ed9ccd1c553459e2318dad057a27198371294e65d1bca2493c20e4dbc6"
 
 
 def _int_tree(value: Any, where: str = "metadata") -> None:
@@ -200,8 +200,8 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
         _int_tree(adapter, arc.get("slug", "arc"))
         journals = arc.get("journals")
         events = arc.get("events")
-        expected_counts = {"v03_jhg_court_assembly": (2, 8), "v03_jhg_convoy_capacity": (3, 10),
-                           "v03_jhg_tribute_autonomy": (1, 6)}[arc["slug"]]
+        expected_counts = {"v03_jhg_court_assembly": (2, 8), "v03_jhg_convoy_capacity": (3, 12),
+                           "v03_jhg_tribute_autonomy": (1, 8)}[arc["slug"]]
         if not isinstance(journals, list) or len(journals) != expected_counts[0] or not isinstance(events, list) or len(events) != expected_counts[1]:
             raise ValueError(f"{arc['slug']}: JHG journal/event inventory drift")
         phases = adapter["live_phases"]
@@ -226,6 +226,9 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
             if not isinstance(event_id, str) or event_id in all_events:
                 raise ValueError(f"{arc['slug']}: duplicate or invalid JHG event identity")
             all_events.add(event_id)
+            if event_id in {"ywc_jhg.1026", "ywc_jhg.1027", "ywc_jhg.1030", "ywc_jhg.1031"}:
+                # Script-dispatched foreign answer and hidden partnership endpoint.
+                continue
             immediate = event.get("immediate")
             if type(immediate) is not str:
                 raise ValueError(f"{event_id}: native immediate must remain raw source text")
@@ -272,8 +275,8 @@ def _validate_catalog(catalog: dict[str, Any]) -> None:
                 raise ValueError(f"{jid}: duplicate JHG event/queue binding")
             bindings_seen.add(binding_identity)
             all_sources.append((arc, next(j for j in journals if j["id"] == jid), proof))
-    if len(witnesses) != 6 or len(all_events) != 24 or len(all_sources) != 58:
-        raise ValueError("JHG adapter must bind six phases, 24 events and 58 source senders")
+    if len(witnesses) != 6 or len(all_events) != 28 or len(all_sources) != 58:
+        raise ValueError("JHG adapter must bind six phases, 28 events and 58 source senders")
     if sum(row[2]["candidates"][0]["kind"] == "normal" for row in all_sources) != 52:
         raise ValueError("JHG adapter must bind 52 normal and six notice senders")
 
