@@ -3535,20 +3535,20 @@
             {
               "key": "consult_only",
               "label": {
-                "zh": "拒绝借款，只接受有偿查账",
-                "en": "Refuse credit and pay only for ledger review"
+                "zh": "不借新款，沿用或购买查账权",
+                "en": "Take no new loan; carry over or pay for ledger review"
               },
-              "effect": "{ if = { limit = { ywc_shu_port_credit_choice_unmade = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } } } } set_variable = { name = ywc_shu_port_fee_half_mode value = 1 } ywc_shu_pay_port_fee = yes remove_variable = ywc_shu_port_fee_half_mode if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_consult_only value = 1 } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1021 } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } }",
+              "effect": "{ if = { limit = { ywc_shu_port_credit_choice_unmade = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid has_variable = ywc_shu_port_fee_waived ywc_shu_merchant_consultation_source = yes AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } } } } set_variable = { name = ywc_shu_port_fee_half_mode value = 1 } ywc_shu_pay_port_fee = yes remove_variable = ywc_shu_port_fee_half_mode if = { limit = { OR = { has_variable = ywc_shu_port_fee_paid has_variable = ywc_shu_port_fee_waived } } set_variable = { name = ywc_shu_port_merchant_review value = 1 } set_variable = { name = ywc_shu_port_consult_only value = 1 } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1021 } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } } else = { if = { limit = { ywc_shu_port_credit_choice_unmade = yes NOT = { has_variable = ywc_shu_port_pending_event } } remove_variable = ywc_shu_port_advance_offer_open set_variable = { name = ywc_shu_port_pending_event value = 1020 } } } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "一次性审阅费为周收入（年总收入÷52）一半；无借款本金或未来偿还。",
-                "en": "One-time review fee is half of weekly income (annual gross income ÷ 52); no borrowed principal or future repayment."
+                "zh": "一次性审阅费为周收入（年总收入÷52）一半；仍持有真实税册商垫来源（接受记录、正数本金及商人咨询权）时依法免收，无需现款。已实缴的费用不追溯改为免收、也不退款。",
+                "en": "One-time review fee is half of weekly income (annual gross income ÷ 52); a still-present real tax-book advance source (acceptance record, positive principal, and the merchant consultation right) lawfully waives it without cash. An already paid fee is never retroactively rewritten into a waiver and never refunded."
               },
               "consequence_note": {
-                "zh": "扣款成功后才取得商人查账权。",
-                "en": "Merchant review rights are recorded only after successful payment."
+                "zh": "实付或依法免收后取得本次查账资格；后续核验不重复收费，既有借款仍按原约偿还。",
+                "en": "Payment or a lawful waiver secures this ledger review. Verification charges no second fee; existing loans remain payable on their original terms."
               },
-              "trigger": "{ ywc_shu_port_credit_choice_unmade = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } } } }"
+              "trigger": "{ ywc_shu_port_credit_choice_unmade = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid has_variable = ywc_shu_port_fee_waived ywc_shu_merchant_consultation_source = yes AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost multiply = 0.5 } } } }"
             },
             {
               "key": "refuse_credit",
@@ -3613,7 +3613,14 @@
             "ywc_shu_service_outcome",
             "ywc_shu_fiscal_outcome_provincial_share",
             "ywc_shu_port_route",
-            "ywc_shu_port_books"
+            "ywc_shu_port_books",
+            "ywc_shu_merchant_consultation",
+            "ywc_shu_merchant_advance",
+            "ywc_shu_merchant_principal",
+            "ywc_shu_port_fee_paid",
+            "ywc_shu_port_fee_waived",
+            "ywc_shu_fiscal_outcome_central_audit",
+            "ywc_shu_v03_pilot_state"
           ],
           "writes": [
             "ywc_shu_port_advance_accepted",
@@ -3621,7 +3628,10 @@
             "ywc_shu_port_advance_offer_open",
             "ywc_shu_port_repayment_due",
             "ywc_shu_port_repayment_clock_initialized",
-            "ywc_shu_port_consult_only"
+            "ywc_shu_port_consult_only",
+            "ywc_shu_port_fee_waived",
+            "ywc_shu_port_fee_paid",
+            "ywc_shu_port_fee_amount"
           ]
         },
         {
@@ -3721,20 +3731,20 @@
             {
               "key": "pay_verification",
               "label": {
-                "zh": "付款核验实收与欠账",
-                "en": "Pay to verify receipts and arrears"
+                "zh": "核验实收与欠账",
+                "en": "Verify receipts and arrears"
               },
-              "effect": "{\nif = { limit = { ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } ywc_shu_pay_port_fee = yes if = { limit = { has_variable = ywc_shu_port_fee_paid } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } } } if = { limit = { NOT = { has_variable = ywc_shu_port_receipts_checked } } set_variable = { name = ywc_shu_port_pending_event value = 1022 } }\n}",
+              "effect": "{ if = { limit = { ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } ywc_shu_port_verification_affordable = yes } ywc_shu_pay_port_fee = yes if = { limit = { ywc_shu_port_fee_covered = yes } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } } } if = { limit = { NOT = { has_variable = ywc_shu_port_receipts_checked } } set_variable = { name = ywc_shu_port_pending_event value = 1022 } } }",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
-                "zh": "一次性费用为一周收入；失败不写核验标记，也不推进。",
-                "en": "One-time fee equals weekly income; failure sets no verification flag and makes no progress."
+                "zh": "一次性费用为一周收入；已按中央核账结果与仍拥有的原试点兑现减半时按半价实际扣款。已依法免收咨询费时本步沿用免收记录，不付现金也不重复收费；失败不写核验标记，也不推进。",
+                "en": "One-time fee equals weekly income; with the honored central register result and the still-owned pilot state it is halved as an actual payment. A lawfully waived consultation fee carries over here, paying no cash and charging nothing again; failure sets no verification flag and makes no progress."
               },
               "consequence_note": {
-                "zh": "真实港口、官署供给、无违约/破产并有现款时才可选。",
-                "en": "Requires a real port, administrative supply, no default or bankruptcy, and available cash."
+                "zh": "须有合格港口、官署供给且财政正常。已实付或依法免收的不再支付；其余按当前中央核账与试点资格核算半价或原价，现款不足则保留待办。",
+                "en": "Requires a qualified port, administrative supply and sound finances. Paid or lawfully waived fees are not charged again. Otherwise current central-audit and pilot eligibility determine half or full price; insufficient cash keeps the task pending."
               },
-              "trigger": "{\nywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } OR = { has_variable = ywc_shu_port_fee_paid AND = { has_variable = ywc_shu_port_cost var:ywc_shu_port_cost > 0 gold_reserves >= { value = var:ywc_shu_port_cost } } }\n}"
+              "trigger": "{ ywc_shu_v03_port_execution_ready = yes net_fixed_income >= 0 NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } ywc_shu_port_verification_affordable = yes }"
             },
             {
               "key": "register_share",
@@ -3742,7 +3752,7 @@
                 "zh": "先记地方留用与未收欠款",
                 "en": "Record the provincial share and unpaid arrears first"
               },
-              "effect": "{\nif = { limit = { ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_arrears_open value = 1 } if = { limit = { OR = { var:ywc_shu_port_route = 3 has_variable = ywc_shu_port_fee_paid } } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1022 } } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1022 } }\n}",
+              "effect": "{\nif = { limit = { ywc_shu_v03_port_execution_ready = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_shu_port_local_share value = 1 } set_variable = { name = ywc_shu_port_arrears_open value = 1 } if = { limit = { OR = { var:ywc_shu_port_route = 3 has_variable = ywc_shu_port_fee_paid has_variable = ywc_shu_port_fee_waived } } set_variable = { name = ywc_shu_port_receipts_checked value = 1 } set_variable = { name = ywc_shu_port_pending_event value = 1023 } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1022 } } } else = { set_variable = { name = ywc_shu_port_pending_event value = 1022 } }\n}",
               "ai_chance": "{ base = 100 }",
               "cost_note": {
                 "zh": "不收费。",
@@ -3780,11 +3790,21 @@
             "ywc_shu_port_advance_accepted",
             "ywc_shu_port_local_share",
             "ywc_shu_port_law_verified",
-            "ywc_shu_port_execution_ready"
+            "ywc_shu_port_execution_ready",
+            "ywc_shu_port_fee_paid",
+            "ywc_shu_port_fee_waived",
+            "ywc_shu_merchant_consultation",
+            "ywc_shu_merchant_advance",
+            "ywc_shu_merchant_principal",
+            "ywc_shu_fiscal_outcome_central_audit",
+            "ywc_shu_v03_pilot_state"
           ],
           "writes": [
             "ywc_shu_port_receipts_checked",
-            "ywc_shu_port_arrears_open"
+            "ywc_shu_port_arrears_open",
+            "ywc_shu_port_fee_paid",
+            "ywc_shu_port_fee_waived",
+            "ywc_shu_port_fee_amount"
           ]
         },
         {
