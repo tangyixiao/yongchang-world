@@ -616,7 +616,7 @@ class MglFoundationContractTest(unittest.TestCase):
     self.assertEqual(self._pulse_actual_je(world,review),[event_id],(arc['slug'],'queued notice'))
     event=self._deliver_actual_event(world,arc,event_id)
     self._choose_actual_event_option(world,event,'defer')
-   self.assertIn(f'ywc_mgl_{pre}_blocked_12_notice_event',state,arc['slug'])
+   self.assertNotIn(f'ywc_mgl_{pre}_blocked_12_notice_event',state,arc['slug'])
    self.assertIn(f'ywc_mgl_{pre}_blocked_36_notice_event',state,arc['slug'])
    state[f'test_ywc_mgl_{pre}_full_ready']=True
    self._pulse_actual_je(world,review)
