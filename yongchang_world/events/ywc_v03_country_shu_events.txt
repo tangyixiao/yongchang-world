@@ -204,7 +204,19 @@ base = 100
     option = {
         name = ywc_shu.1002.collect_with_compensation
         ai_chance = {
-base = 100
+  base = 0
+  modifier = {
+    trigger = {
+      net_fixed_income >= 0
+      NOT = { in_default = yes }
+      NOT = { has_modifier = declared_bankruptcy }
+      NOT = { has_variable = ywc_shu_compensation_paid }
+      has_variable = ywc_shu_fiscal_cost_captured
+      gold_reserves >= { value = var:ywc_shu_fiscal_cost multiply = 2 }
+      any_interest_group = { is_interest_group_type = ig_landowners ig_approval < 0 }
+    }
+    add = 100
+  }
 }
         custom_tooltip = { text = ywc_shu.1002.collect_with_compensation.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1002.collect_with_compensation.consequence_tooltip }
@@ -918,9 +930,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1015 }
     }
     option = {
         name = ywc_shu.1015.joint_recheck
-        trigger = {
-        ywc_shu_service_route = 2 NOT = { has_variable = ywc_shu_service_joint_review }
-        }
+        trigger = { var:ywc_shu_service_route = 2 NOT = { has_variable = ywc_shu_service_joint_review } }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1015.joint_recheck.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1015.joint_recheck.consequence_tooltip }
@@ -1386,7 +1396,7 @@ c:SHU ?= this
 ywc_v03_can_deliver_major = yes
 has_journal_entry = ywc_je_v03_shu_port_customs
 NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
-}
+ OR = { has_variable = ywc_shu_port_review_mature has_variable = ywc_shu_port_review_interrupted } }
     immediate = {
 ywc_v03_mark_major_delivered = yes
 set_variable = { name = ywc_v03_shu_event_dispatch value = 1025 }
@@ -1423,6 +1433,7 @@ set_variable = { name = ywc_v03_shu_event_dispatch value = 1025 }
     }
     option = {
         name = ywc_shu.1025.retry_port
+        trigger = { has_variable = ywc_shu_port_review_interrupted }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_shu.1025.retry_port.cost_tooltip }
         custom_tooltip = { text = ywc_shu.1025.retry_port.consequence_tooltip }

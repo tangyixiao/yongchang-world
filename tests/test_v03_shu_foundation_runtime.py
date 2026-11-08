@@ -884,7 +884,10 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
 
     def test_m1_fiscal_catalog_arc_matches_reviewfix_before_snapshot(self):
         current_arc = next(a for a in CATALOG["arcs"] if a["slug"] == "v03_shu_fiscal_register")
-        canonical = json.dumps(current_arc, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        baseline = json.loads(json.dumps(current_arc, ensure_ascii=False))
+        compensation = next(o for e in baseline["events"] if e["id"] == "ywc_shu.1002" for o in e["options"] if o["key"] == "collect_with_compensation")
+        compensation["ai_chance"] = "{\nbase = 100\n}"
+        canonical = json.dumps(baseline, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         self.assertEqual(hashlib.sha256(canonical).hexdigest(), "c9d2097f2d67b9a1ad0781cac6f047ab07372db905c0fcf83fe860f5ed75da92")
 
     def test_service_healthy_over_36_months_then_loss_starts_fresh_clock(self):
@@ -1046,6 +1049,68 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
                 if "ywc_shu.1021" in fired:
                     runtime.choose("ywc_shu.1021", "wait_law")
         self.assertGreaterEqual(runtime.delivered.count("ywc_shu.1024"), 2)
+
+
+    def test_port_retry_requires_actual_interruption_and_preserves_qualified_observation(self):
+        for burden_choice in ("central_burden", "shared_burden"):
+            with self.subTest(burden_choice=burden_choice):
+                runtime = ShuRuntime("v03_shu_port_treasury", {
+                    "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+                    "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+                    "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+                    "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+                })
+                runtime.open()
+                for event, option in (("ywc_shu.1018", "unified_customs"),
+                                      ("ywc_shu.1019", "publish_books"),
+                                      ("ywc_shu.1020", "refuse_credit"),
+                                      ("ywc_shu.1021", "current_law_review"),
+                                      ("ywc_shu.1022", "pay_verification"),
+                                      ("ywc_shu.1023", "central_form")):
+                    runtime.dispatch_until(event); runtime.choose(event, option)
+                runtime.dispatch_until("ywc_shu.1024"); runtime.choose("ywc_shu.1024", burden_choice)
+                self.assertIn("ywc_shu_port_review_due", runtime.state["SHU"])
+                runtime.advance_review(90); runtime.pulse()
+                self.assertNotIn("ywc_shu_port_review_mature", runtime.state["SHU"])
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_pending_event"), 1025)
+                self.assertNotIn("ywc_shu.1025", runtime.delivered)
+                retry = next(o for o in runtime.event_map["ywc_shu.1025"]["options"] if o["key"] == "retry_port")
+                self.assertFalse(runtime.cond(retry["trigger"]))
+                self.assertIn("ywc_shu_port_review_due", runtime.state["SHU"])
+                self.assertFalse(runtime.cond(retry["trigger"]))
+                runtime.advance_review(90); runtime.pulse()
+                self.assertEqual(runtime.state["SHU"].get("ywc_shu_port_review_mature"), 1)
+                self.assertNotIn("ywc_shu_port_review_interrupted", runtime.state["SHU"])
+                runtime.dispatch_until("ywc_shu.1025")
+                self.assertTrue(runtime.cond(next(o["trigger"] for o in runtime.event_map["ywc_shu.1025"]["options"] if o["key"] == "settle_unified")))
+
+
+    def test_service_joint_recheck_uses_variable_comparison(self):
+        runtime = ShuRuntime("v03_shu_service_compact", {
+            "ywc_v03_initialized": 1, "ywc_v03_release_version": 3,
+            "ywc_v03_shu_v03_shu_fiscal_register_settled": 1,
+            "ywc_v03_shu_v03_shu_fiscal_register_outcome": 2,
+            "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 2,
+            "ywc_shu_service_route": 2,
+        })
+        runtime.open()
+        option = next(o for o in runtime.event_map["ywc_shu.1015"]["options"] if o["key"] == "joint_recheck")
+        self.assertTrue(runtime.cond(option["trigger"]))
+        runtime.state["SHU"]["ywc_shu_service_route"] = 1
+        self.assertFalse(runtime.cond(option["trigger"]))
+
+    def test_compensation_ai_weight_is_gated_by_real_two_week_affordability(self):
+        option = next(o for o in next(e for e in arc("v03_shu_fiscal_register")["events"] if e["id"] == "ywc_shu.1002")["options"] if o["key"] == "collect_with_compensation")
+        chance = parse(option["ai_chance"][1:-1])
+        self.assertEqual(next(v for k, _, v in chance if k == "base"), "0")
+        modifier = next(v for k, _, v in chance if k == "modifier")
+        trigger = next(v for k, _, v in modifier if k == "trigger")
+        self.assertIn(("net_fixed_income", ">=", "0"), trigger)
+        self.assertIn(("has_variable", "=", "ywc_shu_fiscal_cost_captured"), trigger)
+        self.assertIn(("gold_reserves", ">=", [("value", "=", "var:ywc_shu_fiscal_cost"), ("multiply", "=", "2")]), trigger)
+        self.assertIn(("NOT", "=", [("in_default", "=", "yes")]), trigger)
+        self.assertIn(("NOT", "=", [("has_modifier", "=", "declared_bankruptcy")]), trigger)
+        self.assertIn(("NOT", "=", [("has_variable", "=", "ywc_shu_compensation_paid")]), trigger)
 
 
 if __name__ == "__main__":
