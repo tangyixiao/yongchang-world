@@ -1215,6 +1215,28 @@ def validate_jhg_native_helper_source(effects_source: str, triggers_source: str)
     validate(effects_source, triggers_source)
 
 
+_DMG_FOUNDATION_SLUGS = (
+    "v03_dmg_common_subjects", "v03_dmg_two_land_titles", "v03_dmg_court_provinces",
+)
+_DMG_SCHOOL_SLUG = "v03_dmg_school_languages"
+
+
+def _dmg_active_arcs(catalog: dict[str, Any]) -> list[dict[str, Any]]:
+    foundation = [arc for arc in catalog["arcs"]
+                  if isinstance(arc, dict) and arc.get("era") == "foundation"]
+    if len(foundation) != 3 or {arc.get("slug") for arc in foundation} != set(_DMG_FOUNDATION_SLUGS):
+        raise ValueError("DMG inline adapter requires exactly its three foundation arcs")
+    extra = [arc for arc in catalog["arcs"] if arc not in foundation]
+    for arc in extra:
+        if not isinstance(arc, dict) or arc.get("slug") != _DMG_SCHOOL_SLUG or arc.get("era") != "middle":
+            slug = arc.get("slug") if isinstance(arc, dict) else None
+            raise ValueError(f"unregistered DMG inline arc: {slug}")
+    if len(extra) > 1:
+        raise ValueError("DMG inline adapter permits one registered school arc")
+    return [next(arc for arc in foundation if arc["slug"] == slug)
+            for slug in _DMG_FOUNDATION_SLUGS] + extra
+
+
 def validate_inline_catalog(catalog: dict[str, Any]) -> None:
     """Validate exact inline branch/source ownership for explicitly opted-in arcs."""
     if isinstance(catalog, dict) and catalog.get("key") == "country_tib":
@@ -1251,10 +1273,9 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
     if not isinstance(catalog, dict) or catalog.get("key") != "country_dmg": raise ValueError("inline adapter is currently enabled only for registered inline countries")
     arcs = catalog.get("arcs")
     if not isinstance(arcs, list): raise ValueError("catalog arcs must be a list")
-    expected_slugs = {"v03_dmg_common_subjects", "v03_dmg_two_land_titles", "v03_dmg_court_provinces"}
-    active = [arc for arc in arcs if isinstance(arc, dict) and arc.get("era") == "foundation"]
-    if {arc.get("slug") for arc in active} != expected_slugs or len(active) != 3: raise ValueError("DMG inline adapter requires exactly its three foundation arcs")
+    active = _dmg_active_arcs(catalog)
     witnesses: set[str] = set()
+    queue_owners: dict[str, str] = {}
     for arc in active:
         adapter = arc.get("inline_delivery_adapter")
         if not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches"} or adapter.get("schema") != "v03.foundation_inline_adapter.v1": raise ValueError(f"{arc['slug']}: invalid inline adapter schema")
@@ -1276,6 +1297,11 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
                 expected.append((journal["id"], branch))
         recorded = adapter["branches"]
         if not isinstance(recorded, list) or len(recorded) != len(expected): raise ValueError(f"{arc['slug']}: source branch inventory mismatch")
+        if arc["slug"] == _DMG_SCHOOL_SLUG:
+            if len(journals) != 1 or journals[0].get("id") != "ywc_je_v03_dmg_school_languages":
+                raise ValueError("DMG school requires its one native journal")
+            if len(arc.get("events", [])) != 6 or {event.get("id") for event in arc.get("events", [])} != {f"ywc_dmg.{n}" for n in range(1120, 1126)} or len(recorded) != 6:
+                raise ValueError("DMG school requires its six native events and sender sites")
         for item, (jid, branch) in zip(recorded, expected):
             if not isinstance(item, dict) or set(item) != {"journal", "branch_index", "event", "branch_sha256", "limit_sha256", "candidates"}: raise ValueError(f"{arc['slug']}: malformed branch binding")
             if item["journal"] != jid or type(item["branch_index"]) is not int or item["branch_index"] != branch["branch_index"] or item["event"] != branch["event"] or item["branch_sha256"] != branch["sha256"] or item["limit_sha256"] != branch["limit_sha256"]: raise ValueError(f"{arc['slug']}/{jid}: exact source branch drift")
@@ -1286,6 +1312,11 @@ def validate_inline_catalog(catalog: dict[str, Any]) -> None:
             for candidate, source_candidate in zip(candidates, actual):
                 expected_fields = {"queue", "kind", "mode"} | ({"value"} if source_candidate["mode"] == "exact" else set())
                 if not isinstance(candidate, dict) or set(candidate) != expected_fields or candidate != source_candidate: raise ValueError(f"{arc['slug']}/{jid}: candidate does not match source queue semantics")
+                owner = queue_owners.setdefault(candidate["queue"], arc["slug"])
+                if owner != arc["slug"]:
+                    raise ValueError(f"DMG queue ownership crosses arcs: {candidate['queue']}")
+            if arc["slug"] == _DMG_SCHOOL_SLUG and candidates != [{"queue": "ywc_dmg_school_pending_event", "kind": "normal", "mode": "exact", "value": int(item["event"].rsplit(".", 1)[1])}]:
+                raise ValueError("DMG school sender must own its exact native event queue")
 
 
 def _validate_nmg_inline_catalog(catalog: dict[str, Any]) -> None:
@@ -1944,7 +1975,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
     is_mgl = catalog["key"] == "country_mgl"
     is_supported_inline_country = is_dmg or is_kor or is_nqg or is_shu or is_lan or is_nmg or is_mgl
     prefix = "ywc_v03_mgl_inline" if is_mgl else "ywc_v03_nmg_inline" if is_nmg else "ywc_v03_lan_inline" if is_lan else "ywc_v03_shu_inline" if is_shu else "ywc_v03_kor_inline" if is_kor else "ywc_v03_nqg_inline" if is_nqg else "ywc_v03_dmg_inline"
-    arcs = _shu_active_arcs(catalog) if is_shu else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"]
+    arcs = (_shu_active_arcs(catalog) if is_shu else _dmg_active_arcs(catalog) if is_dmg
+            else [arc for arc in catalog["arcs"] if arc.get("era") == "foundation"])
     arc_order = {arc["slug"]: idx for idx, arc in enumerate(arcs)}
     phases: dict[str, dict[str, Any]] = {}
     candidates: list[dict[str, Any]] = []
@@ -2698,7 +2730,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         pulse=direct_values(children(monthly),"effect")[0]
         prepare = f" {prefix}_prepare = yes\n" if is_nmg else f" {prefix}_prepare = yes "
         script=script[:pulse.value_start+1]+prepare+script[pulse.value_start+1:]
-        if is_kor or is_shu:
+        if is_kor or is_shu or is_dmg:
             script = re.sub(r"[ \t]+(?=\r?\n)", "", script)
         journal_scripts[journal_id]=script
     event_hooks={}; ack_hooks={}

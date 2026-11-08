@@ -57,8 +57,12 @@ class InlineSourceParserTests(unittest.TestCase):
     def test_binds_all_real_dmg_inline_sender_nodes(self):
         catalog = json.loads((ROOT / "data/content/v03/countries/dmg.json").read_text(encoding="utf-8-sig"))
         bindings = [source_binding(j["id"], j["script"]) for a in catalog["arcs"] for j in a["journals"]]
-        self.assertEqual(sum(len(item["branches"]) for item in bindings), 29)
-        self.assertEqual(len({item["journal"] for item in bindings}), 6)
+        foundation = [source_binding(j["id"], j["script"]) for a in catalog["arcs"]
+                      if a["era"] == "foundation" for j in a["journals"]]
+        self.assertEqual(sum(len(item["branches"]) for item in foundation), 29)
+        self.assertEqual(len({item["journal"] for item in foundation}), 6)
+        self.assertEqual(sum(len(item["branches"]) for item in bindings), 35)
+        self.assertEqual(len({item["journal"] for item in bindings}), 7)
         self.assertEqual(sum(b["event"] == "ywc_dmg.1015" for item in bindings for b in item["branches"]), 3)
         self.assertTrue(all(len(b["sha256"]) == 64 and b["end"] > b["start"] for item in bindings for b in item["branches"]))
         candidates = [queue_candidates(b["limit_source"]) for item in bindings for b in item["branches"]]
@@ -67,7 +71,7 @@ class InlineSourceParserTests(unittest.TestCase):
     def test_rendered_dispatch_rechecks_exact_captured_queue_before_native_immediate(self):
         catalog = json.loads((ROOT / "data/content/v03/countries/dmg.json").read_text(encoding="utf-8-sig"))
         rendered = render_inline_country_adapters(catalog)
-        self.assertEqual(len(rendered["journal_scripts"]), 6)
+        self.assertEqual(len(rendered["journal_scripts"]), 7)
         number = 0
         for arc in catalog["arcs"]:
             if arc.get("era") != "foundation":

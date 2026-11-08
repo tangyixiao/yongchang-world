@@ -46,17 +46,23 @@ class DmgContentCardTest(unittest.TestCase):
             self.assertNotEqual(journal["goal"].strip(), "{ always = yes }")
             self.assertNotEqual(journal["exit_conditions"].strip(), "{ always = yes }")
 
-    def test_je_goal_uses_clausewitz_or_block_and_executes_both_terminal_paths(self):
+    def test_je_goal_preserves_stage_or_and_excludes_actual_abandoned_terminal(self):
         goal = self.arc["journals"][0]["goal"]
         # The harness parser accepts a block body; strip the JSON field's outer braces.
         nodes = parse(goal.strip()[1:-1])
-        top_level_or = [body for key, _, body in nodes if key == "OR"]
-        self.assertEqual(len(nodes), 1, "goal should be one valid Clausewitz OR node")
-        self.assertEqual(len(top_level_or), 1)
-        self.assertEqual(len(top_level_or[0]), 2)
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0][0:2], ("AND", "="))
+        old_or = next(body for key, _, body in nodes[0][2] if key == "OR")
+        self.assertEqual(old_or, [
+            ("has_variable", "=", "ywc_dmg_first_stage_resolved"),
+            ("has_variable", "=", "ywc_dmg_outcome_withdrawn_breach")])
+        exclusion = next(body for key, _, body in nodes[0][2] if key == "NOT")
+        self.assertEqual(exclusion, [("has_variable", "=", "ywc_dmg_arc_abandoned")])
         for terminal in ("ywc_dmg_first_stage_resolved", "ywc_dmg_outcome_withdrawn_breach"):
             world = PulseWorld("", {"DMG": {terminal: 1}})
             self.assertTrue(world.conditions(nodes, tag="DMG"), terminal)
+            world.countries["DMG"]["ywc_dmg_arc_abandoned"] = 1
+            self.assertFalse(world.conditions(nodes, tag="DMG"), terminal)
         world = PulseWorld("", {"DMG": {}})
         self.assertFalse(world.conditions(nodes, tag="DMG"))
 
@@ -122,7 +128,9 @@ class DmgContentCardTest(unittest.TestCase):
         for key in ("limited_settlement", "withdraw_breach"):
             fallback = next(o for o in e9["options"] if o["key"] == key)
             self.assertIn("ywc_dmg_review_matured", fallback["trigger"])
-            self.assertIn("ywc_dmg_review_blocked_12_notice", fallback["trigger"])
+            self.assertIn("var:ywc_dmg_review_notice_response_context = 12", fallback["trigger"])
+            self.assertIn("var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10",
+                          fallback["trigger"])
 
     def test_legacy_bridge_is_idempotent_and_new_arc_does_not_stop_old_pulse(self):
         bridge = next(block for key, _, block in parse(self.effects) if key == "ywc_v03_bridge_dmg_compact_one")
@@ -481,68 +489,39 @@ class DmgContentCardTest(unittest.TestCase):
         self.assertNotEqual(world.countries["DMG"].get("ywc_dmg_outcome_common_qualification"), 1)
 
     def test_je2_blocked_route_prompts_after_twelve_months_without_maturity_and_keeps_exit(self):
-        journal = self.arc["journals"][1]
-        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
-        pulse_effect = next(body for key, _, body in pulse if key == "effect")
-        class BlockedReviewWorld(PulseWorld):
-            def condition(self, node, tag):
-                if node[0] == "ywc_dmg_v03_selected_route_ready":
-                    return False
-                if node[0] == "ywc_dmg_v03_has_owned_state":
-                    return True
-                if node[0] == "ywc_v03_can_deliver_major":
-                    return True
-                return super().condition(node, tag)
-        world = BlockedReviewWorld(self.effects, {"DMG": {
-            "ywc_dmg_review_findings": 1,
-            "ywc_dmg_pending_event": 1009,
-        }})
-        for _ in range(13):
-            world.execute(pulse_effect, "DMG")
-            world.advance_months()
-        self.assertIn(("DMG", "ywc_dmg.1009"), world.events)
-        event = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
-        withdraw = next(o for o in event["options"] if o["key"] == "withdraw_breach")
-        self.assertIn("ywc_dmg_review_blocked_12_notice", withdraw.get("trigger", ""))
-        limited = next(o for o in event["options"] if o["key"] == "limited_settlement")
-        self.assertIn("ywc_dmg_review_blocked_12_notice", limited.get("trigger", ""))
-        repair = next(o for o in event["options"] if o["key"] == "continue_repair")
-        self.assertIn("ywc_dmg_review_blocked_12_notice", repair["trigger"])
-        effects = self.effects + "\nywc_v03_release_arc_dmg_v03_dmg_common_subjects = { change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } }\n"
-        state = world.countries["DMG"]
-        state.update({"ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1})
-        closer = PulseWorld(effects, {"DMG": state})
-        closer.execute(parse(limited["effect"][1:-1]), "DMG")
-        self.assertEqual(closer.countries["DMG"].get("ywc_dmg_outcome_limited_qualification"), 1)
-        self.assertNotIn("ywc_dmg_outcome_common_qualification", closer.countries["DMG"])
-        self.assertEqual(closer.countries["DMG"].get("ywc_v03_active_arc_count"), 0)
+        from test_v03_dmg_notice_exits import blocked_world
+        from test_v03_shu_provincial_contract import choose, option_legal
+        world, arc = blocked_world()
+        event = world.deliver(arc, "ywc_dmg.1009")
+        state = world.countries[world.tag]
+        self.assertNotIn("ywc_dmg_review_matured", state)
+        self.assertNotIn("ywc_dmg_review_blocked_12_notice", state)
+        self.assertEqual(state["ywc_dmg_review_notice_response_context"], 12)
+        for key in ("continue_repair", "limited_settlement", "withdraw_breach"):
+            self.assertTrue(option_legal(world, event, key), key)
+        choose(world, arc, event, "limited_settlement")
+        self.assertEqual(state["ywc_dmg_outcome_limited_qualification"], 1)
+        self.assertNotIn("ywc_dmg_outcome_common_qualification", state)
+        self.assertEqual(state["ywc_v03_active_arc_count"], 0)
 
     def test_je2_lost_territory_keeps_immediate_breach_exit_and_releases_slot(self):
-        journal = self.arc["journals"][1]
-        pulse = next(body for key, _, body in parse(journal["script"]) if key == "on_monthly_pulse")
-        pulse_effect = next(body for key, _, body in pulse if key == "effect")
-        class TerritoryLostWorld(PulseWorld):
-            def condition(self, node, tag):
-                if node[0] == "ywc_dmg_v03_selected_route_ready":
-                    return False
-                if node[0] == "ywc_dmg_v03_has_owned_state":
-                    return False
-                if node[0] == "ywc_v03_can_deliver_major":
-                    return True
-                return super().condition(node, tag)
-        state = {"ywc_dmg_review_findings": 1, "ywc_v03_active_arc_count": 1, "ywc_v03_visible_task_count": 1}
-        effects = self.effects + "\nywc_v03_release_arc_dmg_v03_dmg_common_subjects = { change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } }\n"
-        world = TerritoryLostWorld(effects, {"DMG": state})
-        world.execute(pulse_effect, "DMG")
-        self.assertIn(("DMG", "ywc_dmg.1009"), world.events)
-        event = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1009")
-        withdraw = next(o for o in event["options"] if o["key"] == "withdraw_breach")
-        self.assertTrue(world.conditions(parse(withdraw["trigger"][1:-1]), "DMG"))
-        world.execute(parse(withdraw["effect"][1:-1]), "DMG")
-        self.assertEqual(state.get("ywc_dmg_outcome_withdrawn_breach"), 1)
+        from test_v03_dmg_school_languages import new_world, play
+        from test_v03_dmg_school_cross_era import COMMON_ESTABLISHED
+        from test_v03_shu_provincial_contract import choose, option_legal
+        world = new_world()
+        arc = next(a for a in world.cat["arcs"] if a["slug"] == "v03_dmg_common_subjects")
+        for number, key in COMMON_ESTABLISHED[:-1]:
+            play(world, arc, number, key)
+        state = world.countries[world.tag]
+        state["states"][0]["owner"] = "PHI"
+        event = world.deliver(arc, "ywc_dmg.1009")
+        self.assertTrue(option_legal(world, event, "withdraw_breach"))
+        choose(world, arc, event, "withdraw_breach")
+        self.assertEqual(state["ywc_dmg_outcome_withdrawn_breach"], 1)
         self.assertNotIn("ywc_dmg_outcome_common_qualification", state)
-        self.assertEqual(state.get("ywc_v03_active_arc_count"), 0)
-        self.assertEqual(state.get("ywc_v03_visible_task_count"), 0)
+        self.assertEqual(state["ywc_v03_active_arc_count"], 0)
+        self.assertEqual(state["ywc_v03_visible_task_count"], 0)
+        self.assertEqual(world.history[world.tag][arc["journals"][1]["id"]], "failed")
 
     def test_failed_compensation_and_local_fee_choices_do_not_advance(self):
         training = next(e for e in self.arc["events"] if e["id"] == "ywc_dmg.1002")

@@ -28,7 +28,7 @@
             "en": "Six months is the minimum continuous period with eligibility, staffed posts and local execution all in place. If conditions are short, wait and address them; the shared delivery queue is not a failure. The twelve-month notice appears only for a real route-specific shortfall; month thirty-six offers limited settlement or withdrawal. The shared 90-day cooldown means the ten sequential main events take at least about 27 months after the first event."
           },
           "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_dmg_v03_unsettled = yes ywc_dmg_v03_has_owned_state = yes } immediate = { ywc_dmg_open_common_subjects_once = yes set_variable = { name = ywc_dmg_pending_event value = 1000 } } on_fail = { ywc_dmg_close_as_breach = yes } on_monthly_pulse = { effect = { if = { limit = { has_variable = ywc_dmg_first_stage_ready_once NOT = { has_variable = ywc_dmg_first_stage_due } ywc_dmg_v03_selected_route_ready = yes NOT = { has_variable = ywc_dmg_first_stage_matured } } set_variable = { name = ywc_dmg_first_stage_matured value = 1 } } if = { limit = { ywc_dmg_v03_selected_route_ready = yes NOT = { has_variable = ywc_dmg_first_stage_due } NOT = { has_variable = ywc_dmg_first_stage_resolved } NOT = { has_variable = ywc_dmg_first_stage_matured } } set_variable = { name = ywc_dmg_first_stage_due value = 1 months = 6 } set_variable = { name = ywc_dmg_first_stage_ready_once value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_selected_route_ready = yes } } remove_variable = ywc_dmg_first_stage_due remove_variable = ywc_dmg_first_stage_ready_once remove_variable = ywc_dmg_first_stage_matured if = { limit = { NOT = { has_variable = ywc_dmg_delay_notice } NOT = { has_variable = ywc_dmg_final_deadline_notice } var:ywc_dmg_pending_event = 1006 } remove_variable = ywc_dmg_pending_event } } if = { limit = { NOT = { has_variable = ywc_dmg_first_stage_resolved } OR = { has_variable = ywc_dmg_first_stage_matured has_variable = ywc_dmg_delay_notice has_variable = ywc_dmg_final_deadline_notice } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_pending_event value = 1006 } } if = { limit = { NOT = { has_variable = ywc_dmg_blocked_12_due } NOT = { ywc_dmg_v03_selected_route_ready = yes } NOT = { has_variable = ywc_dmg_delay_notice } } set_variable = { name = ywc_dmg_delay_notice value = 1 } } if = { limit = { has_variable = ywc_dmg_delay_notice NOT = { has_variable = ywc_dmg_first_stage_resolved } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_pending_event value = 1006 } } if = { limit = { NOT = { has_variable = ywc_dmg_blocked_36_due } NOT = { has_variable = ywc_dmg_first_stage_resolved } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_final_deadline_notice value = 1 } set_variable = { name = ywc_dmg_pending_event value = 1006 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1000 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1000 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1001 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1001 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1002 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1002 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1003 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1003 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1004 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1004 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1005 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1005 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1006 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1006 } } } } }",
-          "goal": "{ OR = { has_variable = ywc_dmg_first_stage_resolved has_variable = ywc_dmg_outcome_withdrawn_breach } }",
+          "goal": "{ AND = { OR = { has_variable = ywc_dmg_first_stage_resolved has_variable = ywc_dmg_outcome_withdrawn_breach } NOT = { has_variable = ywc_dmg_arc_abandoned } } }",
           "exit_conditions": "{ has_variable = ywc_dmg_arc_abandoned }"
         },
         {
@@ -42,7 +42,7 @@
             "en": "A continuous nine-month review checks current eligibility, staffed posts, local appeals, and fiscal or territorial facts. Under elections it checks profession voting power and citizenship voting rights; a non-electoral monarchy must show an actual public office and joint-appointment charter, without invented seats."
           },
           "script": "{ is_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized has_variable = ywc_dmg_first_stage_resolved NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } } possible = { c:DMG ?= this has_variable = ywc_v03_initialized has_variable = ywc_dmg_first_stage_resolved ywc_dmg_v03_unsettled = yes } immediate = { set_variable = { name = ywc_dmg_pending_event value = 1007 } } on_fail = { ywc_dmg_close_as_breach = yes } on_monthly_pulse = { effect = { if = { limit = { ywc_dmg_v03_selected_route_ready = yes NOT = { has_variable = ywc_dmg_review_due } NOT = { has_variable = ywc_dmg_review_matured } NOT = { has_variable = ywc_dmg_review_started } } set_variable = { name = ywc_dmg_review_due value = 1 months = 9 } set_variable = { name = ywc_dmg_review_started value = 1 } } if = { limit = { ywc_dmg_v03_selected_route_ready = yes } remove_variable = ywc_dmg_review_blocked_12_due remove_variable = ywc_dmg_review_blocked_36_due remove_variable = ywc_dmg_review_blocked_timer_started remove_variable = ywc_dmg_review_blocked_12_notice remove_variable = ywc_dmg_review_blocked_36_notice remove_variable = ywc_dmg_review_state_lost_notice } if = { limit = { ywc_dmg_v03_selected_route_ready = yes has_variable = ywc_dmg_review_started NOT = { has_variable = ywc_dmg_review_due } NOT = { has_variable = ywc_dmg_review_matured } } set_variable = { name = ywc_dmg_review_matured value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_selected_route_ready = yes } } remove_variable = ywc_dmg_review_due remove_variable = ywc_dmg_review_started remove_variable = ywc_dmg_review_matured if = { limit = { NOT = { has_variable = ywc_dmg_review_blocked_timer_started } } set_variable = { name = ywc_dmg_review_blocked_timer_started value = 1 } set_variable = { name = ywc_dmg_review_blocked_12_due value = 1 months = 12 } set_variable = { name = ywc_dmg_review_blocked_36_due value = 1 months = 36 } } if = { limit = { has_variable = ywc_dmg_review_blocked_timer_started NOT = { has_variable = ywc_dmg_review_blocked_12_due } NOT = { has_variable = ywc_dmg_review_blocked_12_notice } } set_variable = { name = ywc_dmg_review_blocked_12_notice value = 1 } } if = { limit = { has_variable = ywc_dmg_review_blocked_timer_started NOT = { has_variable = ywc_dmg_review_blocked_36_due } NOT = { has_variable = ywc_dmg_review_blocked_36_notice } } set_variable = { name = ywc_dmg_review_blocked_36_notice value = 1 } } if = { limit = { NOT = { ywc_dmg_v03_has_owned_state = yes } } set_variable = { name = ywc_dmg_review_state_lost_notice value = 1 } } if = { limit = { has_variable = ywc_dmg_review_findings OR = { has_variable = ywc_dmg_review_blocked_12_notice has_variable = ywc_dmg_review_blocked_36_notice has_variable = ywc_dmg_review_state_lost_notice } NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_pending_event value = 1009 } } } if = { limit = { has_variable = ywc_dmg_review_matured has_variable = ywc_dmg_review_findings NOT = { has_variable = ywc_dmg_pending_event } } set_variable = { name = ywc_dmg_review_deadline value = 1 } set_variable = { name = ywc_dmg_pending_event value = 1009 } } if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1007 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1007 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1008 } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1008 } } else_if = { limit = { ywc_v03_can_deliver_major = yes var:ywc_dmg_pending_event = 1009 OR = { AND = { has_variable = ywc_dmg_review_matured NOT = { has_variable = ywc_dmg_review_due } } has_variable = ywc_dmg_review_blocked_12_notice has_variable = ywc_dmg_review_blocked_36_notice has_variable = ywc_dmg_review_state_lost_notice } } remove_variable = ywc_dmg_pending_event trigger_event = { id = ywc_dmg.1009 } } } } }",
-          "goal": "{ has_variable = ywc_dmg_any_outcome }",
+          "goal": "{ AND = { has_variable = ywc_dmg_any_outcome NOT = { has_variable = ywc_dmg_arc_abandoned } } }",
           "exit_conditions": "{ has_variable = ywc_dmg_arc_abandoned }"
         }
       ],
@@ -903,7 +903,7 @@
             "en": "Success choices appear only when their current legal, group-employment, building, administrative and payment conditions hold. Limited settlement and withdrawal remain available in every case. Withdrawal closes as breach immediately, preserves payments, and cannot be overwritten."
           },
           "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_compact_review ywc_dmg_v03_unsettled = yes has_variable = ywc_dmg_review_findings OR = { has_variable = ywc_dmg_review_matured has_variable = ywc_dmg_review_blocked_12_notice has_variable = ywc_dmg_review_blocked_36_notice NOT = { ywc_dmg_v03_has_owned_state = yes } } }",
-          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 10 } }",
+          "immediate": "{ remove_variable = ywc_dmg_review_notice_response_context ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 10 } if = { limit = { has_variable = ywc_dmg_review_blocked_36_notice } set_variable = { name = ywc_dmg_review_notice_response_context value = 36 } } else_if = { limit = { OR = { has_variable = ywc_dmg_review_blocked_12_notice has_variable = ywc_dmg_review_state_lost_notice } } set_variable = { name = ywc_dmg_review_notice_response_context value = 12 } } }",
           "options": [
             {
               "key": "common_qualification",
@@ -965,8 +965,8 @@
                 "zh": "继续整改并重新观察",
                 "en": "Continue repairs and observe again"
               },
-              "trigger": "{ has_variable = ywc_dmg_review_blocked_12_notice NOT = { has_variable = ywc_dmg_review_blocked_36_notice } ywc_dmg_v03_has_owned_state = yes }",
-              "effect": "{ remove_variable = ywc_dmg_review_blocked_12_notice set_variable = { name = ywc_dmg_review_blocked_12_due value = 1 months = 12 } remove_variable = ywc_dmg_review_due remove_variable = ywc_dmg_review_started remove_variable = ywc_dmg_review_matured }",
+              "trigger": "{ c:DMG ?= this has_journal_entry = ywc_je_v03_dmg_compact_review has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } ywc_dmg_v03_unsettled = yes var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10 OR = { NOT = { has_variable = ywc_dmg_pending_event } var:ywc_dmg_pending_event = 1009 } var:ywc_dmg_review_notice_response_context = 12 NOT = { has_variable = ywc_dmg_review_blocked_36_notice } ywc_dmg_v03_has_owned_state = yes }",
+              "effect": "{ if = { limit = { c:DMG ?= this has_journal_entry = ywc_je_v03_dmg_compact_review has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } ywc_dmg_v03_unsettled = yes var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10 OR = { NOT = { has_variable = ywc_dmg_pending_event } var:ywc_dmg_pending_event = 1009 } var:ywc_dmg_review_notice_response_context = 12 NOT = { has_variable = ywc_dmg_review_blocked_36_notice } ywc_dmg_v03_has_owned_state = yes } remove_variable = ywc_dmg_review_blocked_12_notice set_variable = { name = ywc_dmg_review_blocked_12_due value = 1 months = 12 } remove_variable = ywc_dmg_review_due remove_variable = ywc_dmg_review_started remove_variable = ywc_dmg_review_matured remove_variable = ywc_dmg_review_notice_response_context set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 0 } } }",
               "cost_note": {
                 "zh": "不新增付款。",
                 "en": "No new payment."
@@ -983,7 +983,7 @@
                 "zh": "记录有限资格与待补职位",
                 "en": "Record limited eligibility and vacancies"
               },
-              "effect": "{ ywc_dmg_close_as_limited = yes }",
+              "effect": "{ if = { limit = { c:DMG ?= this has_journal_entry = ywc_je_v03_dmg_compact_review has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } ywc_dmg_v03_unsettled = yes var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10 OR = { NOT = { has_variable = ywc_dmg_pending_event } var:ywc_dmg_pending_event = 1009 } OR = { has_variable = ywc_dmg_review_matured var:ywc_dmg_review_notice_response_context = 12 var:ywc_dmg_review_notice_response_context = 36 NOT = { ywc_dmg_v03_has_owned_state = yes } } } ywc_dmg_close_as_limited = yes remove_variable = ywc_dmg_review_notice_response_context set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 0 } } }",
               "ai_chance": "{ base = 0 }",
               "cost_note": {
                 "zh": "不再追加费用；保留已支付的公共登记、地方执行与身份命令费用。",
@@ -993,7 +993,7 @@
                 "zh": "职位、接受度或地方执行条件不足时只记录有限安排。",
                 "en": "When jobs, acceptance or local execution fall short, this records a limited arrangement only."
               },
-              "trigger": "{ OR = { has_variable = ywc_dmg_review_matured has_variable = ywc_dmg_review_blocked_12_notice has_variable = ywc_dmg_review_blocked_36_notice NOT = { ywc_dmg_v03_has_owned_state = yes } } }"
+              "trigger": "{ c:DMG ?= this has_journal_entry = ywc_je_v03_dmg_compact_review has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } ywc_dmg_v03_unsettled = yes var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10 OR = { NOT = { has_variable = ywc_dmg_pending_event } var:ywc_dmg_pending_event = 1009 } OR = { has_variable = ywc_dmg_review_matured var:ywc_dmg_review_notice_response_context = 12 var:ywc_dmg_review_notice_response_context = 36 NOT = { ywc_dmg_v03_has_owned_state = yes } } }"
             },
             {
               "key": "withdraw_breach",
@@ -1001,7 +1001,7 @@
                 "zh": "撤回承诺并承担失信",
                 "en": "Withdraw and accept breach"
               },
-              "effect": "{ ywc_dmg_close_as_breach = yes }",
+              "effect": "{ if = { limit = { c:DMG ?= this has_journal_entry = ywc_je_v03_dmg_compact_review has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } ywc_dmg_v03_unsettled = yes var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10 OR = { NOT = { has_variable = ywc_dmg_pending_event } var:ywc_dmg_pending_event = 1009 } OR = { has_variable = ywc_dmg_review_matured var:ywc_dmg_review_notice_response_context = 12 var:ywc_dmg_review_notice_response_context = 36 NOT = { ywc_dmg_v03_has_owned_state = yes } } } ywc_dmg_close_as_breach = yes remove_variable = ywc_dmg_review_notice_response_context set_variable = { name = ywc_v03_dmg_v03_dmg_common_subjects_last_event value = 0 } } }",
               "ai_chance": "{ base = 0 }",
               "cost_note": {
                 "zh": "不再追加费用；先前付款不退。",
@@ -1011,7 +1011,7 @@
                 "zh": "直接落失信结局，保留已支付标志，不可被后续选项改写。",
                 "en": "Closes directly as breach; paid flags remain and no later choice can overwrite it."
               },
-              "trigger": "{ OR = { has_variable = ywc_dmg_review_matured has_variable = ywc_dmg_review_blocked_12_notice has_variable = ywc_dmg_review_blocked_36_notice NOT = { ywc_dmg_v03_has_owned_state = yes } } }"
+              "trigger": "{ c:DMG ?= this has_journal_entry = ywc_je_v03_dmg_compact_review has_variable = ywc_v03_dmg_v03_dmg_common_subjects_started NOT = { has_variable = ywc_v03_dmg_v03_dmg_common_subjects_settled } ywc_dmg_v03_unsettled = yes var:ywc_v03_dmg_v03_dmg_common_subjects_last_event = 10 OR = { NOT = { has_variable = ywc_dmg_pending_event } var:ywc_dmg_pending_event = 1009 } OR = { has_variable = ywc_dmg_review_matured var:ywc_dmg_review_notice_response_context = 12 var:ywc_dmg_review_notice_response_context = 36 NOT = { ywc_dmg_v03_has_owned_state = yes } } }"
             }
           ],
           "purpose": {
@@ -1027,7 +1027,9 @@
             "ywc_dmg_review_matured",
             "ywc_dmg_review_blocked_12_notice",
             "ywc_dmg_review_blocked_36_notice",
-            "ywc_dmg_review_state_lost_notice"
+            "ywc_dmg_review_state_lost_notice",
+            "ywc_dmg_review_notice_response_context",
+            "ywc_v03_dmg_v03_dmg_common_subjects_last_event"
           ],
           "writes": [
             "ywc_dmg_outcome_common_qualification",
@@ -1042,7 +1044,9 @@
             "ywc_dmg_review_started",
             "ywc_dmg_review_matured",
             "ywc_dmg_arc_abandoned",
-            "ywc_dmg_any_outcome"
+            "ywc_dmg_any_outcome",
+            "ywc_dmg_review_notice_response_context",
+            "ywc_v03_dmg_v03_dmg_common_subjects_last_event"
           ]
         }
       ],
@@ -1064,14 +1068,14 @@
             "journal": "ywc_je_v03_dmg_public_qualification",
             "live_witness": "ywc_v03_dmg_live_public_qualification",
             "source_script_sha256": "b80893a27e58d27a9e1f34c2dce9347bfcb4b447bc7005d5cdc101f3a1f74e67",
-            "goal_sha256": "64cc70246f156c4a10779c3200feeb5b9caf2d5092be285c06c4bf01719c966c",
+            "goal_sha256": "baf8bf495aeb93bfc0743e80ee740b902da4718a20c378cbd80b0b8040e84524",
             "exit_sha256": "9bde391e076fba3163b76cf12c704fb41c46763920eff6a0b38532c4b31df29c"
           },
           {
             "journal": "ywc_je_v03_dmg_compact_review",
             "live_witness": "ywc_v03_dmg_live_compact_review",
             "source_script_sha256": "848d9014fff6ba2c2873f0addc35073457ca5f461dd1fa4373ab11b22bb32a04",
-            "goal_sha256": "23b7307d28e7c12dd8f9778531438f6932f30e9007fdedeeafaefdc95edc61a9",
+            "goal_sha256": "66a4fea757bb316819833c760d7c299f61538b852fa198b3d459a192ddda7185",
             "exit_sha256": "9bde391e076fba3163b76cf12c704fb41c46763920eff6a0b38532c4b31df29c"
           }
         ],
@@ -3534,6 +3538,805 @@
                 "queue": "ywc_dmg_court_blocked_36_notice",
                 "kind": "notice36",
                 "mode": "presence"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "slug": "v03_dmg_school_languages",
+      "era": "middle",
+      "participants": [
+        "现任中央政府与课程官署",
+        "地方贵族、村社与非主流文化家长",
+        "大学academics及现有教士",
+        "在职官僚与学堂账册经办者"
+      ],
+      "depends_on": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_dmg_school_languages",
+          "title": {
+            "zh": "学堂的两种声音",
+            "en": "Two Voices in the Classroom"
+          },
+          "desc": {
+            "zh": "北吕宋的课程、地方文字与教学经费需要一份能跨越任期的协议。选择双语公学、地方共办或中央课程，在本国试点核实学校制度、大学人员与官署供给，支付教材登记和下学期账单。连续六次月度核查后结案；学校尚不齐备时，也可先约定有限辅导与申诉安排。",
+            "en": "Northern Luzon's curriculum, local texts and teaching budget need an agreement that can survive a change of government. Choose bilingual public schooling, local joint provision or a central curriculum; verify school institutions, university staff and offices in the owned pilot, then pay registration and the next term's bill. Close after six consecutive monthly checks, or agree a limited tuition and appeal arrangement while schools remain insufficient."
+          },
+          "script": "{\nis_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_v03_dmg_v03_dmg_school_languages_started } }\npossible = { c:DMG ?= this has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_dmg_v03_dmg_school_languages_started } NOT = { has_variable = ywc_v03_dmg_v03_dmg_school_languages_settled } ywc_dmg_school_has_candidate = yes }\nimmediate = { ywc_dmg_school_claim_once = yes }\non_fail = { ywc_dmg_school_release_once = yes }\non_monthly_pulse = { effect = {\nywc_dmg_school_track_review = yes\nywc_dmg_school_prepare_queue = yes\nif = { limit = { ywc_dmg_school_open = yes ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages var:ywc_dmg_school_stage = 1120 var:ywc_dmg_school_pending_event = 1120 } remove_variable = ywc_dmg_school_pending_event trigger_event = { id = ywc_dmg.1120 } }\nif = { limit = { ywc_dmg_school_open = yes ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages var:ywc_dmg_school_stage = 1121 var:ywc_dmg_school_pending_event = 1121 } remove_variable = ywc_dmg_school_pending_event trigger_event = { id = ywc_dmg.1121 } }\nif = { limit = { ywc_dmg_school_open = yes ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages var:ywc_dmg_school_stage = 1122 var:ywc_dmg_school_pending_event = 1122 } remove_variable = ywc_dmg_school_pending_event trigger_event = { id = ywc_dmg.1122 } }\nif = { limit = { ywc_dmg_school_open = yes ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages var:ywc_dmg_school_stage = 1123 var:ywc_dmg_school_pending_event = 1123 } remove_variable = ywc_dmg_school_pending_event trigger_event = { id = ywc_dmg.1123 } }\nif = { limit = { ywc_dmg_school_open = yes ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages var:ywc_dmg_school_stage = 1124 var:ywc_dmg_school_pending_event = 1124 } remove_variable = ywc_dmg_school_pending_event trigger_event = { id = ywc_dmg.1124 } }\nif = { limit = { ywc_dmg_school_open = yes ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages var:ywc_dmg_school_stage = 1125 var:ywc_dmg_school_pending_event = 1125 } remove_variable = ywc_dmg_school_pending_event trigger_event = { id = ywc_dmg.1125 } }\n} }\n}",
+          "goal": "{ has_variable = ywc_v03_dmg_v03_dmg_school_languages_settled OR = { var:ywc_dmg_school_outcome = 1 var:ywc_dmg_school_outcome = 2 var:ywc_dmg_school_outcome = 3 } NOT = { has_variable = ywc_dmg_school_withdrawn } }",
+          "exit_conditions": "{ has_variable = ywc_dmg_school_withdrawn }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_dmg.1120",
+          "title": {
+            "zh": "同一间讲堂",
+            "en": "One Classroom"
+          },
+          "desc": {
+            "zh": "北吕宋官署收到几份不同的课表：有人要求共用教材，有人坚持保留地方文字，教士和村社则希望参与办学。政府必须先确定本次试点的课程方向，再逐项核实人员与经费。无论王廷还是共和政府，都得回答同一个问题：谁来教，又由谁付款？",
+            "en": "Several timetables have reached the northern Luzon offices. Some ask for common textbooks, others insist on local texts, while clergy and villages seek a role in provision. The government must choose a direction before checking staff and funding. Crown or republic, it faces the same questions: who will teach, and who will pay?"
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages ywc_dmg_school_open = yes var:ywc_dmg_school_stage = 1120 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 1 } }",
+          "options": [
+            {
+              "key": "bilingual_public",
+              "label": {
+                "zh": "双语公学：共同课程与地方文字并行",
+                "en": "Bilingual public schooling: common lessons and local texts"
+              },
+              "trigger": "{ ywc_dmg_school_at_1120 = yes ywc_dmg_school_has_candidate = yes NOT = { has_variable = ywc_dmg_school_pilot } }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1120 = yes ywc_dmg_school_has_candidate = yes NOT = { has_variable = ywc_dmg_school_pilot } }\nset_variable = { name = ywc_dmg_school_pilot value = 1 }\nset_variable = { name = ywc_dmg_school_mode value = 1 }\nset_variable = { name = ywc_dmg_school_stage value = 1121 }\nset_variable = { name = ywc_dmg_school_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费；教材登记费通常为一周收入（按开办时收入计算）。",
+                "en": "No charge at this step; registration normally costs one week's opening income."
+              },
+              "consequence_note": {
+                "zh": "选定当前本国所有的北吕宋试点及课程方向；下一步安排教材登记。",
+                "en": "Select the currently owned northern Luzon pilot and curriculum direction, then arrange textbook registration."
+              }
+            },
+            {
+              "key": "local_joint",
+              "label": {
+                "zh": "地方共办：保留地方与宗教教学空间",
+                "en": "Local joint provision: retain local and religious teaching"
+              },
+              "trigger": "{ ywc_dmg_school_at_1120 = yes ywc_dmg_school_has_candidate = yes NOT = { has_variable = ywc_dmg_school_pilot } }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1120 = yes ywc_dmg_school_has_candidate = yes NOT = { has_variable = ywc_dmg_school_pilot } }\nset_variable = { name = ywc_dmg_school_pilot value = 1 }\nset_variable = { name = ywc_dmg_school_mode value = 2 }\nset_variable = { name = ywc_dmg_school_stage value = 1121 }\nset_variable = { name = ywc_dmg_school_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费；教材登记费通常为半周收入（按开办时收入计算）。",
+                "en": "No charge at this step; registration normally costs half a week's opening income."
+              },
+              "consequence_note": {
+                "zh": "选定当前本国所有的北吕宋试点及课程方向；下一步安排教材登记。",
+                "en": "Select the currently owned northern Luzon pilot and curriculum direction, then arrange textbook registration."
+              }
+            },
+            {
+              "key": "central_curriculum",
+              "label": {
+                "zh": "中央课程：由现任政府统一教材",
+                "en": "Central curriculum under the government now in office"
+              },
+              "trigger": "{ ywc_dmg_school_at_1120 = yes ywc_dmg_school_has_candidate = yes NOT = { has_variable = ywc_dmg_school_pilot } }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1120 = yes ywc_dmg_school_has_candidate = yes NOT = { has_variable = ywc_dmg_school_pilot } }\nset_variable = { name = ywc_dmg_school_pilot value = 1 }\nset_variable = { name = ywc_dmg_school_mode value = 3 }\nset_variable = { name = ywc_dmg_school_stage value = 1121 }\nset_variable = { name = ywc_dmg_school_pending_event value = 1121 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费；教材登记费通常为一周收入（按开办时收入计算）。",
+                "en": "No charge at this step; registration normally costs one week's opening income."
+              },
+              "consequence_note": {
+                "zh": "选定当前本国所有的北吕宋试点及课程方向；下一步安排教材登记。",
+                "en": "Select the currently owned northern Luzon pilot and curriculum direction, then arrange textbook registration."
+              }
+            },
+            {
+              "key": "wait_pilot",
+              "label": {
+                "zh": "等待试点归还或再议",
+                "en": "Wait for the pilot or reconsider"
+              },
+              "trigger": "{ ywc_dmg_school_at_1120 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1120 = yes  }\nremove_variable = ywc_dmg_school_pending_event\nset_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 0 }\n} }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "本次不收费，已付费用保留。",
+                "en": "No charge now; previous payments remain settled."
+              },
+              "consequence_note": {
+                "zh": "保留当前议题，待后续月度机会再议。",
+                "en": "Keep the present question open for a later monthly discussion."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "终止本次学堂协议",
+                "en": "Withdraw this school agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1120 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1120 = yes  }\nywc_dmg_school_withdraw = yes\n} }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不追加费用；已付不退，早先土地与王廷账目保留。",
+                "en": "No further charge or refund; earlier land and court accounts remain in force."
+              },
+              "consequence_note": {
+                "zh": "结束本次协议，腾出一项长期事务的办理名额。",
+                "en": "End this agreement and free one long-term undertaking slot."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "固定同一真实对象和三种互斥意向。",
+            "en": "Fix one real object and one of three policy intentions."
+          },
+          "reads": [
+            "ywc_dmg_school_has_candidate"
+          ],
+          "writes": [
+            "ywc_dmg_school_pilot",
+            "ywc_dmg_school_mode",
+            "ywc_dmg_school_stage",
+            "ywc_dmg_school_pending_event",
+            "ywc_v03_dmg_v03_dmg_school_languages_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1121",
+          "title": {
+            "zh": "译本由谁付",
+            "en": "Who Pays for the Translations"
+          },
+          "desc": {
+            "zh": "抄写、译本与学籍登记都要有人承办。已经落实共同资格和公共翻译职责的官署，可以沿用旧章程，但仍须由本试点在职人员接手。此前没有达成改革的地区，也可以筹款重新起步。",
+            "en": "Copies, translations and enrolment rolls all need staff. Offices that established common qualifications and public translation duties can reuse that work, provided staff in this pilot can carry it forward. A country whose earlier reform did not succeed can still fund a fresh start."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages ywc_dmg_school_open = yes var:ywc_dmg_school_stage = 1121 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 2 } }",
+          "options": [
+            {
+              "key": "pay_setup",
+              "label": {
+                "zh": "支付当前应付教材登记费",
+                "en": "Pay the setup fee currently due"
+              },
+              "trigger": "{ ywc_dmg_school_at_1121 = yes NOT = { has_variable = ywc_dmg_school_setup_paid } ywc_dmg_school_can_pay_setup = yes }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1121 = yes NOT = { has_variable = ywc_dmg_school_setup_paid } ywc_dmg_school_can_pay_setup = yes }\nywc_dmg_school_pay_setup_once = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "以开办时一周收入为基准，最低100。双语公学和中央课程通常付全额，地方共办付半额；共同资格与翻译职责已落实且本试点仍有承办人员时，双语公学也付半额。",
+                "en": "The base is one week's opening income, minimum 100. Bilingual public and central provision normally pay the full amount; local joint provision pays half. Bilingual provision also pays half when common qualifications and translation duties are established and this pilot retains staff to administer them."
+              },
+              "consequence_note": {
+                "zh": "支付当前应付费用后核实教学供给；优惠已经兑现的部分不再追补。",
+                "en": "Pay the amount currently due, then verify teaching provision. A discount already settled will not be reclaimed."
+              }
+            },
+            {
+              "key": "wait_cash",
+              "label": {
+                "zh": "等待当前条件恢复",
+                "en": "Wait for current conditions"
+              },
+              "trigger": "{ ywc_dmg_school_at_1121 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1121 = yes  }\nremove_variable = ywc_dmg_school_pending_event\nset_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 0 }\n} }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "本次不收费，已付费用保留。",
+                "en": "No charge now; previous payments remain settled."
+              },
+              "consequence_note": {
+                "zh": "保留当前议题，待后续月度机会再议。",
+                "en": "Keep the present question open for a later monthly discussion."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "终止本次学堂协议",
+                "en": "Withdraw this school agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1121 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1121 = yes  }\nywc_dmg_school_withdraw = yes\n} }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不追加费用；已付不退，早先土地与王廷账目保留。",
+                "en": "No further charge or refund; earlier land and court accounts remain in force."
+              },
+              "consequence_note": {
+                "zh": "结束本次协议，腾出一项长期事务的办理名额。",
+                "en": "End this agreement and free one long-term undertaking slot."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "核实前期语言职责与当下现金，完成第一次实际付款。",
+            "en": "Check prior language duties and current cash, then make the first real payment."
+          },
+          "reads": [
+            "ywc_dmg_school_prior_common",
+            "ywc_dmg_school_can_pay_setup",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_dmg_school_setup_paid",
+            "ywc_dmg_school_setup_paid_amount",
+            "ywc_dmg_school_setup_source_common",
+            "ywc_dmg_school_stage",
+            "ywc_dmg_school_pending_event",
+            "treasury",
+            "ywc_v03_dmg_v03_dmg_school_languages_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1122",
+          "title": {
+            "zh": "教席与礼拜",
+            "en": "Teaching Posts and Worship"
+          },
+          "desc": {
+            "zh": "课表已经写好，教席却还要一一核对。大学任职的学者或教士能否承担教材工作，学校制度能否支撑课程，宗教政策又容许怎样的安排？如果条件尚不齐备，可以先把目标限于识字辅导和官署答疑。",
+            "en": "The timetable is written; the teaching posts still need checking. Can scholars or clergy employed at the university support the materials? Do school institutions sustain the chosen curriculum, and what does religious policy permit? If provision remains insufficient, the agreement can begin with limited literacy tuition and assistance through the offices."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages ywc_dmg_school_open = yes var:ywc_dmg_school_stage = 1122 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 3 } }",
+          "options": [
+            {
+              "key": "confirm_supply",
+              "label": {
+                "zh": "核实当前教学供给",
+                "en": "Confirm current teaching supply"
+              },
+              "trigger": "{ ywc_dmg_school_at_1122 = yes ywc_dmg_school_has_pilot = yes ywc_dmg_school_finance_safe = yes is_at_war = no ywc_dmg_school_full_supply = yes }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1122 = yes ywc_dmg_school_has_pilot = yes ywc_dmg_school_finance_safe = yes is_at_war = no ywc_dmg_school_full_supply = yes }\nremove_variable = ywc_dmg_school_limited\nset_variable = { name = ywc_dmg_school_supply_confirmed value = 1 }\nset_variable = { name = ywc_dmg_school_stage value = 1123 }\nset_variable = { name = ywc_dmg_school_pending_event value = 1123 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费；须有相应教育法、至少一级学校机构及本试点在职大学人员。",
+                "en": "No charge at this step; requires the appropriate education law, at least level-one school investment and university staff employed in this pilot."
+              },
+              "consequence_note": {
+                "zh": "双语公学须有充分接受的非主流学者及八成大学就业率；地方共办接受非主流学者或教士、五成就业率；中央课程须有八成就业率的大学与官署。所有供给均不得短缺。",
+                "en": "Bilingual provision requires fully accepted non-primary-culture academics and 80% university occupancy. Joint provision accepts non-primary academics or clergy at 50%. Central provision requires a staffed university and offices at 80%. All checked workplaces must have no goods shortage."
+              }
+            },
+            {
+              "key": "limit_existing_tuition",
+              "label": {
+                "zh": "缩限为现有识字与官署辅导",
+                "en": "Limit the agreement to existing literacy and office tuition"
+              },
+              "trigger": "{ ywc_dmg_school_at_1122 = yes ywc_dmg_school_has_pilot = yes ywc_dmg_school_finance_safe = yes is_at_war = no ywc_dmg_school_limited_supply = yes }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1122 = yes ywc_dmg_school_has_pilot = yes ywc_dmg_school_finance_safe = yes is_at_war = no ywc_dmg_school_limited_supply = yes }\nset_variable = { name = ywc_dmg_school_limited value = 1 }\nset_variable = { name = ywc_dmg_school_supply_confirmed value = 1 }\nset_variable = { name = ywc_dmg_school_stage value = 1123 }\nset_variable = { name = ywc_dmg_school_pending_event value = 1123 }\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "国家识字率至少10%，本试点须有非主流在职官僚，其官署就业率至少25%且无短缺。已付登记费保留。",
+                "en": "Requires national literacy of at least 10% and non-primary-culture bureaucrats employed in this pilot's administration, with at least 25% occupancy and no goods shortage. The registration fee remains paid."
+              },
+              "consequence_note": {
+                "zh": "将目标限于现有识字辅导、官署答疑和申诉安排；完成六次月度观察及后续付款后，可达成有限协议。",
+                "en": "Limit the goal to existing literacy tuition, assistance through the offices and appeals. Six monthly observations and the later payment can establish a limited agreement."
+              }
+            },
+            {
+              "key": "wait_supply",
+              "label": {
+                "zh": "等待当前条件恢复",
+                "en": "Wait for current conditions"
+              },
+              "trigger": "{ ywc_dmg_school_at_1122 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1122 = yes  }\nremove_variable = ywc_dmg_school_pending_event\nset_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 0 }\n} }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "本次不收费，已付费用保留。",
+                "en": "No charge now; previous payments remain settled."
+              },
+              "consequence_note": {
+                "zh": "保留当前议题，待后续月度机会再议。",
+                "en": "Keep the present question open for a later monthly discussion."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "终止本次学堂协议",
+                "en": "Withdraw this school agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1122 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1122 = yes  }\nywc_dmg_school_withdraw = yes\n} }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不追加费用；已付不退，早先土地与王廷账目保留。",
+                "en": "No further charge or refund; earlier land and court accounts remain in force."
+              },
+              "consequence_note": {
+                "zh": "结束本次协议，腾出一项长期事务的办理名额。",
+                "en": "End this agreement and free one long-term undertaking slot."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "依真实学校、法律、宗教及人员选择完整或有限目标。",
+            "en": "Select a full or bounded target against real schools, laws, religion and staff."
+          },
+          "reads": [
+            "ywc_dmg_school_full_supply",
+            "ywc_dmg_school_limited_supply",
+            "literacy_rate",
+            "institution_schools"
+          ],
+          "writes": [
+            "ywc_dmg_school_limited",
+            "ywc_dmg_school_supply_confirmed",
+            "ywc_dmg_school_stage",
+            "ywc_dmg_school_pending_event",
+            "ywc_v03_dmg_v03_dmg_school_languages_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1123",
+          "title": {
+            "zh": "村社签名的边界",
+            "en": "The Boundary of Village Consent"
+          },
+          "desc": {
+            "zh": "村社代表愿意在学籍册旁签名，也要求知道发生争议时向谁申诉。先前混合仲裁中的村社签名规则若已落实，可以沿用其程序；否则，政府需要为这次试点另立条款。",
+            "en": "Village representatives will sign beside the enrolment rolls, but want to know where disputes will be heard. A village consent procedure established through mixed land arbitration can supply a precedent. Otherwise, this pilot needs its own appeal clause."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages ywc_dmg_school_open = yes var:ywc_dmg_school_stage = 1123 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 4 } }",
+          "options": [
+            {
+              "key": "reuse_village_clause",
+              "label": {
+                "zh": "承接已结案的村社签名规则",
+                "en": "Reuse the settled village co-signature rule"
+              },
+              "trigger": "{ ywc_dmg_school_at_1123 = yes ywc_dmg_school_terms_ready = yes ywc_dmg_school_prior_land = yes NOT = { has_variable = ywc_dmg_school_terms_written } }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1123 = yes ywc_dmg_school_terms_ready = yes ywc_dmg_school_prior_land = yes NOT = { has_variable = ywc_dmg_school_terms_written } }\nset_variable = { name = ywc_dmg_school_terms_source_land value = 1 }\nset_variable = { name = ywc_dmg_school_terms_written value = 1 }\nset_variable = { name = ywc_dmg_school_terms_pilot value = var:ywc_dmg_school_pilot }\nywc_dmg_school_start_review = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不收费；须已完成混合仲裁、支付赔偿并落实村社签名条款，且本试点仍有在职承办人员。",
+                "en": "No charge; requires concluded mixed arbitration, paid compensation, an established village consent clause and staff still employed in this pilot."
+              },
+              "consequence_note": {
+                "zh": "沿用村社申诉程序，为本次试点记下条款并开始六次连续月度观察。原土地账目继续保留。",
+                "en": "Reuse the village appeal procedure, record terms for this pilot and begin six consecutive monthly observations. Earlier land accounts remain in force."
+              }
+            },
+            {
+              "key": "write_new_appeal",
+              "label": {
+                "zh": "为本线另立申诉条款",
+                "en": "Write a new appeal clause for this agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1123 = yes ywc_dmg_school_terms_ready = yes NOT = { has_variable = ywc_dmg_school_terms_written } }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1123 = yes ywc_dmg_school_terms_ready = yes NOT = { has_variable = ywc_dmg_school_terms_written } }\nset_variable = { name = ywc_dmg_school_terms_new_appeal value = 1 }\nset_variable = { name = ywc_dmg_school_terms_written value = 1 }\nset_variable = { name = ywc_dmg_school_terms_pilot value = var:ywc_dmg_school_pilot }\nywc_dmg_school_start_review = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本步不另收费；登记费须已付，当前人员、官署及所选供给仍须合格。",
+                "en": "No additional charge; registration must be paid and current staff, offices and selected provision must remain qualified."
+              },
+              "consequence_note": {
+                "zh": "为本次试点另立申诉条款，开始六次连续月度观察。",
+                "en": "Write a new appeal clause for this pilot and begin six consecutive monthly observations."
+              }
+            },
+            {
+              "key": "wait_terms",
+              "label": {
+                "zh": "等待当前条件恢复",
+                "en": "Wait for current conditions"
+              },
+              "trigger": "{ ywc_dmg_school_at_1123 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1123 = yes  }\nremove_variable = ywc_dmg_school_pending_event\nset_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 0 }\n} }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "本次不收费，已付费用保留。",
+                "en": "No charge now; previous payments remain settled."
+              },
+              "consequence_note": {
+                "zh": "保留当前议题，待后续月度机会再议。",
+                "en": "Keep the present question open for a later monthly discussion."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "终止本次学堂协议",
+                "en": "Withdraw this school agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1123 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1123 = yes  }\nywc_dmg_school_withdraw = yes\n} }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不追加费用；已付不退，早先土地与王廷账目保留。",
+                "en": "No further charge or refund; earlier land and court accounts remain in force."
+              },
+              "consequence_note": {
+                "zh": "结束本次协议，腾出一项长期事务的办理名额。",
+                "en": "End this agreement and free one long-term undertaking slot."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "把申诉和实际试点绑定，并开启不可按天数跳过的月度观察。",
+            "en": "Bind appeals to the real pilot and begin observation that cannot be replaced by a day count."
+          },
+          "reads": [
+            "ywc_dmg_school_terms_ready",
+            "ywc_dmg_school_prior_land"
+          ],
+          "writes": [
+            "ywc_dmg_school_terms_written",
+            "ywc_dmg_school_terms_pilot",
+            "ywc_dmg_school_terms_source_land",
+            "ywc_dmg_school_terms_new_appeal",
+            "ywc_dmg_school_review_running",
+            "ywc_dmg_school_review_streak",
+            "ywc_dmg_school_review_ticked",
+            "ywc_dmg_school_stage",
+            "ywc_v03_dmg_v03_dmg_school_languages_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1124",
+          "title": {
+            "zh": "下学期的账单",
+            "en": "The Next Term Bill"
+          },
+          "desc": {
+            "zh": "人员、条款、经费和治安已经接受逐月核查。连续六次合格，才轮到下学期的账单；战争、失州、违约或供给中断都需要重新观察。曾经落实中央任命与预算章程的政府，还可以申请减轻本次统筹费用。",
+            "en": "Staff, terms, finances and peace have been checked month by month. Six consecutive satisfactory observations bring the next term's bill; war, loss of the pilot, default or interrupted provision require a new observation period. An established central appointment and budget charter may reduce the coordination charge."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages ywc_dmg_school_open = yes var:ywc_dmg_school_stage = 1124 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 5 } }",
+          "options": [
+            {
+              "key": "pay_next_term",
+              "label": {
+                "zh": "支付成熟后当前应付的下学期账单",
+                "en": "Pay the next-term bill currently due after observation"
+              },
+              "trigger": "{ ywc_dmg_school_at_1124 = yes ywc_dmg_school_review_ready = yes NOT = { has_variable = ywc_dmg_school_bill_paid } ywc_dmg_school_can_pay_bill = yes }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1124 = yes ywc_dmg_school_review_ready = yes NOT = { has_variable = ywc_dmg_school_bill_paid } ywc_dmg_school_can_pay_bill = yes }\nywc_dmg_school_pay_bill_once = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "基准沿用开办时一周收入。双语公学和中央课程通常付全额，地方共办付半额；中央统筹旧章程已落实、两笔旧费已付且本试点官署和行政仍合格时，中央课程付半额。",
+                "en": "Uses the opening one-week income base. Bilingual public and central provision normally pay the full amount; joint provision pays half. Central provision pays half when the earlier central charter is established, its two fees are paid, and this pilot's offices and bureaucracy remain qualified."
+              },
+              "consequence_note": {
+                "zh": "支付本次下学期账单后进入结案审议，有限目标也须承担相应费用。",
+                "en": "Pay this agreement's next term bill and proceed to the closing review. A limited goal also carries its applicable bill."
+              }
+            },
+            {
+              "key": "defer_recount",
+              "label": {
+                "zh": "明确延期，从零重数六个月",
+                "en": "Explicitly defer and recount six months from zero"
+              },
+              "trigger": "{ ywc_dmg_school_at_1124 = yes has_variable = ywc_dmg_school_review_interrupted }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1124 = yes has_variable = ywc_dmg_school_review_interrupted }\nywc_dmg_school_start_review = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不重收登记费，本次暂不支付下学期账单。",
+                "en": "Registration is not charged again; the next term bill is deferred."
+              },
+              "consequence_note": {
+                "zh": "明确重开观察期，从零计算六次合格月度核查。问题仍在时，观察会再次中断。",
+                "en": "Explicitly restart the observation period and count six satisfactory monthly checks from zero. Continuing problems interrupt the new period again."
+              }
+            },
+            {
+              "key": "wait_bill",
+              "label": {
+                "zh": "等待恢复或筹齐当前账单",
+                "en": "Wait for recovery or the current bill"
+              },
+              "trigger": "{ ywc_dmg_school_at_1124 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1124 = yes  }\nremove_variable = ywc_dmg_school_pending_event\nset_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 0 }\n} }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "本次不收费，已付费用保留。",
+                "en": "No charge now; previous payments remain settled."
+              },
+              "consequence_note": {
+                "zh": "保留当前议题，待后续月度机会再议。",
+                "en": "Keep the present question open for a later monthly discussion."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "终止本次学堂协议",
+                "en": "Withdraw this school agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1124 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1124 = yes  }\nywc_dmg_school_withdraw = yes\n} }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不追加费用；已付不退，早先土地与王廷账目保留。",
+                "en": "No further charge or refund; earlier land and court accounts remain in force."
+              },
+              "consequence_note": {
+                "zh": "结束本次协议，腾出一项长期事务的办理名额。",
+                "en": "End this agreement and free one long-term undertaking slot."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "核实六个月后的真实持续支出，处理中断及现金缺口。",
+            "en": "Check real continuing expenditure after six months and handle interruption or missing cash."
+          },
+          "reads": [
+            "ywc_dmg_school_review_ready",
+            "ywc_dmg_school_prior_court",
+            "ywc_dmg_school_can_pay_bill",
+            "ywc_dmg_school_review_interrupted",
+            "gold_reserves"
+          ],
+          "writes": [
+            "ywc_dmg_school_bill_paid",
+            "ywc_dmg_school_bill_paid_amount",
+            "ywc_dmg_school_bill_source_court",
+            "ywc_dmg_school_review_streak",
+            "ywc_dmg_school_stage",
+            "ywc_dmg_school_pending_event",
+            "treasury",
+            "ywc_v03_dmg_v03_dmg_school_languages_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        },
+        {
+          "id": "ywc_dmg.1125",
+          "title": {
+            "zh": "下一届学生的名字",
+            "en": "The Next Generation on the Roll"
+          },
+          "desc": {
+            "zh": "新的登记册已经留出了下一届学生的名字。现在要决定，眼前的人员、课程和账目是否足以维持承诺：确认完整协议，接受地方共办或有限目标，承认尚未解决的缺口，或结束本次试点。",
+            "en": "The new roll has space for the next intake. The government must now decide whether present staff, curriculum and accounts can sustain its promise: confirm the full agreement, accept local joint provision or a limited goal, record unresolved shortcomings, or end the pilot."
+          },
+          "trigger": "{ c:DMG ?= this ywc_v03_can_deliver_major = yes has_journal_entry = ywc_je_v03_dmg_school_languages ywc_dmg_school_open = yes var:ywc_dmg_school_stage = 1125 }",
+          "immediate": "{ ywc_v03_mark_major_delivered = yes set_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 6 } }",
+          "options": [
+            {
+              "key": "close_established",
+              "label": {
+                "zh": "确认完整双语公学或中央课程协议",
+                "en": "Confirm the full bilingual-public or central agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1125 = yes ywc_dmg_school_terminal_established = yes }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1125 = yes ywc_dmg_school_terminal_established = yes }\nywc_dmg_school_close_established = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不再收费；完整供给、六次合格月度观察、两笔付款和当前试点条件均须成立。",
+                "en": "No further charge; full provision, six satisfactory monthly observations, both payments and current pilot conditions must all hold."
+              },
+              "consequence_note": {
+                "zh": "确认双语公学或中央课程协议，保留课程方向与账册，结束本次办理。",
+                "en": "Confirm the bilingual public or central curriculum agreement, retain its direction and ledger, and conclude this undertaking."
+              }
+            },
+            {
+              "key": "close_compromise",
+              "label": {
+                "zh": "确认地方共办或明确有限的协议",
+                "en": "Confirm local joint provision or the explicit bounded agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1125 = yes ywc_dmg_school_terminal_compromise = yes }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1125 = yes ywc_dmg_school_terminal_compromise = yes }\nywc_dmg_school_close_compromise = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不再收费；地方共办或已选有限目标须仍合格，并完成六次观察和两笔付款。",
+                "en": "No further charge; joint provision or the selected limited goal must remain qualified, with six observations and both payments complete."
+              },
+              "consequence_note": {
+                "zh": "按已经兑现的范围确认协议，保留条款、支出与前序来源。",
+                "en": "Confirm the agreement within the scope actually delivered, retaining its terms, expenditure and earlier precedents."
+              }
+            },
+            {
+              "key": "close_setback",
+              "label": {
+                "zh": "按当前缺口记录受挫",
+                "en": "Record a setback against the current gap"
+              },
+              "trigger": "{ ywc_dmg_school_at_1125 = yes NOT = { ywc_dmg_school_terminal_established = yes } NOT = { ywc_dmg_school_terminal_compromise = yes } }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1125 = yes NOT = { ywc_dmg_school_terminal_established = yes } NOT = { ywc_dmg_school_terminal_compromise = yes } }\nywc_dmg_school_close_setback = yes\n} }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "不追加收费，已付不退。",
+                "en": "No further charge or refund."
+              },
+              "consequence_note": {
+                "zh": "在完整协议与有限协议的当前条件均不成立时，记录缺口并结束本次办理，供今后的政府接续。",
+                "en": "When present conditions support neither a full nor a limited agreement, record the shortcomings and conclude this undertaking for a future government to revisit."
+              }
+            },
+            {
+              "key": "wait_final",
+              "label": {
+                "zh": "保留账册，等当前条件恢复",
+                "en": "Keep the ledger and await current conditions"
+              },
+              "trigger": "{ ywc_dmg_school_at_1125 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1125 = yes  }\nremove_variable = ywc_dmg_school_pending_event\nset_variable = { name = ywc_v03_dmg_v03_dmg_school_languages_last_event value = 0 }\n} }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "本次不收费，已付费用保留。",
+                "en": "No charge now; previous payments remain settled."
+              },
+              "consequence_note": {
+                "zh": "保留当前议题，待后续月度机会再议。",
+                "en": "Keep the present question open for a later monthly discussion."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "终止本次学堂协议",
+                "en": "Withdraw this school agreement"
+              },
+              "trigger": "{ ywc_dmg_school_at_1125 = yes  }",
+              "effect": "{ if = { limit = { ywc_dmg_school_at_1125 = yes  }\nywc_dmg_school_withdraw = yes\n} }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "不追加费用；已付不退，早先土地与王廷账目保留。",
+                "en": "No further charge or refund; earlier land and court accounts remain in force."
+              },
+              "consequence_note": {
+                "zh": "结束本次协议，腾出一项长期事务的办理名额。",
+                "en": "End this agreement and free one long-term undertaking slot."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "以当前证据收束，不赠予引擎未实际发生的改变。",
+            "en": "Close against current evidence without granting changes the engine has not made."
+          },
+          "reads": [
+            "ywc_dmg_school_terminal_established",
+            "ywc_dmg_school_terminal_compromise",
+            "ywc_dmg_school_pilot",
+            "ywc_dmg_school_terms_pilot"
+          ],
+          "writes": [
+            "ywc_dmg_school_outcome",
+            "ywc_dmg_school_withdrawn",
+            "ywc_v03_dmg_v03_dmg_school_languages_settled",
+            "ywc_v03_dmg_v03_dmg_school_languages_outcome",
+            "ywc_v03_active_arc_count",
+            "ywc_v03_visible_task_count",
+            "ywc_v03_dmg_v03_dmg_school_languages_last_event",
+            "ywc_v03_major_event_cooldown"
+          ]
+        }
+      ],
+      "outcomes": [
+        "established:完整双语公学或中央课程在当前供给与两笔支出下成立，保留政策模式，不赠予法律或身份变化",
+        "compromise:地方共办或明确有限目标经六次观察及实际账单成立，不冒称新学校已建成",
+        "setback:最终当前供给或资格不再成立，保留已付费用、条款和来源供后期读取",
+        "withdrawn:明确退出，仅释放本线一次容量，保留既有费用与前序债务"
+      ],
+      "legacy_links": [
+        "v03_dmg_common_subjects:真实共同资格结案及翻译职责可减少1121登记工作；未参与或受挫有当前全价入口",
+        "v03_dmg_two_land_titles:已付补偿的混合仲裁村社先例可用于1123本线申诉；不声称旧地契绑定本试点",
+        "v03_dmg_court_provinces:真实中央预算结案及当前官署可减少1124后续账单，不冒充本线已付",
+        "KOR/NMG仅为可连接对象，本卡不要求或制造新外国投入；共和和保守状态均保留退路"
+      ],
+      "inline_delivery_adapter": {
+        "schema": "v03.foundation_inline_adapter.v1",
+        "live_phases": [
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "live_witness": "ywc_v03_dmg_live_school_languages",
+            "source_script_sha256": "7bba31b7aaf447705787d781af968d8bf7dc796813f59fa302bd8350b129ee02",
+            "goal_sha256": "bf961dbe3ee22902a072b937202436536ca222e4ee77dd93f43549cb9a152b25",
+            "exit_sha256": "65cab1e7be90f0c6e5ca6cdb411dd7f409ecae37d8e754a45a2dc9a6b12f385e"
+          }
+        ],
+        "branches": [
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "branch_index": 0,
+            "event": "ywc_dmg.1120",
+            "branch_sha256": "28d47db7597fa6c882232037fac42880e3f51b476745e9a6c88bc89aa8c3c52e",
+            "limit_sha256": "7750b36fb6062f75561e46432a83f1eb1f6f93b3db26e7c84c15c02ed81c55f2",
+            "candidates": [
+              {
+                "queue": "ywc_dmg_school_pending_event",
+                "mode": "exact",
+                "kind": "normal",
+                "value": 1120
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "branch_index": 1,
+            "event": "ywc_dmg.1121",
+            "branch_sha256": "636c0dd489c48e8ba3c2c25e57c761dbfb880811dbea0614f36b59475c1bb985",
+            "limit_sha256": "60d658958b5c1833d58abd425aeacd0f522a43aeaa81276298389dcc0ff0fa58",
+            "candidates": [
+              {
+                "queue": "ywc_dmg_school_pending_event",
+                "mode": "exact",
+                "kind": "normal",
+                "value": 1121
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "branch_index": 2,
+            "event": "ywc_dmg.1122",
+            "branch_sha256": "1105845751e9f17ff6cd2377ca3371d04fc7d4a938ff3cfeae6572e4d5aa1d70",
+            "limit_sha256": "b0d86c61df25809b492e8dfdd620e6c38aac71e7bc754deaa7aebbea3ac3e1df",
+            "candidates": [
+              {
+                "queue": "ywc_dmg_school_pending_event",
+                "mode": "exact",
+                "kind": "normal",
+                "value": 1122
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "branch_index": 3,
+            "event": "ywc_dmg.1123",
+            "branch_sha256": "e37f5392f084cfffc8e8d3e54f88d2a2fee56d4fe9511cfe592ed13f89af8bac",
+            "limit_sha256": "5d3cc4ea959b5848cdee71febd72738c2f11d53876fb2ab85e4f87190a8a1612",
+            "candidates": [
+              {
+                "queue": "ywc_dmg_school_pending_event",
+                "mode": "exact",
+                "kind": "normal",
+                "value": 1123
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "branch_index": 4,
+            "event": "ywc_dmg.1124",
+            "branch_sha256": "a446949db540bf24c715d9316ef9e97fd28077d19b90ffee68495c3df6547846",
+            "limit_sha256": "3e5cc0b08ada092d07eebc93f1fc5c8940023cf296f200d2df294578334101dc",
+            "candidates": [
+              {
+                "queue": "ywc_dmg_school_pending_event",
+                "mode": "exact",
+                "kind": "normal",
+                "value": 1124
+              }
+            ]
+          },
+          {
+            "journal": "ywc_je_v03_dmg_school_languages",
+            "branch_index": 5,
+            "event": "ywc_dmg.1125",
+            "branch_sha256": "60d4a8875e574bd5c935e6cb095e75518e9554cb9eac3f0300a6d625944fa6c1",
+            "limit_sha256": "df9a612a3f796d3da0bff93d7c6a0290f029fa5962a03dac294ce1184b78c9f9",
+            "candidates": [
+              {
+                "queue": "ywc_dmg_school_pending_event",
+                "mode": "exact",
+                "kind": "normal",
+                "value": 1125
               }
             ]
           }
