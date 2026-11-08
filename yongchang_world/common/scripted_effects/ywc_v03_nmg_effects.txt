@@ -757,6 +757,7 @@ ywc_nmg_mexshare_monthly = {
 		else = { remove_modifier = ywc_nmg_local_port_budget_right }
 	}
 	if = { limit = { OR = { var:ywc_nmg_mexshare_state ?= 1 var:ywc_nmg_mexshare_state ?= 2 } OR = { NOT = { has_variable = ywc_nmg_mexshare_request_timer } NOT = { ywc_nmg_mexshare_link_intact = yes } } } ywc_nmg_mexshare_cancel_unsigned = yes }
+	ywc_nmg_market_check_pending = yes
 }
 
 ywc_nmg_mexshare_end_agreement = {
@@ -1049,5 +1050,91 @@ ywc_nmg_partner_renew_fixed = {
   limit = { ywc_nmg_partner_renewal_menu_current = yes var:ywc_nmg_revenue_route ?= 1 ywc_nmg_mexshare_can_offer = yes }
   ywc_nmg_mexshare_send = yes
   ywc_nmg_partner_bump_renewal_serial = yes
+ }
+}
+
+# Optional market-control request; signed remittance and its arrears are separate.
+ywc_nmg_market_bump_serial = {
+ if = { limit = { NOT = { has_variable = ywc_nmg_market_request_serial } } set_variable = { name = ywc_nmg_market_request_serial value = 0 } }
+ change_variable = { name = ywc_nmg_market_request_serial add = 1 }
+}
+
+ywc_nmg_market_cancel_unsigned = {
+ if = {
+  limit = { var:ywc_nmg_market_request_state ?= 1 }
+  remove_variable = ywc_nmg_market_request_timer
+  remove_variable = ywc_nmg_market_request_market
+  ywc_nmg_market_bump_serial = yes
+  set_variable = { name = ywc_nmg_market_request_state value = 3 }
+ }
+}
+
+ywc_nmg_market_check_pending = {
+ if = {
+  limit = {
+   var:ywc_nmg_market_request_state ?= 1
+   OR = {
+    NOT = { has_variable = ywc_nmg_market_request_timer }
+    NOT = { ywc_nmg_market_context_ready = yes }
+    NOT = { exists = var:ywc_nmg_market_request_market }
+    NOT = { market ?= var:ywc_nmg_market_request_market }
+    NOT = { var:ywc_nmg_market_request_contract_generation ?= var:ywc_nmg_mexshare_contract_generation }
+   }
+  }
+  ywc_nmg_market_cancel_unsigned = yes
+ }
+}
+
+ywc_nmg_market_request = {
+ if = {
+  limit = { ywc_nmg_market_request_ready = yes }
+  ywc_nmg_market_bump_serial = yes
+  set_variable = { name = ywc_nmg_market_request_state value = 1 }
+  set_variable = { name = ywc_nmg_market_request_timer value = 1 months = 3 }
+  set_variable = { name = ywc_nmg_market_request_cooldown value = 1 months = 6 }
+  set_variable = { name = ywc_nmg_market_request_contract_generation value = var:ywc_nmg_mexshare_contract_generation }
+  save_scope_as = ywc_nmg_market_requester
+  c:MEX = { save_scope_as = ywc_nmg_market_request_partner }
+  market = { save_scope_as = ywc_nmg_market_request_market }
+  set_variable = { name = ywc_nmg_market_request_market value = scope:ywc_nmg_market_request_market }
+  save_scope_value_as = { name = ywc_nmg_market_request_serial value = var:ywc_nmg_market_request_serial }
+  save_scope_value_as = { name = ywc_nmg_market_contract_generation value = var:ywc_nmg_mexshare_contract_generation }
+  save_scope_value_as = { name = ywc_nmg_market_contract_monthly value = var:ywc_nmg_mexshare_contract_monthly }
+  save_scope_value_as = { name = ywc_nmg_market_contract_term value = var:ywc_nmg_mexshare_contract_term }
+  # Calendar-month estimate at request time; the signed timer remains exact.
+  set_variable = { name = ywc_nmg_market_remaining_months_temp value = var:ywc_nmg_mexshare_start_month }
+  change_variable = { name = ywc_nmg_market_remaining_months_temp add = var:ywc_nmg_mexshare_contract_term }
+  change_variable = { name = ywc_nmg_market_remaining_months_temp add = { value = ywc_nmg_current_calendar_month multiply = -1 } }
+  save_scope_value_as = { name = ywc_nmg_market_remaining_months value = var:ywc_nmg_market_remaining_months_temp }
+  remove_variable = ywc_nmg_market_remaining_months_temp
+  scope:ywc_nmg_market_request_partner = { trigger_event = { id = ywc_nmg.1033 } }
+ }
+}
+
+ywc_nmg_market_accept = {
+ if = {
+  limit = { ywc_nmg_market_offer_matches = yes }
+  scope:ywc_nmg_market_requester = {
+   # The pact's maintenance condition sees this exact signed generation.
+   set_variable = { name = ywc_nmg_market_granted_generation value = scope:ywc_nmg_market_contract_generation }
+   scope:ywc_nmg_market_request_partner = {
+    create_diplomatic_pact = { country = scope:ywc_nmg_market_requester type = ywc_nmg_mex_market_control }
+   }
+   if = {
+    limit = { has_diplomatic_pact = { who = scope:ywc_nmg_market_request_partner type = ywc_nmg_mex_market_control } }
+    set_variable = { name = ywc_nmg_market_request_state value = 2 }
+   }
+   else = { remove_variable = ywc_nmg_market_granted_generation set_variable = { name = ywc_nmg_market_request_state value = 4 } }
+   remove_variable = ywc_nmg_market_request_timer
+   remove_variable = ywc_nmg_market_request_market
+   ywc_nmg_market_bump_serial = yes
+  }
+ }
+}
+
+ywc_nmg_market_refuse = {
+ if = {
+  limit = { ywc_nmg_market_offer_matches = yes }
+  scope:ywc_nmg_market_requester = { ywc_nmg_market_cancel_unsigned = yes }
  }
 }

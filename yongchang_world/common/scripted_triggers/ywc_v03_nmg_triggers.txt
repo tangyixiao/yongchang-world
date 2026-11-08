@@ -440,3 +440,52 @@ ywc_nmg_partner_renewal_menu_current = {
 	}
 	ywc_nmg_partner_renewal_available = yes
 }
+
+# A separately requested market right cannot be inferred from the old fixed-share right.
+ywc_nmg_market_context_ready = {
+ c:NMG ?= this
+ ywc_nmg_mexshare_agreement_current = yes
+ ywc_nmg_v03_finance_safe = yes
+ var:ywc_nmg_mexshare_earned_count >= 1
+ has_variable = ywc_nmg_mexshare_start_month
+ has_variable = ywc_nmg_mexshare_contract_term
+ var:ywc_nmg_mexshare_contract_monthly > 0
+ is_direct_subject_of = c:MEX
+ NOT = { is_diplomatic_play_enemy_of = c:MEX }
+ market ?= c:MEX.market
+ c:MEX = { market.owner ?= this }
+ NOT = { has_diplomatic_pact = { who = c:MEX type = grant_own_market } }
+ NOT = { has_diplomatic_pact = { who = c:MEX type = request_market_control } }
+ NOT = { has_diplomatic_pact = { who = c:MEX type = ywc_nmg_mex_market_control } }
+}
+
+ywc_nmg_market_request_ready = {
+ ywc_nmg_market_context_ready = yes
+ NOT = { var:ywc_nmg_market_request_state ?= 1 }
+ NOT = { has_variable = ywc_nmg_market_request_cooldown }
+}
+
+# ROOT is the actual Mexican recipient. A current contract, recipient,
+# generation, quote, and the same pre-grant market must still match.
+ywc_nmg_market_offer_matches = {
+ c:MEX ?= this
+ is_country_alive = yes
+ exists = scope:ywc_nmg_market_requester
+ exists = scope:ywc_nmg_market_request_partner
+ exists = scope:ywc_nmg_market_request_market
+ scope:ywc_nmg_market_request_partner ?= this
+ scope:ywc_nmg_market_requester ?= c:NMG
+ scope:ywc_nmg_market_request_market ?= c:MEX.market
+ scope:ywc_nmg_market_requester = {
+  ywc_nmg_market_context_ready = yes
+  var:ywc_nmg_market_request_state ?= 1
+  has_variable = ywc_nmg_market_request_timer
+  var:ywc_nmg_market_request_serial ?= scope:ywc_nmg_market_request_serial
+  var:ywc_nmg_market_request_market ?= scope:ywc_nmg_market_request_market
+  var:ywc_nmg_mexshare_contract_generation ?= scope:ywc_nmg_market_contract_generation
+  var:ywc_nmg_mexshare_contract_partner ?= scope:ywc_nmg_market_request_partner
+  var:ywc_nmg_mexshare_contract_monthly ?= scope:ywc_nmg_market_contract_monthly
+  var:ywc_nmg_mexshare_contract_term ?= scope:ywc_nmg_market_contract_term
+  market ?= scope:ywc_nmg_market_request_market
+ }
+}
