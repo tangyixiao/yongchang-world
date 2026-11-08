@@ -1069,7 +1069,6 @@ def _run_port_notice_presence_and_same_id_priority():
                "ywc_shu.1013": "legacy_cap",
                "ywc_shu.1014": "reduce_target",
                "ywc_shu.1015": "vacant_cap",
-               "ywc_shu.1016": "resume_service_contract",
                "ywc_shu.1021": "current_law_review",
                "ywc_shu.1022": "pay_verification",
                "ywc_shu.1023": "share_form",

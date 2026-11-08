@@ -69,6 +69,7 @@ class ShuRuntime:
             "gold_reserves": 100_000,
             "net_fixed_income": 100,
             "bureaucracy": 1000,
+            "army_size": 10,
             "test_owned_state": 1,
             "test_real_building": 1,
             "test_owned_building_building_barrack": 1,
@@ -1110,6 +1111,10 @@ class ShuFoundationRuntimeTest(unittest.TestCase):
             "ywc_shu_service_route": 2,
         })
         runtime.open()
+        # Exercise the route predicate in the real appointment stage.
+        runtime.activate(runtime.arc["journals"][1])
+        runtime.state["SHU"].pop("ywc_shu_service_pending_event", None)
+        runtime.state["SHU"]["ywc_shu_service_appointment_offer_open"] = 1
         option = next(o for o in runtime.event_map["ywc_shu.1015"]["options"] if o["key"] == "joint_recheck")
         self.assertTrue(runtime.cond(option["trigger"]))
         runtime.state["SHU"]["ywc_shu_service_route"] = 1

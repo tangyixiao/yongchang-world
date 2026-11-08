@@ -73,6 +73,7 @@ ywc_shu_v03_has_candidate_state = {
 }
 
 ywc_shu_v03_service_professional_ready = {
+	army_size > 0
 	bureaucracy >= 0
 	ywc_shu_v03_has_pilot_state = yes
 	any_scope_state = {
@@ -96,18 +97,18 @@ ywc_shu_v03_service_route_ready = {
 	AND = {
 		ywc_shu_v03_finance_safe = yes
 		OR = {
-			AND = { var:ywc_shu_service_route = 1 ywc_shu_v03_real_execution_ready = yes }
-			AND = { var:ywc_shu_service_route = 2 ywc_shu_v03_limited_execution_ready = yes OR = { has_variable = ywc_shu_service_provincial_report has_variable = ywc_shu_service_joint_review has_variable = ywc_shu_service_local_voice } }
-			AND = { var:ywc_shu_service_route = 3 ywc_shu_v03_limited_execution_ready = yes }
+			AND = { var:ywc_shu_service_route = 1 ywc_shu_v03_real_execution_ready = yes ywc_shu_v03_service_professional_ready = yes }
+			AND = { var:ywc_shu_service_route = 2 ywc_shu_v03_limited_execution_ready = yes ywc_shu_service_provincial_barracks_ready = yes OR = { has_variable = ywc_shu_service_provincial_report has_variable = ywc_shu_service_joint_review has_variable = ywc_shu_service_local_voice has_variable = ywc_shu_service_local_share } }
+			AND = { var:ywc_shu_service_route = 3 ywc_shu_v03_limited_execution_ready = yes ywc_shu_service_legacy_barracks_ready = yes }
 			AND = { NOT = { has_variable = ywc_shu_service_route } ywc_shu_v03_limited_execution_ready = yes }
 		}
 	}
 }
 ywc_shu_service_route_ready = {
 	OR = {
-		AND = { var:ywc_shu_service_route = 1 ywc_shu_v03_real_execution_ready = yes }
-		AND = { var:ywc_shu_service_route = 2 ywc_shu_v03_limited_execution_ready = yes }
-		AND = { var:ywc_shu_service_route = 3 ywc_shu_v03_limited_execution_ready = yes }
+		AND = { var:ywc_shu_service_route = 1 ywc_shu_v03_real_execution_ready = yes ywc_shu_v03_service_professional_ready = yes ywc_shu_military_funding_current = yes }
+		AND = { var:ywc_shu_service_route = 2 ywc_shu_v03_limited_execution_ready = yes ywc_shu_service_provincial_barracks_ready = yes }
+		AND = { var:ywc_shu_service_route = 3 ywc_shu_v03_limited_execution_ready = yes ywc_shu_service_legacy_barracks_ready = yes }
 		AND = { NOT = { has_variable = ywc_shu_service_route } ywc_shu_v03_limited_execution_ready = yes }
 	}
 }
@@ -159,6 +160,7 @@ ywc_shu_service_professional_qualifies = {
 }
 ywc_shu_service_compact_waiver_eligible = {
 	OR = {
+		ywc_shu_service_fiscal_local_right = yes
 		has_variable = ywc_shu_service_provincial_report
 		has_variable = ywc_shu_service_joint_review
 		has_variable = ywc_shu_service_local_voice
@@ -257,4 +259,80 @@ ywc_shu_military_contract_valid = {
  has_variable = ywc_shu_military_installments_paid
  OR = { var:ywc_shu_military_installments_paid = 1 var:ywc_shu_military_installments_paid = 2 var:ywc_shu_military_installments_paid = 3 var:ywc_shu_military_installments_paid = 4 var:ywc_shu_military_installments_paid = 5 var:ywc_shu_military_installments_paid = 6 var:ywc_shu_military_installments_paid = 7 var:ywc_shu_military_installments_paid = 8 var:ywc_shu_military_installments_paid = 9 var:ywc_shu_military_installments_paid = 10 var:ywc_shu_military_installments_paid = 11 var:ywc_shu_military_installments_paid = 12 }
  var:ywc_shu_military_installments_paid <= var:ywc_shu_military_installments_due
+}
+
+# Prior fiscal promises affect actual service costs and professional review.
+ywc_shu_service_fiscal_local_right = {
+ var:ywc_shu_military_payer ?= 3
+ has_variable = ywc_shu_local_audit_right
+ ywc_shu_v03_has_pilot_state = yes
+}
+
+ywc_shu_military_funding_current = {
+ OR = {
+  AND = { NOT = { has_variable = ywc_shu_military_contract_active } NOT = { has_variable = ywc_shu_military_contract_fulfilled } NOT = { has_variable = ywc_shu_military_installment } NOT = { has_variable = ywc_shu_military_installments_due } NOT = { has_variable = ywc_shu_military_installments_paid } NOT = { has_variable = ywc_shu_military_next_installment } NOT = { has_variable = ywc_shu_military_term_due } }
+  AND = { has_variable = ywc_shu_military_contract_active NOT = { has_variable = ywc_shu_military_contract_fulfilled } ywc_shu_military_contract_valid = yes var:ywc_shu_military_installments_paid = var:ywc_shu_military_installments_due }
+  AND = { NOT = { has_variable = ywc_shu_military_contract_active } has_variable = ywc_shu_military_contract_fulfilled ywc_shu_military_contract_valid = yes var:ywc_shu_military_installments_due = 12 var:ywc_shu_military_installments_paid = 12 }
+ }
+}
+
+ywc_shu_service_compact_choice_unmade = {
+ has_journal_entry = ywc_je_v03_shu_service_contract
+ has_variable = ywc_shu_service_compact_offer_open
+ NOT = { has_variable = ywc_shu_service_route }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
+ NOT = { has_variable = ywc_shu_service_withdrawn }
+ NOT = { has_variable = ywc_shu_service_notice_pending_event }
+ OR = { NOT = { has_variable = ywc_shu_service_pending_event } var:ywc_shu_service_pending_event ?= 1013 }
+}
+
+ywc_shu_service_supply_choice_unmade = {
+ has_journal_entry = ywc_je_v03_shu_service_appointments
+ has_variable = ywc_shu_service_local_offer_open
+ NOT = { has_variable = ywc_shu_service_appointment_offer_open }
+ NOT = { has_variable = ywc_shu_service_contract_delivered }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
+ NOT = { has_variable = ywc_shu_service_withdrawn }
+ NOT = { has_variable = ywc_shu_service_notice_pending_event }
+ OR = { NOT = { has_variable = ywc_shu_service_pending_event } var:ywc_shu_service_pending_event ?= 1014 }
+}
+
+ywc_shu_service_local_choice_unmade = {
+ ywc_shu_service_supply_choice_unmade = yes
+ NOT = { has_variable = ywc_shu_service_local_share }
+}
+
+# A displayed appointment blocks stale supply menus until it is answered.
+ywc_shu_service_appointment_choice_unmade = {
+ has_journal_entry = ywc_je_v03_shu_service_appointments
+ has_variable = ywc_shu_service_appointment_offer_open
+ NOT = { has_variable = ywc_shu_service_contract_delivered }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
+ NOT = { has_variable = ywc_shu_service_withdrawn }
+ NOT = { has_variable = ywc_shu_service_notice_pending_event }
+ OR = { NOT = { has_variable = ywc_shu_service_pending_event } var:ywc_shu_service_pending_event ?= 1015 }
+}
+
+# Route-specific barracks capacity is a proxy, not proof of logistical deliveries.
+ywc_shu_service_provincial_barracks_ready = {
+ army_size > 0
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_barrack occupancy >= 0.6 building_has_goods_shortage = no } }
+}
+
+ywc_shu_service_legacy_barracks_ready = {
+ army_size > 0
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_barrack occupancy >= 0.25 building_has_goods_shortage = no } }
+}
+
+# An unmarked reduced legacy stage is ambiguous; only an explicit retry reopens it.
+ywc_shu_service_legacy_reduced_reopen_ready = {
+ has_journal_entry = ywc_je_v03_shu_service_appointments
+ has_variable = ywc_shu_service_target_reduced
+ NOT = { has_variable = ywc_shu_service_local_offer_open }
+ NOT = { has_variable = ywc_shu_service_appointment_offer_open }
+ NOT = { has_variable = ywc_shu_service_contract_delivered }
+ NOT = { has_variable = ywc_shu_service_pending_event }
+ NOT = { has_variable = ywc_shu_service_notice_pending_event }
+ NOT = { has_variable = ywc_v03_shu_v03_shu_service_compact_settled }
+ NOT = { has_variable = ywc_shu_service_withdrawn }
 }
