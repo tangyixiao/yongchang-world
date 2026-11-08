@@ -22,6 +22,22 @@ COUNTRIES = ("dmg", "jhg", "kor", "lan", "mgl", "nmg", "nqg", "oir", "shu", "tib
 
 
 class AggregateSchedulerContract(unittest.TestCase):
+    def test_comparison_parser_supports_only_var_greater_than_scalar_or_var(self):
+        definitions={}
+        expr=parse_script("probe = { var:left > 3 }")["probe"]
+        self.assertFalse(eval_expr(expr,{"left":2},definitions))
+        self.assertFalse(eval_expr(expr,{"left":3},definitions))
+        self.assertTrue(eval_expr(expr,{"left":4},definitions))
+        var_expr=parse_script("probe = { var:left > var:right }")["probe"]
+        self.assertTrue(eval_expr(var_expr,{"left":4,"right":3},definitions))
+        with self.assertRaises(AssertionError): parse_script("probe = { has_variable > 1 }")
+        malformed=parse_script("probe = { var:left > no }")
+        with self.assertRaisesRegex(AssertionError,"invalid > comparison shape"):
+            eval_expr(malformed["probe"],{},definitions)
+        parsed=parse_script("probe = { var:left > var:right AND = { unknown = yes } }")
+        with self.assertRaisesRegex(AssertionError,"unknown predicate"):
+            eval_expr(parsed["probe"],{},definitions)
+
     def test_ten_catalogues_declare_three_arcs_with_je_and_events(self):
         total = 0
         for tag in COUNTRIES:
@@ -255,13 +271,13 @@ class AggregateSchedulerContract(unittest.TestCase):
         effects = parse_script(rendered["effects"])
         ack_name = "ywc_v03_scheduler_ack_alpha_normal_pending"
         missing = {"alpha_started": 1, "alpha_pending": 1, "alpha_ready": 1,
-                   "ywc_v03_alpha_live": 1, "ywc_v03_demo_delivery_round": 1,
-                   "ywc_v03_demo_reservation_arc": 1, "ywc_v03_demo_reservation_candidate": 1,
-                   "ywc_v03_demo_reservation_timer": 1}
+                   "ywc_v03_alpha_live": 1, "ywc_v03_demo_delivery_round": 1}
+        run_effect(effects["ywc_v03_scheduler_reserve_alpha_normal_pending"], missing, parse_script(rendered["triggers"]))
         run_effect(effects[ack_name], missing, parse_script(rendered["triggers"]))
         self.assertEqual(missing["alpha_pending"], 1)
         self.assertNotIn("ywc_v03_scheduler_served_alpha", missing)
-        present_zero = dict(missing, alpha_receipt=0)
+        present_zero = dict(missing, alpha_receipt=0)  # Toy native receipt fact for presence-vs-missing only.
+        _run_inline_proof(rendered, "ywc_demo.1000", present_zero, parse_script(rendered["triggers"]))
         run_effect(effects[ack_name], present_zero, parse_script(rendered["triggers"]))
         self.assertNotIn("alpha_pending", present_zero)
         self.assertIn("ywc_v03_scheduler_served_alpha", present_zero)
@@ -280,6 +296,7 @@ class AggregateSchedulerContract(unittest.TestCase):
         self.assertTrue(eval_script(triggers, "ywc_v03_scheduler_dispatch_alpha_notice12_pending", state, triggers))
         # Event immediate acknowledges the exact notice, then the option defers and
         # creates an ordinary pending queue. After the 90-day cooldown, beta is eligible.
+        _run_inline_proof(rendered, "ywc_demo.1010", state, triggers)
         run_effect(effects["ywc_v03_scheduler_ack_alpha_notice12_pending"], state, triggers)
         self.assertEqual(state["alpha_ack_seen"],1)
         ack_text=rendered["effects"].split("ywc_v03_scheduler_ack_alpha_notice12_pending = {",1)[1].split("\n}",1)[0]
@@ -311,6 +328,7 @@ class AggregateSchedulerContract(unittest.TestCase):
                 choices=[s for s in order if eval_script(triggers,f"ywc_v03_scheduler_turn_{s}_normal_pending",state,triggers)]
                 self.assertTrue(choices,state)
                 slug=choices[0]; run_effect(effects[f"ywc_v03_scheduler_reserve_{slug}_normal_pending"],state,triggers)
+                _run_inline_proof(rendered, f"ywc_demo.{1000 + (('alpha','beta','gamma').index(slug))}", state, triggers)
                 run_effect(effects[f"ywc_v03_scheduler_ack_{slug}_normal_pending"],state,triggers)
                 counts[slug]+=1
                 # Legal defer/retry is an ordinary queue write after the immediate.
@@ -433,7 +451,7 @@ class AggregateSchedulerContract(unittest.TestCase):
 
 
 
-_TOKENIZER=re.compile(r"var:[a-z0-9_]+|[A-Za-z][A-Za-z0-9_.]*|-?\d+|[={}]")
+_TOKENIZER=re.compile(r"var:[a-z0-9_]+|[A-Za-z][A-Za-z0-9_.]*|-?\d+|[={}>]")
 _KNOWN_NATIVE_PREDICATES={f"ywc_v03_{slug}_live" for slug in ("alpha","beta","gamma")}
 def parse_script(source):
     matches=list(_TOKENIZER.finditer(source)); tokens=[]; last=0
@@ -451,6 +469,13 @@ def parse_script(source):
                 if not expect_close: raise AssertionError("unexpected close brace")
                 return out
             key=tokens[pos]; pos+=1
+            if pos<len(tokens) and tokens[pos]==">":
+                pos+=1
+                if not key.startswith("var:") or pos>=len(tokens): raise AssertionError(f"invalid > comparison after {key}")
+                value=tokens[pos]; pos+=1
+                if value.lstrip("-").isdigit(): value=int(value)
+                out.append((">", (key,value)))
+                continue
             if pos>=len(tokens) or tokens[pos]!="=": raise AssertionError(f"expected = after {key}")
             pos+=1
             if pos<len(tokens) and tokens[pos]=="{":
@@ -484,6 +509,11 @@ def _validate_expr(expr,definitions):
             _validate_expr(val,definitions)
         elif key=="has_variable":
             if type(val) is not str or not re.fullmatch(r"[a-z][a-z0-9_]*",val): raise AssertionError("invalid has_variable operand")
+        elif key==">":
+            if (not isinstance(val,tuple) or len(val)!=2 or
+                type(val[0]) is not str or not re.fullmatch(r"var:[a-z][a-z0-9_]*",val[0]) or
+                not (type(val[1]) is int or type(val[1]) is str and re.fullmatch(r"var:[a-z][a-z0-9_]*",val[1]))):
+                raise AssertionError("invalid > comparison shape")
         elif key.startswith("var:"):
             if not re.fullmatch(r"var:[a-z][a-z0-9_]*",key) or not (type(val) is int or type(val) is str and re.fullmatch(r"var:[a-z][a-z0-9_]*",val)):
                 raise AssertionError("invalid var comparison shape")
@@ -497,7 +527,11 @@ def _validate_expr(expr,definitions):
 def eval_expr(expr,state,definitions):
     _validate_expr(expr,definitions) # validate every branch before boolean short-circuiting
     for key,val in expr:
-        if key=="AND":
+        if key==">":
+            left,right=val
+            expected=state.get(right[4:],0) if isinstance(right,str) else right
+            if state.get(left[4:],0)<=expected: return False
+        elif key=="AND":
             if not all(eval_expr([node],state,definitions) for node in val): return False
         elif key=="OR":
             if not any(eval_expr([node],state,definitions) for node in val): return False
@@ -554,6 +588,15 @@ def advance_test_days(state,days):
 
 def run_effect(block,state,definitions):
     _run_block(block,state,definitions)
+
+def _run_inline_proof(rendered,event_id,state,triggers):
+    # Synthetic event-immediate boundary: parse and execute the renderer's exact
+    # inline proof effect before the public ACK helper runs.
+    snippets=rendered["inline_proofs"].get(event_id,[])
+    if not snippets: raise AssertionError(f"no generated inline proof for {event_id}")
+    wrapped=parse_script("synthetic_event_immediate = { "+" ".join(snippets)+" }")
+    run_effect(wrapped["synthetic_event_immediate"],state,triggers)
+
 
 def fixture_catalog():
     arcs = []

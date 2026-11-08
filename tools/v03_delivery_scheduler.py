@@ -73,6 +73,24 @@ def validate_catalogue_adapters(catalogue:dict[str,Any])->None:
             event_owner[eid]=slug
     if len(slugs)!=len(set(slugs)): raise ValueError("duplicate arc slug")
     internal_vars=[f"ywc_v03_{key}_delivery_round",f"ywc_v03_{key}_reservation_arc",f"ywc_v03_{key}_reservation_candidate",f"ywc_v03_{key}_reservation_timer"]
+    # This early scan exists only to reserve the complete generated namespace
+    # before source roles are collected. Validate the shapes it touches first,
+    # so malformed adapters produce the same deliberate ValueError boundary
+    # as the regular catalogue walk below.
+    candidate_count=0
+    for arc in active:
+        adapter=arc.get("delivery_adapter")
+        if not isinstance(adapter,dict): raise ValueError(f"{arc.get('slug','foundation')}.delivery_adapter must be an object")
+        queues=adapter.get("queues")
+        if not isinstance(queues,list): raise ValueError(f"{arc.get('slug','foundation')}.queues must be a list")
+        for queue in queues:
+            if not isinstance(queue,dict): raise ValueError(f"{arc.get('slug','foundation')}.queue must be an object")
+            candidates=queue.get("candidates")
+            if not isinstance(candidates,list): raise ValueError(f"{arc.get('slug','foundation')}.{queue.get('variable','queue')}.candidates must be a list")
+            candidate_count+=len(candidates)
+    internal_vars.append("ywc_v03_scheduler_provenance_epoch")
+    for ident in range(1,candidate_count+1):
+        internal_vars.extend((f"ywc_v03_scheduler_proof_{ident}",f"ywc_v03_scheduler_proof_candidate_{ident}",f"ywc_v03_scheduler_proof_epoch_{ident}",f"ywc_v03_scheduler_proof_queue_{ident}",f"ywc_v03_scheduler_candidate_epoch_{ident}",f"ywc_v03_scheduler_snapshot_{ident}_present",f"ywc_v03_scheduler_snapshot_{ident}_value"))
     for slug in slugs:
         internal_vars.extend((f"ywc_v03_scheduler_served_{slug}",f"ywc_v03_scheduler_turn_{slug}"))
     for var in internal_vars:
@@ -137,6 +155,8 @@ def validate_catalogue_adapters(catalogue:dict[str,Any])->None:
                     _object(act,{"op","variable"},{"value"},f"{slug}.{ck}.acknowledgement")
                     if act["op"] not in ("set","remove"): raise ValueError(f"{slug}.{ck} invalid acknowledgement operation")
                     _token(act["variable"],f"{slug}.{ck}.ack.variable")
+                    if variable_roles.get(act["variable"],(None,))[0]=="internal":
+                        raise ValueError(f"acknowledgement variable aliases scheduler internals: {act['variable']}")
                     if act["op"]=="set" and ("value" not in act or type(act["value"]) is not int): raise ValueError(f"{slug}.{ck} set acknowledgement needs integer value")
                     if act["op"]=="remove" and "value" in act: raise ValueError(f"{slug}.{ck} remove acknowledgement cannot have value")
                 has_rv="receipt_variable" in c; has_rvalue="receipt_value" in c
@@ -200,7 +220,12 @@ def render_country_adapters(catalogue:dict[str,Any])->dict[str,str]:
         if blockers: conditions.append("NOT = { OR = { "+" ".join(blockers)+" } }")
         trigs.append(f"{candturn} = {{ AND = {{ "+" ".join(conditions)+" } }")
         # Exact reserved candidate can reach its original event trigger; otherwise it needs its turn.
-        trigs.append(f"{_dispatch(slug,c['key'])} = {{ AND = {{ {cn} = yes OR = {{ AND = {{ var:{ra} = {arcpos[slug]} var:{rk} = {uid[(slug,c['key'])]} has_variable = {rt} }} {candturn} = yes }} }} }}")
+        # Popup bodies are allowed only for the exact live reservation. A
+        # candidate turn may request/reserve a popup, but cannot itself open it.
+        ident=uid[(slug,c['key'])]; ad=arc['delivery_adapter']; qvar=q['variable']; epoch="ywc_v03_scheduler_provenance_epoch"; cep=f"ywc_v03_scheduler_candidate_epoch_{ident}"; sp=f"ywc_v03_scheduler_snapshot_{ident}_present"; sv=f"ywc_v03_scheduler_snapshot_{ident}_value"
+        allowed=set(c.get("source_journals",[ph["journal"] for ph in ad["live_phases"]])); phase=" OR = { "+" ".join("AND = { "+_inner(ph["predicate"],"phase")+" }" for ph in ad["live_phases"] if ph["journal"] in allowed)+" }"
+        checks=[f"{cn} = yes",f"var:{ra} = {arcpos[slug]}",f"var:{rk} = {ident}",f"has_variable = {rt}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {cep}",f"var:{cep} > 0",f"var:{cep} = var:{epoch}",f"has_variable = {sp}",f"has_variable = {sv}",f"has_variable = {qvar}",f"var:{qvar} = var:{sv}",phase,f"has_variable = {ad['owner_started']}",f"NOT = {{ has_variable = {ad['owner_settled']} }}",f"NOT = {{ var:ywc_v03_scheduler_served_{slug} = var:{roundv} }}"]
+        trigs.append(f"{_dispatch(slug,c['key'])} = {{ AND = {{ {' '.join(checks)} }} }}")
     for slug in arcpos:
         arc_defs=[(q,c,cn) for a,q,c,cn in defs if a["slug"]==slug]
         trigs.append(f"{_arc_turn(slug)} = {{ OR = {{ "+" ".join(f"{_candidate_turn(slug,c['key'])} = yes" for _,c,_ in arc_defs)+" } }")
@@ -209,8 +234,18 @@ def render_country_adapters(catalogue:dict[str,Any])->dict[str,str]:
     prep=[f"ywc_v03_scheduler_prepare_{key} = {{","    if = { limit = { NOT = { has_variable = "+roundv+" } } set_variable = { name = "+roundv+" value = 1 } }"]
     for arc,q,c,cn in defs:
         pos=arcpos[arc["slug"]]; idv=uid[(arc["slug"],c["key"])]
-        prep.append(f"    if = {{ limit = {{ var:{ra} = {pos} var:{rk} = {idv} NOT = {{ has_variable = {rt} }} }} remove_variable = {ra} remove_variable = {rk} }}")
-        prep.append(f"    if = {{ limit = {{ var:{ra} = {pos} var:{rk} = {idv} has_variable = {rt} NOT = {{ {cn} = yes }} }} remove_variable = {ra} remove_variable = {rk} remove_variable = {rt} }}")
+        ident=uid[(arc['slug'],c['key'])]
+        proof_names=[f"ywc_v03_scheduler_proof_{ident}",f"ywc_v03_scheduler_proof_candidate_{ident}",f"ywc_v03_scheduler_proof_epoch_{ident}",f"ywc_v03_scheduler_proof_queue_{ident}",f"ywc_v03_scheduler_candidate_epoch_{ident}",f"ywc_v03_scheduler_snapshot_{ident}_present",f"ywc_v03_scheduler_snapshot_{ident}_value"]
+        proof_clear=" ".join(f"remove_variable = {name}" for name in proof_names)
+        prep.append(f"    if = {{ limit = {{ var:{ra} = {pos} var:{rk} = {idv} NOT = {{ has_variable = {rt} }} }} remove_variable = {ra} remove_variable = {rk} {proof_clear} }}")
+        prep.append(f"    if = {{ limit = {{ var:{ra} = {pos} var:{rk} = {idv} has_variable = {rt} NOT = {{ {cn} = yes }} }} remove_variable = {ra} remove_variable = {rk} remove_variable = {rt} {proof_clear} }}")
+    known_reservations="OR = { "+" ".join(f"AND = {{ var:{ra} = {arcpos[a['slug']]} var:{rk} = {uid[(a['slug'],c['key'])]} }}" for a,q,c,cn in defs)+" }"
+    all_proof_vars=[]
+    for a,q,c,cn in defs:
+        idv=uid[(a['slug'],c['key'])]
+        all_proof_vars.extend([f"ywc_v03_scheduler_proof_{idv}",f"ywc_v03_scheduler_proof_candidate_{idv}",f"ywc_v03_scheduler_proof_epoch_{idv}",f"ywc_v03_scheduler_proof_queue_{idv}",f"ywc_v03_scheduler_candidate_epoch_{idv}",f"ywc_v03_scheduler_snapshot_{idv}_present",f"ywc_v03_scheduler_snapshot_{idv}_value"])
+    unknown_cleanup=" ".join(f"remove_variable = {name}" for name in all_proof_vars)
+    prep.append(f"    if = {{ limit = {{ has_variable = {ra} NOT = {{ {known_reservations} }} }} remove_variable = {ra} remove_variable = {rk} remove_variable = {rt} {unknown_cleanup} }}")
     any_live=" OR = { "+" ".join(cn+" = yes" for _,_,_,cn in defs)+" } "
     all_arcs=[]
     for arc in arcs:
@@ -221,9 +256,15 @@ def render_country_adapters(catalogue:dict[str,Any])->dict[str,str]:
     for arc,q,c,cn in defs:
         slug=arc["slug"]; ad=arc["delivery_adapter"]; pos=arcpos[slug]; idv=uid[(slug,c["key"])]; candturn=_candidate_turn(slug,c["key"])
         reserve=f"ywc_v03_scheduler_reserve_{slug}_{c['key']}"
-        effects.append(f"{reserve} = {{ if = {{ limit = {{ {candturn} = yes {cn} = yes NOT = {{ has_variable = {ra} }} }} set_variable = {{ name = {ra} value = {pos} }} set_variable = {{ name = {rk} value = {idv} }} set_variable = {{ name = {rt} value = 1 days = 1 }} }} }}")
+        proof_names=[f"ywc_v03_scheduler_proof_{idv}",f"ywc_v03_scheduler_proof_candidate_{idv}",f"ywc_v03_scheduler_proof_epoch_{idv}",f"ywc_v03_scheduler_proof_queue_{idv}",f"ywc_v03_scheduler_candidate_epoch_{idv}",f"ywc_v03_scheduler_snapshot_{idv}_present",f"ywc_v03_scheduler_snapshot_{idv}_value"]
+        proof_clear=" ".join(f"remove_variable = {name}" for name in proof_names)
+        epoch="ywc_v03_scheduler_provenance_epoch"
+        snap_p=f"ywc_v03_scheduler_snapshot_{idv}_present"; snap_v=f"ywc_v03_scheduler_snapshot_{idv}_value"
+        effects.append(f"{reserve} = {{ if = {{ limit = {{ {candturn} = yes {cn} = yes NOT = {{ has_variable = {ra} }} }} {proof_clear} if = {{ limit = {{ has_variable = {epoch} }} if = {{ limit = {{ var:{epoch} > 0 }} change_variable = {{ name = {epoch} add = 1 }} }} if = {{ limit = {{ NOT = {{ var:{epoch} > 0 }} }} set_variable = {{ name = {epoch} value = 1 }} }} }} if = {{ limit = {{ NOT = {{ has_variable = {epoch} }} }} set_variable = {{ name = {epoch} value = 1 }} }} set_variable = {{ name = {ra} value = {pos} }} set_variable = {{ name = {rk} value = {idv} }} set_variable = {{ name = {rt} value = 1 days = 1 }} set_variable = {{ name = ywc_v03_scheduler_candidate_epoch_{idv} value = var:{epoch} }} set_variable = {{ name = {snap_p} value = 1 }} set_variable = {{ name = {snap_v} value = var:{q['variable']} }} }} }}")
         ack=f"ywc_v03_scheduler_ack_{slug}_{c['key']}"
-        ack_checks=[f"var:{ra} = {pos}",f"var:{rk} = {idv}",f"has_variable = {rt}",f"has_variable = {ad['owner_started']}",f"NOT = {{ has_variable = {ad['owner_settled']} }}",f"has_variable = {q['variable']}",f"var:{q['variable']} = {c['value']}"]
+        proof=f"ywc_v03_scheduler_proof_{idv}"; pid=f"ywc_v03_scheduler_proof_candidate_{idv}"; pep=f"ywc_v03_scheduler_proof_epoch_{idv}"; pq=f"ywc_v03_scheduler_proof_queue_{idv}"; cep=f"ywc_v03_scheduler_candidate_epoch_{idv}"
+        snap_p=f"ywc_v03_scheduler_snapshot_{idv}_present"; snap_v=f"ywc_v03_scheduler_snapshot_{idv}_value"
+        ack_checks=[f"var:{ra} = {pos}",f"var:{rk} = {idv}",f"has_variable = {rt}",f"has_variable = {ad['owner_started']}",f"NOT = {{ has_variable = {ad['owner_settled']} }}",f"has_variable = {snap_p}",f"has_variable = {snap_v}",f"has_variable = {q['variable']}",f"var:{q['variable']} = var:{snap_v}",f"var:{q['variable']} = {c['value']}",f"has_variable = {proof}",f"var:{proof} = 1",f"has_variable = {pid}",f"var:{pid} = {idv}",f"has_variable = {pep}",f"has_variable = {pq}",f"var:{pq} = var:{snap_v}",f"has_variable = {cep}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"var:{pep} = var:{epoch}",f"var:{cep} = var:{epoch}"]
         allowed=set(c.get("source_journals",[ph["journal"] for ph in ad["live_phases"]]))
         ack_phases=[_inner(ph["predicate"],"phase") for ph in ad["live_phases"] if ph["journal"] in allowed]
         ack_checks.append("OR = { "+" ".join("AND = { "+phase+" }" for phase in ack_phases)+" }")
@@ -235,7 +276,7 @@ def render_country_adapters(catalogue:dict[str,Any])->dict[str,str]:
         # source acknowledgement writes run, then queue consumption and service commit.
         for act in c.get("acknowledgement",[]):
             lines.append(f"        { 'set_variable = { name = '+act['variable']+' value = '+str(act['value'])+' }' if act['op']=='set' else 'remove_variable = '+act['variable'] }")
-        lines += [f"        remove_variable = {q['variable']}",f"        set_variable = {{ name = ywc_v03_scheduler_served_{slug} value = var:{roundv} }}",f"        remove_variable = {ra}",f"        remove_variable = {rk}",f"        remove_variable = {rt}","    }","}"]
+        lines += [f"        remove_variable = {q['variable']}",f"        set_variable = {{ name = ywc_v03_scheduler_served_{slug} value = var:{roundv} }}",f"        remove_variable = {ra}",f"        remove_variable = {rk}",f"        remove_variable = {rt}",f"        remove_variable = {snap_p}",f"        remove_variable = {snap_v}",* [f"        remove_variable = {name}" for name in (proof,pid,pep,pq,cep)],"    }","}"]
         effects.append("\n".join(lines))
     # Every live OIR JE pulse runs the same bounded recipient scan. Candidate
     # predicates carry the actual owner/phase/queue proof, so a caller from one
@@ -257,7 +298,19 @@ def render_country_adapters(catalogue:dict[str,Any])->dict[str,str]:
     for arc,q,c,cn in defs:
         event_hooks.setdefault(c["event_id"],[]).append(_dispatch(arc["slug"],c["key"]))
         ack_hooks.setdefault(c["event_id"],[]).append(f"ywc_v03_scheduler_ack_{arc['slug']}_{c['key']}")
-    return {"triggers":"\n\n".join(trigs)+"\n","effects":"\n\n".join(effects+callers)+"\n","event_hooks":event_hooks,"ack_hooks":ack_hooks,"journal_calls":{jid:f"ywc_v03_scheduler_dispatch_from_{jid.removeprefix('ywc_je_v03_')}" for jid in journal_calls}}
+    inline_proofs={}; guarded=[]
+    for arc,q,c,cn in defs:
+        ad=arc["delivery_adapter"]
+        idv=uid[(arc['slug'],c['key'])]; proof=f"ywc_v03_scheduler_proof_{idv}"; pid=f"ywc_v03_scheduler_proof_candidate_{idv}"; pep=f"ywc_v03_scheduler_proof_epoch_{idv}"; pq=f"ywc_v03_scheduler_proof_queue_{idv}"; cep=f"ywc_v03_scheduler_candidate_epoch_{idv}"; epoch="ywc_v03_scheduler_provenance_epoch"; pos=arcpos[arc['slug']]
+        snap_p=f"ywc_v03_scheduler_snapshot_{idv}_present"; snap_v=f"ywc_v03_scheduler_snapshot_{idv}_value"
+        checks=[f"var:{ra} = {pos}",f"var:{rk} = {idv}",f"has_variable = {rt}",f"has_variable = {epoch}",f"var:{epoch} > 0",f"has_variable = {cep}",f"var:{cep} > 0",f"var:{cep} = var:{epoch}",f"has_variable = {snap_p}",f"has_variable = {snap_v}",f"has_variable = {q['variable']}",f"var:{q['variable']} = var:{snap_v}",f"var:{q['variable']} = {c['value']}",f"has_variable = {ad['owner_started']}",f"NOT = {{ has_variable = {ad['owner_settled']} }}",f"NOT = {{ var:ywc_v03_scheduler_served_{arc['slug']} = var:{roundv} }}"]
+        allowed=set(c.get('source_journals',[ph['journal'] for ph in arc['delivery_adapter']['live_phases']]))
+        phasechecks=[_inner(ph['predicate'],'phase') for ph in arc['delivery_adapter']['live_phases'] if ph['journal'] in allowed]
+        checks.append("OR = { "+" ".join("AND = { "+v+" }" for v in phasechecks)+" }")
+        if 'receipt_variable' in c: checks += [f"has_variable = {c['receipt_variable']}",f"var:{c['receipt_variable']} = {c['receipt_value']}"]
+        inline_proofs.setdefault(c['event_id'],[]).append(f"if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {pid} value = {idv} }} set_variable = {{ name = {pep} value = var:{epoch} }} set_variable = {{ name = {pq} value = var:{q['variable']} }} }}")
+        guarded.append(c['event_id'])
+    return {"triggers":"\n\n".join(trigs)+"\n","effects":"\n\n".join(effects+callers)+"\n","event_hooks":event_hooks,"ack_hooks":ack_hooks,"inline_proofs":inline_proofs,"guarded_immediate_events":sorted(set(guarded)),"journal_calls":{jid:f"ywc_v03_scheduler_dispatch_from_{jid.removeprefix('ywc_je_v03_')}" for jid in journal_calls}}
 
 def choose_next_dispatch(order:tuple[str,...]|list[str],round_number:int,served_rounds:dict[str,int],eligible:dict[str,list[dict[str,Any]]])->tuple[int,str|None,dict[str,Any]|None]:
     """Pure reference selection over actual current candidates; unknown state fails closed."""
