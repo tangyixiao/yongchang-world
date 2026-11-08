@@ -195,6 +195,33 @@ def validate_catalogs(catalogs: dict[str, dict]) -> list[str]:
     return validate_catalogs_at(ROOT, catalogs)
 
 
+def _arc_range_segments(item: dict, label: str, errors: list[str]) -> list[tuple[int, int]]:
+    """Parse primary and optional disjoint segments once, retaining diagnostics."""
+    segments = []
+    start, end = item.get("start"), item.get("end")
+    if type(start) is not int or type(end) is not int or start > end:
+        errors.append(f"invalid ID arc range bounds for {label}")
+    else:
+        segments.append((start, end))
+    if "additional_ranges" not in item:
+        return segments
+    additional = item["additional_ranges"]
+    if not isinstance(additional, list) or not additional:
+        errors.append(f"ID arc range additional_ranges must be a non-empty list for {label}")
+        return segments
+    for index, segment in enumerate(additional):
+        where = f"{label}.additional_ranges[{index}]"
+        if not isinstance(segment, dict) or set(segment) != {"start", "end"}:
+            errors.append(f"invalid ID arc range fields for {where}")
+            continue
+        start, end = segment["start"], segment["end"]
+        if type(start) is not int or type(end) is not int or start > end:
+            errors.append(f"invalid ID arc range bounds for {where}")
+            continue
+        segments.append((start, end))
+    return segments
+
+
 def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
     errors: list[str] = []
     try:
@@ -246,31 +273,31 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
         pair = (catalog_key, slug)
         if pair in ranges_by_arc:
             errors.append(f"duplicate ID range for arc {pair[0]}/{pair[1]}")
-        ranges_by_arc[pair] = item
-        if set(item) != {"catalog_key", "slug", "namespace", "start", "end"}:
+        segments = _arc_range_segments(item, f"{pair[0]}/{pair[1]}", errors)
+        ranges_by_arc[pair] = {"namespace": item.get("namespace"), "segments": segments}
+        required = {"catalog_key", "slug", "namespace", "start", "end"}
+        if not required.issubset(item) or set(item) - required - {"additional_ranges"}:
             errors.append(f"invalid ID arc range fields for {pair[0]}/{pair[1]}")
         reservation = reservations_by_key.get(pair[0])
         if reservation is None:
             errors.append(f"ID range has no catalog reservation for {pair[0]}")
             continue
         layer = reservation.get("layer")
-        interval = limits.get(layer, {}) if isinstance(limits, dict) else {}
-        start, end = item.get("start"), item.get("end")
+        interval = NAMESPACE_LIMITS.get(layer)
         namespace = item.get("namespace")
-        if type(start) is not int or type(end) is not int or start > end:
-            errors.append(f"invalid ID arc range bounds for {pair[0]}/{pair[1]}")
-            continue
         if not isinstance(namespace, str):
             errors.append(f"invalid ID arc range namespace for {pair[0]}/{pair[1]}")
             continue
         if namespace != reservation.get("namespace"):
             errors.append(f"ID arc range namespace does not match catalog reservation for {pair[0]}/{pair[1]}")
-        if isinstance(interval, dict) and not (interval.get("start", 0) <= start <= end <= interval.get("end", -1)):
-            errors.append(f"ID arc range outside {layer} namespace bounds for {pair[0]}/{pair[1]}")
-        for old_start, old_end, old_slug in ranges_by_namespace.setdefault(namespace, []):
-            if start <= old_end and old_start <= end:
-                errors.append(f"overlapping ID arc ranges in {namespace}: {old_slug} and {pair[1]}")
-        ranges_by_namespace[namespace].append((start, end, f"{pair[0]}/{pair[1]}"))
+        for index, (start, end) in enumerate(segments):
+            if interval and not (interval[0] <= start <= end <= interval[1]):
+                suffix = " (additional_ranges)" if index or (start, end) != (item.get("start"), item.get("end")) else ""
+                errors.append(f"ID arc range outside {layer} namespace bounds for {pair[0]}/{pair[1]}{suffix}")
+            for old_start, old_end, old_slug in ranges_by_namespace.setdefault(namespace, []):
+                if start <= old_end and old_start <= end:
+                    errors.append(f"overlapping ID arc ranges in {namespace}: {old_slug} and {pair[1]}")
+            ranges_by_namespace[namespace].append((start, end, f"{pair[0]}/{pair[1]}"))
 
     all_ids: dict[str, str] = {}
     all_arcs: dict[str, tuple[str, dict]] = {}
@@ -372,7 +399,7 @@ def validate_catalogs_at(root: Path, catalogs: dict[str, dict]) -> list[str]:
             slot = owner_slot(layer, owner)
             if slot:
                 arc_range = ranges_by_arc.get((key, arc.get("slug")))
-                if arc_range and not (slot[0] <= arc_range.get("start", -1) <= arc_range.get("end", -1) <= slot[1]):
+                if arc_range and any(not (slot[0] <= start <= end <= slot[1]) for start, end in arc_range["segments"]):
                     errors.append(f"ID arc range for {key}/{arc.get('slug')} must stay within fixed {layer} owner {owner} slot {slot}")
             slug = arc.get("slug")
             if not isinstance(slug, str) or re.fullmatch(r"[a-z0-9_]+", slug) is None:
@@ -479,9 +506,7 @@ def _validate_event(value: object, where: str, key: str, slug: str, reservation:
             errors.append(f"{where}.id has no explicit arc ID range for {key}/{slug}")
         elif (
             arc_range.get("namespace") != namespace
-            or type(arc_range.get("start")) is not int
-            or type(arc_range.get("end")) is not int
-            or not (arc_range["start"] <= number <= arc_range["end"])
+            or not any(start <= number <= end for start, end in arc_range["segments"])
         ):
             errors.append(f"{where}.id {identifier} outside explicit arc range {key}/{slug}")
     for field in ("title", "desc", "purpose"):
