@@ -5,8 +5,31 @@ ywc_jhg_finance_safe = {
 	net_fixed_income >= 0
 	NOT = { in_default = yes }
 	NOT = { has_modifier = declared_bankruptcy }
+	NOT = { is_at_war = yes }
 }
 
+
+ywc_jhg_court_limited_route_execution_ready = {
+	OR = {
+		AND = { var:ywc_jhg_court_route = 1 bureaucracy >= 40 government_legitimacy >= 20 any_scope_state = { is_owned_by = ROOT any_scope_building = { is_building_type = building_government_administration occupancy >= 0.6 building_has_goods_shortage = no } } }
+		AND = { var:ywc_jhg_court_route = 2 ywc_jhg_court_property_rep = yes government_legitimacy >= 20 }
+		AND = { var:ywc_jhg_court_route = 3 ig:ig_industrialists ?= { is_powerful = yes } }
+	}
+}
+ywc_jhg_convoy_limited_route_execution_ready = {
+	OR = {
+		AND = { var:ywc_jhg_convoy_route = 1 navy_size >= 3 any_scope_state = { is_owned_by = ROOT any_scope_building = { is_building_type = building_port occupancy >= 0.6 building_has_goods_shortage = no } } }
+		AND = { var:ywc_jhg_convoy_route = 2 navy_size >= 3 any_country = { has_diplomatic_pact = { who = ROOT type = alliance } relations:root >= relations_threshold:cordial army_size >= 3 } }
+		AND = { var:ywc_jhg_convoy_route = 3 bureaucracy >= 10 }
+	}
+}
+ywc_jhg_tribute_limited_route_execution_ready = {
+	OR = {
+		AND = { var:ywc_jhg_tribute_route = 1 ywc_jhg_tribute_relationship_open = yes bureaucracy >= 10 }
+		AND = { var:ywc_jhg_tribute_route = 2 ywc_jhg_tribute_relationship_open = yes any_country = { has_diplomatic_pact = { who = ROOT type = alliance } relations:root >= relations_threshold:cordial gold_reserves >= 5000 } }
+		AND = { var:ywc_jhg_tribute_route = 3 ywc_jhg_tribute_relationship_open = yes government_legitimacy >= 20 }
+	}
+}
 # --- v03_jhg_court_assembly ------------------------------------------------
 
 ywc_jhg_court_bureaucracy_ready = {
@@ -60,12 +83,15 @@ ywc_jhg_court_route_three_ready = {
 }
 
 ywc_jhg_court_route_execution_ready = {
-	OR = {
+	AND = {
+		ywc_jhg_finance_safe = yes
+		OR = {
 		ywc_jhg_court_route_one_ready = yes
 		ywc_jhg_court_route_two_ready = yes
 		ywc_jhg_court_route_three_ready = yes
-	}
+	}	}
 }
+
 
 ywc_jhg_court_can_pay = {
 	ywc_jhg_finance_safe = yes
@@ -127,12 +153,15 @@ ywc_jhg_convoy_route_three_ready = {
 }
 
 ywc_jhg_convoy_route_execution_ready = {
-	OR = {
+	AND = {
+		ywc_jhg_finance_safe = yes
+		OR = {
 		ywc_jhg_convoy_route_one_ready = yes
 		ywc_jhg_convoy_route_two_ready = yes
 		ywc_jhg_convoy_route_three_ready = yes
-	}
+	}	}
 }
+
 
 # Deliberately unreachable: full sea-lane cover needs a standing fleet fund that
 # this country never creates, so "escort every sea lane for free" cannot happen.
@@ -193,14 +222,38 @@ ywc_jhg_tribute_route_three_ready = {
 }
 
 ywc_jhg_tribute_route_execution_ready = {
-	OR = {
+	AND = {
+		ywc_jhg_finance_safe = yes
+		OR = {
 		ywc_jhg_tribute_route_one_ready = yes
 		ywc_jhg_tribute_route_two_ready = yes
 		ywc_jhg_tribute_route_three_ready = yes
-	}
+	}	}
 }
+
 
 ywc_jhg_tribute_can_pay = {
 	ywc_jhg_finance_safe = yes
 	gold_reserves >= var:ywc_jhg_tribute_filing_fee
+}
+
+
+# One canonical definition per target and replay gate.
+ywc_jhg_court_current_target_ready = {
+	AND = { ywc_jhg_finance_safe = yes OR = { AND = { has_variable = ywc_jhg_court_limited_target_selected ywc_jhg_court_limited_route_execution_ready = yes } AND = { NOT = { has_variable = ywc_jhg_court_limited_target_selected } ywc_jhg_court_route_execution_ready = yes } } }
+}
+ywc_jhg_convoy_current_target_ready = {
+	AND = { ywc_jhg_finance_safe = yes OR = { AND = { has_variable = ywc_jhg_convoy_limited_target_selected ywc_jhg_convoy_limited_route_execution_ready = yes } AND = { NOT = { has_variable = ywc_jhg_convoy_limited_target_selected } ywc_jhg_convoy_route_execution_ready = yes } } }
+}
+ywc_jhg_tribute_current_target_ready = {
+	AND = { ywc_jhg_finance_safe = yes OR = { AND = { has_variable = ywc_jhg_tribute_limited_target_selected ywc_jhg_tribute_limited_route_execution_ready = yes } AND = { NOT = { has_variable = ywc_jhg_tribute_limited_target_selected } ywc_jhg_tribute_route_execution_ready = yes } } }
+}
+ywc_jhg_court_can_advance = {
+	AND = { ywc_jhg_finance_safe = yes OR = { has_variable = ywc_jhg_court_filing_fee_paid ywc_jhg_court_can_pay = yes } }
+}
+ywc_jhg_convoy_can_advance = {
+	AND = { ywc_jhg_finance_safe = yes OR = { has_variable = ywc_jhg_convoy_filing_fee_paid ywc_jhg_convoy_can_pay = yes } }
+}
+ywc_jhg_tribute_can_advance = {
+	AND = { ywc_jhg_finance_safe = yes OR = { has_variable = ywc_jhg_tribute_filing_fee_paid ywc_jhg_tribute_can_pay = yes } }
 }

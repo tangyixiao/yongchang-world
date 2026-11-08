@@ -1,5 +1,4 @@
-﻿# JHG foundation scripted effects. Owned by country_jhg.
-
+# JHG foundation scripted effects. Owned by country_jhg.
 ywc_jhg_finance_review = {
 	remove_variable = ywc_jhg_finance_blocked_months
 }
@@ -33,11 +32,20 @@ ywc_jhg_court_close_as_established = {
 			NOT = { has_variable = ywc_jhg_v03_jhg_court_assembly_settled }
 			NOT = { has_variable = ywc_jhg_court_established }
 			NOT = { has_variable = ywc_jhg_court_withdrawn }
-			ywc_jhg_court_route_execution_ready = yes
+			has_variable = ywc_jhg_court_six_months_complete
+			ywc_jhg_court_current_target_ready = yes
 		}
 		set_variable = { name = ywc_jhg_court_established value = 1 }
 		set_variable = { name = ywc_jhg_v03_jhg_court_assembly_outcome value = 1 }
 		ywc_jhg_court_finalize = yes
+	}
+	if = {
+		limit = {
+			has_variable = ywc_jhg_v03_jhg_court_assembly_started
+			NOT = { has_variable = ywc_jhg_v03_jhg_court_assembly_settled }
+			NOT = { ywc_jhg_court_current_target_ready = yes }
+		}
+		ywc_jhg_court_invalidate_stale_watch = yes
 	}
 }
 
@@ -49,11 +57,20 @@ ywc_jhg_court_close_as_compromise = {
 			NOT = { has_variable = ywc_jhg_court_established }
 			NOT = { has_variable = ywc_jhg_court_withdrawn }
 			var:ywc_jhg_court_route > 0
-			ywc_jhg_court_route_execution_ready = yes
+			OR = { has_variable = ywc_jhg_court_six_months_complete has_variable = ywc_jhg_court_limited_six_months_complete }
+			ywc_jhg_court_current_target_ready = yes
 		}
 		set_variable = { name = ywc_jhg_court_compromise value = 1 }
 		set_variable = { name = ywc_jhg_v03_jhg_court_assembly_outcome value = 2 }
 		ywc_jhg_court_finalize = yes
+	}
+	if = {
+		limit = {
+			has_variable = ywc_jhg_v03_jhg_court_assembly_started
+			NOT = { has_variable = ywc_jhg_v03_jhg_court_assembly_settled }
+			NOT = { ywc_jhg_court_current_target_ready = yes }
+		}
+		ywc_jhg_court_invalidate_stale_watch = yes
 	}
 }
 
@@ -82,50 +99,78 @@ ywc_jhg_court_finalize = {
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
 		ywc_jhg_court_reset_observation = yes
+			remove_variable = ywc_jhg_court_notice_delivery_active
+	remove_variable = ywc_jhg_court_notice_delivery_12
+	remove_variable = ywc_jhg_court_notice_delivery_36
+	remove_variable = ywc_jhg_court_notice_pending_event
 		ywc_jhg_court_bridge_legacy = yes
+	}
+}
+
+ywc_jhg_court_invalidate_stale_watch = {
+	if = {
+		limit = { NOT = { ywc_jhg_court_current_target_ready = yes } }
+		ywc_jhg_court_reset_observation = yes
+		remove_variable = ywc_jhg_court_six_months_complete
+		remove_variable = ywc_jhg_court_limited_six_months_complete
 	}
 }
 
 ywc_jhg_court_reset_observation = {
 	remove_variable = ywc_jhg_court_observation_armed
 	remove_variable = ywc_jhg_court_observation_timer
-	remove_variable = ywc_jhg_court_six_months_complete
-	remove_variable = ywc_jhg_court_blocked_months
 }
 
 ywc_jhg_court_monthly_review = {
 	if = {
 		limit = { NOT = { has_variable = ywc_jhg_v03_jhg_court_assembly_settled } }
 		if = {
-			limit = { ywc_jhg_court_route_execution_ready = yes }
+			limit = { var:ywc_jhg_court_route > 0 var:ywc_jhg_court_observation_route != var:ywc_jhg_court_route }
+			ywc_jhg_court_reset_observation = yes
+			remove_variable = ywc_jhg_court_six_months_complete
+			remove_variable = ywc_jhg_court_limited_six_months_complete
+			set_variable = { name = ywc_jhg_court_observation_route value = var:ywc_jhg_court_route }
+		}
+		if = {
+			limit = { ywc_jhg_court_current_target_ready = yes }
 			ywc_jhg_finance_review = yes
 			remove_variable = ywc_jhg_court_blocked_months
 			remove_variable = ywc_jhg_court_12_notice
 			remove_variable = ywc_jhg_court_36_notice
+			remove_variable = ywc_jhg_court_notice_pending_event
+			remove_variable = ywc_jhg_court_12_notice_delivered
+			remove_variable = ywc_jhg_court_36_notice_delivered
+			remove_variable = ywc_jhg_court_notice_delivery_active
+			remove_variable = ywc_jhg_court_notice_delivery_12
+			remove_variable = ywc_jhg_court_notice_delivery_36
+			set_variable = { name = ywc_jhg_court_observation_route value = var:ywc_jhg_court_route }
 			if = {
 				limit = { NOT = { has_variable = ywc_jhg_court_observation_armed } }
 				set_variable = { name = ywc_jhg_court_observation_armed value = 1 }
-				set_variable = { name = ywc_jhg_court_observation_timer value = 0 months = 6 }
+				set_variable = { name = ywc_jhg_court_observation_timer value = 0 days = 180 }
 			}
 			else_if = {
 				limit = {
 					has_variable = ywc_jhg_court_observation_armed
 					NOT = { has_variable = ywc_jhg_court_observation_timer }
 				}
-				set_variable = { name = ywc_jhg_court_six_months_complete value = 1 }
+				if = { limit = { has_variable = ywc_jhg_court_limited_target_selected } set_variable = { name = ywc_jhg_court_limited_six_months_complete value = 1 } set_variable = { name = ywc_jhg_court_notice_pending_event value = 1007 } } else = { set_variable = { name = ywc_jhg_court_six_months_complete value = 1 } }
 			}
 		}
 		else = {
 			ywc_jhg_court_reset_observation = yes
+			remove_variable = ywc_jhg_court_six_months_complete
+			remove_variable = ywc_jhg_court_limited_six_months_complete
 			change_variable = { name = ywc_jhg_court_blocked_months add = 1 }
 			if = {
-				limit = { var:ywc_jhg_court_blocked_months >= 12 NOT = { has_variable = ywc_jhg_court_12_notice } }
+				limit = { var:ywc_jhg_court_blocked_months >= 12 NOT = { has_variable = ywc_jhg_court_12_notice_delivered } }
 				set_variable = { name = ywc_jhg_court_12_notice value = 1 days = 365 }
+				set_variable = { name = ywc_jhg_court_notice_pending_event value = 1007 }
 			}
 			if = {
-				limit = { var:ywc_jhg_court_blocked_months >= 36 NOT = { has_variable = ywc_jhg_court_36_notice } }
-				set_variable = { name = ywc_jhg_court_limited_six_months_complete value = 1 }
+				limit = { var:ywc_jhg_court_blocked_months >= 36 NOT = { has_variable = ywc_jhg_court_36_notice_delivered } }
 				set_variable = { name = ywc_jhg_court_36_notice value = 1 days = 1095 }
+				set_variable = { name = ywc_jhg_court_notice_pending_event value = 1007 }
 			}
 		}
 	}
@@ -136,10 +181,9 @@ ywc_jhg_court_bridge_legacy = {
 		limit = { NOT = { has_variable = ywc_campaign_jhg_c1_outcome } }
 		set_variable = { name = ywc_campaign_jhg_c1_outcome value = var:ywc_jhg_v03_jhg_court_assembly_outcome }
 	}
-	else = {
-		limit = { has_variable = ywc_campaign_jhg_c1_outcome }
+	else_if = {
+		limit = { has_variable = ywc_campaign_jhg_c1_outcome NOT = { has_variable = ywc_jhg_court_prior_campaign_outcome } }
 		set_variable = { name = ywc_jhg_court_prior_campaign_outcome value = var:ywc_campaign_jhg_c1_outcome }
-		set_variable = { name = ywc_campaign_jhg_c1_outcome value = var:ywc_jhg_v03_jhg_court_assembly_outcome }
 	}
 }
 
@@ -178,12 +222,21 @@ ywc_jhg_convoy_close_as_established = {
 			NOT = { has_variable = ywc_jhg_v03_jhg_convoy_capacity_settled }
 			NOT = { has_variable = ywc_jhg_convoy_established }
 			NOT = { has_variable = ywc_jhg_convoy_withdrawn }
-			ywc_jhg_convoy_route_execution_ready = yes
+			ywc_jhg_convoy_current_target_ready = yes
 			NOT = { ywc_jhg_convoy_full_sea_lane_covered = yes }
+			has_variable = ywc_jhg_convoy_six_months_complete
 		}
 		set_variable = { name = ywc_jhg_convoy_established value = 1 }
 		set_variable = { name = ywc_jhg_v03_jhg_convoy_capacity_outcome value = 1 }
 		ywc_jhg_convoy_finalize = yes
+	}
+	if = {
+		limit = {
+			has_variable = ywc_jhg_v03_jhg_convoy_capacity_started
+			NOT = { has_variable = ywc_jhg_v03_jhg_convoy_capacity_settled }
+			NOT = { ywc_jhg_convoy_current_target_ready = yes }
+		}
+		ywc_jhg_convoy_invalidate_stale_watch = yes
 	}
 }
 
@@ -195,11 +248,20 @@ ywc_jhg_convoy_close_as_compromise = {
 			NOT = { has_variable = ywc_jhg_convoy_established }
 			NOT = { has_variable = ywc_jhg_convoy_withdrawn }
 			var:ywc_jhg_convoy_route > 0
-			ywc_jhg_convoy_route_execution_ready = yes
+			OR = { has_variable = ywc_jhg_convoy_six_months_complete has_variable = ywc_jhg_convoy_limited_six_months_complete }
+			ywc_jhg_convoy_current_target_ready = yes
 		}
 		set_variable = { name = ywc_jhg_convoy_compromise value = 1 }
 		set_variable = { name = ywc_jhg_v03_jhg_convoy_capacity_outcome value = 2 }
 		ywc_jhg_convoy_finalize = yes
+	}
+	if = {
+		limit = {
+			has_variable = ywc_jhg_v03_jhg_convoy_capacity_started
+			NOT = { has_variable = ywc_jhg_v03_jhg_convoy_capacity_settled }
+			NOT = { ywc_jhg_convoy_current_target_ready = yes }
+		}
+		ywc_jhg_convoy_invalidate_stale_watch = yes
 	}
 }
 
@@ -228,49 +290,77 @@ ywc_jhg_convoy_finalize = {
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
 		ywc_jhg_convoy_reset_observation = yes
+			remove_variable = ywc_jhg_convoy_notice_delivery_active
+	remove_variable = ywc_jhg_convoy_notice_delivery_12
+	remove_variable = ywc_jhg_convoy_notice_delivery_36
+	remove_variable = ywc_jhg_convoy_notice_pending_event
 		ywc_jhg_convoy_bridge_legacy = yes
+	}
+}
+
+ywc_jhg_convoy_invalidate_stale_watch = {
+	if = {
+		limit = { NOT = { ywc_jhg_convoy_current_target_ready = yes } }
+		ywc_jhg_convoy_reset_observation = yes
+		remove_variable = ywc_jhg_convoy_six_months_complete
+		remove_variable = ywc_jhg_convoy_limited_six_months_complete
 	}
 }
 
 ywc_jhg_convoy_reset_observation = {
 	remove_variable = ywc_jhg_convoy_observation_armed
 	remove_variable = ywc_jhg_convoy_observation_timer
-	remove_variable = ywc_jhg_convoy_six_months_complete
-	remove_variable = ywc_jhg_convoy_blocked_months
 }
 
 ywc_jhg_convoy_monthly_review = {
 	if = {
 		limit = { NOT = { has_variable = ywc_jhg_v03_jhg_convoy_capacity_settled } }
 		if = {
-			limit = { ywc_jhg_convoy_route_execution_ready = yes }
+			limit = { var:ywc_jhg_convoy_route > 0 var:ywc_jhg_convoy_observation_route != var:ywc_jhg_convoy_route }
+			ywc_jhg_convoy_reset_observation = yes
+			remove_variable = ywc_jhg_convoy_six_months_complete
+			remove_variable = ywc_jhg_convoy_limited_six_months_complete
+			set_variable = { name = ywc_jhg_convoy_observation_route value = var:ywc_jhg_convoy_route }
+		}
+		if = {
+			limit = { ywc_jhg_convoy_current_target_ready = yes }
 			remove_variable = ywc_jhg_convoy_blocked_months
 			remove_variable = ywc_jhg_convoy_12_notice
 			remove_variable = ywc_jhg_convoy_36_notice
+			remove_variable = ywc_jhg_convoy_notice_pending_event
+			remove_variable = ywc_jhg_convoy_12_notice_delivered
+			remove_variable = ywc_jhg_convoy_36_notice_delivered
+			remove_variable = ywc_jhg_convoy_notice_delivery_active
+			remove_variable = ywc_jhg_convoy_notice_delivery_12
+			remove_variable = ywc_jhg_convoy_notice_delivery_36
+			set_variable = { name = ywc_jhg_convoy_observation_route value = var:ywc_jhg_convoy_route }
 			if = {
 				limit = { NOT = { has_variable = ywc_jhg_convoy_observation_armed } }
 				set_variable = { name = ywc_jhg_convoy_observation_armed value = 1 }
-				set_variable = { name = ywc_jhg_convoy_observation_timer value = 0 months = 6 }
+				set_variable = { name = ywc_jhg_convoy_observation_timer value = 0 days = 180 }
 			}
 			else_if = {
 				limit = {
 					has_variable = ywc_jhg_convoy_observation_armed
 					NOT = { has_variable = ywc_jhg_convoy_observation_timer }
 				}
-				set_variable = { name = ywc_jhg_convoy_six_months_complete value = 1 }
+				if = { limit = { has_variable = ywc_jhg_convoy_limited_target_selected } set_variable = { name = ywc_jhg_convoy_limited_six_months_complete value = 1 } set_variable = { name = ywc_jhg_convoy_notice_pending_event value = 1018 } } else = { set_variable = { name = ywc_jhg_convoy_six_months_complete value = 1 } }
 			}
 		}
 		else = {
 			ywc_jhg_convoy_reset_observation = yes
+			remove_variable = ywc_jhg_convoy_six_months_complete
+			remove_variable = ywc_jhg_convoy_limited_six_months_complete
 			change_variable = { name = ywc_jhg_convoy_blocked_months add = 1 }
 			if = {
-				limit = { var:ywc_jhg_convoy_blocked_months >= 12 NOT = { has_variable = ywc_jhg_convoy_12_notice } }
+				limit = { var:ywc_jhg_convoy_blocked_months >= 12 NOT = { has_variable = ywc_jhg_convoy_12_notice_delivered } }
 				set_variable = { name = ywc_jhg_convoy_12_notice value = 1 days = 365 }
+				set_variable = { name = ywc_jhg_convoy_notice_pending_event value = 1018 }
 			}
 			if = {
-				limit = { var:ywc_jhg_convoy_blocked_months >= 36 NOT = { has_variable = ywc_jhg_convoy_36_notice } }
-				set_variable = { name = ywc_jhg_convoy_limited_six_months_complete value = 1 }
+				limit = { var:ywc_jhg_convoy_blocked_months >= 36 NOT = { has_variable = ywc_jhg_convoy_36_notice_delivered } }
 				set_variable = { name = ywc_jhg_convoy_36_notice value = 1 days = 1095 }
+				set_variable = { name = ywc_jhg_convoy_notice_pending_event value = 1018 }
 			}
 		}
 	}
@@ -281,10 +371,12 @@ ywc_jhg_convoy_bridge_legacy = {
 		limit = { NOT = { has_variable = ywc_campaign_jhg_c1_outcome } }
 		set_variable = { name = ywc_campaign_jhg_c1_outcome value = var:ywc_jhg_v03_jhg_convoy_capacity_outcome }
 	}
-	else = {
-		limit = { has_variable = ywc_campaign_jhg_c1_outcome }
+	else_if = {
+		limit = {
+			has_variable = ywc_campaign_jhg_c1_outcome
+			NOT = { has_variable = ywc_jhg_convoy_prior_campaign_outcome }
+		}
 		set_variable = { name = ywc_jhg_convoy_prior_campaign_outcome value = var:ywc_campaign_jhg_c1_outcome }
-		set_variable = { name = ywc_campaign_jhg_c1_outcome value = var:ywc_jhg_v03_jhg_convoy_capacity_outcome }
 	}
 }
 
@@ -319,11 +411,20 @@ ywc_jhg_tribute_close_as_established = {
 			NOT = { has_variable = ywc_jhg_v03_jhg_tribute_autonomy_settled }
 			NOT = { has_variable = ywc_jhg_tribute_established }
 			NOT = { has_variable = ywc_jhg_tribute_withdrawn }
-			ywc_jhg_tribute_route_execution_ready = yes
+			has_variable = ywc_jhg_tribute_six_months_complete
+			ywc_jhg_tribute_current_target_ready = yes
 		}
 		set_variable = { name = ywc_jhg_tribute_established value = 1 }
 		set_variable = { name = ywc_jhg_v03_jhg_tribute_autonomy_outcome value = 1 }
 		ywc_jhg_tribute_finalize = yes
+	}
+	if = {
+		limit = {
+			has_variable = ywc_jhg_v03_jhg_tribute_autonomy_started
+			NOT = { has_variable = ywc_jhg_v03_jhg_tribute_autonomy_settled }
+			NOT = { ywc_jhg_tribute_current_target_ready = yes }
+		}
+		ywc_jhg_tribute_invalidate_stale_watch = yes
 	}
 }
 
@@ -335,11 +436,20 @@ ywc_jhg_tribute_close_as_compromise = {
 			NOT = { has_variable = ywc_jhg_tribute_established }
 			NOT = { has_variable = ywc_jhg_tribute_withdrawn }
 			var:ywc_jhg_tribute_route > 0
-			ywc_jhg_tribute_route_execution_ready = yes
+			OR = { has_variable = ywc_jhg_tribute_six_months_complete has_variable = ywc_jhg_tribute_limited_six_months_complete }
+			ywc_jhg_tribute_current_target_ready = yes
 		}
 		set_variable = { name = ywc_jhg_tribute_compromise value = 1 }
 		set_variable = { name = ywc_jhg_v03_jhg_tribute_autonomy_outcome value = 2 }
 		ywc_jhg_tribute_finalize = yes
+	}
+	if = {
+		limit = {
+			has_variable = ywc_jhg_v03_jhg_tribute_autonomy_started
+			NOT = { has_variable = ywc_jhg_v03_jhg_tribute_autonomy_settled }
+			NOT = { ywc_jhg_tribute_current_target_ready = yes }
+		}
+		ywc_jhg_tribute_invalidate_stale_watch = yes
 	}
 }
 
@@ -368,49 +478,77 @@ ywc_jhg_tribute_finalize = {
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
 		ywc_jhg_tribute_reset_observation = yes
+			remove_variable = ywc_jhg_tribute_notice_delivery_active
+	remove_variable = ywc_jhg_tribute_notice_delivery_12
+	remove_variable = ywc_jhg_tribute_notice_delivery_36
+	remove_variable = ywc_jhg_tribute_notice_pending_event
 		ywc_jhg_tribute_bridge_legacy = yes
+	}
+}
+
+ywc_jhg_tribute_invalidate_stale_watch = {
+	if = {
+		limit = { NOT = { ywc_jhg_tribute_current_target_ready = yes } }
+		ywc_jhg_tribute_reset_observation = yes
+		remove_variable = ywc_jhg_tribute_six_months_complete
+		remove_variable = ywc_jhg_tribute_limited_six_months_complete
 	}
 }
 
 ywc_jhg_tribute_reset_observation = {
 	remove_variable = ywc_jhg_tribute_observation_armed
 	remove_variable = ywc_jhg_tribute_observation_timer
-	remove_variable = ywc_jhg_tribute_six_months_complete
-	remove_variable = ywc_jhg_tribute_blocked_months
 }
 
 ywc_jhg_tribute_monthly_review = {
 	if = {
 		limit = { NOT = { has_variable = ywc_jhg_v03_jhg_tribute_autonomy_settled } }
 		if = {
-			limit = { ywc_jhg_tribute_route_execution_ready = yes }
+			limit = { var:ywc_jhg_tribute_route > 0 var:ywc_jhg_tribute_observation_route != var:ywc_jhg_tribute_route }
+			ywc_jhg_tribute_reset_observation = yes
+			remove_variable = ywc_jhg_tribute_six_months_complete
+			remove_variable = ywc_jhg_tribute_limited_six_months_complete
+			set_variable = { name = ywc_jhg_tribute_observation_route value = var:ywc_jhg_tribute_route }
+		}
+		if = {
+			limit = { ywc_jhg_tribute_current_target_ready = yes }
 			remove_variable = ywc_jhg_tribute_blocked_months
 			remove_variable = ywc_jhg_tribute_12_notice
 			remove_variable = ywc_jhg_tribute_36_notice
+			remove_variable = ywc_jhg_tribute_notice_pending_event
+			remove_variable = ywc_jhg_tribute_12_notice_delivered
+			remove_variable = ywc_jhg_tribute_36_notice_delivered
+			remove_variable = ywc_jhg_tribute_notice_delivery_active
+			remove_variable = ywc_jhg_tribute_notice_delivery_12
+			remove_variable = ywc_jhg_tribute_notice_delivery_36
+			set_variable = { name = ywc_jhg_tribute_observation_route value = var:ywc_jhg_tribute_route }
 			if = {
 				limit = { NOT = { has_variable = ywc_jhg_tribute_observation_armed } }
 				set_variable = { name = ywc_jhg_tribute_observation_armed value = 1 }
-				set_variable = { name = ywc_jhg_tribute_observation_timer value = 0 months = 6 }
+				set_variable = { name = ywc_jhg_tribute_observation_timer value = 0 days = 180 }
 			}
 			else_if = {
 				limit = {
 					has_variable = ywc_jhg_tribute_observation_armed
 					NOT = { has_variable = ywc_jhg_tribute_observation_timer }
 				}
-				set_variable = { name = ywc_jhg_tribute_six_months_complete value = 1 }
+				if = { limit = { has_variable = ywc_jhg_tribute_limited_target_selected } set_variable = { name = ywc_jhg_tribute_limited_six_months_complete value = 1 } set_variable = { name = ywc_jhg_tribute_notice_pending_event value = 1025 } } else = { set_variable = { name = ywc_jhg_tribute_six_months_complete value = 1 } }
 			}
 		}
 		else = {
 			ywc_jhg_tribute_reset_observation = yes
+			remove_variable = ywc_jhg_tribute_six_months_complete
+			remove_variable = ywc_jhg_tribute_limited_six_months_complete
 			change_variable = { name = ywc_jhg_tribute_blocked_months add = 1 }
 			if = {
-				limit = { var:ywc_jhg_tribute_blocked_months >= 12 NOT = { has_variable = ywc_jhg_tribute_12_notice } }
+				limit = { var:ywc_jhg_tribute_blocked_months >= 12 NOT = { has_variable = ywc_jhg_tribute_12_notice_delivered } }
 				set_variable = { name = ywc_jhg_tribute_12_notice value = 1 days = 365 }
+				set_variable = { name = ywc_jhg_tribute_notice_pending_event value = 1025 }
 			}
 			if = {
-				limit = { var:ywc_jhg_tribute_blocked_months >= 36 NOT = { has_variable = ywc_jhg_tribute_36_notice } }
-				set_variable = { name = ywc_jhg_tribute_limited_six_months_complete value = 1 }
+				limit = { var:ywc_jhg_tribute_blocked_months >= 36 NOT = { has_variable = ywc_jhg_tribute_36_notice_delivered } }
 				set_variable = { name = ywc_jhg_tribute_36_notice value = 1 days = 1095 }
+				set_variable = { name = ywc_jhg_tribute_notice_pending_event value = 1025 }
 			}
 		}
 	}
@@ -418,14 +556,13 @@ ywc_jhg_tribute_monthly_review = {
 
 ywc_jhg_tribute_bridge_legacy = {
 	if = {
-		limit = { NOT = { has_variable = ywc_je_flavor_jhg_convoy_1_resolved } }
+		limit = { NOT = { has_variable = ywc_je_flavor_jhg_convoy_1 } }
 		set_variable = { name = ywc_je_flavor_jhg_convoy_1 value = var:ywc_jhg_v03_jhg_tribute_autonomy_outcome }
 		set_variable = { name = ywc_je_flavor_jhg_convoy_1_resolved value = 1 }
 	}
-	else = {
-		limit = { has_variable = ywc_je_flavor_jhg_convoy_1_resolved }
+	else_if = {
+		limit = { has_variable = ywc_je_flavor_jhg_convoy_1 NOT = { has_variable = ywc_jhg_tribute_prior_flavor_outcome } }
 		set_variable = { name = ywc_jhg_tribute_prior_flavor_outcome value = var:ywc_je_flavor_jhg_convoy_1 }
-		set_variable = { name = ywc_je_flavor_jhg_convoy_1 value = var:ywc_jhg_v03_jhg_tribute_autonomy_outcome }
 	}
 }
 
