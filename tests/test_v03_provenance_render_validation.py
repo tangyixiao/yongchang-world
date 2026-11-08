@@ -78,7 +78,7 @@ class ProvenanceRenderValidation(unittest.TestCase):
         recipes = (
             ("OIR", lambda: (lambda w, _a, e: (w, e))(*provenance._oir_reserved()), "ywc_v03_scheduler_provenance_epoch", "ywc_v03_scheduler_candidate_epoch_1"),
             ("DMG", lambda: (lambda w, _a, e: (w, e))(*provenance._dmg_reserved()), "ywc_v03_dmg_inline_reservation_epoch", "ywc_v03_dmg_inline_candidate_epoch_1"),
-            ("KOR", lambda: (lambda w, e: (w, "ywc_kor.1010"))(*kor.KorFairDeliveryContract()._reserve_school_event()), "ywc_v03_kor_inline_reservation_epoch", "ywc_v03_kor_inline_candidate_epoch_11"),
+            ("KOR", lambda: (lambda w, e: (w, "ywc_kor.1010"))(*kor.KorFairDeliveryContract()._reserve_school_event()), "ywc_v03_kor_inline_reservation_epoch", "ywc_v03_kor_inline_candidate_epoch_13"),
             ("NQG", lambda: (lambda w, _j, e, _c: (w, e))(*nqg._reserve_first_source_popup()), "ywc_v03_nqg_inline_reservation_epoch", "ywc_v03_nqg_inline_candidate_epoch_4"),
         )
         for invalid in (0, -1):

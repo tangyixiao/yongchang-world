@@ -137,6 +137,323 @@ ywc_kor_pay_selected_contracts = {
 	}
 }
 
+# A send records a fresh, explicit participant pair and immutable numeric terms.
+ywc_kor_instructor_send_shu = {
+	if = {
+		limit = { ywc_kor_instructor_can_offer_shu = yes }
+		c:SHU = { save_scope_as = ywc_kor_request_partner }
+		ywc_kor_instructor_send_captured_offer = yes
+	}
+}
+
+ywc_kor_instructor_send_jhg = {
+	if = {
+		limit = { ywc_kor_instructor_can_offer_jhg = yes }
+		c:JHG = { save_scope_as = ywc_kor_request_partner }
+		ywc_kor_instructor_send_captured_offer = yes
+	}
+}
+
+ywc_kor_instructor_send_captured_offer = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_request_partner
+			OR = {
+				AND = { scope:ywc_kor_request_partner ?= c:SHU ywc_kor_instructor_can_offer_shu = yes }
+				AND = { scope:ywc_kor_request_partner ?= c:JHG ywc_kor_instructor_can_offer_jhg = yes }
+			}
+		}
+		if = { limit = { NOT = { has_variable = ywc_kor_instructor_generation } } set_variable = { name = ywc_kor_instructor_generation value = 0 } }
+		change_variable = { name = ywc_kor_instructor_generation add = 1 }
+		set_variable = { name = ywc_kor_instructor_partner value = scope:ywc_kor_request_partner }
+		set_variable = { name = ywc_kor_instructor_state value = 1 }
+		set_variable = { name = ywc_kor_instructor_request_timer value = 1 months = 3 }
+		set_variable = { name = ywc_kor_instructor_request_total value = var:ywc_kor_weekly_cost }
+		set_variable = { name = ywc_kor_instructor_request_months value = 12 }
+		remove_variable = ywc_kor_instructor_notice_open_serial
+		remove_variable = ywc_kor_instructor_notice_event
+		save_scope_as = ywc_kor_requester
+		save_scope_value_as = { name = ywc_kor_request_generation value = var:ywc_kor_instructor_generation }
+		save_scope_value_as = { name = ywc_kor_request_total value = var:ywc_kor_instructor_request_total }
+		save_scope_value_as = { name = ywc_kor_request_months value = var:ywc_kor_instructor_request_months }
+		scope:ywc_kor_request_partner = { trigger_event = { id = ywc_kor.1030 } }
+	}
+}
+
+ywc_kor_instructor_accept_offer = {
+	if = {
+		limit = { ywc_kor_instructor_signable = yes }
+		set_variable = { name = ywc_kor_instructor_answer_requester value = scope:ywc_kor_requester }
+		set_variable = { name = ywc_kor_instructor_answer_generation value = scope:ywc_kor_request_generation }
+		set_variable = { name = ywc_kor_instructor_answer value = 1 }
+		set_variable = { name = ywc_kor_instructor_answer_total value = scope:ywc_kor_request_total }
+		set_variable = { name = ywc_kor_instructor_answer_months value = scope:ywc_kor_request_months }
+		scope:ywc_kor_requester = {
+			set_variable = { name = ywc_kor_instructor_contract_partner value = scope:ywc_kor_request_partner }
+			set_variable = { name = ywc_kor_instructor_contract_generation value = scope:ywc_kor_request_generation }
+			set_variable = { name = ywc_kor_instructor_contract_total value = scope:ywc_kor_request_total }
+			set_variable = { name = ywc_kor_instructor_contract_installment value = scope:ywc_kor_request_total }
+			change_variable = { name = ywc_kor_instructor_contract_installment divide = 12 }
+			set_variable = { name = ywc_kor_instructor_paid_count value = 0 }
+			set_variable = { name = ywc_kor_instructor_paid_total value = 0 }
+			set_variable = { name = ywc_kor_instructor_balance value = scope:ywc_kor_request_total }
+			set_variable = { name = ywc_kor_instructor_due_count value = 0 }
+			remove_variable = ywc_kor_instructor_service_start_month
+			remove_variable = ywc_kor_instructor_last_processed_calendar_month
+			remove_variable = ywc_kor_instructor_service_term_active
+			remove_variable = ywc_kor_instructor_end_scheduled_generation
+			remove_variable = ywc_kor_instructor_service_withdrawn_generation
+			remove_variable = ywc_kor_instructor_creditor_invalid_generation
+			remove_variable = ywc_kor_instructor_request_timer
+			set_variable = { name = ywc_kor_instructor_state value = 2 }
+			set_variable = { name = ywc_kor_instructor_notice_reason value = 1 }
+			ywc_kor_instructor_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_instructor_refuse_offer = {
+	if = {
+		limit = { ywc_kor_instructor_signable = yes }
+		set_variable = { name = ywc_kor_instructor_answer_requester value = scope:ywc_kor_requester }
+		set_variable = { name = ywc_kor_instructor_answer_generation value = scope:ywc_kor_request_generation }
+		set_variable = { name = ywc_kor_instructor_answer value = 2 }
+		set_variable = { name = ywc_kor_instructor_answer_total value = scope:ywc_kor_request_total }
+		set_variable = { name = ywc_kor_instructor_answer_months value = scope:ywc_kor_request_months }
+		scope:ywc_kor_requester = {
+			remove_variable = ywc_kor_instructor_request_timer
+			set_variable = { name = ywc_kor_instructor_state value = 3 }
+			set_variable = { name = ywc_kor_instructor_notice_reason value = 2 }
+			ywc_kor_instructor_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_instructor_publish_notice = {
+	if = {
+		limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } }
+		if = { limit = { NOT = { has_variable = ywc_kor_instructor_notice_serial } } set_variable = { name = ywc_kor_instructor_notice_serial value = 0 } }
+		change_variable = { name = ywc_kor_instructor_notice_serial add = 1 }
+		set_variable = { name = ywc_kor_instructor_notice_event value = 1031 }
+		set_variable = { name = ywc_kor_instructor_notice_generation value = var:ywc_kor_instructor_generation }
+		set_variable = { name = ywc_kor_instructor_notice_request_state value = var:ywc_kor_instructor_state }
+		remove_variable = ywc_kor_instructor_notice_partner
+		if = {
+			limit = { exists = var:ywc_kor_instructor_partner var:ywc_kor_instructor_partner = { is_country_alive = yes } }
+			set_variable = { name = ywc_kor_instructor_notice_partner value = var:ywc_kor_instructor_partner }
+		}
+	}
+}
+
+ywc_kor_instructor_invalidate_pending = {
+	if = {
+		limit = { var:ywc_kor_instructor_state ?= 1 NOT = { has_variable = ywc_kor_instructor_request_timer } }
+		set_variable = { name = ywc_kor_instructor_state value = 4 }
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 3 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+	if = {
+		limit = {
+			var:ywc_kor_instructor_state ?= 1
+			OR = {
+				NOT = { exists = var:ywc_kor_instructor_partner }
+				NOT = { ywc_kor_instructor_requester_ready = yes }
+				AND = { var:ywc_kor_instructor_partner ?= c:SHU NOT = { c:SHU = { is_country_alive = yes relations:c:KOR >= 0 any_scope_state = { owner = c:SHU any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no } } } } }
+				AND = { var:ywc_kor_instructor_partner ?= c:JHG NOT = { c:JHG = { is_country_alive = yes relations:c:KOR >= 0 any_scope_state = { owner = c:JHG any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no } } } } }
+			}
+		}
+		remove_variable = ywc_kor_instructor_request_timer
+		set_variable = { name = ywc_kor_instructor_state value = 5 }
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 4 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+}
+
+ywc_kor_instructor_refresh_status = {
+	ywc_kor_instructor_invalidate_pending = yes
+	if = {
+		limit = {
+			has_variable = ywc_kor_instructor_contract_generation
+			var:ywc_kor_instructor_state ?= 2
+			OR = {
+				NOT = { ywc_kor_instructor_service_eligible = yes }
+				var:ywc_kor_instructor_paid_count < var:ywc_kor_instructor_due_count
+				var:ywc_kor_instructor_creditor_invalid_generation ?= var:ywc_kor_instructor_contract_generation
+			}
+			NOT = { var:ywc_kor_instructor_notice_reason ?= 5 }
+		}
+		remove_modifier = ywc_v03_kor_paid_instructor_training
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 5 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+	if = {
+		limit = {
+			var:ywc_kor_instructor_state ?= 2
+			var:ywc_kor_instructor_notice_reason ?= 5
+			ywc_kor_instructor_service_eligible = yes
+			var:ywc_kor_instructor_paid_count >= var:ywc_kor_instructor_due_count
+			has_variable = ywc_kor_instructor_service_term_active
+			NOT = { var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation }
+		}
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 6 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+}
+
+# This helper has one owner: the KOR country-monthly on_action. It never runs
+# from a journal pulse, and its calendar token is independent of the old 27-day
+# domestic payment lock.
+ywc_kor_instructor_monthly = {
+	if = {
+		limit = { has_variable = ywc_kor_instructor_contract_generation }
+		save_scope_as = ywc_kor_requester
+		if = { limit = { exists = var:ywc_kor_instructor_contract_partner } var:ywc_kor_instructor_contract_partner = { save_scope_as = ywc_kor_request_partner } }
+		set_variable = { name = ywc_kor_instructor_current_month value = ywc_kor_current_calendar_month }
+		if = {
+			limit = { NOT = { var:ywc_kor_instructor_last_processed_calendar_month ?= var:ywc_kor_instructor_current_month } }
+			set_variable = { name = ywc_kor_instructor_last_processed_calendar_month value = var:ywc_kor_instructor_current_month }
+			remove_modifier = ywc_v03_kor_paid_instructor_training
+			if = {
+				limit = { NOT = { has_variable = ywc_kor_instructor_service_start_month } }
+				set_variable = { name = ywc_kor_instructor_service_start_month value = var:ywc_kor_instructor_current_month }
+				set_variable = { name = ywc_kor_instructor_service_term_active value = 1 months = 12 }
+				if = {
+					limit = { NOT = { var:ywc_kor_instructor_end_scheduled_generation ?= var:ywc_kor_instructor_contract_generation } }
+					save_scope_as = ywc_kor_service_end_owner
+					save_scope_value_as = { name = ywc_kor_service_end_generation value = var:ywc_kor_instructor_contract_generation }
+					set_variable = { name = ywc_kor_instructor_end_scheduled_generation value = var:ywc_kor_instructor_contract_generation }
+					trigger_event = { id = ywc_kor.1032 months = 12 }
+				}
+			}
+			set_variable = { name = ywc_kor_instructor_computed_due value = var:ywc_kor_instructor_current_month }
+			change_variable = { name = ywc_kor_instructor_computed_due add = { value = var:ywc_kor_instructor_service_start_month multiply = -1 } }
+			change_variable = { name = ywc_kor_instructor_computed_due add = 1 }
+			clamp_variable = { name = ywc_kor_instructor_computed_due min = 0 max = 12 }
+			if = {
+				limit = { var:ywc_kor_instructor_computed_due > var:ywc_kor_instructor_due_count }
+				set_variable = { name = ywc_kor_instructor_due_count value = var:ywc_kor_instructor_computed_due }
+			}
+			if = {
+				limit = {
+					NOT = { exists = var:ywc_kor_instructor_contract_partner }
+				}
+				set_variable = { name = ywc_kor_instructor_creditor_invalid_generation value = var:ywc_kor_instructor_contract_generation }
+			}
+			if = {
+				limit = { exists = var:ywc_kor_instructor_contract_partner var:ywc_kor_instructor_contract_partner = { is_country_alive = no } }
+				set_variable = { name = ywc_kor_instructor_creditor_invalid_generation value = var:ywc_kor_instructor_contract_generation }
+			}
+			if = {
+				limit = {
+					ywc_kor_instructor_contract_collectible = yes
+					var:ywc_kor_instructor_paid_count < var:ywc_kor_instructor_due_count
+					var:ywc_kor_instructor_paid_count < 12
+				}
+				set_variable = { name = ywc_kor_instructor_transfer_amount value = var:ywc_kor_instructor_contract_installment }
+				if = {
+					limit = { var:ywc_kor_instructor_paid_count = 11 }
+					set_variable = { name = ywc_kor_instructor_transfer_amount value = var:ywc_kor_instructor_contract_total }
+					change_variable = { name = ywc_kor_instructor_transfer_amount add = { value = var:ywc_kor_instructor_paid_total multiply = -1 } }
+				}
+				if = {
+					limit = {
+						ywc_kor_v03_finance_safe = yes
+						gold_reserves >= var:ywc_kor_instructor_transfer_amount
+						var:ywc_kor_instructor_transfer_amount > 0
+						ywc_kor_instructor_contract_collectible = yes
+					}
+					save_scope_as = ywc_kor_requester
+					var:ywc_kor_instructor_contract_partner = {
+						save_scope_as = ywc_kor_request_partner
+						if = {
+							limit = { is_country_alive = yes scope:ywc_kor_request_partner ?= this scope:ywc_kor_requester = { ywc_kor_v03_finance_safe = yes gold_reserves >= var:ywc_kor_instructor_transfer_amount } }
+							scope:ywc_kor_requester = { add_treasury = { value = var:ywc_kor_instructor_transfer_amount multiply = -1 } }
+							add_treasury = { value = scope:ywc_kor_requester.var:ywc_kor_instructor_transfer_amount }
+							scope:ywc_kor_requester = {
+								change_variable = { name = ywc_kor_instructor_paid_count add = 1 }
+								change_variable = { name = ywc_kor_instructor_paid_total add = var:ywc_kor_instructor_transfer_amount }
+								set_variable = { name = ywc_kor_instructor_balance value = var:ywc_kor_instructor_contract_total }
+								change_variable = { name = ywc_kor_instructor_balance add = { value = var:ywc_kor_instructor_paid_total multiply = -1 } }
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					var:ywc_kor_instructor_current_month < { value = var:ywc_kor_instructor_service_start_month add = 12 }
+					has_variable = ywc_kor_instructor_service_term_active
+					NOT = { var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation }
+					NOT = { var:ywc_kor_instructor_service_withdrawn_generation ?= var:ywc_kor_instructor_contract_generation }
+					NOT = { var:ywc_kor_instructor_creditor_invalid_generation ?= var:ywc_kor_instructor_contract_generation }
+					ywc_kor_instructor_service_eligible = yes
+					var:ywc_kor_instructor_paid_count >= var:ywc_kor_instructor_due_count
+				}
+				add_modifier = { name = ywc_v03_kor_paid_instructor_training months = 1 }
+			}
+			ywc_kor_instructor_refresh_status = yes
+		}
+	}
+	if = { limit = { var:ywc_kor_instructor_state ?= 1 } ywc_kor_instructor_invalidate_pending = yes }
+}
+
+ywc_kor_instructor_end_service = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_service_end_owner
+			scope:ywc_kor_service_end_owner ?= this
+			has_variable = ywc_kor_instructor_contract_generation
+			var:ywc_kor_instructor_contract_generation ?= scope:ywc_kor_service_end_generation
+			NOT = { var:ywc_kor_instructor_service_ended_generation ?= scope:ywc_kor_service_end_generation }
+		}
+		remove_modifier = ywc_v03_kor_paid_instructor_training
+		set_variable = { name = ywc_kor_instructor_service_ended_generation value = scope:ywc_kor_service_end_generation }
+		remove_variable = ywc_kor_instructor_service_term_active
+	}
+}
+
+ywc_kor_instructor_withdraw_service = {
+	if = {
+		limit = { has_variable = ywc_kor_instructor_contract_generation }
+		remove_modifier = ywc_v03_kor_paid_instructor_training
+		set_variable = { name = ywc_kor_instructor_service_withdrawn_generation value = var:ywc_kor_instructor_contract_generation }
+		set_variable = { name = ywc_kor_instructor_service_ended_generation value = var:ywc_kor_instructor_contract_generation }
+		remove_variable = ywc_kor_instructor_service_term_active
+	}
+	ywc_kor_instructor_retire_host = yes
+}
+
+ywc_kor_instructor_retire_host = {
+	if = { limit = { var:ywc_kor_instructor_state ?= 1 } set_variable = { name = ywc_kor_instructor_state value = 6 } remove_variable = ywc_kor_instructor_request_timer }
+	remove_variable = ywc_kor_instructor_notice_event
+	remove_variable = ywc_kor_instructor_notice_open_serial
+}
+
+ywc_kor_instructor_consume_notice = {
+	if = {
+		limit = { ywc_kor_instructor_notice_choice_matches = yes }
+		remove_variable = ywc_kor_instructor_notice_open_serial
+	}
+}
+
+ywc_kor_instructor_choose_local = {
+	if = {
+		limit = { ywc_kor_instructor_notice_choice_matches = yes ywc_kor_v03_finance_safe = yes ywc_kor_v03_has_translation_employer = yes }
+		ywc_kor_instructor_consume_notice = yes
+		ywc_kor_start_translation_contract_once = yes
+		if = { limit = { has_variable = ywc_kor_translation_contract_started } set_variable = { name = ywc_kor_local_translation_funded value = 1 } set_variable = { name = ywc_kor_pending_event value = 1005 } }
+	}
+}
+
+ywc_kor_instructor_choose_narrow = {
+	if = {
+		limit = { ywc_kor_instructor_notice_choice_matches = yes }
+		ywc_kor_instructor_consume_notice = yes
+		set_variable = { name = ywc_kor_procurement_narrowed value = 1 }
+		set_variable = { name = ywc_kor_pending_event value = 1005 }
+	}
+}
+
 ywc_kor_open_military_accounts_once = {
 	if = {
 		limit = { NOT = { has_variable = ywc_kor_arc_open } }
@@ -204,6 +521,7 @@ ywc_kor_close_as_breach = {
 		set_variable = { name = ywc_kor_outcome_withdrawn_breach value = 1 }
 		set_variable = { name = ywc_kor_any_outcome value = 1 }
 		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 4 }
+		ywc_kor_instructor_withdraw_service = yes
 		ywc_kor_release_military_accounts = yes
 	}
 }
@@ -216,6 +534,7 @@ ywc_kor_release_military_accounts = {
 		change_variable = { name = ywc_v03_visible_task_count add = -1 }
 		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
 		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		ywc_kor_instructor_retire_host = yes
 		ywc_kor_bridge_military_accounts = yes
 	}
 }
@@ -457,6 +776,15 @@ ywc_kor_school_record_old_account = {
 		if = {
 			limit = { has_variable = ywc_kor_veteran_contract_started }
 			set_variable = { name = ywc_kor_school_old_account_veteran_months value = var:ywc_kor_veteran_contract_paid_months }
+		}
+		set_variable = { name = ywc_kor_school_old_account_instructor_generation value = 0 }
+		set_variable = { name = ywc_kor_school_old_account_instructor_paid_count value = 0 }
+		set_variable = { name = ywc_kor_school_old_account_instructor_balance value = 0 }
+		if = {
+			limit = { has_variable = ywc_kor_instructor_contract_generation }
+			set_variable = { name = ywc_kor_school_old_account_instructor_generation value = var:ywc_kor_instructor_contract_generation }
+			set_variable = { name = ywc_kor_school_old_account_instructor_paid_count value = var:ywc_kor_instructor_paid_count }
+			set_variable = { name = ywc_kor_school_old_account_instructor_balance value = var:ywc_kor_instructor_balance }
 		}
 	}
 }

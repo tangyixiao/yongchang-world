@@ -64,6 +64,30 @@ def catalog():
 
 
 class V03CatalogTests(unittest.TestCase):
+    def test_hidden_requires_exact_boolean_and_zero_options(self):
+        for hidden, accepted in ((True, True), (False, False), (None, False), (1, False),
+                                 (0, False), ("true", False), ("false", False)):
+            with self.subTest(hidden=hidden):
+                value = catalog()
+                event = value["arcs"][0]["events"][0]
+                event["hidden"] = hidden
+                event["options"] = []
+                errors = [error for error in validate_catalogs({value["key"]: value})
+                          if "no explicit arc ID range" not in error]
+                self.assertEqual(not errors, accepted, errors)
+        value = catalog()
+        event = value["arcs"][0]["events"][0]
+        event["hidden"] = False
+        self.assertFalse([error for error in validate_catalogs({value["key"]: value})
+                          if "no explicit arc ID range" not in error])
+        event["hidden"] = True
+        errors = validate_catalogs({value["key"]: value})
+        self.assertTrue(any("options" in error for error in errors), errors)
+        del event["hidden"]
+        event["options"] = []
+        errors = validate_catalogs({value["key"]: value})
+        self.assertTrue(any("options" in error for error in errors), errors)
+
     def test_load_catalogs_reads_only_manifest_entries(self):
         catalogs = load_catalogs(ROOT)
         self.assertEqual(

@@ -11,7 +11,7 @@ Supported additions: country scopes this/root/prev, c:TAG, scope:name, var:name;
 typed numeric/bool/country variables and .var: reads; permanent saved scopes
 and numeric/bool snapshots; numeric comparisons and add/multiply/divide/clamp;
 relations:<country>, alive/exists, day/month timers, current-recipient events
-with optional days delay, and treasury value/multiply. Existing local factual
+    with optional integer day/month delay, and treasury value/multiply. Existing local factual
 predicates/scripted helpers delegate to Strict. No general script-value parser,
 random scopes, temporary scopes, flags, AI simulation, treaties or transactions.
 The supported stack contains countries only: PREV/this/local-variable reads
@@ -20,7 +20,7 @@ mistaking that actual non-country scope for a country. Explicit root/saved
 country reads and documented state owner checks remain supported there.
 Legacy owned=True facts mean owner=containing country; an explicit owner
 overrides it. owner is documented syntax; is_owned_by remains fixture compatibility.
-The inherited calendar approximation is 30 days/month, not a game calendar.
+The offline calendar uses actual Gregorian dates; engine timing remains separate.
 Scalar custom_tooltip labels are metadata; block wrappers execute their source
 children after validating/removing only the scalar text localization field.
 Direct advance_months owns its elapsed counter; inherited deliver owns that
@@ -28,6 +28,8 @@ same increment while its original waiting loop is active.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import date, timedelta
+import calendar
 import math
 import re
 
@@ -58,9 +60,16 @@ class EventJob:
 _MISSING = object()
 
 
+def _add_months(start, months):
+    absolute = start.year * 12 + start.month - 1 + months
+    year, zero_month = divmod(absolute, 12)
+    month = zero_month + 1
+    return date(year, month, min(start.day, calendar.monthrange(year, month)[1]))
+
+
 class PartnerWorld(Strict):
-    def __init__(self, countries, events=""):
-        super().__init__("kor")
+    def __init__(self, countries, events="", start_date=date(1836, 1, 1)):
+        super().__init__("kor", load_inline=True)
         self.countries = countries
         self.treasury = {tag: 0 for tag in countries}
         self.months_until_expiry = {tag: {} for tag in countries}
@@ -76,6 +85,18 @@ class PartnerWorld(Strict):
         self._displayed = {}
         self._delivery_owns_months = False
         self.day = 0
+        if not isinstance(start_date, date):
+            raise UnsupportedSubset("explicit calendar start_date required")
+        self.date = start_date
+        self._epoch = self.date
+        self.modifier_expires = {}
+        from pathlib import Path
+        source = Path("yongchang_world/common/script_values/ywc_v03_kor_values.txt")
+        self.named_values = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))} if source.exists() else {}
+        source = Path("yongchang_world/common/static_modifiers/ywc_v03_kor_modifiers.txt")
+        self.modifier_defs = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))} if source.exists() else {}
+        source = Path("yongchang_world/common/on_actions/ywc_v03_kor_accounts.txt")
+        self.on_actions = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))}
 
     def country_ref(self, tag):
         if tag not in self.countries:
@@ -164,9 +185,13 @@ class PartnerWorld(Strict):
 
     def _value(self, token, *, optional=False):
         if isinstance(token, list):
-            fields = self._fields(token, {"value", "multiply"}, {"value"})
+            fields = self._fields(token, {"value", "multiply", "divide", "add"}, {"value"})
             value = self._numeric(self._value(fields["value"]))
-            return self._numeric(value * self._numeric(self._value(fields.get("multiply", "1"))))
+            value *= self._numeric(self._value(fields.get("multiply", "1")))
+            divisor = self._numeric(self._value(fields.get("divide", "1")))
+            if divisor == 0:
+                raise UnsupportedSubset("script value division by zero")
+            return self._numeric(value / divisor + self._numeric(self._value(fields.get("add", "0"))))
         if not isinstance(token, str):
             raise UnsupportedSubset(f"unsupported value: {token!r}")
         if any(scope is not None for scope in (self.state_scope, self.building_scope, self.pop_scope)):
@@ -188,6 +213,12 @@ class PartnerWorld(Strict):
             result = self.countries[self._current.tag].get(token[4:], _MISSING)
         elif token in ("yes", "no"):
             result = token == "yes"
+        elif token == "year":
+            result = self.date.year
+        elif token == "month":
+            result = self.date.month - 1
+        elif token in self.named_values:
+            result = self._value(self.named_values[token])
         elif re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", token):
             result = float(token)
             self._numeric(result)
@@ -223,6 +254,16 @@ class PartnerWorld(Strict):
             with self._chain(self.country_ref(tag)):
                 return self.condition(node, tag)
         key, op, value = node
+        if key in ("AND", "OR", "NOT", "NOR"):
+            if not isinstance(value, list):
+                raise UnsupportedSubset(f"logical block required: {node}")
+            if key == "AND":
+                return all(self.condition(child, tag) for child in value)
+            if key == "OR":
+                return any(self.condition(child, tag) for child in value)
+            if key == "NOT":
+                return not all(self.condition(child, tag) for child in value)
+            return not any(self.condition(child, tag) for child in value)
         if key in ("any_scope_state", "any_scope_building", "any_scope_pop", "workplace"):
             previous = self.state_scope, self.building_scope, self.pop_scope
             try:
@@ -255,6 +296,10 @@ class PartnerWorld(Strict):
         if self._scope_token(key):
             left = self._value(key, optional=True)
             if isinstance(value, list):
+                if op in ("<", "<=", ">", ">="):
+                    if left is _MISSING:
+                        return False
+                    return self.compare(left, op, self._value(value))
                 if op not in ("=", "?="):
                     raise UnsupportedSubset(f"unsupported country scope operator: {node}")
                 if left is _MISSING:
@@ -267,6 +312,12 @@ class PartnerWorld(Strict):
             if left is _MISSING or right is _MISSING:
                 if op == "?=":
                     return False
+                # Generated inline guards compare an optional served marker
+                # before its first assignment. A missing country variable is
+                # unequal to a present round; saved event-chain values remain
+                # strict because their absence is a broken capture.
+                if key.startswith("var:") and left is _MISSING and right is not _MISSING and op in ("=", "!="):
+                    return op == "!="
                 raise UnsupportedSubset(f"undefined comparison value: {node}")
             return self.compare(left, op, right)
         if key.startswith("relations:"):
@@ -303,7 +354,7 @@ class PartnerWorld(Strict):
             for unit, mapping in (("days", self.days_until_expiry), ("months", self.months_until_expiry)):
                 mapping[tag].pop(name, None)
                 if unit in timers:
-                    mapping[tag][name] = timers[unit]
+                    mapping[tag][name] = (self.date + timedelta(days=timers[unit])) if unit == "days" else _add_months(self.date, timers[unit])
             return
         old = self._numeric(self._value("var:" + name))
         if key == "clamp_variable":
@@ -364,14 +415,42 @@ class PartnerWorld(Strict):
                     self._numeric(value)
                 self._saved[fields["name"]] = value
             elif key == "trigger_event":
-                fields = self._fields(body, {"id", "days"}, {"id"})
+                fields = self._fields(body, {"id", "days", "months"}, {"id"})
                 if fields["id"] not in self.event_defs:
                     raise UnsupportedSubset(f"unsupported unknown event: {fields['id']}")
-                days = self._numeric(self._value(fields.get("days", "0")))
-                if days < 0 or int(days) != days:
-                    raise UnsupportedSubset(f"unsupported event delay: {days}")
-                self.jobs.append(EventJob(len(self.jobs) + 1, self._current, fields["id"], self.day + int(days), "days" in fields, tuple(sorted(self._saved.items()))))
+                if "days" in fields and "months" in fields:
+                    raise UnsupportedSubset("mixed event delay units")
+                delay_key = "months" if "months" in fields else "days"
+                delay = self._numeric(self._value(fields.get(delay_key, "0")))
+                if delay < 0 or int(delay) != delay:
+                    raise UnsupportedSubset(f"unsupported event delay: {delay}")
+                due = _add_months(self.date, int(delay)) if delay_key == "months" else self.date + timedelta(days=int(delay))
+                self.jobs.append(EventJob(len(self.jobs) + 1, self._current, fields["id"], (due - self._epoch).days, delay_key in fields, tuple(sorted(self._saved.items()))))
                 self.events.append((tag, fields["id"]))
+            elif key == "add_modifier":
+                fields = self._fields(body, {"name", "modifier", "days", "months"})
+                identity = fields.get("modifier", fields.get("name"))
+                if not isinstance(identity, str):
+                    raise UnsupportedSubset("modifier identity required")
+                if identity == "ywc_v03_kor_paid_instructor_training" and identity not in self.modifier_defs:
+                    raise UnsupportedSubset("instructor modifier has no formal definition")
+                self._remove_modifier(tag, identity)
+                record = (tag, fields)
+                self.modifiers.append(record)
+                if "days" in fields or "months" in fields:
+                    if "days" in fields and "months" in fields:
+                        raise UnsupportedSubset("mixed modifier duration")
+                    unit = "days" if "days" in fields else "months"
+                    duration = self._numeric(self._value(fields[unit]))
+                    if duration <= 0 or int(duration) != duration:
+                        raise UnsupportedSubset("invalid modifier duration")
+                    self.modifier_expires[id(fields)] = (self.date + timedelta(days=int(duration))) if unit == "days" else _add_months(self.date, int(duration))
+            elif key == "remove_modifier":
+                self._remove_modifier(tag, body)
+            elif key == "remove_variable":
+                self.countries[tag].pop(body, None)
+                self.days_until_expiry[tag].pop(body, None)
+                self.months_until_expiry[tag].pop(body, None)
             elif key == "add_treasury":
                 self.treasury[tag] += self._numeric(self._value(body))
             elif key == "custom_tooltip":
@@ -386,16 +465,45 @@ class PartnerWorld(Strict):
             else:
                 super().execute([(key, op, body)], tag)
 
+    def _remove_modifier(self, tag, identity):
+        retained = []
+        for record in self.modifiers:
+            owner, fields = record
+            if owner == tag and fields.get("modifier", fields.get("name")) == identity:
+                self.modifier_expires.pop(id(fields), None)
+            else:
+                retained.append(record)
+        self.modifiers = retained
+
+    def _advance_to(self, target):
+        if target < self.date:
+            raise UnsupportedSubset("calendar cannot move backwards")
+        self.date = target
+        self.day = (target - self._epoch).days
+        for tag in self.countries:
+            for mapping in (self.days_until_expiry[tag], self.months_until_expiry[tag]):
+                for name, expiry in list(mapping.items()):
+                    if target >= expiry:
+                        mapping.pop(name)
+                        self.countries[tag].pop(name, None)
+        retained = []
+        for record in self.modifiers:
+            expiry = self.modifier_expires.get(id(record[1]))
+            if expiry is not None and target >= expiry:
+                self.modifier_expires.pop(id(record[1]), None)
+            else:
+                retained.append(record)
+        self.modifiers = retained
+
     def advance_days(self, days=1):
         if type(days) is not int or days < 0:
             raise UnsupportedSubset(f"unsupported elapsed days: {days}")
-        super().advance_days(days)
-        self.day += days
+        self._advance_to(self.date + timedelta(days=days))
 
     def advance_months(self, months=1):
         if type(months) is not int or months < 0:
             raise UnsupportedSubset(f"unsupported elapsed months: {months}")
-        super().advance_months(months)
+        self._advance_to(_add_months(self.date, months))
         if not self._delivery_owns_months:
             self.elapsed_months += months
 
@@ -420,6 +528,24 @@ class PartnerWorld(Strict):
                 self.execute(field(event, "immediate"), job.recipient.tag)
                 self._displayed[job] = tuple(sorted(self._saved.items()))
             return True
+
+    def run_due_hidden(self):
+        """Run each due hidden event once; caller chooses ordering versus pulse."""
+        for job in list(self.jobs):
+            if job in self._displayed or self.day < job.due_day or not self._alive(job.recipient):
+                continue
+            event = self.event_defs[job.event_id]
+            if field(event, "hidden") != "yes":
+                continue
+            with self._chain(job.recipient, job.saved):
+                if self.conditions(field(event, "trigger"), job.recipient.tag):
+                    self.execute(field(event, "immediate"), job.recipient.tag)
+                self._displayed[job] = tuple(sorted(self._saved.items()))
+
+    def run_country_monthly(self, tag="KOR"):
+        action = self.on_actions["on_monthly_pulse_country"]
+        with self._chain(self.country_ref(tag)):
+            self.execute(field(action, "effect"), tag)
 
     def job_options(self, job):
         if job not in self._displayed or not self._alive(job.recipient):

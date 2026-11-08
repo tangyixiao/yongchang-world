@@ -52,11 +52,15 @@ def era_fixture(eras_by_country=None):
         eras = eras_by_country[tag]
         arcs = []
         for index, era in enumerate(eras):
-            arcs.append({"era": era, "events": [None] * 8, "journals": [None] * 2})
+            arcs.append({"era": era, "events": [VISIBLE_EVENT_SLOT] * 8, "journals": [None] * 2})
         catalogs[f"country_{tag.lower()}"] = {
             "key": f"country_{tag.lower()}", "layer": "country", "runtime_tags": [tag], "arcs": arcs,
         }
     return catalogs
+
+
+# Placeholder events counted as visible (non-hidden) by the substantive quota.
+VISIBLE_EVENT_SLOT = {"hidden": False}
 
 
 def registry_probe_catalog(slug):
@@ -134,7 +138,9 @@ class V03CampaignReservationTests(unittest.TestCase):
         foundation_arcs = [arc for c in authored.values() for arc in c["arcs"]
                            if arc.get("era") == "foundation"]
         self.assertEqual(len(foundation_arcs), 30)
-        self.assertEqual(sum(len(arc["events"]) for arc in foundation_arcs), 242)
+        self.assertEqual(sum(len(arc["events"]) for arc in foundation_arcs), 245)
+        self.assertEqual(sum(sum(not event.get("hidden", False) for event in arc["events"])
+                             for arc in foundation_arcs), 244)
         self.assertEqual(sum(len(arc["journals"]) for arc in foundation_arcs), 60)
         self.assertEqual(validate_catalogs_at(ROOT, authored), [])
 
@@ -186,6 +192,16 @@ class V03CampaignReservationTests(unittest.TestCase):
         self.assertIn("crisis owner C01 event quota: 0/12", errors)
         self.assertIn("regional owner CHI event quota: 0/6", errors)
         self.assertIn("theme owner T01 event quota: 0/8", errors)
+
+    def test_hidden_events_do_not_fulfill_country_event_quota(self):
+        catalogs = era_fixture()
+        catalogs["country_shu"]["arcs"][0]["events"] = [VISIBLE_EVENT_SLOT] * 7 + [{"hidden": True}] * 2
+        errors = check_complete_quotas(catalogs)
+        self.assertTrue(any(error == "country owner SHU event quota: 71/72" for error in errors), errors)
+        surplus = era_fixture()
+        surplus["country_shu"]["arcs"][0]["events"] = [VISIBLE_EVENT_SLOT] * 8 + [{"hidden": True}] * 3
+        surplus_errors = check_complete_quotas(surplus)
+        self.assertFalse(any(error.startswith("country owner SHU ") for error in surplus_errors), surplus_errors)
 
     def test_arbitrary_three_era_names_do_not_pass_complete_country_era_gate(self):
         era_order = ("early",) * 3 + ("present",) * 3 + ("after",) * 3

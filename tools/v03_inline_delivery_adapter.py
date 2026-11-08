@@ -1400,6 +1400,9 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
             event_ids = {event["id"] for event in arc["events"]}
             if proof["event"] not in event_ids:
                 raise ValueError(f"{arc['slug']}/{jid}: source event is not arc-owned")
+            event = next(event for event in arc["events"] if event["id"] == proof["event"])
+            if event.get("hidden") is True or proof["event"] in {"ywc_kor.1030", "ywc_kor.1032"}:
+                raise ValueError(f"{arc['slug']}/{jid}: hidden/foreign event cannot enter the KOR inline scheduler")
             candidates = proof.get("candidates")
             if not isinstance(candidates, list) or len(candidates) != len(source["candidates"]):
                 raise ValueError(f"{arc['slug']}/{jid}: queue candidate inventory drift")
@@ -1409,6 +1412,8 @@ def _validate_kor_inline_catalog(catalog: dict[str, Any]) -> None:
                     raise ValueError(f"{arc['slug']}/{jid}: queue semantics do not match positive source predicates")
                 if "value" in candidate and type(candidate["value"]) is not int:
                     raise ValueError(f"{arc['slug']}/{jid}: queue value must be an integer")
+                if proof["event"] == "ywc_kor.1031" and candidate != {"queue": "ywc_kor_instructor_notice_event", "kind": "notice", "mode": "exact", "value": 1031}:
+                    raise ValueError("KOR 1031 requires the exact instructor notice queue")
             for prior in proof["chain_prior"]:
                 if not isinstance(prior, dict) or set(prior) != {"ordinal", "sha256", "limit_sha256", "limit_source"} or type(prior.get("ordinal")) is not int or not isinstance(prior.get("limit_source"), str):
                     raise ValueError(f"{arc['slug']}/{jid}: invalid prior predicate record")
@@ -1626,6 +1631,48 @@ def _queue_snapshot_name(candidate_id: int, queue: str, suffix: str, prefix: str
     return _script_var(f"{prefix}_c{candidate_id}_{queue_id}_{suffix}")
 
 
+def _kor_instructor_fields(candidate_id: int) -> dict[str, str]:
+    stem = f"ywc_v03_kor_inline_c{candidate_id}_instructor_"
+    return {name: stem + name for name in ("serial", "generation", "request_state", "reason",
+                                          "partner_available", "partner", "body_completed",
+                                          "body_completed_epoch", "body_completed_serial")}
+
+
+def _kor_instructor_checks(candidate_id: int, *, delivered: bool) -> list[str]:
+    """Pre-export checks use live/reserved state; delivered checks require C-fields."""
+    f = _kor_instructor_fields(candidate_id)
+    checks = ["ywc_kor_instructor_notice_live = yes",
+              "has_variable = ywc_kor_instructor_generation",
+              "has_variable = ywc_kor_instructor_state"]
+    live = {"serial": "ywc_kor_instructor_notice_serial",
+            "generation": "ywc_kor_instructor_notice_generation",
+            "request_state": "ywc_kor_instructor_notice_request_state",
+            "reason": "ywc_kor_instructor_notice_reason"}
+    for suffix, name in live.items():
+        checks += [f"has_variable = {f[suffix]}", f"var:{f[suffix]} = var:{name}"]
+    checks += [f"has_variable = {f['partner_available']}",
+               f"OR = {{ var:{f['partner_available']} = 0 var:{f['partner_available']} = 1 }}",
+               "var:ywc_kor_instructor_notice_generation = var:ywc_kor_instructor_generation",
+               "var:ywc_kor_instructor_notice_request_state = var:ywc_kor_instructor_state",
+               f"OR = {{ AND = {{ var:{f['partner_available']} = 0 NOT = {{ exists = var:ywc_kor_instructor_notice_partner }} }} "
+               f"AND = {{ var:{f['partner_available']} = 1 exists = var:{f['partner']} "
+               f"var:{f['partner']} ?= var:ywc_kor_instructor_notice_partner "
+               f"var:{f['partner']} = {{ is_country_alive = yes }} }} }}"]
+    if delivered:
+        captured = "ywc_kor_notice_"
+        checks += [f"exists = scope:{captured}owner", f"scope:{captured}owner ?= this",
+                   f"scope:{captured}candidate ?= {candidate_id}",
+                   "has_variable = ywc_v03_kor_inline_reservation_epoch",
+                   "var:ywc_v03_kor_inline_reservation_epoch > 0",
+                   f"scope:{captured}epoch ?= var:ywc_v03_kor_inline_reservation_epoch"]
+        for suffix in ("serial", "generation", "request_state", "reason", "partner_available"):
+            checks.append(f"scope:{captured}{suffix} ?= var:{f[suffix]}")
+        checks += [f"OR = {{ AND = {{ var:{f['partner_available']} = 0 NOT = {{ exists = scope:{captured}partner }} }} "
+                   f"AND = {{ var:{f['partner_available']} = 1 exists = scope:{captured}partner "
+                   f"scope:{captured}partner ?= var:{f['partner']} }} }}"]
+    return checks
+
+
 def _branch_node(pulse: str, branch: dict[str, Any]) -> tuple[Node, Node, Node]:
     top = parse_block(pulse)
     monthly = direct_values(top, "on_monthly_pulse")
@@ -1778,6 +1825,11 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             branch = binding["branches"][proof["branch_index"]]
             for queue in proof["candidates"]:
                 event = next(e for e in arc["events"] if e["id"] == proof["event"])
+                kor_instructor_notice = is_kor and event["id"] == "ywc_kor.1031"
+                if is_kor and event["id"] in {"ywc_kor.1030", "ywc_kor.1032"}:
+                    raise ValueError("foreign/hidden KOR instructor events cannot be inline candidates")
+                if kor_instructor_notice and queue != {"queue": "ywc_kor_instructor_notice_event", "kind": "notice", "mode": "exact", "value": 1031}:
+                    raise ValueError("KOR instructor notice candidate has wrong queue shape")
                 native_short = queue["queue"].split("_")[2] if is_nmg else None
                 if is_mgl:
                     receipt_variable, receipt_value, receipt_match = None, None, True
@@ -1837,7 +1889,7 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 rank_map = ({"normal": 0, "notice": 1} if (is_kor or is_lan or is_nmg) else {"normal": 1, "notice": 0} if is_shu else {"normal": 0, "notice36": 1, "notice12": 2} if not is_nqg else {"normal_queued_event": 0, "notice36": 1, "notice12": 2, "remedy_final": 3})
                 if is_mgl:
                     rank_map = {"normal": 0, "notice": 1}
-                candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "native_return": native_return, "native_context": native_context, "native_notice": native_notice, "native_due": native_due, "native_delivered": native_delivered, "native_notice_marker": native_notice_marker, "native_notice_marker_value": native_notice_marker_value, "rank": rank_map[queue["kind"]]})
+                candidates.append({"id": len(candidates) + 1, "key": f"c{len(candidates)+1}", "arc": arc, "journal": journal, "phase": phases[journal["id"]]["phase"], "branch": branch, "proof": proof, "queue": queue, "event": event, "receipt_variable": receipt_variable, "receipt_value": receipt_value, "intent_variable": intent_variable, "open_variable": open_variable, "native_return": native_return, "native_context": native_context, "native_notice": native_notice, "native_due": native_due, "native_delivered": native_delivered, "native_notice_marker": native_notice_marker, "native_notice_marker_value": native_notice_marker_value, "kor_instructor_notice": kor_instructor_notice, "rank": rank_map[queue["kind"]]})
     cid = lambda c: f"{prefix}_candidate_{c['id']}"
     turn = lambda c: f"{prefix}_turn_{c['id']}"
     dispatch = lambda c: f"{prefix}_dispatch_{c['id']}"
@@ -2007,6 +2059,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     f"AND = {{ NOT = {{ has_variable = {present} }} NOT = {{ has_variable = {value} }} NOT = {{ has_variable = {name} }} }} }}")
         if q["mode"] == "exact":
             dispatch_checks.append(f"var:{snapshot_value} = {q['value']}")
+        if c.get("kor_instructor_notice"):
+            dispatch_checks.extend(_kor_instructor_checks(c["id"], delivered=True))
         triggers.append(f"{dispatch(c)} = {{ AND = {{ {' '.join(dispatch_checks)} }} }}")
     # Per-JE live witness and source lifecycle are handled by the journal renderer.
     any_candidates = " OR = { " + " ".join(f"{cid(c)} = yes" for c in candidates) + " }"
@@ -2043,6 +2097,8 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 names += [f"{prefix}_body_completed_{ident}", f"{prefix}_body_completed_epoch_{ident}"]
                 names += [_queue_snapshot_name(ident, state, suffix, prefix)
                           for state in _mgl_tracked_state(c) for suffix in ("present", "value")]
+            if c.get("kor_instructor_notice"):
+                names += list(_kor_instructor_fields(ident).values())
             ephemeral_by_candidate[ident] = names
             kor_ephemeral.extend(names)
     kor_cleanup = " ".join(f"remove_variable = {name}" for name in kor_ephemeral)
@@ -2160,6 +2216,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             capture += [f"    remove_variable = {name}" for name in (ephemeral_by_candidate[ident] if is_nqg else kor_ephemeral)]
             capture += [f"    set_variable = {{ name = {prefix}_candidate_epoch_{ident} value = var:{epoch} }}"]
         capture += [f"    set_variable = {{ name = {reservation} value = {ident} }}",f"    set_variable = {{ name = {snap_present} value = 1 }}",f"    set_variable = {{ name = {snap_value} value = var:{qvar} }}",f"    set_variable = {{ name = {timer} value = 1 days = 1 }}"]
+        if c.get("kor_instructor_notice"):
+            f = _kor_instructor_fields(ident)
+            capture += [f"    set_variable = {{ name = {f[suffix]} value = var:ywc_kor_instructor_notice_{suffix} }}"
+                        for suffix in ("serial", "generation", "request_state", "reason")]
+            capture += [f"    remove_variable = {f['partner']}",
+                        f"    set_variable = {{ name = {f['partner_available']} value = 0 }}",
+                        f"    if = {{ limit = {{ exists = var:ywc_kor_instructor_notice_partner "
+                        f"var:ywc_kor_instructor_notice_partner = {{ is_country_alive = yes }} }} "
+                        f"set_variable = {{ name = {f['partner']} value = var:ywc_kor_instructor_notice_partner }} "
+                        f"set_variable = {{ name = {f['partner_available']} value = 1 }} }}"]
         if is_lan:
             stem=qvar.split("_")[2]
             tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
@@ -2246,6 +2312,16 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             expected_aux=((f"ywc_lan_{stem}_notice_current",str(q["value"])),(f"ywc_lan_{stem}_notice{q['value']}_sent","1")) if q["kind"] == "notice" else ()
             for name,value in expected_aux: checks += [f"has_variable = {name}",f"var:{name} = {value}"]
         if q["mode"]=="exact": checks.append(f"var:{snap_value} = {q['value']}")
+        if c.get("kor_instructor_notice"):
+            f = _kor_instructor_fields(ident)
+            checks.extend(_kor_instructor_checks(ident, delivered=True))
+            checks += [f"has_variable = {f['body_completed']}", f"var:{f['body_completed']} = 1",
+                       f"has_variable = {f['body_completed_epoch']}",
+                       f"var:{f['body_completed_epoch']} = var:{epoch}",
+                       f"has_variable = {f['body_completed_serial']}",
+                       f"var:{f['body_completed_serial']} = scope:ywc_kor_notice_serial",
+                       "has_variable = ywc_kor_instructor_notice_open_serial",
+                       "var:ywc_kor_instructor_notice_open_serial = scope:ywc_kor_notice_serial"]
         if is_lan:
             stem=qvar.split("_")[2]
             tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
@@ -2276,6 +2352,14 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
         if is_supported_inline_country:
             callback_guard = [f"var:{reservation} = {ident}", f"has_variable = {timer}", f"has_variable = {snap_present}", f"has_variable = {snap_value}", f"has_variable = {qvar}", f"var:{qvar} = var:{snap_value}", f"has_journal_entry = {c['journal']['id']}", f"has_variable = {c['phase']['live_witness']}"]
             if q["mode"] == "exact": callback_guard.append(f"var:{snap_value} = {q['value']}")
+            if c.get("kor_instructor_notice"):
+                f = _kor_instructor_fields(ident)
+                callback_guard.extend(_kor_instructor_checks(ident, delivered=True))
+                callback_guard += [f"has_variable = {f['body_completed']}",
+                                   f"var:{f['body_completed']} = 1",
+                                   f"var:{f['body_completed_epoch']} = var:{epoch}",
+                                   f"var:{f['body_completed_serial']} = scope:ywc_kor_notice_serial",
+                                   "var:ywc_kor_instructor_notice_open_serial = scope:ywc_kor_notice_serial"]
             if goal and not (is_shu or is_lan): callback_guard.append(f"NOT = {{ {goal} }}")
             if fail and not (is_shu or is_lan): callback_guard.append(f"NOT = {{ {fail} }}")
             callback_guard.append(f"NOT = {{ var:{served[c['arc']['slug']]} = var:{roundv} }}")
@@ -2338,7 +2422,26 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
             turns=" OR = { "+" ".join(f"{turn(c)} = yes" for c in group)+" }"
             reserve_calls=" ".join(f"if = {{ limit = {{ {turn(c)} = yes }} {prefix}_reserve_{c['id']} = yes }}" for c in group)
             if is_kor:
-                wrapped = f"if = {{ limit = {{ {turns} }} {reserve_calls} {render_node(trigger, script)} }}"
+                if any(c.get("kor_instructor_notice") for c in group):
+                    if len(group) != 1 or not group[0].get("kor_instructor_notice"):
+                        raise ValueError("KOR instructor notice sender must own one exact candidate")
+                    c = group[0]
+                    f = _kor_instructor_fields(c["id"])
+                    gate = [f"var:{reservation} = {c['id']}", f"has_variable = {epoch}",
+                            f"var:{epoch} > 0", f"has_variable = {prefix}_candidate_epoch_{c['id']}",
+                            f"var:{prefix}_candidate_epoch_{c['id']} = var:{epoch}"]
+                    gate.extend(_kor_instructor_checks(c["id"], delivered=False))
+                    exports = ["save_scope_as = ywc_kor_notice_owner"]
+                    for suffix in ("serial", "generation", "request_state", "reason", "partner_available"):
+                        exports.append(f"save_scope_value_as = {{ name = ywc_kor_notice_{suffix} value = var:{f[suffix]} }}")
+                    exports += [f"save_scope_value_as = {{ name = ywc_kor_notice_candidate value = var:{reservation} }}",
+                                f"save_scope_value_as = {{ name = ywc_kor_notice_epoch value = var:{epoch} }}",
+                                f"if = {{ limit = {{ var:{f['partner_available']} = 1 exists = var:{f['partner']} }} "
+                                f"var:{f['partner']} = {{ save_scope_as = ywc_kor_notice_partner }} }}"]
+                    wrapped = (f"if = {{ limit = {{ {turns} }} {reserve_calls} "
+                               f"if = {{ limit = {{ {' '.join(gate)} }} {' '.join(exports)} {render_node(trigger, script)} }} }}")
+                else:
+                    wrapped = f"if = {{ limit = {{ {turns} }} {reserve_calls} {render_node(trigger, script)} }}"
                 edits.append((trigger.start, trigger.end, wrapped))
             else:
                 edits.append((branch["limit_end"]-1,branch["limit_end"]-1," "+turns+" "))
@@ -2416,6 +2519,10 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                 if is_mgl:
                     checks.extend(_mgl_snapshot_checks(c, prefix))
                 if c["queue"]["mode"]=="exact": checks.append(f"var:{sv} = {c['queue']['value']}")
+                if c.get("kor_instructor_notice"):
+                    checks.extend(_kor_instructor_checks(ident, delivered=True))
+                    checks += ["has_variable = ywc_kor_instructor_notice_open_serial",
+                               "var:ywc_kor_instructor_notice_open_serial = scope:ywc_kor_notice_serial"]
                 if is_lan:
                     stem=qvar.split("_")[2]; queue=c["queue"]
                     tracked=[f"ywc_lan_{stem}_notice_current",f"ywc_lan_{stem}_notice12_sent",f"ywc_lan_{stem}_notice36_sent",f"ywc_lan_{stem}_pending_event",f"ywc_lan_{stem}_notice_event"]
@@ -2435,6 +2542,30 @@ def render_inline_country_adapters(catalog: dict[str, Any]) -> dict[str, Any]:
                     completion = f"if = {{ limit = {{ var:{reservation} = {ident} }} set_variable = {{ name = {prefix}_body_completed_{ident} value = 1 }} if = {{ limit = {{ has_variable = {prefix}_candidate_epoch_{ident} }} set_variable = {{ name = {prefix}_body_completed_epoch_{ident} value = var:{prefix}_candidate_epoch_{ident} }} }} remove_variable = {prefix}_rollback_armed_{ident} }}"
                     proof_body=f"{completion} if = {{ limit = {{ {' '.join(checks)} }} set_variable = {{ name = {proof} value = 1 }} set_variable = {{ name = {cidvar} value = {ident} }} set_variable = {{ name = {epvar} value = var:{epoch} }} set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}"
                     proofs.append(proof_body)
+                elif c.get("kor_instructor_notice"):
+                    f = _kor_instructor_fields(ident)
+                    completion_checks = [f"var:{reservation} = {ident}",
+                                         f"has_variable = {epoch}",
+                                         f"has_variable = {prefix}_candidate_epoch_{ident}",
+                                         f"var:{prefix}_candidate_epoch_{ident} = var:{epoch}",
+                                         f"scope:ywc_kor_notice_candidate ?= {ident}",
+                                         f"scope:ywc_kor_notice_epoch ?= var:{epoch}",
+                                         "ywc_kor_instructor_notice_live = yes",
+                                         "scope:ywc_kor_notice_serial ?= var:ywc_kor_instructor_notice_serial",
+                                         "var:ywc_kor_instructor_notice_open_serial = scope:ywc_kor_notice_serial"]
+                    completion = (f"if = {{ limit = {{ {' '.join(completion_checks)} }} "
+                                  f"set_variable = {{ name = {f['body_completed']} value = 1 }} "
+                                  f"set_variable = {{ name = {f['body_completed_epoch']} value = var:{epoch} }} "
+                                  f"set_variable = {{ name = {f['body_completed_serial']} value = scope:ywc_kor_notice_serial }} }}")
+                    proof_checks = checks + [f"has_variable = {f['body_completed']}",
+                                             f"var:{f['body_completed']} = 1",
+                                             f"var:{f['body_completed_epoch']} = var:{epoch}",
+                                             f"var:{f['body_completed_serial']} = scope:ywc_kor_notice_serial"]
+                    proofs.append(f"{completion} if = {{ limit = {{ {' '.join(proof_checks)} }} "
+                                  f"set_variable = {{ name = {proof} value = 1 }} "
+                                  f"set_variable = {{ name = {cidvar} value = {ident} }} "
+                                  f"set_variable = {{ name = {epvar} value = var:{epoch} }} "
+                                  f"set_variable = {{ name = {qproof} value = {queue_proof_value} }} }}")
                 elif is_nmg or is_mgl:
                     completion = (f"if = {{ limit = {{ var:{reservation} = {ident} }} "
                                   f"set_variable = {{ name = {prefix}_body_completed_{ident} value = 1 }} "

@@ -225,6 +225,10 @@ ywc_kor_school_observation_target_ready = {
 ywc_kor_school_old_contracts_clear = {
 	AND = {
 		OR = {
+			NOT = { has_variable = ywc_kor_instructor_contract_generation }
+			var:ywc_kor_instructor_balance ?= 0
+		}
+		OR = {
 			NOT = { has_variable = ywc_kor_translation_contract_started }
 			var:ywc_kor_translation_contract_paid_months >= 12
 		}
@@ -339,4 +343,193 @@ ywc_kor_ports_auditor_ready = {
 
 ywc_kor_ports_old_contracts_clear = {
 	ywc_kor_school_old_contracts_clear = yes
+}
+
+# Live menu predicates use actual country objects before an event chain exists.
+ywc_kor_instructor_requester_ready = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	has_variable = ywc_kor_weekly_cost
+	gold_reserves >= { value = var:ywc_kor_weekly_cost multiply = 0.0833333333 }
+	any_scope_state = {
+		owner = c:KOR
+		any_scope_building = {
+			OR = { is_building_type = building_university is_building_type = building_government_administration }
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+# Foreign response context: saved requester and selected recipient are immutable.
+ywc_kor_instructor_provider_ready = {
+	exists = scope:ywc_kor_request_partner
+	scope:ywc_kor_request_partner ?= this
+	is_country_alive = yes
+	relations:scope:ywc_kor_requester >= 0
+	any_scope_state = {
+		owner = scope:ywc_kor_request_partner
+		any_scope_building = {
+			is_building_type = building_barrack
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_instructor_can_offer_shu = {
+	c:KOR ?= this
+	ywc_kor_instructor_requester_ready = yes
+	OR = {
+		NOT = { has_variable = ywc_kor_instructor_contract_generation }
+		AND = {
+			var:ywc_kor_instructor_balance ?= 0
+			var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation
+		}
+	}
+	NOT = { var:ywc_kor_instructor_state ?= 1 }
+	exists = c:SHU
+	c:SHU = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = c:SHU
+			any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_kor_instructor_can_offer_jhg = {
+	c:KOR ?= this
+	ywc_kor_instructor_requester_ready = yes
+	OR = {
+		NOT = { has_variable = ywc_kor_instructor_contract_generation }
+		AND = {
+			var:ywc_kor_instructor_balance ?= 0
+			var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation
+		}
+	}
+	NOT = { var:ywc_kor_instructor_state ?= 1 }
+	exists = c:JHG
+	c:JHG = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = c:JHG
+			any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_kor_instructor_offer_matches = {
+	exists = scope:ywc_kor_requester
+	exists = scope:ywc_kor_request_partner
+	scope:ywc_kor_request_partner ?= this
+	scope:ywc_kor_requester ?= c:KOR
+	scope:ywc_kor_requester = {
+		var:ywc_kor_instructor_partner ?= root
+		var:ywc_kor_instructor_generation ?= scope:ywc_kor_request_generation
+		var:ywc_kor_instructor_state ?= 1
+		has_variable = ywc_kor_instructor_request_timer
+		var:ywc_kor_instructor_request_total ?= scope:ywc_kor_request_total
+		var:ywc_kor_instructor_request_months ?= scope:ywc_kor_request_months
+		var:ywc_kor_instructor_request_months ?= 12
+	}
+}
+
+ywc_kor_instructor_signable = {
+	ywc_kor_instructor_offer_matches = yes
+	ywc_kor_instructor_provider_ready = yes
+	scope:ywc_kor_requester = {
+		is_country_alive = yes
+		is_subject = no
+		ywc_kor_v03_finance_safe = yes
+		gold_reserves >= { value = var:ywc_kor_instructor_request_total divide = 12 }
+		any_scope_state = {
+			owner = scope:ywc_kor_requester
+			any_scope_building = {
+				OR = { is_building_type = building_university is_building_type = building_government_administration }
+				occupancy >= 0.8 building_has_goods_shortage = no
+			}
+		}
+		OR = {
+			NOT = { has_variable = ywc_kor_instructor_contract_generation }
+			AND = {
+				var:ywc_kor_instructor_balance ?= 0
+				var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation
+			}
+		}
+	}
+}
+
+ywc_kor_instructor_notice_live = {
+	var:ywc_kor_instructor_notice_event ?= 1031
+	has_variable = ywc_kor_instructor_notice_serial
+	has_variable = ywc_kor_instructor_notice_generation
+	has_variable = ywc_kor_instructor_notice_request_state
+	has_variable = ywc_kor_instructor_notice_reason
+	var:ywc_kor_instructor_notice_generation ?= var:ywc_kor_instructor_generation
+	var:ywc_kor_instructor_notice_request_state ?= var:ywc_kor_instructor_state
+}
+
+ywc_kor_instructor_notice_choice_matches = {
+	exists = scope:ywc_kor_notice_owner
+	scope:ywc_kor_notice_owner ?= this
+	has_variable = ywc_kor_instructor_notice_open_serial
+	has_variable = ywc_kor_instructor_notice_serial
+	has_variable = ywc_kor_instructor_notice_generation
+	has_variable = ywc_kor_instructor_notice_request_state
+	has_variable = ywc_kor_instructor_notice_reason
+	var:ywc_kor_instructor_notice_generation ?= var:ywc_kor_instructor_generation
+	var:ywc_kor_instructor_notice_request_state ?= var:ywc_kor_instructor_state
+	scope:ywc_kor_notice_serial = var:ywc_kor_instructor_notice_serial
+	scope:ywc_kor_notice_serial = var:ywc_kor_instructor_notice_open_serial
+	scope:ywc_kor_notice_generation = var:ywc_kor_instructor_notice_generation
+	scope:ywc_kor_notice_request_state = var:ywc_kor_instructor_notice_request_state
+	scope:ywc_kor_notice_reason = var:ywc_kor_instructor_notice_reason
+	OR = { scope:ywc_kor_notice_partner_available = 0 scope:ywc_kor_notice_partner_available = 1 }
+	OR = {
+		AND = { scope:ywc_kor_notice_partner_available = 0 NOT = { exists = var:ywc_kor_instructor_notice_partner } }
+		AND = {
+			scope:ywc_kor_notice_partner_available = 1
+			OR = {
+				AND = { exists = scope:ywc_kor_notice_partner scope:ywc_kor_notice_partner ?= var:ywc_kor_instructor_notice_partner }
+				AND = { NOT = { exists = scope:ywc_kor_notice_partner } NOT = { exists = var:ywc_kor_instructor_notice_partner } }
+			}
+		}
+	}
+}
+
+ywc_kor_instructor_contract_collectible = {
+	has_variable = ywc_kor_instructor_contract_generation
+	var:ywc_kor_instructor_balance > 0
+	NOT = { var:ywc_kor_instructor_creditor_invalid_generation ?= var:ywc_kor_instructor_contract_generation }
+	exists = var:ywc_kor_instructor_contract_partner
+	var:ywc_kor_instructor_contract_partner = { is_country_alive = yes }
+}
+
+ywc_kor_instructor_service_eligible = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	exists = var:ywc_kor_instructor_contract_partner
+	relations:var:ywc_kor_instructor_contract_partner >= 0
+	any_scope_state = {
+		owner = c:KOR
+		any_scope_building = {
+			OR = { is_building_type = building_university is_building_type = building_government_administration }
+			occupancy >= 0.8 building_has_goods_shortage = no
+		}
+	}
+	var:ywc_kor_instructor_contract_partner = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = scope:ywc_kor_request_partner
+			any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
 }

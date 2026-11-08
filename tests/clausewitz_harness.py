@@ -47,6 +47,38 @@ class PulseWorld:
         self.journals = []
         self.months_until_expiry = {tag: {} for tag in countries}
         self.days_until_expiry = {tag: {} for tag in countries}
+        # Saved event-chain scopes: name -> country tag (str) or numeric value.
+        self.scopes = {}
+
+    def resolve_operand(self, operand, tag, variables):
+        """Resolve a condition operand; None means an absent country or scope."""
+        if operand.startswith("var:"):
+            return variables.get(operand[4:], 0)
+        if operand.startswith("scope:"):
+            return self.scopes.get(operand[6:])
+        if operand.startswith("c:"):
+            return operand[2:] if operand[2:] in self.countries else None
+        if operand == "this":
+            return tag
+        try:
+            return float(operand)
+        except ValueError:
+            return operand
+
+    def resolve_value_operand(self, operand, tag, variables):
+        """Resolve an effect value operand, including scope:X.var:Y reads."""
+        if operand.startswith("scope:") and ".var:" in operand:
+            scope_name, variable = operand[6:].split(".var:", 1)
+            holder = self.scopes.get(scope_name)
+            if not (isinstance(holder, str) and holder in self.countries):
+                raise AssertionError(f"missing saved country scope for value: {operand}")
+            return self.countries[holder].get(variable, 0)
+        if operand.startswith("scope:"):
+            scope_name = operand[6:]
+            if scope_name not in self.scopes:
+                raise AssertionError(f"missing saved scope for value: {operand}")
+            return self.scopes[scope_name]
+        return self.resolve_operand(operand, tag, variables)
 
     def advance_months(self, months=1):
         """Advance calendar months; Clausewitz day timers age by 30 days here."""
@@ -105,6 +137,10 @@ class PulseWorld:
                 for entry_tag, body in self.journals
             )
         if key == "exists":
+            if value.startswith("var:"):
+                return value[4:] in variables
+            if value.startswith("scope:"):
+                return value[6:] in self.scopes
             return value.removeprefix("c:") in self.countries
         if key == "always":
             return value == "yes"
@@ -115,13 +151,22 @@ class PulseWorld:
                 raw_value = fields["value"]
                 right = variables.get(raw_value[4:], 0) if raw_value.startswith("var:") else float(raw_value)
                 right *= float(fields.get("multiply", 1))
+                if "divide" in fields:
+                    divisor = float(fields["divide"])
+                    if divisor == 0:
+                        raise AssertionError(f"divide by zero in trigger block: {value}")
+                    right /= divisor
             elif value.startswith("var:"):
                 right = variables.get(value[4:], 0)
+            elif value.startswith("scope:"):
+                right = self.scopes.get(value[6:])
+                if right is None:
+                    return False
             elif value in ("yes", "no"):
                 right = value == "yes"
             else:
                 right = float(value)
-            return {"=": operator.eq, ">=": operator.ge, "<=": operator.le,
+            return {"=": operator.eq, "?=": operator.eq, ">=": operator.ge, "<=": operator.le,
                     ">": operator.gt, "<": operator.lt, "!=": operator.ne}[comparison](left, right)
         if key.startswith("c:"):
             other = key[2:]
@@ -129,10 +174,34 @@ class PulseWorld:
                 return False
             return tag == other if isinstance(value, str) else self.conditions(value, other)
         if key.startswith("var:"):
-            left = variables.get(key[4:], 0)
-            right = variables.get(value[4:], 0) if value.startswith("var:") else float(value)
-            return {"=": operator.eq, ">=": operator.ge, "<=": operator.le,
+            name = key[4:]
+            if not isinstance(value, str):
+                # Object-var block condition, e.g. var:X = { is_country_alive = yes }.
+                holder = variables.get(name)
+                if not (isinstance(holder, str) and holder in self.countries):
+                    return False
+                fields = {inner_key: field for inner_key, _, field in value}
+                if set(fields) == {"is_country_alive"}:
+                    return fields["is_country_alive"] == "yes"
+                raise AssertionError(f"unsupported object-var condition: {node}")
+            if comparison == "?=" and name not in variables:
+                return False
+            left = variables.get(name, 0)
+            right = self.resolve_operand(value, tag, variables)
+            if right is None:
+                return False
+            return {"=": operator.eq, "?=": operator.eq, ">=": operator.ge, "<=": operator.le,
                     ">": operator.gt, "<": operator.lt, "!=": operator.ne}[comparison](left, right)
+        if key.startswith("scope:"):
+            name = key[6:]
+            if name not in self.scopes:
+                return False
+            if comparison not in ("=", "?=", "!="):
+                raise AssertionError(f"unsupported scope comparison: {node}")
+            right = self.resolve_operand(value, tag, variables)
+            if right is None:
+                return False
+            return {"=": operator.eq, "?=": operator.eq, "!=": operator.ne}[comparison](self.scopes[name], right)
         if key == "trigger_if":
             limit = next(body for name, _, body in value if name == "limit")
             body = [node for node in value if node[0] not in ("limit", "trigger_else")]
@@ -188,6 +257,8 @@ class PulseWorld:
                         raw_value = fields["value"]
                         if raw_value.startswith("var:"):
                             resolved_value = variables.get(raw_value[4:], 0)
+                        elif raw_value.startswith("scope:"):
+                            resolved_value = self.resolve_value_operand(raw_value, tag, variables)
                         elif raw_value.startswith("this."):
                             resolved_value = variables.get(raw_value[5:], 0)
                         elif raw_value in ("yearly_gross_income", "gdp", "scaled_debt"):
@@ -218,6 +289,8 @@ class PulseWorld:
                         raw_add = fields["add"]
                         if raw_add.startswith("var:"):
                             amount = variables.get(raw_add[4:], 0)
+                        elif raw_add.startswith("scope:"):
+                            amount = self.resolve_value_operand(raw_add, tag, variables)
                         elif raw_add.startswith("this."):
                             amount = variables.get(raw_add[5:], 0)
                         else:
@@ -244,6 +317,8 @@ class PulseWorld:
                     raw_value = fields["value"]
                     if raw_value.startswith("var:"):
                         amount = variables.get(raw_value[4:], 0)
+                    elif raw_value.startswith("scope:"):
+                        amount = self.resolve_value_operand(raw_value, tag, variables)
                     elif raw_value.startswith("this."):
                         amount = variables.get(raw_value[5:], 0)
                     else:
@@ -254,6 +329,25 @@ class PulseWorld:
                 self.treasury[tag] += amount
             elif key == "add_journal_entry":
                 self.journals.append((tag, body))
+            elif key == "save_scope_as":
+                self.scopes[body] = tag
+            elif key == "save_scope_value_as":
+                fields = {name: value for name, _, value in body}
+                self.scopes[fields["name"]] = self.resolve_value_operand(fields["value"], tag, variables)
+            elif key.startswith("var:") and isinstance(body, list):
+                holder = variables.get(key[4:])
+                if holder is None:
+                    continue
+                if not (isinstance(holder, str) and holder in self.countries):
+                    raise AssertionError(f"object-var effect on non-country variable: {key}")
+                self.execute(body, holder)
+            elif key.startswith("scope:") and isinstance(body, list):
+                holder = self.scopes.get(key[6:])
+                if holder is None:
+                    continue
+                if not (isinstance(holder, str) and holder in self.countries):
+                    raise AssertionError(f"scope effect on non-country scope: {key}")
+                self.execute(body, holder)
             elif key.startswith("c:"):
                 if key[2:] in self.countries:
                     self.execute(body, key[2:])
