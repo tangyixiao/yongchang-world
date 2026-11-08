@@ -207,7 +207,9 @@ class DmgCrownGeneratedAdapter(unittest.TestCase):
         baseline = json.loads(subprocess.run(
             ["git", "show", "9980153ba0edb9c48f141df84c11b2f530ab39b6:data/content/v03/countries/dmg.json"],
             cwd=ROOT, check=True, capture_output=True).stdout.decode("utf-8-sig"))
-        self.assertEqual(active[:-1], baseline["arcs"], "old five complete source bindings must remain unchanged")
+        from test_v03_current_choice_guards import migrated_opening_projection
+        expected = migrated_opening_projection("dmg", baseline["arcs"])
+        self.assertEqual(active[:-1], expected, "only the three reviewed court choice effects may change")
         self.assertEqual([a["slug"] for a in active], [*FOUNDATION, SCHOOL, MARKET, CROWN])
         self.assertEqual([j["id"] for j in active[-1]["journals"]], list(JES))
         self.assertEqual(active[-1]["depends_on"], [])
