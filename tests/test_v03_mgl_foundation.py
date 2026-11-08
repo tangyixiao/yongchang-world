@@ -96,11 +96,6 @@ class MglPulseWorld(PulseWorld):
    route_suffix={1:'full',2:'one',3:'local'}.get(self.countries[tag].get(f'ywc_mgl_{pre}_route',0)) if pre else None
    return bool(pre and route_suffix and self.countries[tag].get(f'test_ywc_mgl_{pre}_{route_suffix}_ready',False))
   if key=='ywc_v03_can_deliver_major': return True
-  if key.startswith('ywc_mgl_') and key.endswith('_execution_ready'):
-   pre=key.removeprefix('ywc_mgl_').removesuffix('_execution_ready')
-   route=int(self.countries[tag].get(f'ywc_mgl_{pre}_route',0))
-   suffix={1:'full',2:'one',3:'local'}.get(route)
-   return bool(suffix and self.condition((f'ywc_mgl_{pre}_{suffix}_ready','=','yes'),tag))
   if key.startswith('ywc_mgl_') and key.endswith('_trade_signal'):
    return bool(self.countries[tag].get('test_'+key,False))
   if key.startswith('ywc_mgl_') and key.endswith('_entry_price'):
