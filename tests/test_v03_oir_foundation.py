@@ -65,6 +65,10 @@ class OIRWorld(PulseWorld):
   if key in self.triggers and val=='yes':return self.conditions(self.triggers[key],tag)
   if key=='any_scope_state':return any(all(self._cond(x,tag,s) for x in val) for s in v.get('fixture_states',[]))
   if key=='any_scope_building':return any(all(self._cond(x,tag,state,b) for x in val) for b in (state or {}).get('buildings',[]))
+  # Legacy is_owned_by remains a fixture-only alias.
+  if key=='owner':
+   if op!='=' or val!='ROOT' or state is None:raise AssertionError(('unsupported OIR ownership shape',node))
+   return bool(state.get('owned'))
   if key=='is_owned_by':return bool(state and state.get('owned'))
   if key=='is_building_type':return bool(building and building.get('type')==val)
   if key=='occupancy':return self._cmp((building or {}).get('occupancy',0),op,val,v)

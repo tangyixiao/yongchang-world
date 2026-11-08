@@ -58,7 +58,8 @@ class StrictSchoolWorld(TibWorldFacts):
         if key in ("net_fixed_income","literacy_rate","occupancy","market_access","average_sol","radical_fraction"):
             if op not in OPS: raise AssertionError(("invalid_numeric_predicate",node))
             self._number(value,node);return
-        if key in ("in_default","has_modifier","has_law","has_law_or_variant","is_owned_by","is_pop_type","is_employed","is_building_type"):
+        if key in ("in_default","has_modifier","has_law","has_law_or_variant","owner","is_owned_by","is_pop_type","is_employed","is_building_type"):
+            if key=="owner" and (op!="=" or value!="ROOT"): raise AssertionError(("invalid_owner_predicate",node))
             if op not in ("=","?=") or not isinstance(value,str): raise AssertionError(("invalid_scalar_predicate",node))
             return
         if key in ("any_scope_state","any_scope_pop","any_scope_building"):

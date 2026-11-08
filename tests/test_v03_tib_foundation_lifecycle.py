@@ -99,10 +99,15 @@ class TibWorldFacts(PulseWorld):
                     return True
             self.state_scope = previous
             return False
-        if key == "is_owned_by":
-            if value != "ROOT":
+        # owner is documented syntax; is_owned_by is legacy fixture compatibility.
+        if key in ("owner", "is_owned_by"):
+            if comparison != "=" or value != "ROOT":
                 raise AssertionError(f"unsupported ownership scope: {node}")
-            return self.state_scope is not None and bool(self.state_scope.get("owned"))
+            if self.state_scope is None:
+                raise AssertionError(f"ownership read outside actual state scope: {node}")
+            if "owner" in self.state_scope:
+                return self.state_scope["owner"] == tag
+            return bool(self.state_scope.get("owned"))
         if key in ("market_access", "average_sol"):
             if self.state_scope is None:
                 raise AssertionError(f"{key} read outside actual state scope")
@@ -625,6 +630,9 @@ class TibStrictLifecycleTest(unittest.TestCase):
         self.assertFalse(world.conditions(world.trigger_defs["ywc_tib_has_agriculture"], "TIB"))
         with self.assertRaisesRegex(AssertionError, "unsupported test trigger"):
             world.condition(("any_scope_state", "=", [("is_owned_by", "=", "ROOT"),
+                                                        ("tib_unknown_predicate", "=", "yes")]), "TIB")
+        with self.assertRaisesRegex(AssertionError, "unsupported test trigger"):
+            world.condition(("any_scope_state", "=", [("owner", "=", "ROOT"),
                                                         ("tib_unknown_predicate", "=", "yes")]), "TIB")
 
     def test_paid_cash_primitive_matches_actual_debit_and_unpaid_route_gate(self):

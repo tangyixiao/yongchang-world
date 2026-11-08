@@ -95,6 +95,34 @@ def offer(w, target="SHU", generation=1, price=12, days=0, timer=30):
 
 
 class PartnerRuntimeTests(unittest.TestCase):
+    def test_documented_and_legacy_ownership_in_foreign_recipient_event(self):
+        for spelling in ("owner", "is_owned_by"):
+            for recipient in ("SHU", "JHG"):
+                for owner in ("KOR", recipient, None, "absent"):
+                    with self.subTest(spelling=spelling, recipient=recipient, owner=owner):
+                        w = world()
+                        state = w.countries["KOR"]["states"][0]
+                        state["owned"] = True
+                        if owner != "absent":
+                            state["owner"] = owner
+                        w.event_defs["test.typed_owner"] = parse("""
+                            trigger = { always = yes }
+                            immediate = {
+                                scope:requester = {
+                                    if = { limit = { any_scope_state = { OWNER = ROOT } }
+                                        set_variable = { name = event_root_owned value = yes } }
+                                    if = { limit = { any_scope_state = { OWNER = scope:requester } }
+                                        set_variable = { name = requester_owned value = yes } }
+                                }
+                            }
+                        """.replace("OWNER", spelling))
+                        job = replace(offer(w, recipient), event_id="test.typed_owner")
+                        self.assertTrue(w.display_job(job))
+                        self.assertEqual(w.countries["KOR"].get("event_root_owned", False), owner == recipient)
+                        self.assertEqual(w.countries["KOR"].get("requester_owned", False), owner in ("KOR", "absent"))
+                        self.assertIsNone(w.state_scope)
+                        self.assertIsNone(w.building_scope)
+
     def test_wrapped_option_effects_preserve_recipient_and_stale_guards(self):
         for target in ("SHU", "JHG"):
             with self.subTest(target=target):

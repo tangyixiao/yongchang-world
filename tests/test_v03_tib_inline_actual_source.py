@@ -130,7 +130,7 @@ class _ActualTibWorld(TibWorldFacts):
                 if scope!=needed: raise AssertionError(('invalid source scope nesting',node,scope))
                 child_scope={'any_scope_state':'state','any_scope_pop':'pop','any_scope_building':'building'}[key]
             validate_children(value,child_scope); return
-        scoped={'is_owned_by':'state','market_access':'state','average_sol':'state','radical_fraction':'state',
+        scoped={'owner':'state','is_owned_by':'state','market_access':'state','average_sol':'state','radical_fraction':'state',
                 'is_pop_type':'pop','is_employed':'pop','is_building_type':'building','occupancy':'building',
                 'market_goods_pricier':'good','market_goods_imports':'good','market_goods_exports':'good'}
         if key in scoped and scope!=scoped[key]: raise AssertionError(('predicate outside supported scope',node,scope))
@@ -138,9 +138,9 @@ class _ActualTibWorld(TibWorldFacts):
             scalar()
             if value not in self.known_journals: raise AssertionError(('unknown actual JE predicate',node))
             return
-        if key in ('has_variable','has_modifier','has_law','has_law_or_variant','is_owned_by','is_pop_type','is_building_type'):
+        if key in ('has_variable','has_modifier','has_law','has_law_or_variant','owner','is_owned_by','is_pop_type','is_building_type'):
             scalar()
-            if key=='is_owned_by' and value!='ROOT': raise AssertionError(('unsupported ownership target',node))
+            if key in ('owner','is_owned_by') and value!='ROOT': raise AssertionError(('unsupported ownership target',node))
             if key in ('has_law','has_law_or_variant') and not value.removeprefix('law_type:').startswith('law_'): raise AssertionError(('invalid law identifier',node))
             if key=='is_building_type' and not value.startswith('building_'): raise AssertionError(('invalid building identifier',node))
             return
@@ -756,6 +756,7 @@ class TibInlineActualSourceControls(unittest.TestCase):
             'any_scope_state = { any_scope_pop = { workplace ?= { unknown = yes } } }',
             'any_scope_state = { any_scope_building = { occupancy ?= .5 } }',
             'any_scope_state ?= { is_owned_by = ROOT }',
+            'any_scope_state ?= { owner = ROOT }',
             'any_scope_pop = { is_employed = yes }',
             'market_capital.market = { mg:invalid = { market_goods_pricier > .2 } }',
             'market_capital.market = { mg:grain ?= { market_goods_pricier > .2 } }',
@@ -790,7 +791,7 @@ class TibInlineActualSourceControls(unittest.TestCase):
         # Exact real source node, outside the route's payment/story gate. This
         # is a native scoped-command primitive control, not route acceptance.
         native=next(node for node in _field(w.effects['ywc_tib_choose_grain_3'],'if') if node[0]=='every_scope_state')
-        self.assertEqual(_field(native[2],'limit'),[('is_owned_by','=','ROOT')])
+        self.assertEqual(_field(native[2],'limit'),[('owner','=','ROOT')])
         expected=dict((k,v) for k,_,v in _field(native[2],'add_modifier'))
         w.countries[TAG]['states'].append({'owned':False,'pops':[],'buildings':[]})
         before=len(w.modifiers); initial=w._scope_checkpoint()

@@ -17,9 +17,9 @@ random scopes, temporary scopes, flags, AI simulation, treaties or transactions.
 The supported stack contains countries only: PREV/this/local-variable reads
 inside inherited state/building/pop iterators fail explicitly rather than
 mistaking that actual non-country scope for a country. Explicit root/saved
-country reads and legacy state is_owned_by checks remain supported there.
+country reads and documented state owner checks remain supported there.
 Legacy owned=True facts mean owner=containing country; an explicit owner
-overrides it. is_owned_by is fixture compatibility, not verified engine syntax.
+overrides it. owner is documented syntax; is_owned_by remains fixture compatibility.
 The inherited calendar approximation is 30 days/month, not a game calendar.
 Scalar custom_tooltip labels are metadata; block wrappers execute their source
 children after validating/removing only the scalar text localization field.
@@ -229,7 +229,7 @@ class PartnerWorld(Strict):
                 return super().condition(node, tag)
             finally:
                 self.state_scope, self.building_scope, self.pop_scope = previous
-        if key == "is_owned_by":
+        if key in ("owner", "is_owned_by"):
             if op not in ("=", "?=") or self.state_scope is None:
                 raise UnsupportedSubset(f"unsupported state ownership predicate: {node}")
             target = self._value(value, optional=True)
@@ -238,7 +238,7 @@ class PartnerWorld(Strict):
             if not isinstance(target, CountryRef):
                 raise UnsupportedSubset("country reference required for state owner")
             owner = self.state_scope.get("owner")
-            if owner is None:
+            if "owner" not in self.state_scope:
                 owner = self.country_ref(tag) if self.state_scope.get("owned", False) else _MISSING
             elif isinstance(owner, str):
                 owner = self.country_ref(owner) if owner in self.countries else _MISSING

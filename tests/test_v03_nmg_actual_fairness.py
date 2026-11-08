@@ -62,7 +62,7 @@ class _ActualNmgWorld(base.NmgWorld):
             "has_variable", "has_modifier", "exists", "always", "net_fixed_income",
             "bureaucracy", "gold_reserves", "yearly_gross_income", "scaled_debt",
             "in_default", "is_at_war", "trigger_if", "calc_true_if", "ywc_nmg_v03_has_owned_state",
-            "is_owned_by", "any_scope_state", "any_scope_building", "is_building_type",
+            "owner", "is_owned_by", "any_scope_state", "any_scope_building", "is_building_type",
             "occupancy", "building_has_goods_shortage", "has_law_or_variant", "radical_fraction",
             "literacy_rate", "institution_investment_level", "is_subject", "is_subject_of",
             "overlord", "relations:root", "relations_threshold:poor", "any_interest_group",

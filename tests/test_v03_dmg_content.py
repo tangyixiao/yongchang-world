@@ -186,7 +186,11 @@ class DmgContentCardTest(unittest.TestCase):
                 if key == "OR" and not any(eval_nodes([child], scope, country) for child in value): return False
                 if key == "NOT" and eval_nodes(value, scope, country): return False
                 if key == "bureaucracy" and not (country["bureaucracy"] >= float(value)): return False
-                if key == "is_owned_by" and scope.get("owner") != country["tag"]: return False
+                # Legacy spelling is fixture compatibility, not engine syntax.
+                if key in ("owner", "is_owned_by"):
+                    if (op, value) != ("=", "ROOT"):
+                        raise AssertionError(("unsupported state owner", key, op, value))
+                    if scope.get("owner") != country["tag"]: return False
                 if key == "any_scope_state" and not any(eval_nodes(value, state, country) for state in country["states"]): return False
                 if key == "any_scope_pop" and not any(eval_nodes(value, pop, country) for pop in scope["pops"]): return False
                 if key == "pop_has_primary_culture" and scope.get("primary") != (value == "yes"): return False
@@ -209,6 +213,13 @@ class DmgContentCardTest(unittest.TestCase):
         self.assertFalse(eval_nodes(nodes, {}, facts([pop(acceptance=4, employed=True, workplace=admin)])))
         self.assertFalse(eval_nodes(nodes, {}, facts([pop(acceptance=5, employed=True, workplace={**admin,"occupancy":0.79})])))
         self.assertTrue(eval_nodes(nodes, {}, facts([pop(acceptance=5, employed=True, workplace=admin)])))
+        for owner in ("KOR", None):
+            foreign = facts([pop(acceptance=5, employed=True, workplace=admin)])
+            if owner is None:
+                foreign["states"][0].pop("owner")
+            else:
+                foreign["states"][0]["owner"] = owner
+            self.assertFalse(eval_nodes(nodes, {}, foreign))
 
     def test_scripts_use_real_acceptance_and_job_eligibility_checks(self):
         self.assertIn("any_scope_pop", self.triggers)

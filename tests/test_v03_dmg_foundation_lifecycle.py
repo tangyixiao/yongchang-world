@@ -43,18 +43,18 @@ class DmgWorld(PulseWorld):
         if node[0] == "any_scope_state":
             if node[1] != "=" or not isinstance(node[2], list):
                 raise AssertionError(f"unsupported any_scope_state shape: {node!r}")
-            owners = [child for child in node[2] if child[0] == "is_owned_by"]
+            owners = [child for child in node[2] if child[0] in ("owner", "is_owned_by")]
             if len(owners) != 1 or owners[0][1:] != ("=", "ROOT"):
                 raise AssertionError(f"unsupported any_scope_state ownership: {node!r}")
-            if any(child[0] not in {"is_owned_by", "any_scope_pop", "any_scope_building"}
+            if any(child[0] not in {"owner", "is_owned_by", "any_scope_pop", "any_scope_building"}
                    for child in node[2]):
                 raise AssertionError(f"unsupported any_scope_state child: {node!r}")
             variables = self.countries[tag]
             if not variables.get("fixture_owned_state", 0):
                 return False
             return all(self.condition(child, tag) for child in node[2]
-                       if child[0] != "is_owned_by")
-        if node[0] == "is_owned_by":
+                       if child[0] not in ("owner", "is_owned_by"))
+        if node[0] in ("owner", "is_owned_by"):
             if node[1:] != ("=", "ROOT"):
                 raise AssertionError(f"unsupported is_owned_by shape: {node!r}")
             return bool(self.countries[tag].get("fixture_owned_state", 0))
@@ -201,6 +201,12 @@ class DmgFoundationLifecycleTest(unittest.TestCase):
     def test_engine_scope_fixture_rejects_unknown_children_even_when_false_facts_precede_them(self):
         world = DmgWorld(EFFECTS + "\n" + SHARED_EFFECTS, {"DMG": {"fixture_owned_state": 1}})
         malformed = [
+            ("any_scope_state", "=", [("owner", "=", "ROOT"),
+                                        ("unknown_engine_fact", "=", "yes")]),
+            ("any_scope_state", "=", [("owner", "=", "OTHER")]),
+            ("any_scope_state", "=", [("owner", "!=", "ROOT")]),
+            ("any_scope_state", "=", [("owner", "=", [("who", "=", "ROOT")])]),
+            ("any_scope_state", "=", [("owner", "=", "ROOT"), ("is_owned_by", "=", "ROOT")]),
             ("any_scope_state", "=", [("is_owned_by", "=", "ROOT"),
                                         ("unknown_engine_fact", "=", "yes")]),
             ("any_scope_state", "=", [("is_owned_by", "=", "OTHER"),

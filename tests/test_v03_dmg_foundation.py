@@ -247,7 +247,7 @@ class DmgFoundationContractTest(unittest.TestCase):
     def test_agriculture_employment_uses_real_staffed_buildings(self):
         body = _helper_body(self.triggers, "ywc_dmg_foundation_agriculture_employment")
         self.assertIn("any_scope_state", body)
-        self.assertIn("is_owned_by = ROOT", body)
+        self.assertIn("owner = ROOT", body)
         self.assertIn("is_building_group = bg_agriculture", body)
         self.assertIn("occupancy >= 0.5", body)
         self.assertIn("building_has_goods_shortage = no", body)
