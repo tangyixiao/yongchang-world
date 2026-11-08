@@ -165,7 +165,11 @@ class TibFoundationTest(unittest.TestCase):
       choose=body(self.effects,f'ywc_tib_choose_{p}_{r}')
       for token in ('add_treasury','multiply = -1',f'ywc_tib_{p}_paid','NOT = { in_default = yes }','NOT = { has_modifier = declared_bankruptcy }'): self.assertIn(token,choose)
  def test_failed_and_replayed_route_choice_keeps_or_advances_current_event(self):
-    world=TibPulseWorld(self.effects,{'TIB':{'gold_reserves':120,'net_fixed_income':10,'in_default':False,'ywc_tib_register_fee':100,'ywc_tib_register_route_cost_1':200,'ywc_tib_register_route_cost_2':150,'ywc_tib_register_route_cost_3':75,'ywc_tib_register_pending_event':1000}})
+    from test_v03_tib_foundation_lifecycle import TibStrictLifecycleTest
+    TibStrictLifecycleTest.setUpClass()
+    driver=TibStrictLifecycleTest()
+    world=driver.world('register',1,120)
+    driver.entry(driver.arcs['v03_tib_service_register'],world)
     from clausewitz_harness import parse
     trigger_defs={key:body for key,_,body in parse(self.triggers)}
     self.assertFalse(world.conditions(trigger_defs['ywc_tib_payable_register_1'],'TIB'))
@@ -182,10 +186,12 @@ class TibFoundationTest(unittest.TestCase):
     self.assertEqual(world.treasury['TIB'],-200)
 
  def test_parallel_arc_options_keep_independent_queues_and_charges(self):
-    world=TibPulseWorld(self.effects,{'TIB':{'gold_reserves':1000,'net_fixed_income':10,'in_default':False,
-     'ywc_tib_register_fee':100,'ywc_tib_register_route_cost_1':200,
-     'ywc_tib_grain_fee':100,'ywc_tib_grain_route_cost_2':150,
-     'ywc_tib_register_pending_event':1000,'ywc_tib_grain_pending_event':1010}})
+    from test_v03_tib_foundation_lifecycle import TibStrictLifecycleTest
+    TibStrictLifecycleTest.setUpClass()
+    driver=TibStrictLifecycleTest()
+    world=driver.world('register',1,1000)
+    driver.entry(driver.arcs['v03_tib_service_register'],world)
+    driver.entry(driver.arcs['v03_tib_grain_credit'],world)
     from clausewitz_harness import parse
     world.execute(parse('test_action = '+self.cat['arcs'][0]['events'][0]['options'][0]['effect'])[0][2],'TIB')
     world.execute(parse('test_action = '+self.cat['arcs'][1]['events'][0]['options'][1]['effect'])[0][2],'TIB')
