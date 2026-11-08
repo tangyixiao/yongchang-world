@@ -397,7 +397,7 @@ def _drive_actual_ports_notice_and_normal_1022(world):
     if state.get("ywc_kor_ports_pending_event") != 1022:
         raise AssertionError(("normal_and_notice_1022_not_coexisting", state))
     notice_candidate = int(state["ywc_v03_kor_inline_reservation"])
-    if notice_candidate != 22:
+    if notice_candidate != 24:
         raise AssertionError(("notice_used_wrong_source_site", notice_candidate, world.trace[-20:]))
     _receive_and_choose(world, "ywc_kor.1022", "defer")
     if state.get("ywc_kor_ports_pending_event") != 1022 or "ywc_kor_ports_notice_event" in state:
@@ -411,16 +411,16 @@ def _drive_actual_ports_notice_and_normal_1022(world):
         raise AssertionError(("normal_1022_not_delivered_after_recovery", world.events, state,
                               world.trace[-30:]))
     normal_candidate = int(state["ywc_v03_kor_inline_reservation"])
-    if normal_candidate != 28:
+    if normal_candidate != 30:
         raise AssertionError(("normal_1022_used_wrong_source_site", normal_candidate,
                               world.trace[-20:]))
     _receive_and_choose(world, "ywc_kor.1022")
     if state.get("ywc_kor_ports_pending_event") is not None:
         raise AssertionError(("normal_1022_ack_did_not_consume_pending_queue", state))
     ack_names = [name for name, _ in world.ack_boundaries]
-    if "ywc_v03_kor_inline_ack_22" not in ack_names or "ywc_v03_kor_inline_ack_28" not in ack_names:
+    if "ywc_v03_kor_inline_ack_24" not in ack_names or "ywc_v03_kor_inline_ack_30" not in ack_names:
         raise AssertionError(("notice_and_normal_callbacks_not_both_reached", ack_names))
-    if "ywc_v03_kor_inline_ack_27" in ack_names:
+    if "ywc_v03_kor_inline_ack_29" in ack_names:
         raise AssertionError(("native_redundant_notice_site_became_dispatchable", ack_names))
 
 

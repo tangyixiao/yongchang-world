@@ -14,10 +14,15 @@ relations:<country>, alive/exists, day/month timers, current-recipient events
     with optional integer day/month delay, and treasury value/multiply. Existing local factual
 predicates/scripted helpers delegate to Strict. No general script-value parser,
 random scopes, temporary scopes, flags, AI simulation, treaties or transactions.
-The supported stack contains countries only: PREV/this/local-variable reads
-inside inherited state/building/pop iterators fail explicitly rather than
-mistaking that actual non-country scope for a country. Explicit root/saved
-country reads and documented state owner checks remain supported there.
+The supported stack contains countries plus typed state and market objects:
+states carry a world-unique object identity that survives ownership transfer,
+and markets are distinct objects addressable through the documented .market and
+market .owner links. state_imports/state_exports/state_goods_production use the
+documented strict operand blocks (target state object, g:/sg: goods token,
+compared value) and only ever read real fixture economics fields; marker
+booleans can never satisfy them. every_scope_state is the sole added effect
+iterator and is restricted to the current country's states. prev/prev.prev and
+owner resolve through the live scope chain inside state or market context.
 Legacy owned=True facts mean owner=containing country; an explicit owner
 overrides it. owner is documented syntax; is_owned_by remains fixture compatibility.
 The offline calendar uses actual Gregorian dates; engine timing remains separate.
@@ -45,6 +50,23 @@ class UnsupportedSubset(AssertionError):
 class CountryRef:
     tag: str
     incarnation: int
+
+
+@dataclass(frozen=True)
+class StateRef:
+    """A state object identity; ownership is read live from the world."""
+
+    sid: int
+
+
+@dataclass(frozen=True)
+class MarketRef:
+    mid: str
+
+
+@dataclass(frozen=True)
+class GoodsRef:
+    name: str
 
 
 @dataclass(frozen=True)
@@ -81,6 +103,8 @@ class PartnerWorld(Strict):
         self._next_incarnation = len(countries) + 1
         self._current = self._root = self._prev = None
         self._saved = {}
+        self._stack = []
+        self.market_scope = None
         self.jobs = []
         self._displayed = {}
         self._delivery_owns_months = False
@@ -97,6 +121,78 @@ class PartnerWorld(Strict):
         self.modifier_defs = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))} if source.exists() else {}
         source = Path("yongchang_world/common/on_actions/ywc_v03_kor_accounts.txt")
         self.on_actions = {key: body for key, _, body in parse(source.read_text(encoding="utf-8-sig"))}
+        # Typed world objects: states get a world-unique identity that survives
+        # ownership transfer; markets are distinct objects owned at world level.
+        self.markets = {}
+        self._next_sid = 1
+        for tag in countries:
+            self._register_states(tag)
+
+    def _register_states(self, tag):
+        for state in self.countries[tag].get("states", []):
+            if "_sid" not in state:
+                state["_sid"] = self._next_sid
+                self._next_sid += 1
+
+    def _state_dict(self, sid):
+        return self._state_location(sid)[0]
+
+    def _state_location(self, sid):
+        """Return (state dict, containing country tag) for a state object id."""
+        for tag, facts in self.countries.items():
+            for state in facts.get("states", []):
+                if state.get("_sid") == sid:
+                    return state, tag
+        raise UnsupportedSubset(f"state object vanished: {sid}")
+
+    def _state_owner_tag(self, ref):
+        state, containing = self._state_location(ref.sid)
+        owner = state.get("owner")
+        if owner is None and state.get("owned"):
+            owner = containing
+        if owner not in self.countries:
+            raise UnsupportedSubset(f"state object has no live owner: {ref.sid}")
+        return owner
+
+    def _state_owner_ref(self, ref):
+        owner = self._state_owner_tag(ref)
+        return self.country_ref(owner)
+
+    def _state_present(self, sid):
+        for facts in self.countries.values():
+            for state in facts.get("states", []):
+                if state.get("_sid") == sid:
+                    return True
+        return False
+
+    def _market_ref(self, obj):
+        if isinstance(obj, MarketRef):
+            return obj
+        if isinstance(obj, StateRef):
+            state = self._state_dict(obj.sid)
+            if "market" in state:
+                return MarketRef(state["market"])
+            owner = state.get("owner")
+            if owner is None and state.get("owned"):
+                owner = self._state_location(obj.sid)[1]
+        elif isinstance(obj, CountryRef):
+            owner = obj.tag
+        else:
+            raise UnsupportedSubset(f"market link requires a country or state object: {obj!r}")
+        mid = self.countries.get(owner, {}).get("market", f"m_{owner}") if owner else None
+        if not mid:
+            return _MISSING
+        return MarketRef(mid)
+
+    def _market_owner(self, mid):
+        market = self.markets.setdefault(mid, {"owner": None, "adjacent": set()})
+        if market["owner"] is None and mid.startswith("m_") and mid[2:] in self.countries:
+            market["owner"] = mid[2:]
+        return market["owner"]
+
+    def market_ref(self, mid):
+        self._market_owner(mid)
+        return MarketRef(mid)
 
     def country_ref(self, tag):
         if tag not in self.countries:
@@ -104,6 +200,10 @@ class PartnerWorld(Strict):
         return CountryRef(tag, self._incarnations[tag])
 
     def _present(self, ref):
+        if isinstance(ref, StateRef):
+            return self._state_present(ref.sid)
+        if isinstance(ref, MarketRef):
+            return True
         return (isinstance(ref, CountryRef) and ref.tag in self.countries
                 and self._incarnations.get(ref.tag) == ref.incarnation)
 
@@ -129,26 +229,51 @@ class PartnerWorld(Strict):
         self.days_until_expiry[tag] = {}
         self.active[tag] = []
         self.history[tag] = {}
+        self._register_states(tag)
 
     @contextmanager
     def _chain(self, recipient, saved=()):
-        previous = self._current, self._root, self._prev, self._saved
+        previous = self._current, self._root, self._prev, self._saved, self._stack
         self._current = self._root = recipient
         self._prev = None
         self._saved = dict(saved)
+        self._stack = [recipient]
         try:
             yield
         finally:
-            self._current, self._root, self._prev, self._saved = previous
+            self._current, self._root, self._prev, self._saved, self._stack = previous
 
     @contextmanager
     def _scope(self, target):
-        previous = self._current, self._prev
-        self._prev, self._current = self._current, target
+        previous = self._current, self._prev, self._stack
+        self._prev = self._current
+        self._current = target
+        self._stack = self._stack + [target]
         try:
             yield
         finally:
-            self._current, self._prev = previous
+            self._current, self._prev, self._stack = previous
+
+    @contextmanager
+    def _state_context(self, ref):
+        previous = self.state_scope, self.building_scope, self.pop_scope, self._stack
+        self.state_scope = self._state_dict(ref.sid)
+        self.building_scope = self.pop_scope = None
+        self._stack = self._stack + [ref]
+        try:
+            yield
+        finally:
+            self.state_scope, self.building_scope, self.pop_scope, self._stack = previous
+
+    @contextmanager
+    def _market_context(self, ref):
+        previous = self.market_scope, self._stack
+        self.market_scope = self.markets.setdefault(ref.mid, {"owner": None, "adjacent": set()})
+        self._stack = self._stack + [ref]
+        try:
+            yield
+        finally:
+            self.market_scope, self._stack = previous
 
     def run_script(self, text, tag="KOR"):
         with self._chain(self.country_ref(tag)):
@@ -179,9 +304,21 @@ class PartnerWorld(Strict):
 
     @staticmethod
     def _scope_token(token):
-        return (isinstance(token, str) and (token.lower() in ("this", "root", "prev")
+        return (isinstance(token, str) and (token.lower() in ("this", "root", "prev", "prev.prev")
                 or token.startswith(("c:", "scope:", "var:"))
                 or ".var:" in token))
+
+    def _scope_link(self, obj, suffix):
+        if suffix == "market":
+            return self._market_ref(obj)
+        if suffix == "owner":
+            if isinstance(obj, StateRef):
+                return self._state_owner_ref(obj)
+            if isinstance(obj, MarketRef):
+                owner = self._market_owner(obj.mid)
+                return self.country_ref(owner) if owner and owner in self.countries else _MISSING
+            raise UnsupportedSubset(f"owner link requires a state or market object: {obj!r}")
+        raise UnsupportedSubset(f"unsupported scope link: {suffix}")
 
     def _value(self, token, *, optional=False):
         if isinstance(token, list):
@@ -195,52 +332,100 @@ class PartnerWorld(Strict):
         if not isinstance(token, str):
             raise UnsupportedSubset(f"unsupported value: {token!r}")
         if any(scope is not None for scope in (self.state_scope, self.building_scope, self.pop_scope)):
-            if token.lower() in ("prev", "this") or token.lower().startswith(("prev.var:", "this.var:")) or token.startswith("var:"):
+            typed_state = isinstance(self._stack[-1] if self._stack else None, StateRef)
+            if token.lower() in ("prev", "this", "prev.prev") and not typed_state:
+                raise UnsupportedSubset("unsupported PREV/this read inside an untyped non-country iterator")
+            if token.lower().startswith(("prev.var:", "this.var:")) or token.startswith("var:"):
                 raise UnsupportedSubset("unsupported PREV/this/local variable read inside non-country iterator")
+        suffixes = []
+        rest = token
+        if ".var:" not in token:
+            while rest.endswith(".market") or rest.endswith(".owner"):
+                if rest.endswith(".market"):
+                    suffixes.append("market")
+                    rest = rest[:-len(".market")]
+                else:
+                    suffixes.append("owner")
+                    rest = rest[:-len(".owner")]
+            if rest != token and not rest:
+                raise UnsupportedSubset(f"unsupported bare scope link: {token}")
         if ".var:" in token:
             owner, name = token.rsplit(".var:", 1)
             ref = self._value(owner, optional=True)
-            result = self.countries[ref.tag].get(name, _MISSING) if self._present(ref) else _MISSING
-        elif token.lower() in ("this", "root", "prev"):
-            result = {"this": self._current, "root": self._root, "prev": self._prev}[token.lower()]
-            if result is None:
+            result = self.countries[ref.tag].get(name, _MISSING) if self._present(ref) and isinstance(ref, CountryRef) else _MISSING
+        elif rest.lower() in ("this", "root", "prev", "prev.prev"):
+            depth = {"this": 1, "prev": 2, "prev.prev": 3}.get(rest.lower())
+            if rest.lower() == "root":
+                result = self._stack[0] if self._stack else _MISSING
+            elif depth and len(self._stack) >= depth:
+                result = self._stack[-depth]
+            else:
                 result = _MISSING
-        elif token.startswith("c:"):
-            result = self.country_ref(token[2:]) if token[2:] in self.countries else _MISSING
-        elif token.startswith("scope:"):
-            result = self._saved.get(token[6:], _MISSING)
-        elif token.startswith("var:"):
-            result = self.countries[self._current.tag].get(token[4:], _MISSING)
-        elif token in ("yes", "no"):
-            result = token == "yes"
-        elif token == "year":
+        elif rest.lower() == "owner":
+            top = self._stack[-1] if self._stack else None
+            if isinstance(top, StateRef):
+                result = self._state_owner_ref(top)
+            elif isinstance(top, MarketRef):
+                owner = self._market_owner(top.mid)
+                result = self.country_ref(owner) if owner and owner in self.countries else _MISSING
+            else:
+                raise UnsupportedSubset("owner read requires a state or market scope")
+        elif rest.lower() == "market":
+            top = self._stack[-1] if self._stack else None
+            if isinstance(top, MarketRef):
+                raise UnsupportedSubset("market link is not valid inside a market scope")
+            result = self._market_ref(top) if top is not None else _MISSING
+        elif rest.startswith("c:"):
+            result = self.country_ref(rest[2:]) if rest[2:] in self.countries else _MISSING
+        elif rest.startswith("scope:"):
+            result = self._saved.get(rest[6:], _MISSING)
+        elif rest.startswith("var:"):
+            result = self.countries[self._current.tag].get(rest[4:], _MISSING)
+        elif rest.startswith(("g:", "sg:")):
+            result = GoodsRef(rest.split(":", 1)[1])
+        elif rest in ("yes", "no"):
+            result = rest == "yes"
+        elif rest == "year":
             result = self.date.year
-        elif token == "month":
+        elif rest == "month":
             result = self.date.month - 1
-        elif token in self.named_values:
-            result = self._value(self.named_values[token])
-        elif re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", token):
-            result = float(token)
+        elif rest in self.named_values:
+            result = self._value(self.named_values[rest])
+        elif re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", rest):
+            result = float(rest)
             self._numeric(result)
-        elif token in ("yearly_gross_income", "gdp", "scaled_debt", "gold_reserves", "net_fixed_income", "bureaucracy", "army_size", "legitimacy", "authority"):
-            result = self.countries[self._current.tag].get(token, _MISSING)
-            if token == "gold_reserves" and result is not _MISSING:
+        elif rest in ("yearly_gross_income", "gdp", "scaled_debt", "gold_reserves", "net_fixed_income", "bureaucracy", "army_size", "legitimacy", "authority"):
+            result = self.countries[self._current.tag].get(rest, _MISSING)
+            if rest == "gold_reserves" and result is not _MISSING:
                 result += self.treasury[self._current.tag]
         else:
             raise UnsupportedSubset(f"unsupported value token: {token}")
+        for suffix in suffixes:
+            if result is not _MISSING:
+                result = self._scope_link(result, suffix)
         if isinstance(result, CountryRef) and not self._present(result):
+            result = _MISSING
+        if isinstance(result, StateRef) and not self._state_present(result.sid):
             result = _MISSING
         if result is _MISSING and not optional:
             raise UnsupportedSubset(f"undefined value/country: {token}")
-        if result is not _MISSING and not isinstance(result, CountryRef):
+        if result is not _MISSING and not isinstance(result, (CountryRef, StateRef, MarketRef, GoodsRef)):
             if type(result) is not bool:
                 self._numeric(result)
         return result
 
     def compare(self, left, op, right):
-        if isinstance(left, CountryRef) or isinstance(right, CountryRef):
-            if not isinstance(left, CountryRef) or not isinstance(right, CountryRef) or op not in ("=", "!=", "?="):
-                raise UnsupportedSubset(f"unsupported typed country comparison: {left!r} {op} {right!r}")
+        object_refs = (CountryRef, StateRef, MarketRef)
+        if isinstance(left, object_refs) or isinstance(right, object_refs):
+            if not isinstance(left, object_refs) or not isinstance(right, object_refs) or op not in ("=", "!=", "?="):
+                raise UnsupportedSubset(f"unsupported typed object comparison: {left!r} {op} {right!r}")
+            if type(left) is not type(right):
+                return False
+            return left == right if op in ("=", "?=") else left != right
+        if type(left) is GoodsRef or type(right) is GoodsRef:
+            if type(left) is not type(right) or op not in ("=", "!="):
+                raise UnsupportedSubset(f"unsupported typed goods comparison: {left!r} {op} {right!r}")
+            return left == right
         elif type(left) is bool or type(right) is bool:
             if type(left) is not bool or type(right) is not bool or op not in ("=", "!=", "?="):
                 raise UnsupportedSubset(f"unsupported typed bool comparison: {left!r} {op} {right!r}")
@@ -264,12 +449,99 @@ class PartnerWorld(Strict):
             if key == "NOT":
                 return not all(self.condition(child, tag) for child in value)
             return not any(self.condition(child, tag) for child in value)
-        if key in ("any_scope_state", "any_scope_building", "any_scope_pop", "workplace"):
+        if key == "any_scope_state":
+            if op != "=" or not isinstance(value, list):
+                raise UnsupportedSubset(f"unsupported state iteration: {node}")
+            top = self._stack[-1] if self._stack else None
+            if not isinstance(top, CountryRef):
+                raise UnsupportedSubset("any_scope_state requires an actual country scope")
+            previous = self.state_scope, self.building_scope, self.pop_scope
+            try:
+                for state in self.countries[top.tag].get("states", []):
+                    ref = StateRef(state["_sid"])
+                    self.state_scope = state
+                    self.building_scope = self.pop_scope = None
+                    self._stack.append(ref)
+                    try:
+                        if self.conditions(value, tag):
+                            return True
+                    finally:
+                        self._stack.pop()
+                return False
+            finally:
+                self.state_scope, self.building_scope, self.pop_scope = previous
+        if key in ("any_scope_building", "any_scope_pop", "workplace"):
             previous = self.state_scope, self.building_scope, self.pop_scope
             try:
                 return super().condition(node, tag)
             finally:
                 self.state_scope, self.building_scope, self.pop_scope = previous
+        if key == "state_goods_production":
+            if op != "=" or not isinstance(value, list) or not isinstance(self._stack[-1] if self._stack else None, StateRef):
+                raise UnsupportedSubset(f"state_goods_production requires an actual state scope: {node}")
+            target = next((v for k, o, v in value if k == "target" and o == "="), None)
+            amount = next(((o, v) for k, o, v in value if k == "value"), None)
+            if target is None or amount is None or len(value) != 2:
+                raise UnsupportedSubset(f"unsupported state_goods_production operands: {node}")
+            if not isinstance(target, str) or not target.startswith("sg:"):
+                raise UnsupportedSubset(f"state_goods_production target must use the sg: goods form: {node}")
+            goods = self._value(target, optional=True)
+            if goods is _MISSING:
+                return False
+            produced = self.state_scope.get("production", {}).get(goods.name, 0)
+            return self.compare(produced, amount[0], self._value(amount[1]))
+        if key in ("state_imports", "state_exports"):
+            if op != "=" or not isinstance(value, list) or not isinstance(self._stack[-1] if self._stack else None, StateRef):
+                raise UnsupportedSubset(f"{key} requires an actual state scope: {node}")
+            target = next((v for k, o, v in value if k == "target" and o == "="), None)
+            goods_node = next((v for k, o, v in value if k == "goods" and o == "="), None)
+            amount = next(((o, v) for k, o, v in value if k == "value"), None)
+            if target is None or goods_node is None or amount is None or len(value) != 3:
+                raise UnsupportedSubset(f"unsupported {key} operands: {node}")
+            if not isinstance(goods_node, str) or not goods_node.startswith("g:"):
+                raise UnsupportedSubset(f"{key} goods must use the g: goods form: {node}")
+            goods = self._value(goods_node, optional=True)
+            other = self._value(target, optional=True)
+            if goods is _MISSING or other is _MISSING or not isinstance(other, StateRef):
+                return False
+            field_name = "source" if key == "state_imports" else "target"
+            matched = [float(row.get("value", 0)) for row in self.state_scope.get(key.removeprefix("state_"), [])
+                       if row.get(field_name) == other.sid and row.get("goods") == goods.name]
+            return any(self.compare(row, amount[0], self._value(amount[1])) for row in matched)
+        if key == "has_port_state":
+            if not isinstance(self._stack[-1] if self._stack else None, StateRef):
+                raise UnsupportedSubset(f"has_port_state requires an actual state scope: {node}")
+            if op != "=" or value not in ("yes", "no"):
+                raise UnsupportedSubset(f"unsupported boolean predicate: {node}")
+            return bool(self.state_scope.get("port")) == (value == "yes")
+        if key == "market" and not isinstance(value, list):
+            top = self._stack[-1] if self._stack else None
+            if op not in ("=", "!=", "?="):
+                raise UnsupportedSubset(f"unsupported market comparison: {node}")
+            left = self._market_ref(top) if top is not None else _MISSING
+            right = self._value(value, optional=(op == "?="))
+            if left is _MISSING or right is _MISSING:
+                if op == "?=":
+                    return False
+                raise UnsupportedSubset(f"undefined market comparison value: {node}")
+            return self.compare(left, op, right)
+        if key == "market":
+            top = self._stack[-1] if self._stack else None
+            if op != "=" or not isinstance(value, list) or not isinstance(top, (CountryRef, StateRef)):
+                raise UnsupportedSubset(f"market scope requires an actual country or state scope: {node}")
+            ref = self._market_ref(top)
+            if ref is _MISSING:
+                return False
+            with self._market_context(ref):
+                return self.conditions(value, tag)
+        if key == "is_adjacent_to_market":
+            top = self._stack[-1] if self._stack else None
+            if not isinstance(top, MarketRef) or op != "=":
+                raise UnsupportedSubset(f"is_adjacent_to_market requires an actual market scope: {node}")
+            other = self._value(value, optional=True)
+            if other is _MISSING or not isinstance(other, MarketRef):
+                return False
+            return other.mid in self.markets.setdefault(top.mid, {"owner": None, "adjacent": set()}).get("adjacent", set())
         if key in ("owner", "is_owned_by"):
             if op not in ("=", "?=") or self.state_scope is None:
                 raise UnsupportedSubset(f"unsupported state ownership predicate: {node}")
@@ -304,6 +576,12 @@ class PartnerWorld(Strict):
                     raise UnsupportedSubset(f"unsupported country scope operator: {node}")
                 if left is _MISSING:
                     return False
+                if isinstance(left, StateRef):
+                    with self._state_context(left):
+                        return self.conditions(value, self._state_owner_tag(left))
+                if isinstance(left, MarketRef):
+                    with self._market_context(left):
+                        return self.conditions(value, tag)
                 if not isinstance(left, CountryRef):
                     raise UnsupportedSubset(f"country scope requires country reference: {key}")
                 with self._scope(left):
@@ -383,6 +661,11 @@ class PartnerWorld(Strict):
         while index < len(nodes):
             key, op, body = nodes[index]
             index += 1
+            top = self._stack[-1] if self._stack else None
+            if (isinstance(top, (StateRef, MarketRef))
+                    and key not in ("save_scope_as", "custom_tooltip", "every_scope_state", "if", "else_if", "else")
+                    and not (self._scope_token(key) and isinstance(body, list))):
+                raise UnsupportedSubset(f"effect {key} requires an actual country scope")
             # Reuse the existing branch executor intact, including else chains.
             if key == "if":
                 end = index
@@ -396,10 +679,33 @@ class PartnerWorld(Strict):
                 target = self._value(key, optional=(op == "?="))
                 if target is _MISSING:
                     continue
+                if isinstance(target, StateRef):
+                    with self._state_context(target):
+                        self.execute(body, self._state_owner_tag(target))
+                    continue
+                if isinstance(target, MarketRef):
+                    with self._market_context(target):
+                        self.execute(body, tag)
+                    continue
                 if not isinstance(target, CountryRef):
                     raise UnsupportedSubset(f"country scope requires country reference: {key}")
                 with self._scope(target):
                     self.execute(body, target.tag)
+            elif key == "every_scope_state":
+                if op != "=" or not isinstance(body, list):
+                    raise UnsupportedSubset(f"unsupported state effect iterator: {key} {op}")
+                top = self._stack[-1] if self._stack else None
+                if not isinstance(top, CountryRef):
+                    raise UnsupportedSubset("every_scope_state requires an actual country scope")
+                limit_nodes = [child for child in body if child[0] == "limit"]
+                if len(limit_nodes) != 1:
+                    raise UnsupportedSubset("every_scope_state requires exactly one limit")
+                body_nodes = [child for child in body if child[0] != "limit"]
+                for state in self.countries[top.tag].get("states", []):
+                    ref = StateRef(state["_sid"])
+                    with self._state_context(ref):
+                        if self.conditions(limit_nodes[0][2], tag):
+                            self.execute(body_nodes, tag)
             elif op != "=":
                 raise UnsupportedSubset(f"unsupported effect operator: {key} {op}")
             elif key in ("set_variable", "change_variable", "clamp_variable"):
@@ -407,11 +713,12 @@ class PartnerWorld(Strict):
             elif key == "save_scope_as":
                 if not isinstance(body, str):
                     raise UnsupportedSubset("unsupported saved scope name")
-                self._saved[body] = self._current
+                top = self._stack[-1] if self._stack else None
+                self._saved[body] = top if isinstance(top, (StateRef, MarketRef)) else self._current
             elif key == "save_scope_value_as":
                 fields = self._fields(body, {"name", "value"}, {"name", "value"})
                 value = self._value(fields["value"])
-                if type(value) is not bool:
+                if type(value) is not bool and not isinstance(value, (StateRef, MarketRef)):
                     self._numeric(value)
                 self._saved[fields["name"]] = value
             elif key == "trigger_event":

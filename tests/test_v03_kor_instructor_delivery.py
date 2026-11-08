@@ -89,7 +89,7 @@ class InstructorDeliveryTests(unittest.TestCase):
         world.run_script("ywc_v03_kor_inline_prepare = yes")
         second = source_notice_sender(world, "ywc_je_v03_kor_service_settlement")
         self.assertEqual(second.event_id, "ywc_kor.1031")
-        self.assertEqual(dict(second.saved)["ywc_kor_notice_candidate"], 12)
+        self.assertEqual(dict(second.saved)["ywc_kor_notice_candidate"], 13)
         self.assertTrue(world.display_job(second))
         self.assertEqual(kor.get("ywc_v03_kor_v03_kor_military_accounts_last_event"), 6)
 
