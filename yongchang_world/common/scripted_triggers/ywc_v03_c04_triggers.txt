@@ -1,0 +1,172 @@
+﻿# Crisis C04 南洋航路：港规、护航与不同国家的船: scripted triggers. All state
+# variables are per-country with the ywc_c04_ prefix; every cross-country read
+# stays inside an explicit c:XXX ?= { } block so no variable is read outside
+# its writer's scope. Stage values: 1300/1301 organizer investigation, 1302
+# DMG/LAN protected counter, 1303 island berth terms, 1304 escort account,
+# 1305 island inspection, 1306 island seizure answer, 1307 flag check, 1308
+# segment proposal, 1309 island local choice, 1310 settlement, 1311 aftermath
+# review; shared answer stages: 1314 cargo-owner answer (event ywc_crisis.1306),
+# 1316 DMG/LAN renegotiation answer (event ywc_crisis.1308); internal waiting
+# stages: 1313 (organizer awaits responses), 1317 (organizer awaits seizure
+# answers), 1318 (mounted country awaits the opening of responses), 1319
+# (country awaits the renegotiation window), 1320 (organizer awaits
+# renegotiation answers), 1321 (country awaits the settlement round), 1322
+# (terminal aftermath record).
+
+# --- Real producer claims (settled country-arc variables, read in the
+# claimant's own scope; each case_ready_* guard pins c:<TAG> ?= this) -------
+
+# JHG fleet finance: a settled convoy-capacity or court-assembly line.
+ywc_c04_jhg_claim = { OR = { var:ywc_jhg_v03_jhg_convoy_capacity_settled ?= 1 var:ywc_jhg_v03_jhg_court_assembly_settled ?= 1 } }
+# DMG port trade and citizen qualification: a settled common-subjects line.
+ywc_c04_dmg_claim = { var:ywc_v03_dmg_v03_dmg_common_subjects_settled ?= 1 }
+# LAN mining export: a settled mine-accounts line.
+ywc_c04_lan_claim = { var:ywc_v03_lan_v03_lan_mine_accounts_settled ?= 1 }
+
+# --- Organizer priority gates (one case at a time; JHG > DMG > LAN) --------
+
+ywc_c04_jhg_organizer_active = { c:JHG ?= { is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_c04_jhg_claim = yes NOT = { has_variable = ywc_c04_outcome } } }
+ywc_c04_dmg_organizer_active = { c:DMG ?= { is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_c04_dmg_claim = yes NOT = { has_variable = ywc_c04_outcome } } }
+
+# --- Actual contact links (adjacency, diplomatic contact, market, port) ----
+# Defined for the three core tags: a candidate country is checked at its own
+# scope for its real link to the organizing core (contact_<ORG>), so no
+# island-side counterpart is needed.
+
+ywc_c04_adjacent_jhg = { any_scope_state = { any_neighbouring_state = { c:JHG ?= owner } } }
+ywc_c04_market_jhg = { c:JHG ?= { is_country_alive = yes } is_in_same_market_area = c:JHG.capital }
+ywc_c04_contact_jhg = { OR = { ywc_c04_adjacent_jhg = yes has_diplomatic_relevance = c:JHG ywc_c04_market_jhg = yes AND = { has_port_country = yes ywc_c04_market_jhg = yes } } }
+ywc_c04_adjacent_dmg = { any_scope_state = { any_neighbouring_state = { c:DMG ?= owner } } }
+ywc_c04_market_dmg = { c:DMG ?= { is_country_alive = yes } is_in_same_market_area = c:DMG.capital }
+ywc_c04_contact_dmg = { OR = { ywc_c04_adjacent_dmg = yes has_diplomatic_relevance = c:DMG ywc_c04_market_dmg = yes AND = { has_port_country = yes ywc_c04_market_dmg = yes } } }
+ywc_c04_adjacent_lan = { any_scope_state = { any_neighbouring_state = { c:LAN ?= owner } } }
+ywc_c04_market_lan = { c:LAN ?= { is_country_alive = yes } is_in_same_market_area = c:LAN.capital }
+ywc_c04_contact_lan = { OR = { ywc_c04_adjacent_lan = yes has_diplomatic_relevance = c:LAN ywc_c04_market_lan = yes AND = { has_port_country = yes ywc_c04_market_lan = yes } } }
+
+# Availability of one party as seen from an organizer's scope; the inner
+# contact trigger is evaluated at the candidate's own scope.
+
+ywc_c04_dmg_available_jhg = { c:DMG ?= { is_country_alive = yes ywc_c04_contact_jhg = yes } }
+ywc_c04_lan_available_jhg = { c:LAN ?= { is_country_alive = yes ywc_c04_contact_jhg = yes } }
+ywc_c04_wbk_available_jhg = { c:WBK ?= { is_country_alive = yes ywc_c04_contact_jhg = yes } }
+ywc_c04_mhg_available_jhg = { c:MHG ?= { is_country_alive = yes ywc_c04_contact_jhg = yes } }
+ywc_c04_jhg_available_dmg = { c:JHG ?= { is_country_alive = yes ywc_c04_contact_dmg = yes } }
+ywc_c04_lan_available_dmg = { c:LAN ?= { is_country_alive = yes ywc_c04_contact_dmg = yes } }
+ywc_c04_wbk_available_dmg = { c:WBK ?= { is_country_alive = yes ywc_c04_contact_dmg = yes } }
+ywc_c04_mhg_available_dmg = { c:MHG ?= { is_country_alive = yes ywc_c04_contact_dmg = yes } }
+ywc_c04_jhg_available_lan = { c:JHG ?= { is_country_alive = yes ywc_c04_contact_lan = yes } }
+ywc_c04_dmg_available_lan = { c:DMG ?= { is_country_alive = yes ywc_c04_contact_lan = yes } }
+ywc_c04_wbk_available_lan = { c:WBK ?= { is_country_alive = yes ywc_c04_contact_lan = yes } }
+ywc_c04_mhg_available_lan = { c:MHG ?= { is_country_alive = yes ywc_c04_contact_lan = yes } }
+
+# --- Counterparty presence (organizer scope, per organizer tag) ------------
+
+ywc_c04_no_counterparty_jhg = { NOT = { OR = { c:DMG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:LAN ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:WBK ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:MHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } } } }
+ywc_c04_no_counterparty_dmg = { NOT = { OR = { c:JHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:LAN ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:WBK ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:MHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } } } }
+ywc_c04_no_counterparty_lan = { NOT = { OR = { c:JHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:DMG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:WBK ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } c:MHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_outcome } } } } }
+
+# --- Entry readiness ---------------------------------------------------------
+
+ywc_c04_case_ready_jhg = { c:JHG ?= this is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_c04_jhg_claim = yes OR = { ywc_c04_dmg_available_jhg = yes ywc_c04_lan_available_jhg = yes ywc_c04_wbk_available_jhg = yes ywc_c04_mhg_available_jhg = yes } NOT = { c:DMG ?= { has_variable = ywc_c04_started } } NOT = { c:LAN ?= { has_variable = ywc_c04_started } } NOT = { has_variable = ywc_c04_started } NOT = { has_variable = ywc_c04_outcome } }
+ywc_c04_case_ready_dmg = { c:DMG ?= this is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_c04_dmg_claim = yes OR = { ywc_c04_jhg_available_dmg = yes ywc_c04_lan_available_dmg = yes ywc_c04_wbk_available_dmg = yes ywc_c04_mhg_available_dmg = yes } NOT = { ywc_c04_jhg_organizer_active = yes } NOT = { c:JHG ?= { has_variable = ywc_c04_started } } NOT = { c:LAN ?= { has_variable = ywc_c04_started } } NOT = { has_variable = ywc_c04_started } NOT = { has_variable = ywc_c04_outcome } }
+ywc_c04_case_ready_lan = { c:LAN ?= this is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_c04_lan_claim = yes OR = { ywc_c04_jhg_available_lan = yes ywc_c04_dmg_available_lan = yes ywc_c04_wbk_available_lan = yes ywc_c04_mhg_available_lan = yes } NOT = { ywc_c04_jhg_organizer_active = yes } NOT = { ywc_c04_dmg_organizer_active = yes } NOT = { c:JHG ?= { has_variable = ywc_c04_started } } NOT = { c:DMG ?= { has_variable = ywc_c04_started } } NOT = { has_variable = ywc_c04_started } NOT = { has_variable = ywc_c04_outcome } }
+
+# --- Cross-country state helpers ---------------------------------------------
+
+ywc_c04_organizer_alive_for_me = { OR = { c:JHG ?= { is_country_alive = yes var:ywc_c04_role ?= 1 } c:DMG ?= { is_country_alive = yes var:ywc_c04_role ?= 2 } c:LAN ?= { is_country_alive = yes var:ywc_c04_role ?= 3 } } }
+ywc_c04_organizer_gone = { NOT = { ywc_c04_organizer_alive_for_me = yes } }
+ywc_c04_organizer_awaiting_responses = { OR = { c:JHG ?= { is_country_alive = yes var:ywc_c04_role ?= 1 var:ywc_c04_stage ?= 1313 } c:DMG ?= { is_country_alive = yes var:ywc_c04_role ?= 2 var:ywc_c04_stage ?= 1313 } c:LAN ?= { is_country_alive = yes var:ywc_c04_role ?= 3 var:ywc_c04_stage ?= 1313 } } }
+ywc_c04_organizer_awaiting_seizure = { OR = { c:JHG ?= { is_country_alive = yes var:ywc_c04_role ?= 1 var:ywc_c04_stage ?= 1317 } c:DMG ?= { is_country_alive = yes var:ywc_c04_role ?= 2 var:ywc_c04_stage ?= 1317 } c:LAN ?= { is_country_alive = yes var:ywc_c04_role ?= 3 var:ywc_c04_stage ?= 1317 } } }
+# Organizer-scope resolution checks: a mounted party counts as resolved once
+# it is dead or has left its answer stage (its own answer moves the stage).
+ywc_c04_responses_resolved = { NOT = { AND = { var:ywc_c04_invited_dmg ?= 1 c:DMG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_dmg_response } } } } NOT = { AND = { var:ywc_c04_invited_lan ?= 1 c:LAN ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_lan_response } } } } NOT = { AND = { var:ywc_c04_invited_wbk ?= 1 c:WBK ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_island_response } } } } NOT = { AND = { var:ywc_c04_invited_mhg ?= 1 c:MHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c04_island_response } } } } }
+ywc_c04_seizure_resolved = { NOT = { AND = { var:ywc_c04_seizure_island ?= 1 c:WBK ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { var:ywc_c04_seizure_island ?= 2 c:MHG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { var:ywc_c04_seizure_owner ?= 1 c:LAN ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } NOT = { AND = { var:ywc_c04_seizure_owner ?= 2 c:DMG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } }
+ywc_c04_renegotiation_resolved = { NOT = { AND = { var:ywc_c04_reneg_dmg ?= 1 c:DMG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1316 } } } NOT = { AND = { var:ywc_c04_reneg_lan ?= 1 c:LAN ?= { is_country_alive = yes var:ywc_c04_stage ?= 1316 } } } NOT = { AND = { var:ywc_c04_reneg_wbk ?= 1 c:WBK ?= { is_country_alive = yes var:ywc_c04_stage ?= 1309 } } } NOT = { AND = { var:ywc_c04_reneg_mhg ?= 1 c:MHG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1309 } } } }
+# Party-scope seizure resolution: read the organizer's mount markers through
+# the explicit c:XXX block of the one tag that can hold the organizer role.
+ywc_c04_seizure_clear_jhg = { NOT = { AND = { c:JHG ?= { var:ywc_c04_seizure_island ?= 1 } c:WBK ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { c:JHG ?= { var:ywc_c04_seizure_island ?= 2 } c:MHG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { c:JHG ?= { var:ywc_c04_seizure_owner ?= 1 } c:LAN ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } NOT = { AND = { c:JHG ?= { var:ywc_c04_seizure_owner ?= 2 } c:DMG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } }
+ywc_c04_seizure_clear_dmg = { NOT = { AND = { c:DMG ?= { var:ywc_c04_seizure_island ?= 1 } c:WBK ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { c:DMG ?= { var:ywc_c04_seizure_island ?= 2 } c:MHG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { c:DMG ?= { var:ywc_c04_seizure_owner ?= 1 } c:LAN ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } NOT = { AND = { c:DMG ?= { var:ywc_c04_seizure_owner ?= 2 } c:DMG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } }
+ywc_c04_seizure_clear_lan = { NOT = { AND = { c:LAN ?= { var:ywc_c04_seizure_island ?= 1 } c:WBK ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { c:LAN ?= { var:ywc_c04_seizure_island ?= 2 } c:MHG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1306 } } } NOT = { AND = { c:LAN ?= { var:ywc_c04_seizure_owner ?= 1 } c:LAN ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } NOT = { AND = { c:LAN ?= { var:ywc_c04_seizure_owner ?= 2 } c:DMG ?= { is_country_alive = yes var:ywc_c04_stage ?= 1314 } } } }
+
+# --- Delivery and popup-snapshot triggers ------------------------------------
+# Every delivery trigger carries the shared ywc_v03_can_deliver_major gate;
+# the at_ triggers pin options to the popup instance via the saved epoch scope.
+
+ywc_c04_jhg_delivery_1300 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1300 var:ywc_c04_pending ?= 1300 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1300 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1300 var:ywc_c04_pending ?= 1300 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1300 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1300 var:ywc_c04_pending ?= 1300 ywc_v03_can_deliver_major = yes }
+ywc_c04_jhg_delivery_1301 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1301 var:ywc_c04_pending ?= 1301 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1301 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1301 var:ywc_c04_pending ?= 1301 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1301 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1301 var:ywc_c04_pending ?= 1301 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1302 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1302 var:ywc_c04_pending ?= 1302 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_responses = yes }
+ywc_c04_lan_delivery_1302 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1302 var:ywc_c04_pending ?= 1302 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_responses = yes }
+ywc_c04_wbk_delivery_1303 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1303 var:ywc_c04_pending ?= 1303 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_responses = yes }
+ywc_c04_mhg_delivery_1303 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1303 var:ywc_c04_pending ?= 1303 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_responses = yes }
+ywc_c04_jhg_delivery_1304 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1304 var:ywc_c04_pending ?= 1304 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1304 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1304 var:ywc_c04_pending ?= 1304 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1304 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1304 var:ywc_c04_pending ?= 1304 ywc_v03_can_deliver_major = yes }
+ywc_c04_wbk_delivery_1305 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1305 var:ywc_c04_pending ?= 1305 ywc_v03_can_deliver_major = yes }
+ywc_c04_mhg_delivery_1305 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1305 var:ywc_c04_pending ?= 1305 ywc_v03_can_deliver_major = yes }
+ywc_c04_wbk_delivery_1306 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1306 var:ywc_c04_pending ?= 1306 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_seizure = yes }
+ywc_c04_mhg_delivery_1306 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1306 var:ywc_c04_pending ?= 1306 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_seizure = yes }
+ywc_c04_dmg_delivery_1314 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1314 var:ywc_c04_pending ?= 1314 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_seizure = yes }
+ywc_c04_lan_delivery_1314 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1314 var:ywc_c04_pending ?= 1314 ywc_v03_can_deliver_major = yes ywc_c04_organizer_awaiting_seizure = yes }
+ywc_c04_jhg_delivery_1307 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1307 var:ywc_c04_pending ?= 1307 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1307 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1307 var:ywc_c04_pending ?= 1307 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1307 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1307 var:ywc_c04_pending ?= 1307 ywc_v03_can_deliver_major = yes }
+ywc_c04_jhg_delivery_1308 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1308 var:ywc_c04_pending ?= 1308 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1308 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1308 var:ywc_c04_pending ?= 1308 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1308 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1308 var:ywc_c04_pending ?= 1308 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1316 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1316 var:ywc_c04_pending ?= 1316 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1316 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1316 var:ywc_c04_pending ?= 1316 ywc_v03_can_deliver_major = yes }
+ywc_c04_wbk_delivery_1309 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1309 var:ywc_c04_pending ?= 1309 ywc_v03_can_deliver_major = yes }
+ywc_c04_mhg_delivery_1309 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1309 var:ywc_c04_pending ?= 1309 ywc_v03_can_deliver_major = yes }
+ywc_c04_jhg_delivery_1310 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 var:ywc_c04_pending ?= 1310 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1310 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 var:ywc_c04_pending ?= 1310 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1310 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 var:ywc_c04_pending ?= 1310 ywc_v03_can_deliver_major = yes }
+ywc_c04_wbk_delivery_1310 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 var:ywc_c04_pending ?= 1310 ywc_v03_can_deliver_major = yes }
+ywc_c04_mhg_delivery_1310 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 var:ywc_c04_pending ?= 1310 ywc_v03_can_deliver_major = yes }
+ywc_c04_jhg_delivery_1311 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 var:ywc_c04_pending ?= 1311 ywc_v03_can_deliver_major = yes }
+ywc_c04_dmg_delivery_1311 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 var:ywc_c04_pending ?= 1311 ywc_v03_can_deliver_major = yes }
+ywc_c04_lan_delivery_1311 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 var:ywc_c04_pending ?= 1311 ywc_v03_can_deliver_major = yes }
+ywc_c04_wbk_delivery_1311 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 var:ywc_c04_pending ?= 1311 ywc_v03_can_deliver_major = yes }
+ywc_c04_mhg_delivery_1311 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 var:ywc_c04_pending ?= 1311 ywc_v03_can_deliver_major = yes }
+ywc_c04_jhg_at_1300 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1300 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1300 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1300 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1300 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1300 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_jhg_at_1301 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1301 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1301 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1301 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1301 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1301 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1302 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1302 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1302 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1302 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_wbk_at_1303 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1303 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_mhg_at_1303 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_verifiable_ship_license var:ywc_c04_stage ?= 1303 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_jhg_at_1304 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1304 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1304 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1304 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1304 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1304 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_wbk_at_1305 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1305 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_mhg_at_1305 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1305 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_wbk_at_1306 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1306 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_mhg_at_1306 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1306 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1314 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1314 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1314 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1314 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_jhg_at_1307 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1307 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1307 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1307 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1307 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_escort_cost_bearer var:ywc_c04_stage ?= 1307 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_jhg_at_1308 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1308 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1308 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1308 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1308 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1308 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1316 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1316 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1316 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1316 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_wbk_at_1309 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1309 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_mhg_at_1309 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1309 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_jhg_at_1310 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1310 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1310 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_wbk_at_1310 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_mhg_at_1310 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1310 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_jhg_at_1311 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_dmg_at_1311 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_lan_at_1311 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_wbk_at_1311 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }
+ywc_c04_mhg_at_1311 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands var:ywc_c04_stage ?= 1311 scope:ywc_c04_popup_epoch ?= var:ywc_c04_popup_epoch }

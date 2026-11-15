@@ -1,0 +1,96 @@
+﻿# Crisis C04 南洋航路：港规、护航与不同国家的船: entry hooks. Initialization follows
+# the shared startup pattern with per-country exists guards; the monthly hook adds
+# the crisis journals only after real eligibility, one instance per holder country.
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c04_after_lobby } }
+
+ywc_v03_c04_after_lobby = {
+	effect = {
+		every_country = {
+			limit = {
+				# Exists-check comparisons: a tag absent from the current world must
+				# not raise "Event target link c returned an unset scope".
+				OR = {
+					c:JHG ?= this
+					c:DMG ?= this
+					c:LAN ?= this
+					c:WBK ?= this
+					c:MHG ?= this
+				}
+			}
+			ywc_v03_initialize_country = yes
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c04_monthly } }
+
+ywc_v03_c04_monthly = {
+	effect = {
+		# Journal 1: investigation and escort account. JHG/DMG/LAN open when their
+		# settled producer line meets a real sea-trade counterparty; invited or
+		# mounted countries (case_open) enter one by one, capacity gated.
+		if = {
+			limit = {
+				ywc_c04_case_ready_jhg = yes
+				NOT = { has_journal_entry = ywc_je_v03_c04_verifiable_ship_license }
+			}
+			add_journal_entry = { type = ywc_je_v03_c04_verifiable_ship_license }
+		}
+		if = {
+			limit = {
+				ywc_c04_case_ready_dmg = yes
+				NOT = { has_journal_entry = ywc_je_v03_c04_verifiable_ship_license }
+			}
+			add_journal_entry = { type = ywc_je_v03_c04_verifiable_ship_license }
+		}
+		if = {
+			limit = {
+				ywc_c04_case_ready_lan = yes
+				NOT = { has_journal_entry = ywc_je_v03_c04_verifiable_ship_license }
+			}
+			add_journal_entry = { type = ywc_je_v03_c04_verifiable_ship_license }
+		}
+		# Mounted participants: an organizer (or the JE possible trigger) pushed
+		# ywc_c04_case_open; without this branch mounted cores and islands could
+		# never activate journal 1.
+		if = {
+			limit = {
+				OR = {
+					c:JHG ?= this
+					c:DMG ?= this
+					c:LAN ?= this
+					c:WBK ?= this
+					c:MHG ?= this
+				}
+				var:ywc_c04_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c04_started }
+				NOT = { has_journal_entry = ywc_je_v03_c04_verifiable_ship_license }
+			}
+			add_journal_entry = { type = ywc_je_v03_c04_verifiable_ship_license }
+		}
+		# Journal 2: escort account and seizure conflicts, for countries that
+		# entered the escort arrangement.
+		if = {
+			limit = {
+				has_variable = ywc_c04_started
+				var:ywc_c04_escort_open ?= 1
+				NOT = { has_variable = ywc_c04_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c04_escort_cost_bearer }
+			}
+			add_journal_entry = { type = ywc_je_v03_c04_escort_cost_bearer }
+		}
+		# Journal 3: renegotiation, settlement and aftermath review.
+		if = {
+			limit = {
+				has_variable = ywc_c04_started
+				var:ywc_c04_review_open ?= 1
+				NOT = { has_variable = ywc_c04_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c04_port_rules_reach_islands }
+			}
+			add_journal_entry = { type = ywc_je_v03_c04_port_rules_reach_islands }
+		}
+	}
+}
