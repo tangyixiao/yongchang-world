@@ -19,14 +19,831 @@
         "DMG"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t07_patronage_ledger",
+          "title": {
+            "zh": "香火、施济与国家账册",
+            "en": "Incense, Almsgiving and the State Ledger"
+          },
+          "desc": {
+            "zh": "蒙古已有可越境而来的僧俗供养；西藏须核对本地善仓缺口与财政实况，决定登记受供、以公费替代，还是延请邻邦成例。",
+            "en": "Mongol patronage may cross the border; Tibet must audit its own relief granaries and finances before registering the patronage, substituting public funds, or citing a neighbor's precedent."
+          },
+          "script": "{ is_shown_when_inactive = { c:TIB ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t07_started } } possible = { c:TIB ?= this ywc_v03_has_capacity = yes ywc_t07_partner_current = yes ywc_t07_local_need = yes ywc_t07_faith_estate = yes NOT = { has_variable = ywc_t07_started } } immediate = { set_variable = { name = ywc_t07_started value = 1 } set_variable = { name = ywc_t07_stage value = 1300 } set_variable = { name = ywc_t07_pending value = 1300 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } } on_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t07_stage ?= 1302 var:ywc_t07_stage ?= 1305 var:ywc_t07_stage ?= 1306 } NOT = { ywc_t07_partner_current = yes } NOT = { has_variable = ywc_t07_outcome } } c:MGL ?= { remove_variable = ywc_t07_pending } set_variable = { name = ywc_t07_stage value = 1307 } set_variable = { name = ywc_t07_pending value = 1307 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } if = { limit = { ywc_t07_tib_delivery_1300 = yes } trigger_event = { id = ywc_society.1300 } } if = { limit = { ywc_t07_tib_delivery_1301 = yes } trigger_event = { id = ywc_society.1301 } } if = { limit = { ywc_t07_tib_delivery_1303 = yes } trigger_event = { id = ywc_society.1303 } } if = { limit = { ywc_t07_tib_delivery_1304 = yes } trigger_event = { id = ywc_society.1304 } } if = { limit = { ywc_t07_tib_delivery_1307 = yes } trigger_event = { id = ywc_society.1307 } } } } on_complete = { ywc_t07_release_capacity = yes } on_fail = { ywc_t07_release_capacity = yes } }",
+          "goal": "{ OR = { var:ywc_t07_outcome ?= 1 var:ywc_t07_outcome ?= 2 var:ywc_t07_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t07_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1300",
+          "title": {
+            "zh": "越过国境的供养",
+            "en": "Patronage Across the Border"
+          },
+          "desc": {
+            "zh": "蒙古施主的香火供养已到边境。是记入国册成为账面记录，还是暂存私册，须先核对实况再定。",
+            "en": "The Mongol patron's offering has reached the border. Decide whether it enters the state ledger or stays on private books after a factual audit."
+          },
+          "trigger": "{ ywc_t07_tib_delivery_1300 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_tib_delivery_1300 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "register",
+              "label": {
+                "zh": "核对后记入国册",
+                "en": "Register the patronage in the ledger"
+              },
+              "trigger": "{ ywc_t07_tib_at_1300 ywc_t07_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1300 ywc_t07_partner_current = yes } set_variable = { name = ywc_t07_mode value = 1 } set_variable = { name = ywc_t07_stage value = 1301 } set_variable = { name = ywc_t07_pending value = 1301 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "供养记入国册，成为账面记录。",
+                "en": "The patronage is entered in the state ledger as a record."
+              }
+            },
+            {
+              "key": "defer",
+              "label": {
+                "zh": "暂记私册，不入国账",
+                "en": "Hold it on private books"
+              },
+              "trigger": "{ ywc_t07_tib_at_1300 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1300 } set_variable = { name = ywc_t07_mode value = 2 } set_variable = { name = ywc_t07_stage value = 1301 } set_variable = { name = ywc_t07_pending value = 1301 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "供养暂记私册，不入国账。",
+                "en": "The patronage is held on private books, outside the state ledger."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t07_tib_at_1300 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1300 } set_variable = { name = ywc_t07_pending value = 1300 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "越过国境的供养",
+            "en": "Patronage Across the Border"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "MGL patron availability record"
+          ],
+          "writes": [
+            "patronage register mode",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1301",
+          "title": {
+            "zh": "荒年打开哪座仓",
+            "en": "Which Granary Opens in a Lean Year"
+          },
+          "desc": {
+            "zh": "荒年已现，善仓与官仓的账目须当面核对。用施主的粮要记施主的账，用公费要自担成本，账册不能混记。",
+            "en": "The lean year has arrived and the charity and state granaries must be audited face to face. Patron grain is entered as patronage; public grain is paid for from the treasury. The ledger does not mix them."
+          },
+          "trigger": "{ ywc_t07_tib_delivery_1301 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_tib_delivery_1301 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "patron_granary",
+              "label": {
+                "zh": "请施主供养开仓",
+                "en": "Ask the patron to fund the granary"
+              },
+              "trigger": "{ ywc_t07_tib_at_1301 ywc_t07_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1301 ywc_t07_partner_current = yes } set_variable = { name = ywc_t07_relief value = 1 } set_variable = { name = ywc_t07_stage value = 1302 } set_variable = { name = ywc_t07_pending value = 1302 } c:MGL = { set_variable = { name = ywc_t07_pending value = 1302 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "开仓之费改由施主供养承担，请求记入账册。",
+                "en": "The granary cost shifts to patron funds; the request is recorded."
+              }
+            },
+            {
+              "key": "public_granary",
+              "label": {
+                "zh": "以公费替代，自开官仓",
+                "en": "Substitute public funds and open the state granary"
+              },
+              "trigger": "{ ywc_t07_tib_at_1301 gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1301 gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t07_relief value = 2 } set_variable = { name = ywc_t07_stage value = 1302 } set_variable = { name = ywc_t07_pending value = 1302 } c:MGL = { set_variable = { name = ywc_t07_pending value = 1302 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "西藏国库支付 500。",
+                "en": "Tibet pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "以公费替代并自担成本，施主供养之请仍在账上。",
+                "en": "Public funds substitute for patronage and bear the cost; the patron request stays on record."
+              }
+            },
+            {
+              "key": "dmg_model",
+              "label": {
+                "zh": "仿东明公仓成例",
+                "en": "Follow the Dongming granary precedent"
+              },
+              "trigger": "{ ywc_t07_tib_at_1301 ywc_t07_dmg_precedent = yes gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1301 ywc_t07_dmg_precedent = yes gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t07_relief value = 3 } set_variable = { name = ywc_t07_stage value = 1302 } set_variable = { name = ywc_t07_pending value = 1302 } c:MGL = { set_variable = { name = ywc_t07_pending value = 1302 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "西藏国库支付 400。",
+                "en": "Tibet pays 400 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "仿东明公仓成例办理，费用入册。",
+                "en": "Adopt the Dongming state granary precedent; the cost is entered in the ledger."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t07_tib_at_1301 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1301 } set_variable = { name = ywc_t07_pending value = 1301 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "荒年打开哪座仓",
+            "en": "Which Granary Opens in a Lean Year"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "staple crop shortage and administration occupancy",
+            "DMG precedent contact"
+          ],
+          "writes": [
+            "relief funding mode",
+            "TIB stage 1302 and MGL pending 1302",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1302",
+          "title": {
+            "zh": "经费附带的教义",
+            "en": "Doctrine Attached to the Funds"
+          },
+          "desc": {
+            "zh": "施主的经费随附教义要求。可以按请供养、附带条款、与卫拉特共施，也可以拒绝；账册两边各留一份。",
+            "en": "The patron's funds come with doctrine attached. Fund in full, attach clauses, share with the Oirats, or refuse; both ledgers keep a copy."
+          },
+          "trigger": "{ ywc_t07_mgl_delivery_1302 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_mgl_delivery_1302 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "fund_full",
+              "label": {
+                "zh": "按对方请求全额供养",
+                "en": "Fund the request in full"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1302 c:TIB ?= { var:ywc_t07_relief ?= 1 var:ywc_t07_mode ?= 1 } gold_reserves >= 800 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1302 c:TIB ?= { var:ywc_t07_relief ?= 1 var:ywc_t07_mode ?= 1 } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t07_fund value = 1 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_fund value = 1 } set_variable = { name = ywc_t07_stage value = 1303 } set_variable = { name = ywc_t07_pending value = 1303 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蒙古国库支付 800；不向西藏转款。",
+                "en": "Mongolia pays 800; no transfer to Tibet."
+              },
+              "consequence_note": {
+                "zh": "按对方请求全额供养，账目记为足额。",
+                "en": "Fund the request in full; the record shows full patronage."
+              }
+            },
+            {
+              "key": "fund_conditional",
+              "label": {
+                "zh": "附带教义条款供养",
+                "en": "Fund with doctrine clauses attached"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1302 gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1302 gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t07_fund value = 2 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_fund value = 2 } set_variable = { name = ywc_t07_stage value = 1303 } set_variable = { name = ywc_t07_pending value = 1303 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蒙古国库支付 400。",
+                "en": "Mongolia pays 400 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "附带教义条款的部分供养。",
+                "en": "A partial grant with doctrine clauses attached."
+              }
+            },
+            {
+              "key": "co_fund",
+              "label": {
+                "zh": "与卫拉特同教共施",
+                "en": "Fund jointly with the Oirats"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1302 ywc_t07_alt_patron = yes gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1302 ywc_t07_alt_patron = yes gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t07_fund value = 3 } set_variable = { name = ywc_t07_witness value = 1 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_fund value = 3 } set_variable = { name = ywc_t07_stage value = 1303 } set_variable = { name = ywc_t07_pending value = 1303 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蒙古国库支付 400。",
+                "en": "Mongolia pays 400 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "与卫拉特同教共施，供养记为两部合施。",
+                "en": "Share the grant with the Oirat co-religionists; the record shows joint patronage."
+              }
+            },
+            {
+              "key": "refuse",
+              "label": {
+                "zh": "拒绝承担外部供养",
+                "en": "Decline the external patronage"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1302 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1302 } set_variable = { name = ywc_t07_fund value = 4 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_fund value = 4 } set_variable = { name = ywc_t07_stage value = 1303 } set_variable = { name = ywc_t07_pending value = 1303 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝承担外部供养，账目记为拒施。",
+                "en": "Decline the external patronage; the record shows refusal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1302 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1302 } set_variable = { name = ywc_t07_pending value = 1302 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "经费附带的教义",
+            "en": "Doctrine Attached to the Funds"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "TIB relief request and register mode"
+          ],
+          "writes": [
+            "patron fund decision",
+            "TIB stage 1303 and fund record",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1303",
+          "title": {
+            "zh": "地方习惯进入法庭",
+            "en": "Local Custom Before the Court"
+          },
+          "desc": {
+            "zh": "施济分配的争执进了法庭。本地习惯与供养条款各有依据，无论依哪一方断案，判例都要写进账册。",
+            "en": "A dispute over relief distribution reaches the court. Local custom and the patronage clauses each have their grounds; whichever prevails, the precedent is written into the ledger."
+          },
+          "trigger": "{ ywc_t07_tib_delivery_1303 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_tib_delivery_1303 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "custom_precedent",
+              "label": {
+                "zh": "依本地习惯断案",
+                "en": "Rule by local custom"
+              },
+              "trigger": "{ ywc_t07_tib_at_1303 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1303 } set_variable = { name = ywc_t07_custom value = 1 } set_variable = { name = ywc_t07_stage value = 1304 } set_variable = { name = ywc_t07_pending value = 1304 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "依本地习惯断案，判例入册。",
+                "en": "Rule by local custom; the precedent enters the ledger."
+              }
+            },
+            {
+              "key": "doctrine_precedent",
+              "label": {
+                "zh": "依供养条款断案",
+                "en": "Rule by the patronage clauses"
+              },
+              "trigger": "{ ywc_t07_tib_at_1303 ywc_t07_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1303 ywc_t07_partner_current = yes } set_variable = { name = ywc_t07_custom value = 2 } set_variable = { name = ywc_t07_stage value = 1304 } set_variable = { name = ywc_t07_pending value = 1304 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "依供养条款断案，判例入册。",
+                "en": "Rule by the patronage clauses; the precedent enters the ledger."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t07_tib_at_1303 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1303 } set_variable = { name = ywc_t07_pending value = 1303 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "地方习惯进入法庭",
+            "en": "Local Custom Before the Court"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "patron fund record"
+          ],
+          "writes": [
+            "court precedent decision",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1304",
+          "title": {
+            "zh": "善堂需要检查吗",
+            "en": "Should the Charity Halls Be Inspected"
+          },
+          "desc": {
+            "zh": "受外供养的善堂账目需要检查。派员查账要公费，交由自陈省事而受质疑；无论查与不查，施主都会得到照会。",
+            "en": "The charity halls living on foreign patronage need their accounts checked. Inspectors cost public money; self-reporting is cheap but doubted. Either way the patron is notified."
+          },
+          "trigger": "{ ywc_t07_tib_delivery_1304 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_tib_delivery_1304 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "inspect",
+              "label": {
+                "zh": "派员查账",
+                "en": "Send inspectors to audit the halls"
+              },
+              "trigger": "{ ywc_t07_tib_at_1304 gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1304 gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t07_inspect value = 1 } set_variable = { name = ywc_t07_stage value = 1305 } set_variable = { name = ywc_t07_pending value = 1305 } c:MGL = { set_variable = { name = ywc_t07_pending value = 1305 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "西藏国库支付 300。",
+                "en": "Tibet pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "派员查账，账目核对后照会施主。",
+                "en": "Send inspectors; the audited accounts are reported to the patron."
+              }
+            },
+            {
+              "key": "no_inspect",
+              "label": {
+                "zh": "交由善堂自陈",
+                "en": "Let the halls report for themselves"
+              },
+              "trigger": "{ ywc_t07_tib_at_1304 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1304 } set_variable = { name = ywc_t07_inspect value = 2 } set_variable = { name = ywc_t07_stage value = 1305 } set_variable = { name = ywc_t07_pending value = 1305 } c:MGL = { set_variable = { name = ywc_t07_pending value = 1305 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "不查账，交由善堂自陈，账册记为未查。",
+                "en": "No audit; the halls report for themselves and the ledger records no inspection."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t07_tib_at_1304 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1304 } set_variable = { name = ywc_t07_pending value = 1304 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "善堂需要检查吗",
+            "en": "Should the Charity Halls Be Inspected"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "charity hall accounts"
+          ],
+          "writes": [
+            "inspection decision",
+            "TIB stage 1305 and MGL pending 1305",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1305",
+          "title": {
+            "zh": "拒绝干涉的施主",
+            "en": "The Patron Who Refuses Interference"
+          },
+          "desc": {
+            "zh": "施主回应查账之请：可以分担费用认可检查，可以保留条款，也可以拒绝外部检查进入。底线之后还有一次对账。",
+            "en": "The patron answers the audit request: share the cost and accept it, reserve its clauses, or refuse outside inspectors. One reconciliation remains after the bottom line."
+          },
+          "trigger": "{ ywc_t07_mgl_delivery_1305 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_mgl_delivery_1305 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "accept_audit",
+              "label": {
+                "zh": "认可查账并分担费用",
+                "en": "Accept the audit and share the cost"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1305 gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1305 gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t07_coop value = 1 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_coop value = 1 } set_variable = { name = ywc_t07_stage value = 1306 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蒙古国库支付 200。",
+                "en": "Mongolia pays 200 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "认可查账并分担费用，账目记为认可。",
+                "en": "Accept the audit and share the cost; the record shows acceptance."
+              }
+            },
+            {
+              "key": "accept_reserved",
+              "label": {
+                "zh": "认可但保留条款",
+                "en": "Accept while reserving clauses"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1305 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1305 } set_variable = { name = ywc_t07_coop value = 2 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_coop value = 2 } set_variable = { name = ywc_t07_stage value = 1306 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "认可查账但保留条款，账目记为保留。",
+                "en": "Accept the audit while reserving its clauses; the record shows reservations."
+              }
+            },
+            {
+              "key": "refuse_inspection",
+              "label": {
+                "zh": "拒绝外部检查进入",
+                "en": "Refuse the outside inspection"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1305 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1305 } set_variable = { name = ywc_t07_coop value = 3 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_partner_coop value = 3 } set_variable = { name = ywc_t07_stage value = 1306 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝外部检查进入，账目记为拒绝。",
+                "en": "Refuse the outside inspection; the record shows refusal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1305 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1305 } set_variable = { name = ywc_t07_pending value = 1305 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "拒绝干涉的施主",
+            "en": "The Patron Who Refuses Interference"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "TIB inspection decision"
+          ],
+          "writes": [
+            "patron cooperation record",
+            "MGL pending 1306",
+            "TIB stage 1306 and cooperation record",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1306",
+          "title": {
+            "zh": "共同救济的底线",
+            "en": "The Bottom Line of Joint Relief"
+          },
+          "desc": {
+            "zh": "双方核对共同救济的底线：立章程、只立有限条目、邀卫拉特作保，或撤回供养。底线一旦写下，两边账册同时更新。",
+            "en": "The two courts reconcile the bottom line of joint relief: a charter, limited terms, a charter with Oirat surety, or withdrawal. Once written, both ledgers update together."
+          },
+          "trigger": "{ ywc_t07_mgl_delivery_1306 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_mgl_delivery_1306 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "charter",
+              "label": {
+                "zh": "立共同救济章程",
+                "en": "Establish the joint relief charter"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1306 gold_reserves >= 600 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1306 gold_reserves >= 600 } add_treasury = -600 set_variable = { name = ywc_t07_joint value = 1 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_proposed_outcome value = 1 } set_variable = { name = ywc_t07_stage value = 1307 } set_variable = { name = ywc_t07_pending value = 1307 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蒙古国库支付 600。",
+                "en": "Mongolia pays 600 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "立共同救济章程，账册记为章程完成。",
+                "en": "Establish the joint relief charter; the ledger records a completed charter."
+              }
+            },
+            {
+              "key": "charter_witnessed",
+              "label": {
+                "zh": "邀卫拉特作保共立章程",
+                "en": "Establish the charter with Oirat surety"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1306 ywc_t07_alt_patron = yes gold_reserves >= 600 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1306 ywc_t07_alt_patron = yes gold_reserves >= 600 } add_treasury = -600 set_variable = { name = ywc_t07_joint value = 1 } set_variable = { name = ywc_t07_witness value = 1 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_proposed_outcome value = 1 } set_variable = { name = ywc_t07_stage value = 1307 } set_variable = { name = ywc_t07_pending value = 1307 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蒙古国库支付 600。",
+                "en": "Mongolia pays 600 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "邀卫拉特作保共立章程，账册记为有保章程。",
+                "en": "Establish the charter with Oirat surety; the ledger records a witnessed charter."
+              }
+            },
+            {
+              "key": "limited_terms",
+              "label": {
+                "zh": "只立有限条目",
+                "en": "Settle for limited terms"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1306 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1306 } set_variable = { name = ywc_t07_joint value = 2 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_proposed_outcome value = 2 } set_variable = { name = ywc_t07_stage value = 1307 } set_variable = { name = ywc_t07_pending value = 1307 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "只立有限条目，账册记为有限合作。",
+                "en": "Settle for limited terms; the ledger records limited cooperation."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回外部供养",
+                "en": "Withdraw the external patronage"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1306 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1306 } set_variable = { name = ywc_t07_joint value = 3 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:TIB = { set_variable = { name = ywc_t07_proposed_outcome value = 3 } set_variable = { name = ywc_t07_stage value = 1307 } set_variable = { name = ywc_t07_pending value = 1307 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回外部供养，账册记为拒施。",
+                "en": "Withdraw the external patronage; the ledger records refusal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t07_mgl_at_1306 }",
+              "effect": "{ if = { limit = { ywc_t07_mgl_at_1306 } set_variable = { name = ywc_t07_pending value = 1306 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "共同救济的底线",
+            "en": "The Bottom Line of Joint Relief"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "OIR co-religionist availability"
+          ],
+          "writes": [
+            "joint relief charter record",
+            "TIB proposed outcome and stage 1307",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1307",
+          "title": {
+            "zh": "供养结束之后",
+            "en": "After the Patronage Ends"
+          },
+          "desc": {
+            "zh": "供养关系结束之后，账册须结清。按底线记录结案；施主已不可联系时，本地按已有账目自行收束。",
+            "en": "When the patronage ends the ledger must be closed on the bottom-line record. If the patron is unavailable, Tibet closes alone on the accounts it holds."
+          },
+          "trigger": "{ ywc_t07_tib_delivery_1307 = yes }",
+          "immediate": "{ if = { limit = { ywc_t07_tib_delivery_1307 = yes } remove_variable = ywc_t07_pending if = { limit = { NOT = { has_variable = ywc_t07_popup_epoch } } set_variable = { name = ywc_t07_popup_epoch value = 0 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t07_popup_epoch value = var:ywc_t07_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "confirm",
+              "label": {
+                "zh": "章程入册结案",
+                "en": "Close the ledger on the charter"
+              },
+              "trigger": "{ ywc_t07_tib_at_1307 var:ywc_t07_proposed_outcome ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1307 var:ywc_t07_proposed_outcome ?= 1 } set_variable = { name = ywc_t07_outcome value = 1 } change_relations = { country = c:MGL value = 5 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t07_patron_standing value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "章程入册结案，蒙古对西藏关系增加 5。",
+                "en": "The charter closes the ledger; Mongolia gains 5 relations with Tibet."
+              }
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "记为有限合作结案",
+                "en": "Close the ledger as limited cooperation"
+              },
+              "trigger": "{ ywc_t07_tib_at_1307 var:ywc_t07_proposed_outcome ?= 2 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1307 var:ywc_t07_proposed_outcome ?= 2 } set_variable = { name = ywc_t07_outcome value = 2 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t07_patron_standing value = 2 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记为有限合作结案。",
+                "en": "Close the ledger as limited cooperation."
+              }
+            },
+            {
+              "key": "close_refused",
+              "label": {
+                "zh": "记为拒绝外部干涉结案",
+                "en": "Close the ledger as refused interference"
+              },
+              "trigger": "{ ywc_t07_tib_at_1307 var:ywc_t07_proposed_outcome ?= 3 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1307 var:ywc_t07_proposed_outcome ?= 3 } set_variable = { name = ywc_t07_outcome value = 3 } change_relations = { country = c:MGL value = -5 } change_variable = { name = ywc_t07_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t07_patron_standing value = 3 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记为拒绝外部干涉结案，蒙古对西藏关系减少 5。",
+                "en": "Close the ledger as refusal of outside interference; Mongolia loses 5 relations with Tibet."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "施主已不可联系，本地自行结案",
+                "en": "Close locally because the patron is unavailable"
+              },
+              "trigger": "{ ywc_t07_tib_at_1307 NOT = { ywc_t07_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1307 NOT = { ywc_t07_partner_current = yes } } if = { limit = { NOT = { has_variable = ywc_t07_partner_fund } } set_variable = { name = ywc_t07_outcome value = 4 } } else_if = { limit = { var:ywc_t07_partner_fund ?= 4 } set_variable = { name = ywc_t07_outcome value = 3 } } else = { set_variable = { name = ywc_t07_outcome value = 2 } } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "施主已不可联系，本地按账册自行结案；已支付的费用不退。",
+                "en": "The patron is unavailable; Tibet closes on its own ledger. Expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓结案",
+                "en": "Wait before closing"
+              },
+              "trigger": "{ ywc_t07_tib_at_1307 }",
+              "effect": "{ if = { limit = { ywc_t07_tib_at_1307 } set_variable = { name = ywc_t07_pending value = 1307 } change_variable = { name = ywc_t07_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "供养结束之后",
+            "en": "After the Patronage Ends"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "joint charter and patron fund records"
+          ],
+          "writes": [
+            "arc outcome",
+            "MGL patron standing",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t07_patronage_accepted",
+        "v03_t07_patronage_limited",
+        "v03_t07_patronage_refused",
+        "v03_t07_patronage_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
