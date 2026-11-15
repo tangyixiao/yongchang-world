@@ -1545,9 +1545,14 @@ def _validate_mgl_inline_catalog(catalog: dict[str, Any]) -> None:
     if len(mobile) != 1:
         raise ValueError("MGL inline adapter requires its registered mobile-offices middle card")
     arc = mobile[0]
-    if len(arc.get("journals", [])) != 1 or len(arc.get("events", [])) != 6:
-        raise ValueError("MGL mobile offices requires one middle-era JE and six events")
-    journal = arc["journals"][0]
+    journals = arc.get("journals")
+    if not isinstance(journals, list) or not journals or journals[0].get("id") != "ywc_je_v03_mgl_mobile_offices":
+        raise ValueError("MGL mobile offices must keep its registered register JE as the first middle-era journal")
+    if len(journals) > 2 or (len(journals) == 2 and journals[1].get("id") != "ywc_je_v03_mgl_mobile_offices_review"):
+        raise ValueError("MGL mobile offices allows only its registered review JE as a second middle-era journal")
+    if len(arc.get("events", [])) != 6:
+        raise ValueError("MGL mobile offices requires six middle-era events")
+    journal = journals[0]
     adapter = arc.get("inline_delivery_adapter")
     if (not isinstance(adapter, dict) or set(adapter) != {"schema", "live_phases", "branches"}
             or adapter.get("schema") != "v03.mgl_mobile_inline_adapter.v1"):
