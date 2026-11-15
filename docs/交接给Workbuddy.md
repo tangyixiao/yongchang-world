@@ -161,6 +161,6 @@ powershell -NoProfile -File tools/collect_smoke_logs.ps1 -NoLaunch
 
 ## 7. 完成定义
 
-只有以下事项全部完成，才可以把任务标记为发布完成：静态测试和检查保持通过；五种 Playset 实际 DLC 与 Mod 挂载证据齐全；十国 1836 进入和特色内容证据齐全；NMG 谈判两支有真实证据；两个原生 scripted-test 套件均为非空 PASS；15 个观察 run 均为 `observed_to_checkpoint` 并由汇总器生成 `verified`；长期异常分类与平衡结论已记录；最后工作树按用户指示处理且本体/DLL 未被修改。
+只有以下事项全部完成，才可以把任务标记为发布完成：静态测试和检查保持通过；五种 Playset 实际 DLC 与 Mod 挂载证据齐全；十国 1836 进入和特色内容证据齐全；NMG 谈判两支有真实证据；两个原生 scripted-test 套件均为非空 PASS；15 个观察 run 均为 `observed_to_checkpoint` 并由汇总器生成 `verified`；长期异常分类与平衡结论已记录；最后工作树按 Tangyixiao 指示处理且本体/DLL 未被修改。
 
 当前状态：**实现和静态验证完成，真实发行验收进行中，不能宣称发布完成。**
