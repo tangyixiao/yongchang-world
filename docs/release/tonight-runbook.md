@@ -93,7 +93,7 @@ Remove-Item artifacts/automation/stop.flag
 Get-Process victoria3 -ErrorAction SilentlyContinue             # 必须为空
 ```
 
-- 更新 `CHANGELOG.md`；`docs/release/automation-pilot-log.md` 记本轮实测；工作树**不要提交、不要清理**，按用户指示处理。
+- 更新 `CHANGELOG.md`；`docs/release/automation-pilot-log.md` 记本轮实测；工作树**不要提交、不要清理**，按 Tangyixiao 指示处理。
 - 不修改本体目录与三枚兼容层 DLL；`launcher-v2.sqlite` 只读（已备份在 `artifacts/launcher-backup/`）。
 
 ## 已知环境坑（踩过的，别再踩）

@@ -42,7 +42,7 @@ victoria3.exe -handsoff -debug_mode -no_notifications -start_tag=SHU -run_until 
 
 **注入时段登记（纪律要求，先登记再注入）**
 
-- 起：2026-09-20 19:23（+08:00）。用户已明示"最好一直到做完"，同意占用桌面。
+- 起：2026-09-20 19:23（+08:00）。Tangyixiao 已明示"最好一直到做完"，同意占用桌面。
 - 注入范围：仅 Victoria 3 启动器（`dowser.exe` / `launcher-x64.exe`）与游戏窗口 `victoria3.exe`，以及它们自己的确认框。
 - 收尾：按 PID 结束本会话启动的进程，确认无残留 `victoria3.exe` / 启动器窗口。
 - 前置备份：`artifacts/launcher-backup/launcher-v2.before-agent-automation.sqlite`（sha256 `0d4305d1…042b6`，126976 字节）。
@@ -88,7 +88,7 @@ victoria3.exe -handsoff -debug_mode -no_notifications -start_tag=SHU -run_until 
 
 **本会话新增的自动化资产**（都在 `tools/`）：`recon_desktop.py`（只读窗口清单+截图）、`game_ui.py`（launch/shot/click/key/list/kill，点击前先校验坐标落在游戏窗口矩形内）、`keep_game_alive.py`、`launch_launcher.py`、`diagnose_launcher.py`、`probe_dlc_gating.py`。
 
-**为什么停在"到主菜单"**：19:45 起用户已回到前台使用电脑（开始菜单与浏览器可见），而游戏窗口的矩形就是整个屏幕（0,0,2560,1600），此时任何一次点击都会落到用户的窗口上——`game_ui.py` 的"坐标在窗口内"校验在这种情况下形同虚设。按纪律"用户正在使用电脑（前台不是我们的窗口）时暂停自动化"，在拿到一个不被打断的桌面时段之前不再注入。
+**为什么停在"到主菜单"**：19:45 起Tangyixiao 已回到前台使用电脑（开始菜单与浏览器可见），而游戏窗口的矩形就是整个屏幕（0,0,2560,1600），此时任何一次点击都会落到当时前台窗口上——`game_ui.py` 的"坐标在窗口内"校验在这种情况下形同虚设。按纪律"Tangyixiao 正在使用电脑（前台不是我们的窗口）时暂停自动化"，在拿到一个不被打断的桌面时段之前不再注入。
 
 **结论四：命令行进战局也已彻底证伪（第二次独立验证）。**
 
@@ -188,7 +188,7 @@ victoria3.exe -handsoff -debug_mode -no_notifications -start_tag=SHU -run_until 
 
 这两点合起来提示"会话/设置文件缺失导致原生层早退"，但**没有验证手段**（启动器连日志都不写，无法观察它读到哪一步）。仍在启动器自己的错误处理之前死掉，所以无法从外部继续缩小范围。
 
-**给用户的判断**：按代价从低到高——① 启动 Steam 客户端后重试（`D:\Steam\steam.exe` 存在，当前没运行）；② 重启电脑；③ 用 `launcher\launcher-installer-windows_2026.10.exe` 重装启动器。重装是最可能有效的，因为它会重建启动器的整个目录树与设置文件。**在此之前门槛一与门槛四的 DLC 维度都无法产出。**
+**后续排查建议**：按代价从低到高——① 启动 Steam 客户端后重试（`D:\Steam\steam.exe` 存在，当前没运行）；② 重启电脑；③ 用 `launcher\launcher-installer-windows_2026.10.exe` 重装启动器。重装是最可能有效的，因为它会重建启动器的整个目录树与设置文件。**在此之前门槛一与门槛四的 DLC 维度都无法产出。**
 
 ---
 
