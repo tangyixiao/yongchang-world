@@ -1,0 +1,2300 @@
+# KOR-local readiness checks: real laws, staffed forces, military goods and treasury.
+ywc_kor_v03_has_owned_state = {
+	any_scope_state = { owner = ROOT }
+}
+
+# Success requires a solvent treasury, working administration and no active
+# default or bankruptcy status in addition to the route-specific army checks.
+ywc_kor_v03_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+ywc_kor_v03_has_staffed_supplied_barracks = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			is_building_type = building_barrack
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_v03_has_staffed_border_office = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			is_building_type = building_government_administration
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_v03_has_translation_employer = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			OR = { is_building_type = building_university is_building_type = building_government_administration }
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_v03_court_execution_ready = {
+	has_law_or_variant = law_type:law_professional_army
+	OR = { has_modifier = military_wages_medium has_modifier = military_wages_high has_modifier = military_wages_very_high }
+	net_fixed_income >= 0
+	ywc_kor_v03_has_staffed_supplied_barracks = yes
+}
+
+ywc_kor_v03_provincial_execution_ready = {
+	OR = {
+		has_law_or_variant = law_type:law_peasant_levies
+		has_law_or_variant = law_type:law_warrior_caste
+		has_law_or_variant = law_type:law_professional_army
+		has_law_or_variant = law_type:law_national_militia
+	}
+	OR = {
+		has_modifier = military_wages_low
+		has_modifier = military_wages_medium
+		has_modifier = military_wages_high
+		has_modifier = military_wages_very_high
+	}
+	net_fixed_income >= 0
+	ywc_kor_v03_has_staffed_supplied_barracks = yes
+}
+
+ywc_kor_v03_limited_execution_ready = {
+	net_fixed_income >= 0
+	OR = {
+		AND = { army_size <= 0 ywc_kor_v03_has_staffed_border_office = yes }
+		AND = { army_size > 0 ywc_kor_v03_has_staffed_supplied_barracks = yes }
+	}
+}
+
+# A narrowed commitment may be fulfilled through a real staffed border office
+# instead of meeting the full court/provincial army standard.
+ywc_kor_v03_reduced_execution_ready = {
+	ywc_kor_v03_has_staffed_border_office = yes
+}
+
+ywc_kor_v03_route_execution_ready = {
+	ywc_kor_v03_has_owned_state = yes
+	ywc_kor_v03_finance_safe = yes
+	OR = {
+		AND = { var:ywc_kor_supply_route = 1 ywc_kor_v03_court_execution_ready = yes }
+		AND = { var:ywc_kor_supply_route = 2 ywc_kor_v03_provincial_execution_ready = yes }
+		AND = { var:ywc_kor_supply_route = 3 ywc_kor_v03_limited_execution_ready = yes }
+		AND = { has_variable = ywc_kor_scope_narrowed ywc_kor_v03_reduced_execution_ready = yes }
+	}
+}
+
+ywc_kor_v03_unsettled = {
+	NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled }
+}
+
+ywc_kor_school_affordable = {
+	ywc_kor_v03_finance_safe = yes
+	gold_reserves >= var:ywc_kor_school_archive_fee
+}
+
+ywc_kor_school_can_pay = {
+	ywc_kor_school_affordable = yes
+}
+
+ywc_kor_school_education_law = {
+	OR = {
+		has_law_or_variant = law_type:law_religious_schools
+		has_law_or_variant = law_type:law_public_schools
+		has_law_or_variant = law_type:law_private_schools
+	}
+}
+
+ywc_kor_school_institution_ready = {
+	ywc_kor_school_education_law = yes
+	institution_investment_level = {
+		institution = institution_schools
+		value >= 1
+	}
+}
+
+ywc_kor_school_has_staffed_university = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			is_building_type = building_university
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_school_coop_ready = {
+	ywc_kor_v03_finance_safe = yes
+	OR = {
+		ywc_kor_v03_has_translation_employer = yes
+		ywc_kor_v03_has_staffed_border_office = yes
+	}
+}
+
+ywc_kor_school_office_ready = {
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_school_institution_ready = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+}
+
+ywc_kor_school_limited_ready = {
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+}
+
+ywc_kor_school_university_ready = {
+	ywc_kor_school_institution_ready = yes
+	ywc_kor_school_has_staffed_university = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_school_employer_office_ready = {
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_school_selected_employer_ready = {
+	has_variable = ywc_kor_school_employer_confirmed
+	var:ywc_kor_school_employer_confirmed = 1
+	OR = {
+		AND = { var:ywc_kor_school_employer = 1 ywc_kor_school_university_ready = yes }
+		AND = { var:ywc_kor_school_employer = 2 ywc_kor_school_employer_office_ready = yes }
+	}
+}
+
+ywc_kor_school_route_execution_ready = {
+	OR = {
+		AND = {
+			var:ywc_kor_school_route = 1
+			ywc_kor_school_coop_ready = yes
+		}
+		AND = {
+			var:ywc_kor_school_route = 2
+			ywc_kor_school_office_ready = yes
+		}
+		AND = {
+			var:ywc_kor_school_route = 3
+			ywc_kor_school_limited_ready = yes
+		}
+	}
+}
+
+ywc_kor_school_full_ready = {
+	OR = {
+		AND = {
+			var:ywc_kor_school_route = 1
+			ywc_kor_school_university_ready = yes
+		}
+		AND = {
+			var:ywc_kor_school_route = 2
+			ywc_kor_school_office_ready = yes
+		}
+	}
+	ywc_kor_school_old_contracts_clear = yes
+}
+
+# Observation and terminal effects must watch the exact target that the chosen
+# full or limited ending requires, with a live, paid, implemented KOR program.
+ywc_kor_school_observation_target_ready = {
+	is_at_war = no
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_v03_has_owned_state = yes
+	has_variable = ywc_kor_school_filing_fee_paid
+	has_variable = ywc_kor_school_old_invoice_paid
+	has_variable = ywc_kor_school_funding_decided
+	has_variable = ywc_kor_school_appointment_decided
+	ywc_kor_school_selected_employer_ready = yes
+	OR = {
+		AND = { var:ywc_kor_school_route = 1 ywc_kor_school_full_ready = yes }
+		AND = { var:ywc_kor_school_route = 2 ywc_kor_school_full_ready = yes }
+		AND = { var:ywc_kor_school_route = 3 ywc_kor_school_limited_ready = yes }
+	}
+}
+
+ywc_kor_school_old_contracts_clear = {
+	AND = {
+		OR = {
+			NOT = { has_variable = ywc_kor_instructor_contract_generation }
+			var:ywc_kor_instructor_balance ?= 0
+		}
+		OR = {
+			NOT = { has_variable = ywc_kor_translation_contract_started }
+			var:ywc_kor_translation_contract_paid_months >= 12
+		}
+		OR = {
+			NOT = { has_variable = ywc_kor_veteran_contract_started }
+			var:ywc_kor_veteran_contract_paid_months >= 12
+		}
+	}
+}
+
+ywc_kor_ports_trade_permitted = {
+	OR = {
+		has_law_or_variant = law_type:law_mercantilism
+		has_law_or_variant = law_type:law_protectionism
+		has_law_or_variant = law_type:law_free_trade
+	}
+}
+
+ywc_kor_ports_broad_trade_law = {
+	OR = {
+		has_law_or_variant = law_type:law_protectionism
+		has_law_or_variant = law_type:law_free_trade
+	}
+}
+
+ywc_kor_ports_has_staffed_port = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = {
+			is_building_type = building_port
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_ports_can_pay = {
+	ywc_kor_v03_finance_safe = yes
+	gold_reserves >= var:ywc_kor_port_fee
+}
+
+ywc_kor_ports_designated_ready = {
+	ywc_kor_ports_trade_permitted = yes
+	ywc_kor_ports_has_staffed_port = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_ports_general_ready = {
+	ywc_kor_ports_broad_trade_law = yes
+	ywc_kor_ports_has_staffed_port = yes
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_ports_shore_ready = {
+	ywc_kor_v03_has_staffed_border_office = yes
+	ywc_kor_v03_finance_safe = yes
+}
+
+ywc_kor_ports_current_route_ready = {
+	OR = {
+		AND = { var:ywc_kor_ports_route = 1 ywc_kor_ports_designated_ready = yes }
+		AND = { var:ywc_kor_ports_route = 2 ywc_kor_ports_general_ready = yes }
+		AND = { var:ywc_kor_ports_route = 3 ywc_kor_ports_shore_ready = yes }
+	}
+}
+
+ywc_kor_ports_full_ready = {
+	OR = {
+		AND = { var:ywc_kor_ports_route = 1 ywc_kor_ports_designated_ready = yes }
+		AND = { var:ywc_kor_ports_route = 2 ywc_kor_ports_general_ready = yes }
+	}
+}
+
+ywc_kor_ports_shore_funding_ready = {
+	has_variable = ywc_kor_ports_filing_fee_paid
+	OR = {
+		has_variable = ywc_kor_ports_shore_paid
+		AND = {
+			has_variable = ywc_kor_ports_shore_prior_funding_credit
+			OR = { has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_general_paid }
+		}
+	}
+}
+
+ywc_kor_ports_observation_target_ready = {
+	is_at_war = no
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_v03_has_owned_state = yes
+	has_variable = ywc_kor_ports_filing_fee_paid
+	OR = {
+		AND = { var:ywc_kor_ports_route = 1 has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_prior_contracts_checked ywc_kor_ports_designated_ready = yes ywc_kor_ports_auditor_ready = yes }
+		AND = { var:ywc_kor_ports_route = 2 has_variable = ywc_kor_ports_general_paid has_variable = ywc_kor_ports_prior_contracts_checked ywc_kor_ports_general_ready = yes ywc_kor_ports_auditor_ready = yes }
+		AND = { var:ywc_kor_ports_route = 3 ywc_kor_ports_shore_funding_ready = yes ywc_kor_ports_shore_ready = yes }
+	}
+}
+
+ywc_kor_ports_auditor_ready = {
+	OR = {
+		AND = { var:ywc_kor_school_route = 1 ywc_kor_school_full_ready = yes }
+		AND = { var:ywc_kor_school_route = 2 ywc_kor_school_office_ready = yes }
+		AND = { var:ywc_kor_school_route = 3 ywc_kor_school_limited_ready = yes }
+		NOT = { has_variable = ywc_kor_school_route }
+	}
+	OR = {
+		AND = { has_variable = ywc_kor_school_route ywc_kor_school_selected_employer_ready = yes }
+		NOT = { has_variable = ywc_kor_school_route }
+	}
+	ywc_kor_ports_current_route_ready = yes
+}
+
+ywc_kor_ports_old_contracts_clear = {
+	ywc_kor_school_old_contracts_clear = yes
+}
+
+# Live menu predicates use actual country objects before an event chain exists.
+ywc_kor_instructor_requester_ready = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	has_variable = ywc_kor_weekly_cost
+	gold_reserves >= { value = var:ywc_kor_weekly_cost multiply = 0.0833333333 }
+	any_scope_state = {
+		owner = c:KOR
+		any_scope_building = {
+			OR = { is_building_type = building_university is_building_type = building_government_administration }
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+# Foreign response context: saved requester and selected recipient are immutable.
+ywc_kor_instructor_provider_ready = {
+	exists = scope:ywc_kor_request_partner
+	scope:ywc_kor_request_partner ?= this
+	is_country_alive = yes
+	relations:scope:ywc_kor_requester >= 0
+	any_scope_state = {
+		owner = scope:ywc_kor_request_partner
+		any_scope_building = {
+			is_building_type = building_barrack
+			occupancy >= 0.8
+			building_has_goods_shortage = no
+		}
+	}
+}
+
+ywc_kor_instructor_can_offer_shu = {
+	c:KOR ?= this
+	ywc_kor_instructor_requester_ready = yes
+	OR = {
+		NOT = { has_variable = ywc_kor_instructor_contract_generation }
+		AND = {
+			var:ywc_kor_instructor_balance ?= 0
+			var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation
+		}
+	}
+	NOT = { var:ywc_kor_instructor_state ?= 1 }
+	exists = c:SHU
+	c:SHU = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = c:SHU
+			any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_kor_instructor_can_offer_jhg = {
+	c:KOR ?= this
+	ywc_kor_instructor_requester_ready = yes
+	OR = {
+		NOT = { has_variable = ywc_kor_instructor_contract_generation }
+		AND = {
+			var:ywc_kor_instructor_balance ?= 0
+			var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation
+		}
+	}
+	NOT = { var:ywc_kor_instructor_state ?= 1 }
+	exists = c:JHG
+	c:JHG = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = c:JHG
+			any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+ywc_kor_instructor_offer_matches = {
+	exists = scope:ywc_kor_requester
+	exists = scope:ywc_kor_request_partner
+	scope:ywc_kor_request_partner ?= this
+	scope:ywc_kor_requester ?= c:KOR
+	scope:ywc_kor_requester = {
+		var:ywc_kor_instructor_partner ?= root
+		var:ywc_kor_instructor_generation ?= scope:ywc_kor_request_generation
+		var:ywc_kor_instructor_state ?= 1
+		has_variable = ywc_kor_instructor_request_timer
+		var:ywc_kor_instructor_request_total ?= scope:ywc_kor_request_total
+		var:ywc_kor_instructor_request_months ?= scope:ywc_kor_request_months
+		var:ywc_kor_instructor_request_months ?= 12
+	}
+}
+
+ywc_kor_instructor_signable = {
+	ywc_kor_instructor_offer_matches = yes
+	ywc_kor_instructor_provider_ready = yes
+	scope:ywc_kor_requester = {
+		is_country_alive = yes
+		is_subject = no
+		ywc_kor_v03_finance_safe = yes
+		gold_reserves >= { value = var:ywc_kor_instructor_request_total divide = 12 }
+		any_scope_state = {
+			owner = scope:ywc_kor_requester
+			any_scope_building = {
+				OR = { is_building_type = building_university is_building_type = building_government_administration }
+				occupancy >= 0.8 building_has_goods_shortage = no
+			}
+		}
+		OR = {
+			NOT = { has_variable = ywc_kor_instructor_contract_generation }
+			AND = {
+				var:ywc_kor_instructor_balance ?= 0
+				var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation
+			}
+		}
+	}
+}
+
+ywc_kor_instructor_notice_live = {
+	var:ywc_kor_instructor_notice_event ?= 1031
+	has_variable = ywc_kor_instructor_notice_serial
+	has_variable = ywc_kor_instructor_notice_generation
+	has_variable = ywc_kor_instructor_notice_request_state
+	has_variable = ywc_kor_instructor_notice_reason
+	var:ywc_kor_instructor_notice_generation ?= var:ywc_kor_instructor_generation
+	var:ywc_kor_instructor_notice_request_state ?= var:ywc_kor_instructor_state
+}
+
+ywc_kor_instructor_notice_choice_matches = {
+	exists = scope:ywc_kor_notice_owner
+	scope:ywc_kor_notice_owner ?= this
+	has_variable = ywc_kor_instructor_notice_open_serial
+	has_variable = ywc_kor_instructor_notice_serial
+	has_variable = ywc_kor_instructor_notice_generation
+	has_variable = ywc_kor_instructor_notice_request_state
+	has_variable = ywc_kor_instructor_notice_reason
+	var:ywc_kor_instructor_notice_generation ?= var:ywc_kor_instructor_generation
+	var:ywc_kor_instructor_notice_request_state ?= var:ywc_kor_instructor_state
+	scope:ywc_kor_notice_serial = var:ywc_kor_instructor_notice_serial
+	scope:ywc_kor_notice_serial = var:ywc_kor_instructor_notice_open_serial
+	scope:ywc_kor_notice_generation = var:ywc_kor_instructor_notice_generation
+	scope:ywc_kor_notice_request_state = var:ywc_kor_instructor_notice_request_state
+	scope:ywc_kor_notice_reason = var:ywc_kor_instructor_notice_reason
+	OR = { scope:ywc_kor_notice_partner_available = 0 scope:ywc_kor_notice_partner_available = 1 }
+	OR = {
+		AND = { scope:ywc_kor_notice_partner_available = 0 NOT = { exists = var:ywc_kor_instructor_notice_partner } }
+		AND = {
+			scope:ywc_kor_notice_partner_available = 1
+			OR = {
+				AND = { exists = scope:ywc_kor_notice_partner scope:ywc_kor_notice_partner ?= var:ywc_kor_instructor_notice_partner }
+				AND = { NOT = { exists = scope:ywc_kor_notice_partner } NOT = { exists = var:ywc_kor_instructor_notice_partner } }
+			}
+		}
+	}
+}
+
+ywc_kor_instructor_contract_collectible = {
+	has_variable = ywc_kor_instructor_contract_generation
+	var:ywc_kor_instructor_balance > 0
+	NOT = { var:ywc_kor_instructor_creditor_invalid_generation ?= var:ywc_kor_instructor_contract_generation }
+	exists = var:ywc_kor_instructor_contract_partner
+	var:ywc_kor_instructor_contract_partner = { is_country_alive = yes }
+}
+
+ywc_kor_instructor_service_eligible = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	exists = var:ywc_kor_instructor_contract_partner
+	relations:var:ywc_kor_instructor_contract_partner >= 0
+	any_scope_state = {
+		owner = c:KOR
+		any_scope_building = {
+			OR = { is_building_type = building_university is_building_type = building_government_administration }
+			occupancy >= 0.8 building_has_goods_shortage = no
+		}
+	}
+	var:ywc_kor_instructor_contract_partner = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = scope:ywc_kor_request_partner
+			any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+# KOR 1007 procurement: live eligibility uses actual objects before any event
+# chain exists; quote/sign/flow predicates always require the exact captured
+# participants and generation, and the flow predicates read real state trade.
+ywc_kor_procurement_requester_ready = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	has_variable = ywc_kor_weekly_cost
+}
+
+ywc_kor_procurement_clear_to_inquire = {
+	NOT = { var:ywc_kor_procurement_state ?= 1 }
+	NOT = { var:ywc_kor_procurement_state ?= 2 }
+	OR = {
+		NOT = { has_variable = ywc_kor_procurement_contract_generation }
+		AND = {
+			has_variable = ywc_kor_procurement_paid_total
+			var:ywc_kor_procurement_earned_total ?= var:ywc_kor_procurement_paid_total
+			var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation
+		}
+	}
+}
+
+ywc_kor_procurement_can_offer_shu = {
+	c:KOR ?= this
+	ywc_kor_procurement_requester_ready = yes
+	ywc_kor_procurement_clear_to_inquire = yes
+	exists = c:SHU
+	c:SHU = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		NOT = { market ?= c:KOR.market }
+		any_scope_state = {
+			owner = c:SHU
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+		OR = {
+			any_scope_state = { owner = c:SHU has_port_state = yes }
+			market = { is_adjacent_to_market = c:KOR.market }
+		}
+	}
+}
+
+ywc_kor_procurement_can_offer_jhg = {
+	c:KOR ?= this
+	ywc_kor_procurement_requester_ready = yes
+	ywc_kor_procurement_clear_to_inquire = yes
+	exists = c:JHG
+	c:JHG = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		NOT = { market ?= c:KOR.market }
+		any_scope_state = {
+			owner = c:JHG
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+		OR = {
+			any_scope_state = { owner = c:JHG has_port_state = yes }
+			market = { is_adjacent_to_market = c:KOR.market }
+		}
+	}
+}
+
+# Foreign response context: saved requester and selected recipient are immutable.
+ywc_kor_procurement_quote_matches = {
+	exists = scope:ywc_kor_procurement_requester
+	exists = scope:ywc_kor_procurement_partner
+	scope:ywc_kor_procurement_partner ?= this
+	scope:ywc_kor_procurement_requester ?= c:KOR
+	scope:ywc_kor_procurement_requester = {
+		var:ywc_kor_procurement_partner ?= root
+		var:ywc_kor_procurement_generation ?= scope:ywc_kor_procurement_request_generation
+		var:ywc_kor_procurement_state ?= 1
+		has_variable = ywc_kor_procurement_request_timer
+		var:ywc_kor_procurement_total ?= scope:ywc_kor_procurement_request_total
+	}
+}
+
+ywc_kor_procurement_authorizable = {
+	ywc_kor_procurement_quote_matches = yes
+	is_country_alive = yes
+	relations:scope:ywc_kor_procurement_requester >= 0
+	any_scope_state = {
+		owner = scope:ywc_kor_procurement_partner
+		any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+	}
+}
+
+# A live route is a real bilateral state flow: a provider-owned producing state
+# exporting small arms to a KOR-owned state, over two distinct market objects.
+ywc_kor_procurement_route_live = {
+	any_scope_state = {
+		owner = c:KOR
+		owner.var:ywc_kor_procurement_partner = {
+			any_scope_state = {
+				owner = prev
+				state_goods_production = { target = sg:small_arms value > 0 }
+				state_exports = { target = prev.prev goods = g:small_arms value >= 5 }
+				NOT = { market ?= prev.prev.market }
+				prev.prev = {
+					state_imports = { target = prev goods = g:small_arms value >= 5 }
+				}
+			}
+		}
+	}
+}
+
+ywc_kor_procurement_dest_candidate_here = {
+	owner = c:KOR
+	scope:ywc_kor_procurement_partner = {
+		any_scope_state = {
+			owner = scope:ywc_kor_procurement_partner
+			state_goods_production = { target = sg:small_arms value > 0 }
+			state_exports = { target = prev.prev goods = g:small_arms value >= 5 }
+			NOT = { market ?= prev.prev.market }
+		}
+	}
+}
+
+ywc_kor_procurement_source_candidate_here = {
+	owner = scope:ywc_kor_procurement_partner
+	state_goods_production = { target = sg:small_arms value > 0 }
+	state_exports = { target = scope:ywc_kor_procurement_dest_state goods = g:small_arms value >= 5 }
+	NOT = { market ?= scope:ywc_kor_procurement_dest_state.market }
+}
+
+ywc_kor_procurement_signable = {
+	ywc_kor_procurement_notice_choice_matches = yes
+	exists = var:ywc_kor_procurement_partner
+	var:ywc_kor_procurement_partner = { is_country_alive = yes }
+	var:ywc_kor_procurement_quote_generation ?= var:ywc_kor_procurement_generation
+	ywc_kor_procurement_route_live = yes
+	ywc_kor_v03_finance_safe = yes
+	gold_reserves >= { value = var:ywc_kor_procurement_quote_total divide = 3 }
+	NOT = { has_variable = ywc_kor_procurement_contract_generation }
+}
+
+# The signed route stays bound to the exact captured objects; owners, markets
+# and production are re-read live on every inspection. Callers establish the
+# source/destination/provider/market scopes first (monthly owner or signing).
+ywc_kor_procurement_route_intact = {
+	exists = scope:ywc_kor_procurement_source_state
+	exists = scope:ywc_kor_procurement_dest_state
+	scope:ywc_kor_procurement_source_state = {
+		owner ?= scope:ywc_kor_procurement_provider
+		state_goods_production = { target = sg:small_arms value > 0 }
+		market ?= scope:ywc_kor_procurement_source_market
+	}
+	scope:ywc_kor_procurement_dest_state = {
+		owner ?= c:KOR
+		market ?= scope:ywc_kor_procurement_dest_market
+	}
+	NOT = { scope:ywc_kor_procurement_source_market ?= scope:ywc_kor_procurement_dest_market }
+}
+
+ywc_kor_procurement_flow_current = {
+	var:ywc_kor_procurement_dest_state = {
+		state_imports = { target = owner.var:ywc_kor_procurement_source_state goods = g:small_arms value >= 5 }
+	}
+}
+
+ywc_kor_procurement_inspection_ready = {
+	ywc_kor_v03_finance_safe = yes
+	ywc_kor_procurement_route_intact = yes
+	ywc_kor_procurement_flow_current = yes
+}
+
+ywc_kor_procurement_unsigned_intact = {
+	exists = var:ywc_kor_procurement_partner
+	var:ywc_kor_procurement_partner = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		NOT = { market ?= c:KOR.market }
+		any_scope_state = {
+			owner = scope:ywc_kor_procurement_partner
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+	c:KOR = { is_subject = no }
+}
+
+ywc_kor_procurement_notice_live = {
+	var:ywc_kor_procurement_notice_event ?= 1034
+	has_variable = ywc_kor_procurement_notice_serial
+	has_variable = ywc_kor_procurement_notice_generation
+	has_variable = ywc_kor_procurement_notice_request_state
+	has_variable = ywc_kor_procurement_notice_reason
+	var:ywc_kor_procurement_notice_generation ?= var:ywc_kor_procurement_generation
+	var:ywc_kor_procurement_notice_request_state ?= var:ywc_kor_procurement_state
+}
+
+ywc_kor_procurement_notice_choice_matches = {
+	exists = scope:ywc_kor_procurement_notice_owner
+	scope:ywc_kor_procurement_notice_owner ?= this
+	has_variable = ywc_kor_procurement_notice_open_serial
+	has_variable = ywc_kor_procurement_notice_serial
+	has_variable = ywc_kor_procurement_notice_generation
+	has_variable = ywc_kor_procurement_notice_request_state
+	has_variable = ywc_kor_procurement_notice_reason
+	var:ywc_kor_procurement_notice_generation ?= var:ywc_kor_procurement_generation
+	var:ywc_kor_procurement_notice_request_state ?= var:ywc_kor_procurement_state
+	scope:ywc_kor_procurement_notice_serial = var:ywc_kor_procurement_notice_serial
+	scope:ywc_kor_procurement_notice_serial = var:ywc_kor_procurement_notice_open_serial
+	scope:ywc_kor_procurement_notice_generation = var:ywc_kor_procurement_notice_generation
+	scope:ywc_kor_procurement_notice_request_state = var:ywc_kor_procurement_notice_request_state
+	scope:ywc_kor_procurement_notice_reason = var:ywc_kor_procurement_notice_reason
+	OR = { scope:ywc_kor_procurement_notice_partner_available = 0 scope:ywc_kor_procurement_notice_partner_available = 1 }
+	OR = {
+		AND = { scope:ywc_kor_procurement_notice_partner_available = 0 NOT = { exists = var:ywc_kor_procurement_notice_partner } }
+		AND = {
+			scope:ywc_kor_procurement_notice_partner_available = 1
+			OR = {
+				AND = { exists = scope:ywc_kor_procurement_notice_partner scope:ywc_kor_procurement_notice_partner ?= var:ywc_kor_procurement_notice_partner }
+				AND = { NOT = { exists = scope:ywc_kor_procurement_notice_partner } NOT = { exists = var:ywc_kor_procurement_notice_partner } }
+			}
+		}
+	}
+}
+
+ywc_kor_procurement_contract_collectible = {
+	has_variable = ywc_kor_procurement_contract_generation
+	has_variable = ywc_kor_procurement_earned_total
+	var:ywc_kor_procurement_earned_total > var:ywc_kor_procurement_paid_total
+	NOT = { var:ywc_kor_procurement_creditor_invalid_generation ?= var:ywc_kor_procurement_contract_generation }
+	exists = var:ywc_kor_procurement_contract_partner
+	var:ywc_kor_procurement_contract_partner = { is_country_alive = yes }
+}
+
+ywc_kor_procurement_service_eligible = {
+	c:KOR ?= this
+	is_country_alive = yes
+	is_subject = no
+	ywc_kor_v03_finance_safe = yes
+	exists = var:ywc_kor_procurement_contract_partner
+	var:ywc_kor_procurement_contract_partner = {
+		is_country_alive = yes
+		relations:c:KOR >= 0
+		any_scope_state = {
+			owner = prev
+			any_scope_building = { is_building_type = building_arms_industry occupancy >= 0.8 building_has_goods_shortage = no }
+		}
+	}
+}
+
+# M3 KOR provincial revenue (v03_kor_provincial_revenue, middle, events 1100-1107).
+# The pilot is one currently owned KOR state captured by object variable at 1100;
+# every later staffed-post, employment, legitimacy and turmoil fact is read against
+# that exact saved state via var:ywc_kor_revenue_pilot_state. No nationwide
+# any_scope_state "ready" is reused as proof of the same pilot.
+ywc_kor_revenue_open = {
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started
+	NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+	NOT = { has_variable = ywc_kor_revenue_outcome }
+}
+
+ywc_kor_revenue_has_any_owned_state = {
+	any_scope_state = { owner = ROOT }
+}
+
+ywc_kor_revenue_pilot_owned = {
+	exists = var:ywc_kor_revenue_pilot_state
+	var:ywc_kor_revenue_pilot_state = { owner = ROOT }
+}
+
+ywc_kor_revenue_mode_chosen = {
+	OR = { var:ywc_kor_revenue_mode = 1 var:ywc_kor_revenue_mode = 2 var:ywc_kor_revenue_mode = 3 }
+}
+
+ywc_kor_revenue_target_chosen = {
+	OR = { var:ywc_kor_revenue_target = 1 var:ywc_kor_revenue_target = 2 }
+}
+
+ywc_kor_revenue_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+# Pilot-scoped current facts. Every clause is inside var:ywc_kor_revenue_pilot_state,
+# so another owned state or a foreign state cannot satisfy them.
+ywc_kor_revenue_pilot_office_full = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_revenue_pilot_office_half = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_revenue_pilot_office_bounded = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_revenue_pilot_school_post = {
+	ywc_kor_revenue_pilot_owned = yes
+	institution_investment_level = { institution = institution_schools value >= 1 }
+	OR = {
+		var:ywc_kor_revenue_pilot_state = { any_scope_pop = { is_pop_type = academics is_employed = yes workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no } } }
+		var:ywc_kor_revenue_pilot_state = { any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } }
+	}
+}
+
+ywc_kor_revenue_pilot_barracks = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = {
+		any_scope_pop = { OR = { is_pop_type = soldiers is_pop_type = officers } is_employed = yes workplace ?= { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_revenue_pilot_farm_employment = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = {
+		any_scope_pop = {
+			OR = { is_pop_type = farmers is_pop_type = laborers }
+			is_employed = yes
+			workplace ?= {
+				OR = { is_building_type = building_rice_farm is_building_type = building_wheat_farm is_building_type = building_millet_farm }
+				occupancy >= 0.5
+				building_has_goods_shortage = no
+			}
+		}
+	}
+}
+
+ywc_kor_revenue_pilot_turmoil_calm = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = { turmoil <= 0.25 }
+}
+
+ywc_kor_revenue_pilot_turmoil_bounded = {
+	ywc_kor_revenue_pilot_owned = yes
+	var:ywc_kor_revenue_pilot_state = { turmoil <= 0.40 }
+}
+
+# In-government interest groups. Same conjunction shape as LanPublicWorld:
+# one type, in government, clout >= .10, approval >= 0.
+ywc_kor_revenue_ig_rural = {
+	any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_revenue_ig_intelligentsia = {
+	any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_revenue_ig_armed = {
+	any_interest_group = { is_interest_group_type = ig_armed_forces is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_revenue_ig_landowners = {
+	any_interest_group = { is_interest_group_type = ig_landowners is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_revenue_ig_devout = {
+	any_interest_group = { is_interest_group_type = ig_devout is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_revenue_law_appointed_bureaucrats = {
+	has_law_or_variant = law_type:law_appointed_bureaucrats
+}
+
+ywc_kor_revenue_law_written_shares = {
+	OR = { has_law_or_variant = law_type:law_proportional_taxation has_law_or_variant = law_type:law_graduated_taxation }
+}
+
+ywc_kor_revenue_law_central_collection = {
+	OR = { has_law_or_variant = law_type:law_per_capita_based_taxation has_law_or_variant = law_type:law_proportional_taxation has_law_or_variant = law_type:law_graduated_taxation }
+}
+
+ywc_kor_revenue_law_project_grants = {
+	OR = { has_law_or_variant = law_type:law_land_based_taxation has_law_or_variant = law_type:law_per_capita_based_taxation }
+}
+
+# Mode 1 written shares: full policy, distinct from any finite target.
+ywc_kor_revenue_mode1_full = {
+	ywc_kor_revenue_law_written_shares = yes
+	ywc_kor_revenue_pilot_office_full = yes
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_kor_revenue_pilot_turmoil_calm = yes
+	OR = { ywc_kor_revenue_ig_rural = yes ywc_kor_revenue_ig_intelligentsia = yes }
+	ywc_kor_revenue_pilot_school_post = yes
+}
+
+# Mode 2 central collection: full policy with staffed barracks and armed support.
+ywc_kor_revenue_mode2_full = {
+	ywc_kor_revenue_law_central_collection = yes
+	ywc_kor_revenue_law_appointed_bureaucrats = yes
+	ywc_kor_revenue_pilot_office_full = yes
+	ywc_kor_revenue_pilot_barracks = yes
+	ywc_kor_revenue_ig_armed = yes
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_kor_revenue_pilot_turmoil_calm = yes
+}
+
+# Mode 3 project grants: a complete independent strategy, not the finite target.
+ywc_kor_revenue_mode3_full = {
+	ywc_kor_revenue_law_project_grants = yes
+	ywc_kor_revenue_pilot_office_half = yes
+	ywc_kor_revenue_pilot_farm_employment = yes
+	OR = { ywc_kor_revenue_ig_landowners = yes ywc_kor_revenue_ig_devout = yes }
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_kor_revenue_pilot_turmoil_calm = yes
+}
+
+# Explicit target 2 conservative finite goal. Requires only the exact pilot, its
+# real posts and peace/solvency; needs no school, port, barracks, law change,
+# sponsoring group or foreign cooperation. Never "missing variable" defaults here.
+ywc_kor_revenue_target2_finite = {
+	ywc_kor_revenue_pilot_owned = yes
+	ywc_kor_revenue_pilot_office_bounded = yes
+	bureaucracy >= 0
+	legitimacy >= 20
+	ywc_kor_revenue_pilot_turmoil_bounded = yes
+	is_at_war = no
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+	net_fixed_income >= 0
+}
+
+ywc_kor_revenue_full_conditions = {
+	is_at_war = no
+	OR = {
+		AND = { var:ywc_kor_revenue_mode = 1 ywc_kor_revenue_mode1_full = yes }
+		AND = { var:ywc_kor_revenue_mode = 2 ywc_kor_revenue_mode2_full = yes }
+		AND = { var:ywc_kor_revenue_mode = 3 ywc_kor_revenue_mode3_full = yes }
+	}
+}
+
+# The currently declared target's operating condition, used for the six-month run.
+ywc_kor_revenue_selected_current_ready = {
+	ywc_kor_revenue_open = yes
+	ywc_kor_revenue_mode_chosen = yes
+	ywc_kor_revenue_target_chosen = yes
+	ywc_kor_revenue_finance_safe = yes
+	OR = {
+		AND = { var:ywc_kor_revenue_target = 1 ywc_kor_revenue_full_conditions = yes }
+		AND = { var:ywc_kor_revenue_target = 2 ywc_kor_revenue_target2_finite = yes }
+	}
+}
+
+# Both real fees must be actually paid before any terminal result can be claimed.
+ywc_kor_revenue_both_fees_paid = {
+	has_variable = ywc_kor_revenue_charter_paid
+	var:ywc_kor_revenue_charter_paid_amount > 0
+	has_variable = ywc_kor_revenue_review_paid
+	var:ywc_kor_revenue_review_paid_amount > 0
+}
+
+ywc_kor_revenue_six_months_complete = {
+	ywc_kor_revenue_both_fees_paid = yes
+	has_variable = ywc_kor_revenue_review_mature
+	var:ywc_kor_revenue_review_streak >= 6
+	NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+}
+
+# Terminal outcome 1: full policy, both fees paid, matching decisions and a real
+# six-month run that upgraded to the explicit full target. Mutually exclusive with the
+# finite target, so a narrowed arc can never claim a full close.
+ywc_kor_revenue_terminal_full = {
+	ywc_kor_revenue_open = yes
+	NOT = { has_variable = ywc_kor_revenue_finite_chosen }
+	is_at_war = no
+	ywc_kor_revenue_full_conditions = yes
+	ywc_kor_revenue_finance_safe = yes
+	ywc_kor_revenue_both_fees_paid = yes
+	ywc_kor_revenue_six_months_complete = yes
+	ywc_kor_revenue_pilot_owned = yes
+	ywc_kor_revenue_both_snapshots_match = yes
+	ywc_kor_revenue_reviewer_current_duty = yes
+	has_variable = ywc_kor_revenue_charter_mode
+	var:ywc_kor_revenue_charter_mode = var:ywc_kor_revenue_mode
+}
+
+# Terminal outcome 2: explicit finite target with current bounded facts.
+ywc_kor_revenue_terminal_finite = {
+	ywc_kor_revenue_open = yes
+	ywc_kor_revenue_both_fees_paid = yes
+	ywc_kor_revenue_six_months_complete = yes
+	has_variable = ywc_kor_revenue_finite_chosen
+	var:ywc_kor_revenue_target = 2
+	ywc_kor_revenue_target2_finite = yes
+}
+
+# Terminal outcome 3: real setback. Only requestable once fees were paid and the
+# six-month proof matured, but the current running conditions (basic policy or the
+# current reviewer/source duty) have since been lost. Recovery disables it.
+ywc_kor_revenue_terminal_setback = {
+	ywc_kor_revenue_open = yes
+	ywc_kor_revenue_both_fees_paid = yes
+	has_variable = ywc_kor_revenue_review_mature
+	NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+	OR = {
+		NOT = { ywc_kor_revenue_selected_current_ready = yes }
+		NOT = { ywc_kor_revenue_reviewer_current_duty = yes }
+	}
+}
+
+ywc_kor_revenue_withdrawn = {
+	has_variable = ywc_kor_revenue_outcome
+	var:ywc_kor_revenue_outcome = 4
+}
+
+# Per-event stage gate. Each event has its own last_event receipt (1..8) written
+# strictly after ywc_v03_mark_major_delivered in the native immediate, and the same
+# receipt is required by every option display/effect guard for that event.
+ywc_kor_revenue_stage_1100 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 1
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_settlement
+	var:ywc_kor_revenue_stage = 1100
+}
+
+ywc_kor_revenue_at_1100 = {
+	ywc_kor_revenue_stage_1100 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 1
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1100 }
+}
+
+ywc_kor_revenue_stage_1101 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 1
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_settlement
+	var:ywc_kor_revenue_stage = 1101
+}
+
+ywc_kor_revenue_at_1101 = {
+	ywc_kor_revenue_stage_1101 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 2
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1101 }
+}
+
+ywc_kor_revenue_stage_1102 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 1
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_settlement
+	var:ywc_kor_revenue_stage = 1102
+}
+
+ywc_kor_revenue_at_1102 = {
+	ywc_kor_revenue_stage_1102 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 3
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1102 }
+}
+
+ywc_kor_revenue_stage_1103 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 1
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_settlement
+	var:ywc_kor_revenue_stage = 1103
+}
+
+ywc_kor_revenue_at_1103 = {
+	ywc_kor_revenue_stage_1103 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 4
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1103 }
+}
+
+ywc_kor_revenue_stage_1104 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 2
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_review
+	var:ywc_kor_revenue_stage = 1104
+}
+
+ywc_kor_revenue_at_1104 = {
+	ywc_kor_revenue_stage_1104 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 5
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1104 }
+}
+
+ywc_kor_revenue_stage_1105 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 2
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_review
+	var:ywc_kor_revenue_stage = 1105
+}
+
+ywc_kor_revenue_at_1105 = {
+	ywc_kor_revenue_stage_1105 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 6
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1105 }
+}
+
+ywc_kor_revenue_stage_1106 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 2
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_review
+	var:ywc_kor_revenue_stage = 1106
+}
+
+ywc_kor_revenue_at_1106 = {
+	ywc_kor_revenue_stage_1106 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 7
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1106 }
+}
+
+ywc_kor_revenue_stage_1107 = {
+	ywc_kor_revenue_open = yes
+	var:ywc_kor_revenue_phase = 2
+	has_journal_entry = ywc_je_v03_kor_provincial_revenue_review
+	var:ywc_kor_revenue_stage = 1107
+}
+
+ywc_kor_revenue_at_1107 = {
+	ywc_kor_revenue_stage_1107 = yes
+	var:ywc_v03_kor_v03_kor_provincial_revenue_last_event = 8
+	OR = { NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_pending_event = 1107 }
+}
+
+# A wait or exit is legal at any live stage of this arc, but never after the arc is
+# settled. Options point this at their own stage to avoid reopening old popups.
+ywc_kor_revenue_live_stage = {
+	ywc_kor_revenue_open = yes
+	OR = { var:ywc_kor_revenue_phase = 1 var:ywc_kor_revenue_phase = 2 }
+	OR = {
+		has_journal_entry = ywc_je_v03_kor_provincial_revenue_settlement
+		has_journal_entry = ywc_je_v03_kor_provincial_revenue_review
+	}
+	var:ywc_kor_revenue_stage >= 1100
+	var:ywc_kor_revenue_stage <= 1107
+}
+
+# Fee amounts as exact multiples of the captured week B (ywc_kor_revenue_budget).
+# Charter (1101): mode1 B, mode2 2B, mode3 .5B, target2 .5B.
+ywc_kor_revenue_charter_is_prior_provincial = {
+	ywc_kor_revenue_mode_chosen = yes
+	var:ywc_kor_revenue_mode = 1
+	ywc_kor_revenue_prior_provincial_contract = yes
+}
+
+ywc_kor_revenue_charter_half = {
+	OR = {
+		var:ywc_kor_revenue_mode = 3
+		var:ywc_kor_revenue_target = 2
+		ywc_kor_revenue_charter_is_prior_provincial = yes
+	}
+}
+
+ywc_kor_revenue_can_pay_charter = {
+	ywc_kor_revenue_pilot_owned = yes
+	ywc_kor_revenue_mode_chosen = yes
+	ywc_kor_revenue_target_chosen = yes
+	has_variable = ywc_kor_revenue_budget
+	var:ywc_kor_revenue_budget >= 100
+	NOT = { has_variable = ywc_kor_revenue_charter_paid }
+	ywc_kor_revenue_finance_safe = yes
+	OR = {
+		AND = { ywc_kor_revenue_charter_half = yes gold_reserves >= { value = var:ywc_kor_revenue_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_revenue_mode = 1 gold_reserves >= var:ywc_kor_revenue_budget }
+		AND = { var:ywc_kor_revenue_mode = 2 gold_reserves >= { value = var:ywc_kor_revenue_budget multiply = 2 } }
+	}
+}
+
+# Charter and reviewer snapshots bind the same pilot/mode/target as the live one;
+# used by review billing and every terminal check so a late swap cannot inherit a
+# stale arrangement.
+ywc_kor_revenue_both_snapshots_match = {
+	has_variable = ywc_kor_revenue_charter_pilot
+	var:ywc_kor_revenue_charter_pilot = var:ywc_kor_revenue_pilot_state
+	has_variable = ywc_kor_revenue_reviewer_pilot
+	var:ywc_kor_revenue_reviewer_pilot = var:ywc_kor_revenue_pilot_state
+	has_variable = ywc_kor_revenue_charter_mode
+	var:ywc_kor_revenue_charter_mode = var:ywc_kor_revenue_mode
+	has_variable = ywc_kor_revenue_charter_target
+	var:ywc_kor_revenue_charter_target = var:ywc_kor_revenue_target
+}
+
+# Review fee may be billed ONLY after a genuine six-month maturity in the same
+# running review, with the signed duties still current and solvent. Paying it must
+# not erase that maturity, so it is gated on the actual mature proof here.
+ywc_kor_revenue_can_pay_review = {
+	ywc_kor_revenue_pilot_owned = yes
+	ywc_kor_revenue_mode_chosen = yes
+	ywc_kor_revenue_target_chosen = yes
+	has_variable = ywc_kor_revenue_budget
+	var:ywc_kor_revenue_budget >= 100
+	has_variable = ywc_kor_revenue_review_mature
+	var:ywc_kor_revenue_review_streak >= 6
+	NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+	has_variable = ywc_kor_revenue_reviewer
+	ywc_kor_revenue_both_snapshots_match = yes
+	ywc_kor_revenue_selected_current_ready = yes
+	ywc_kor_revenue_reviewer_current_duty = yes
+	NOT = { has_variable = ywc_kor_revenue_review_paid }
+	ywc_kor_revenue_finance_safe = yes
+	OR = {
+		AND = { var:ywc_kor_revenue_target = 2 gold_reserves >= { value = var:ywc_kor_revenue_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_revenue_mode = 3 gold_reserves >= { value = var:ywc_kor_revenue_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_revenue_mode = 2 ywc_kor_revenue_prior_court_contract = yes gold_reserves >= var:ywc_kor_revenue_budget }
+		AND = { var:ywc_kor_revenue_mode = 2 NOT = { ywc_kor_revenue_prior_court_contract = yes } gold_reserves >= { value = var:ywc_kor_revenue_budget multiply = 1.5 } }
+		AND = { var:ywc_kor_revenue_mode = 1 gold_reserves >= var:ywc_kor_revenue_budget }
+	}
+}
+
+# Old military provincial-report contract: a real earned finance contract, never a
+# free flag. It lowers mode1 charter to .5B and permits .5 office checks at 1102.
+ywc_kor_revenue_prior_provincial_contract = {
+	has_variable = ywc_v03_kor_v03_kor_military_accounts_started
+	has_variable = ywc_v03_kor_v03_kor_military_accounts_settled
+	var:ywc_v03_kor_v03_kor_military_accounts_outcome = 2
+	has_variable = ywc_kor_any_outcome
+	var:ywc_kor_supply_route = 2
+	var:ywc_kor_reporting_mode = 2
+	has_variable = ywc_kor_provincial_report_right
+	has_variable = ywc_kor_outcome_provincial_supply
+	has_variable = ywc_kor_audit_paid
+	has_variable = ywc_kor_invoice_review_paid
+	has_variable = ywc_kor_supply_account_accepted
+	has_variable = ywc_kor_audit_public
+	has_variable = ywc_kor_review_complete
+	has_variable = ywc_kor_service_review_complete
+	has_variable = ywc_kor_six_months_complete
+	has_variable = ywc_kor_nine_months_complete
+	ywc_kor_v03_route_execution_ready = yes
+	NOT = { has_variable = ywc_kor_arc_abandoned }
+	NOT = { has_variable = ywc_kor_scope_narrowed }
+}
+
+# Old military court-inspection contract: lowers mode2 review to B and is reread
+# at 1105 with the exact prior command commitment and current barracks.
+ywc_kor_revenue_prior_court_contract = {
+	has_variable = ywc_v03_kor_v03_kor_military_accounts_started
+	has_variable = ywc_v03_kor_v03_kor_military_accounts_settled
+	var:ywc_v03_kor_v03_kor_military_accounts_outcome = 1
+	has_variable = ywc_kor_any_outcome
+	var:ywc_kor_supply_route = 1
+	var:ywc_kor_reporting_mode = 1
+	has_variable = ywc_kor_court_inspection_right
+	has_variable = ywc_kor_court_command_commitment
+	has_variable = ywc_kor_outcome_court_supply
+	has_variable = ywc_kor_audit_paid
+	has_variable = ywc_kor_invoice_review_paid
+	has_variable = ywc_kor_supply_account_accepted
+	has_variable = ywc_kor_audit_public
+	has_variable = ywc_kor_review_complete
+	has_variable = ywc_kor_service_review_complete
+	has_variable = ywc_kor_six_months_complete
+	has_variable = ywc_kor_nine_months_complete
+	ywc_kor_v03_route_execution_ready = yes
+	NOT = { has_variable = ywc_kor_arc_abandoned }
+	NOT = { has_variable = ywc_kor_scope_narrowed }
+}
+
+# School joint contract, reread as recent evidence at 1102/1103 and 1105/1106.
+# Only a positive paid route counts; "old contracts clear" alone is an absence of
+# debt, never proof of a positive arrangement.
+ywc_kor_revenue_prior_school_coop = {
+	has_variable = ywc_v03_kor_v03_kor_school_factions_started
+	has_variable = ywc_v03_kor_v03_kor_school_factions_settled
+	OR = { var:ywc_v03_kor_v03_kor_school_factions_outcome = 1 var:ywc_v03_kor_v03_kor_school_factions_outcome = 2 }
+	var:ywc_kor_school_route = 1
+	has_variable = ywc_kor_school_established
+	has_variable = ywc_kor_school_coop_paid
+	has_variable = ywc_kor_school_filing_fee_paid
+	has_variable = ywc_kor_school_old_invoice_paid
+	has_variable = ywc_kor_school_old_account_read_2
+	var:ywc_kor_school_old_account_read_2 = 1
+	has_variable = ywc_kor_school_funding_decided
+	has_variable = ywc_kor_school_appointment_decided
+	has_variable = ywc_kor_school_six_months_complete
+	var:ywc_kor_school_employer = 1
+	var:ywc_kor_school_employer_confirmed = 1
+	NOT = { has_variable = ywc_kor_school_withdrawn }
+	ywc_kor_school_university_ready = yes
+	ywc_kor_school_selected_employer_ready = yes
+}
+
+ywc_kor_revenue_prior_school_office = {
+	has_variable = ywc_v03_kor_v03_kor_school_factions_started
+	has_variable = ywc_v03_kor_v03_kor_school_factions_settled
+	OR = { var:ywc_v03_kor_v03_kor_school_factions_outcome = 1 var:ywc_v03_kor_v03_kor_school_factions_outcome = 2 }
+	var:ywc_kor_school_route = 2
+	has_variable = ywc_kor_school_established
+	has_variable = ywc_kor_school_office_paid
+	has_variable = ywc_kor_school_filing_fee_paid
+	has_variable = ywc_kor_school_old_invoice_paid
+	has_variable = ywc_kor_school_old_account_read_2
+	var:ywc_kor_school_old_account_read_2 = 1
+	has_variable = ywc_kor_school_funding_decided
+	has_variable = ywc_kor_school_appointment_decided
+	has_variable = ywc_kor_school_six_months_complete
+	var:ywc_kor_school_employer = 2
+	var:ywc_kor_school_employer_confirmed = 1
+	NOT = { has_variable = ywc_kor_school_withdrawn }
+	ywc_kor_school_office_ready = yes
+	ywc_kor_school_selected_employer_ready = yes
+}
+
+ywc_kor_revenue_prior_school = {
+	OR = { ywc_kor_revenue_prior_school_coop = yes ywc_kor_revenue_prior_school_office = yes }
+}
+
+# Port joint contract. A real paid designated/general settlement with prior review
+# and current auditor; withdrawn/compromise are excluded. No reviewer flag stands in
+# for a real paid contract.
+ywc_kor_revenue_prior_ports = {
+	has_variable = ywc_v03_kor_v03_kor_controlled_ports_started
+	has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled
+	OR = { var:ywc_v03_kor_v03_kor_controlled_ports_outcome = 1 var:ywc_v03_kor_v03_kor_controlled_ports_outcome = 2 }
+	has_variable = ywc_kor_ports_established
+	has_variable = ywc_kor_ports_filing_fee_paid
+	OR = { has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_general_paid }
+	has_variable = ywc_kor_ports_prior_contracts_checked
+	has_variable = ywc_kor_ports_prior_outcome_read
+	has_variable = ywc_kor_ports_six_months_complete
+	NOT = { has_variable = ywc_kor_ports_withdrawn }
+	NOT = { has_variable = ywc_kor_ports_compromise }
+	ywc_kor_ports_current_route_ready = yes
+	ywc_kor_ports_auditor_ready = yes
+}
+
+# Current reviewer/source duty. The recorded reviewer (1 school, 2 ports,
+# 3 provincial, 4 fresh current local office) must still hold its genuinely earned
+# CURRENT qualification; a cached role whose old contract has since lost its live
+# posts/route is defunct and cannot remain the adopted responsibility source.
+ywc_kor_revenue_reviewer_current_duty = {
+	OR = {
+		AND = {
+			var:ywc_kor_revenue_reviewer = 1
+			ywc_kor_revenue_prior_school = yes
+			has_variable = ywc_kor_revenue_reviewer_pilot
+			var:ywc_kor_revenue_reviewer_pilot = var:ywc_kor_revenue_pilot_state
+		}
+		AND = {
+			var:ywc_kor_revenue_reviewer = 2
+			ywc_kor_revenue_prior_ports = yes
+			has_variable = ywc_kor_revenue_reviewer_pilot
+			var:ywc_kor_revenue_reviewer_pilot = var:ywc_kor_revenue_pilot_state
+		}
+		AND = { var:ywc_kor_revenue_reviewer = 3 var:ywc_kor_revenue_target = 1 ywc_kor_revenue_prior_provincial_contract = yes }
+		AND = { var:ywc_kor_revenue_reviewer = 4 ywc_kor_revenue_reviewer_office = yes }
+	}
+}
+
+# Office check at 1102 is selected ONLY by the explicit target/mode:
+# finite -> .25 ; project full -> .5 ; provincial full -> .8, or .5 with the real
+# old provincial contract ; central full -> .8. This never lowers schools, army,
+# IG or tax thresholds, which stay in their own mode blocks.
+ywc_kor_revenue_reviewer_office = {
+	ywc_kor_revenue_pilot_owned = yes
+	OR = {
+		AND = { var:ywc_kor_revenue_target = 2 ywc_kor_revenue_pilot_office_bounded = yes }
+		AND = { var:ywc_kor_revenue_target = 1 var:ywc_kor_revenue_mode = 3 ywc_kor_revenue_pilot_office_half = yes }
+		AND = { var:ywc_kor_revenue_target = 1 var:ywc_kor_revenue_mode = 1 ywc_kor_revenue_prior_provincial_contract = yes ywc_kor_revenue_pilot_office_half = yes }
+		AND = { var:ywc_kor_revenue_target = 1 var:ywc_kor_revenue_mode = 1 NOT = { ywc_kor_revenue_prior_provincial_contract = yes } ywc_kor_revenue_pilot_office_full = yes }
+		AND = { var:ywc_kor_revenue_target = 1 var:ywc_kor_revenue_mode = 2 ywc_kor_revenue_pilot_office_full = yes }
+	}
+}
+
+# M5 KOR court public (v03_kor_court_public, middle, events 1120-1127). The pilot is
+# one currently owned KOR state captured ONCE by object variable at claim, through a
+# saved-scope guard so a later state can never overwrite it. Every office/employment/
+# witness/channel fact is read against that exact saved state via
+# var:ywc_kor_public_pilot_state. No nationwide any_scope_state "ready" stands in for
+# the same pilot.
+ywc_kor_public_open = {
+	has_variable = ywc_v03_kor_v03_kor_court_public_started
+	NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_settled }
+	NOT = { has_variable = ywc_kor_public_outcome }
+}
+
+ywc_kor_public_has_any_owned_state = {
+	any_scope_state = { owner = ROOT }
+}
+
+ywc_kor_public_pilot_owned = {
+	exists = var:ywc_kor_public_pilot_state
+	var:ywc_kor_public_pilot_state = { owner = ROOT }
+}
+
+ywc_kor_public_mode_chosen = {
+	OR = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_mode = 2 var:ywc_kor_public_mode = 3 }
+}
+
+ywc_kor_public_target_chosen = {
+	OR = { var:ywc_kor_public_target = 1 var:ywc_kor_public_target = 2 }
+}
+
+ywc_kor_public_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+
+# Pilot-scoped current office facts. Only the saved pilot state can satisfy them.
+ywc_kor_public_pilot_office_full = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_office_half = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_office_bounded = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.25 building_has_goods_shortage = no } }
+	}
+}
+
+# New professional witness posts at the saved pilot (academics -> university, or
+# bureaucrats/clerks -> government administration) at full occupancy, no shortage.
+ywc_kor_public_pilot_academic_post = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = academics is_employed = yes workplace ?= { is_building_type = building_university occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_clerk_post_full = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.8 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_academic_post_half = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { is_pop_type = academics is_employed = yes workplace ?= { is_building_type = building_university occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_clerk_post_half = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = {
+		any_scope_pop = { OR = { is_pop_type = bureaucrats is_pop_type = clerks } is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } }
+	}
+}
+
+ywc_kor_public_pilot_turmoil_calm = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = { turmoil <= 0.25 }
+}
+
+ywc_kor_public_pilot_turmoil_bounded = {
+	ywc_kor_public_pilot_owned = yes
+	var:ywc_kor_public_pilot_state = { turmoil <= 0.40 }
+}
+
+# In-government interest groups. One type, in government, clout >= .10, approval >= 0.
+ywc_kor_public_ig_intelligentsia = {
+	any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_landowners = {
+	any_interest_group = { is_interest_group_type = ig_landowners is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_rural_folk = {
+	any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_industrialists = {
+	any_interest_group = { is_interest_group_type = ig_industrialists is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+ywc_kor_public_ig_devout = {
+	any_interest_group = { is_interest_group_type = ig_devout is_in_government = yes ig_clout >= 0.10 ig_approval >= 0 }
+}
+
+# Current political laws. Speech and distribution-of-power keys are the installed
+# base-game law keys; none of these invent a political-rights tax or a new law.
+ywc_kor_public_law_monarchy = {
+	has_law_or_variant = law_type:law_monarchy
+}
+
+ywc_kor_public_law_appointed_bureaucrats = {
+	has_law_or_variant = law_type:law_appointed_bureaucrats
+}
+
+ywc_kor_public_law_autocratic_power = {
+	OR = {
+		has_law_or_variant = law_type:law_autocracy
+		has_law_or_variant = law_type:law_oligarchy
+		has_law_or_variant = law_type:law_technocracy
+	}
+}
+
+ywc_kor_public_law_conservative_power = {
+	OR = {
+		has_law_or_variant = law_type:law_autocracy
+		has_law_or_variant = law_type:law_oligarchy
+	}
+}
+
+ywc_kor_public_law_voting_power = {
+	OR = {
+		has_law_or_variant = law_type:law_wealth_voting
+		has_law_or_variant = law_type:law_census_voting
+		has_law_or_variant = law_type:law_universal_suffrage
+	}
+}
+
+ywc_kor_public_law_court_speech = {
+	OR = {
+		has_law_or_variant = law_type:law_censorship
+		has_law_or_variant = law_type:law_right_of_assembly
+		has_law_or_variant = law_type:law_protected_speech
+	}
+}
+
+ywc_kor_public_law_assembly_speech = {
+	OR = {
+		has_law_or_variant = law_type:law_right_of_assembly
+		has_law_or_variant = law_type:law_protected_speech
+	}
+}
+
+ywc_kor_public_law_conservative_speech = {
+	OR = {
+		has_law_or_variant = law_type:law_outlawed_dissent
+		has_law_or_variant = law_type:law_censorship
+	}
+}
+
+# Mode 1 court-open full policy: monarchy + appointed bureaucrats + autocratic power +
+# court speech, intelligentsia or landowners support, real full office and legitimacy.
+# All full modes honor peace and solvency (is_at_war no, net income >= 0, no default or
+# bankruptcy) as a pure pre-choice current predicate, before any handler exists.
+ywc_kor_public_mode1_full = {
+	ywc_kor_public_law_monarchy = yes
+	ywc_kor_public_law_appointed_bureaucrats = yes
+	ywc_kor_public_law_autocratic_power = yes
+	ywc_kor_public_law_court_speech = yes
+	ywc_kor_public_pilot_office_full = yes
+	bureaucracy >= 0
+	legitimacy >= 30
+	ywc_kor_public_pilot_turmoil_calm = yes
+	is_at_war = no
+	ywc_kor_public_finance_safe = yes
+	OR = { ywc_kor_public_ig_intelligentsia = yes ywc_kor_public_ig_landowners = yes }
+}
+
+# Mode 2 local-delegates full policy: real voting power + assembly speech, rural folk
+# or industrialists support, real office at .5 (or full with the old written-share
+# contract re-read), legitimacy.
+ywc_kor_public_mode2_full = {
+	ywc_kor_public_law_voting_power = yes
+	ywc_kor_public_law_assembly_speech = yes
+	ywc_kor_public_pilot_office_half = yes
+	bureaucracy >= 0
+	legitimacy >= 25
+	ywc_kor_public_pilot_turmoil_calm = yes
+	is_at_war = no
+	ywc_kor_public_finance_safe = yes
+	OR = { ywc_kor_public_ig_rural_folk = yes ywc_kor_public_ig_industrialists = yes }
+}
+
+# Mode 3 conservative-petition full policy: monarchy + conservative power + conservative
+# speech, landowners or devout support, real office at .5 and authority/legitimacy.
+ywc_kor_public_mode3_full = {
+	ywc_kor_public_law_monarchy = yes
+	ywc_kor_public_law_conservative_power = yes
+	ywc_kor_public_law_conservative_speech = yes
+	ywc_kor_public_pilot_office_half = yes
+	bureaucracy >= 0
+	authority >= 50
+	legitimacy >= 25
+	ywc_kor_public_pilot_turmoil_calm = yes
+	is_at_war = no
+	ywc_kor_public_finance_safe = yes
+	OR = { ywc_kor_public_ig_landowners = yes ywc_kor_public_ig_devout = yes }
+}
+
+# Explicit target 2 finite petition: any current regime/power/speech/tax, no special IG.
+# Requires only the saved pilot, its bounded office, peace, solvency and moderate turmoil.
+ywc_kor_public_target2_finite = {
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_pilot_office_bounded = yes
+	bureaucracy >= 0
+	legitimacy >= 20
+	ywc_kor_public_pilot_turmoil_bounded = yes
+	is_at_war = no
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+	net_fixed_income >= 0
+}
+
+ywc_kor_public_full_conditions = {
+	is_at_war = no
+	OR = {
+		AND = { var:ywc_kor_public_mode = 1 ywc_kor_public_mode1_full = yes }
+		AND = { var:ywc_kor_public_mode = 2 ywc_kor_public_mode2_full = yes }
+		AND = { var:ywc_kor_public_mode = 3 ywc_kor_public_mode3_full = yes }
+	}
+}
+
+# The currently declared target's operating condition for the six-month run.
+ywc_kor_public_selected_current_ready = {
+	ywc_kor_public_open = yes
+	ywc_kor_public_mode_chosen = yes
+	ywc_kor_public_target_chosen = yes
+	ywc_kor_public_finance_safe = yes
+	OR = {
+		AND = { var:ywc_kor_public_target = 1 ywc_kor_public_full_conditions = yes }
+		AND = { var:ywc_kor_public_target = 2 ywc_kor_public_target2_finite = yes }
+	}
+}
+
+# Both real fees must be actually paid with positive amounts before any terminal.
+# Each paid flag must be genuinely 1 (not merely present) and its amount strictly
+# positive; a zeroed flag with a leftover amount is never accepted.
+ywc_kor_public_both_fees_paid = {
+	has_variable = ywc_kor_public_petition_paid
+	var:ywc_kor_public_petition_paid = 1
+	has_variable = ywc_kor_public_petition_paid_amount
+	var:ywc_kor_public_petition_paid_amount > 0
+	has_variable = ywc_kor_public_review_paid
+	var:ywc_kor_public_review_paid = 1
+	has_variable = ywc_kor_public_review_paid_amount
+	var:ywc_kor_public_review_paid_amount > 0
+}
+
+ywc_kor_public_six_months_complete = {
+	ywc_kor_public_both_fees_paid = yes
+	has_variable = ywc_kor_public_review_mature
+	var:ywc_kor_public_review_streak >= 6
+	NOT = { has_variable = ywc_kor_public_review_interrupted }
+}
+
+ywc_kor_public_terminal_full = {
+	ywc_kor_public_open = yes
+	NOT = { has_variable = ywc_kor_public_finite_chosen }
+	is_at_war = no
+	ywc_kor_public_full_conditions = yes
+	ywc_kor_public_finance_safe = yes
+	ywc_kor_public_both_fees_paid = yes
+	ywc_kor_public_six_months_complete = yes
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_historical_identity_complete = yes
+	ywc_kor_public_witness_current_duty = yes
+	ywc_kor_public_channel_current_legal = yes
+	ywc_kor_public_new_opposition_appeared = no
+	ywc_kor_public_new_suppressed_appeared = no
+	ywc_kor_public_adopted_school_source_current = yes
+	ywc_kor_public_adopted_written_shares_current = yes
+}
+
+ywc_kor_public_terminal_finite = {
+	ywc_kor_public_open = yes
+	ywc_kor_public_both_fees_paid = yes
+	ywc_kor_public_six_months_complete = yes
+	has_variable = ywc_kor_public_finite_chosen
+	var:ywc_kor_public_target = 2
+	ywc_kor_public_target2_finite = yes
+	ywc_kor_public_historical_identity_complete = yes
+	ywc_kor_public_witness_current_duty = yes
+	ywc_kor_public_channel_current_legal = yes
+	ywc_kor_public_new_opposition_appeared = no
+	ywc_kor_public_new_suppressed_appeared = no
+}
+
+ywc_kor_public_terminal_setback = {
+	ywc_kor_public_open = yes
+	ywc_kor_public_both_fees_paid = yes
+	ywc_kor_public_six_months_complete = yes
+	ywc_kor_public_historical_identity_complete = yes
+	has_variable = ywc_kor_public_review_mature
+	NOT = { has_variable = ywc_kor_public_review_interrupted }
+	OR = {
+		ywc_kor_public_new_opposition_appeared = yes
+		ywc_kor_public_new_suppressed_appeared = yes
+		NOT = { ywc_kor_public_selected_current_ready = yes }
+		NOT = { ywc_kor_public_witness_current_duty = yes }
+		NOT = { ywc_kor_public_channel_current_legal = yes }
+		NOT = { ywc_kor_public_adopted_school_source_current = yes }
+		NOT = { ywc_kor_public_adopted_written_shares_current = yes }
+	}
+}
+
+ywc_kor_public_withdrawn = {
+	has_variable = ywc_kor_public_outcome
+	var:ywc_kor_public_outcome = 4
+}
+
+# Per-event stage gate. Each event's own last_event receipt (1..8) is written strictly
+# after ywc_v03_mark_major_delivered in the native immediate, and the same receipt is
+# required by every option display/effect guard for that event.
+ywc_kor_public_stage_1120 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1120
+}
+
+ywc_kor_public_at_1120 = {
+	ywc_kor_public_stage_1120 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 1
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1120 }
+}
+
+ywc_kor_public_stage_1121 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1121
+}
+
+ywc_kor_public_at_1121 = {
+	ywc_kor_public_stage_1121 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 2
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1121 }
+}
+
+ywc_kor_public_stage_1122 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1122
+}
+
+ywc_kor_public_at_1122 = {
+	ywc_kor_public_stage_1122 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 3
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1122 }
+}
+
+ywc_kor_public_stage_1123 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 1
+	has_journal_entry = ywc_je_v03_kor_court_public_deliberation
+	var:ywc_kor_public_stage = 1123
+}
+
+ywc_kor_public_at_1123 = {
+	ywc_kor_public_stage_1123 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 4
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1123 }
+}
+
+ywc_kor_public_stage_1124 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1124
+}
+
+ywc_kor_public_at_1124 = {
+	ywc_kor_public_stage_1124 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 5
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1124 }
+}
+
+ywc_kor_public_stage_1125 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1125
+}
+
+ywc_kor_public_at_1125 = {
+	ywc_kor_public_stage_1125 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 6
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1125 }
+}
+
+ywc_kor_public_stage_1126 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1126
+}
+
+ywc_kor_public_at_1126 = {
+	ywc_kor_public_stage_1126 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 7
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1126 }
+}
+
+ywc_kor_public_stage_1127 = {
+	ywc_kor_public_open = yes
+	var:ywc_kor_public_phase = 2
+	has_journal_entry = ywc_je_v03_kor_court_public_review
+	var:ywc_kor_public_stage = 1127
+}
+
+ywc_kor_public_at_1127 = {
+	ywc_kor_public_stage_1127 = yes
+	var:ywc_v03_kor_v03_kor_court_public_last_event = 8
+	OR = { NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_pending_event = 1127 }
+}
+
+# Fee pricing: petition (1121) and review (1125) as exact multiples of B.
+# Petition half is only mode3 or target2; the old written-share contract lowers mode2
+# petition from 2B to B (one base), never to half.
+ywc_kor_public_petition_half = {
+	OR = {
+		var:ywc_kor_public_mode = 3
+		var:ywc_kor_public_target = 2
+	}
+}
+
+ywc_kor_public_can_pay_petition = {
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_mode_chosen = yes
+	ywc_kor_public_target_chosen = yes
+	has_variable = ywc_kor_public_budget
+	var:ywc_kor_public_budget >= 100
+	NOT = { has_variable = ywc_kor_public_petition_paid }
+	ywc_kor_public_finance_safe = yes
+	is_at_war = no
+	ywc_kor_public_selected_current_ready = yes
+	OR = {
+		AND = { ywc_kor_public_petition_half = yes gold_reserves >= { value = var:ywc_kor_public_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_public_mode = 1 gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 ywc_kor_public_petition_prior_written_shares = yes gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 NOT = { ywc_kor_public_petition_prior_written_shares = yes } gold_reserves >= { value = var:ywc_kor_public_budget multiply = 2 } }
+	}
+}
+
+# Old written-share provincial revenue contract (mode2 B/B discount). A real settled
+# written-share contract at the same pilot, never a free flag. Every old numeric amount,
+# mode, target, streak and snapshot field is has_variable-guarded before the older
+# predicates read it, so a deleted old field honestly returns false instead of raising.
+ywc_kor_public_petition_prior_written_shares = {
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled
+	has_variable = ywc_v03_kor_v03_kor_provincial_revenue_outcome
+	var:ywc_v03_kor_v03_kor_provincial_revenue_outcome = 1
+	has_variable = ywc_kor_revenue_outcome
+	var:ywc_kor_revenue_outcome = 1
+	has_variable = ywc_kor_revenue_mode
+	var:ywc_kor_revenue_mode = 1
+	has_variable = ywc_kor_revenue_target
+	var:ywc_kor_revenue_target = 1
+	NOT = { has_variable = ywc_kor_revenue_finite_chosen }
+	NOT = { has_variable = ywc_kor_revenue_withdrawn }
+	has_variable = ywc_kor_revenue_charter_paid
+	has_variable = ywc_kor_revenue_charter_paid_amount
+	var:ywc_kor_revenue_charter_paid_amount > 0
+	has_variable = ywc_kor_revenue_review_paid
+	has_variable = ywc_kor_revenue_review_paid_amount
+	var:ywc_kor_revenue_review_paid_amount > 0
+	has_variable = ywc_kor_revenue_review_mature
+	has_variable = ywc_kor_revenue_review_streak
+	var:ywc_kor_revenue_review_streak >= 6
+	NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+	has_variable = ywc_kor_revenue_pilot_state
+	var:ywc_kor_revenue_pilot_state = var:ywc_kor_public_pilot_state
+	ywc_kor_revenue_pilot_owned = yes
+	has_variable = ywc_kor_revenue_charter_pilot
+	has_variable = ywc_kor_revenue_reviewer_pilot
+	has_variable = ywc_kor_revenue_charter_mode
+	has_variable = ywc_kor_revenue_charter_target
+	has_variable = ywc_kor_revenue_reviewer
+	ywc_kor_revenue_both_snapshots_match = yes
+	ywc_kor_revenue_reviewer_current_duty = yes
+	ywc_kor_revenue_full_conditions = yes
+	ywc_kor_revenue_finance_safe = yes
+}
+
+# Review fee may be billed only after genuine six-month maturity in the same run.
+ywc_kor_public_review_half = {
+	OR = {
+		var:ywc_kor_public_mode = 3
+		var:ywc_kor_public_target = 2
+	}
+}
+
+ywc_kor_public_can_pay_review = {
+	ywc_kor_public_pilot_owned = yes
+	ywc_kor_public_mode_chosen = yes
+	ywc_kor_public_target_chosen = yes
+	has_variable = ywc_kor_public_budget
+	var:ywc_kor_public_budget >= 100
+	has_variable = ywc_kor_public_review_mature
+	var:ywc_kor_public_review_streak >= 6
+	NOT = { has_variable = ywc_kor_public_review_interrupted }
+	has_variable = ywc_kor_public_witness_kind
+	ywc_kor_public_petition_snapshot_match = yes
+	ywc_kor_public_selected_current_ready = yes
+	ywc_kor_public_witness_current_duty = yes
+	ywc_kor_public_channel_current_legal = yes
+	ywc_kor_public_adopted_written_shares_current = yes
+	ywc_kor_public_adopted_school_source_current = yes
+	ywc_kor_public_new_opposition_appeared = no
+	ywc_kor_public_new_suppressed_appeared = no
+	is_at_war = no
+	NOT = { has_variable = ywc_kor_public_review_paid }
+	ywc_kor_public_finance_safe = yes
+	OR = {
+		AND = { ywc_kor_public_review_half = yes gold_reserves >= { value = var:ywc_kor_public_budget multiply = 0.5 } }
+		AND = { var:ywc_kor_public_mode = 1 ywc_kor_public_review_school_discount = yes gold_reserves >= { value = var:ywc_kor_public_budget multiply = 0.75 } }
+		AND = { var:ywc_kor_public_mode = 1 NOT = { ywc_kor_public_review_school_discount = yes } gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 ywc_kor_public_petition_prior_written_shares = yes gold_reserves >= var:ywc_kor_public_budget }
+		AND = { var:ywc_kor_public_mode = 2 NOT = { ywc_kor_public_petition_prior_written_shares = yes } gold_reserves >= { value = var:ywc_kor_public_budget multiply = 1.5 } }
+	}
+}
+
+# School joint contract discount for full mode1 review (.75B). Independent of the chosen
+# witness: it rechecks the genuine old paid school coop/office settlement AND the current
+# same-pilot university/office post at the old source's own >=.8 bar. A new witness does
+# not inherit the school witness duty but still gets the contract price when this source
+# is actually valid; no school => B.
+ywc_kor_public_review_school_discount = {
+	ywc_kor_public_pilot_owned = yes
+	OR = {
+		AND = { ywc_kor_revenue_prior_school_coop = yes ywc_kor_public_pilot_academic_post = yes }
+		AND = { ywc_kor_revenue_prior_school_office = yes ywc_kor_public_pilot_clerk_post_full = yes }
+	}
+}
+
+# An adopted school-price source (recorded review_source_school=1 at review payment) must
+# keep its genuine current joint contract. Loss of the old coop/office source or the same
+# pilot university/office post invalidates the adopted responsibility at request/close and
+# interrupts the unpaid run; recovery does not auto-resume.
+ywc_kor_public_adopted_school_source_current = {
+	OR = {
+		NOT = { has_variable = ywc_kor_public_review_source_school }
+		AND = {
+			has_variable = ywc_kor_public_review_source_school
+			var:ywc_kor_public_review_source_school = 1
+			ywc_kor_public_review_school_discount = yes
+		}
+	}
+}
+
+# An adopted written-revenue source (recorded petition_source_written_shares=1 at petition)
+# must keep its genuine current written-share contract through every later node. Loss of
+# the old outcome/fees/maturity/current full conditions/current reviewer at the same pilot
+# invalidates the adopted responsibility; no silent fallback to the full price.
+ywc_kor_public_adopted_written_shares_current = {
+	OR = {
+		NOT = { has_variable = ywc_kor_public_petition_source_written_shares }
+		AND = {
+			has_variable = ywc_kor_public_petition_source_written_shares
+			var:ywc_kor_public_petition_source_written_shares = 1
+			ywc_kor_public_petition_prior_written_shares = yes
+		}
+	}
+}
+
+# Petition snapshot binds the already-earned first-fee identity to the live pilot/mode/
+# target. It is the only snapshot available before 1125 (review pilot/mode/target are
+# not yet written), so pre-sign and review-billing stages use this, never a future field.
+ywc_kor_public_petition_snapshot_match = {
+	has_variable = ywc_kor_public_petition_pilot
+	var:ywc_kor_public_petition_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_petition_mode
+	var:ywc_kor_public_petition_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_petition_target
+	var:ywc_kor_public_petition_target = var:ywc_kor_public_target
+}
+
+# Both snapshots bind the petition AND the actually-paid review identity to the live
+# pilot/mode/target. Only usable after 1125 actually wrote the review snapshot; late
+# request/close (1126/1127) and terminals use this full match.
+ywc_kor_public_both_snapshots_match = {
+	ywc_kor_public_petition_snapshot_match = yes
+	has_variable = ywc_kor_public_review_pilot
+	var:ywc_kor_public_review_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_review_mode
+	var:ywc_kor_public_review_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_review_target
+	var:ywc_kor_public_review_target = var:ywc_kor_public_target
+}
+
+# Full historical identity: every EARNED responsibility snapshot (petition, review,
+# witness, signature, acceptance and handler) must match the live selected mode/target and
+# the original saved StateRef. Consumed only at paid advance/request/close for full and
+# finite, where all snapshots already exist. It is never required at 1123/1124 or the
+# initial 1125 payment, so there is no future/self snapshot dependency. Missing identity
+# is not a current loss and must not fabricate an earned duty.
+ywc_kor_public_historical_identity_complete = {
+	ywc_kor_public_both_snapshots_match = yes
+	has_variable = ywc_kor_public_witness_kind
+	has_variable = ywc_kor_public_witness_pilot
+	var:ywc_kor_public_witness_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_witness_mode
+	var:ywc_kor_public_witness_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_witness_target
+	var:ywc_kor_public_witness_target = var:ywc_kor_public_target
+	has_variable = ywc_kor_public_sign_mode
+	var:ywc_kor_public_sign_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_sign_target
+	var:ywc_kor_public_sign_target = var:ywc_kor_public_target
+	has_variable = ywc_kor_public_sign_pilot
+	var:ywc_kor_public_sign_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_accept_channel
+	has_variable = ywc_kor_public_accept_mode
+	var:ywc_kor_public_accept_mode = var:ywc_kor_public_mode
+	has_variable = ywc_kor_public_accept_target
+	var:ywc_kor_public_accept_target = var:ywc_kor_public_target
+	has_variable = ywc_kor_public_accept_pilot
+	var:ywc_kor_public_accept_pilot = var:ywc_kor_public_pilot_state
+	has_variable = ywc_kor_public_handler
+	has_variable = ywc_kor_public_handler_pilot
+	var:ywc_kor_public_handler_pilot = var:ywc_kor_public_pilot_state
+}
+
+# Witness current duty: the recorded witness kind must still hold its genuinely earned
+# CURRENT qualification at the same pilot. A cached role whose post/source lost its
+# live posts is defunct.
+ywc_kor_public_witness_current_duty = {
+	ywc_kor_public_pilot_owned = yes
+	has_variable = ywc_kor_public_witness_kind
+	has_variable = ywc_kor_public_witness_pilot
+	var:ywc_kor_public_witness_pilot = var:ywc_kor_public_pilot_state
+	OR = {
+		AND = { var:ywc_kor_public_witness_kind = 1 OR = { ywc_kor_public_pilot_academic_post = yes ywc_kor_public_pilot_clerk_post_full = yes } }
+		AND = { var:ywc_kor_public_witness_kind = 2 ywc_kor_revenue_prior_school_coop = yes ywc_kor_public_pilot_academic_post_half = yes }
+		AND = { var:ywc_kor_public_witness_kind = 3 ywc_kor_revenue_prior_school_office = yes ywc_kor_public_pilot_clerk_post_half = yes }
+		AND = { var:ywc_kor_public_witness_kind = 4 ywc_kor_public_pilot_office_half = yes }
+		AND = { var:ywc_kor_public_witness_kind = 5 ywc_kor_public_pilot_office_bounded = yes }
+	}
+}
+
+# Channel current legality by mode and target, bound to the signed/accept snapshot.
+ywc_kor_public_channel_current_legal = {
+	has_variable = ywc_kor_public_accept_channel
+	OR = {
+		AND = { var:ywc_kor_public_accept_channel = 1 ywc_kor_public_law_court_speech = yes ywc_kor_public_witness_current_duty = yes }
+		AND = { var:ywc_kor_public_accept_channel = 2 ywc_kor_public_law_assembly_speech = yes ywc_kor_public_law_voting_power = yes ywc_kor_public_witness_current_duty = yes }
+		AND = { var:ywc_kor_public_accept_channel = 3 ywc_kor_public_law_conservative_speech = yes ywc_kor_public_witness_current_duty = yes }
+		AND = { var:ywc_kor_public_accept_channel = 4 ywc_kor_public_witness_current_duty = yes }
+	}
+}
+
+# Continuity: a NEW out-of-government, clout >= .05, approval < 0 opposition type that was
+# not present in the recorded snapshot (bit still 0) now interrupts the run. This is read
+# by observation, billing and late execution guards; it never changes any IG fact.
+ywc_kor_public_new_opposition_appeared = {
+	OR = {
+		AND = { var:ywc_kor_public_opp_landowners = 0 any_interest_group = { is_interest_group_type = ig_landowners is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_devout = 0 any_interest_group = { is_interest_group_type = ig_devout is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_armed_forces = 0 any_interest_group = { is_interest_group_type = ig_armed_forces is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_intelligentsia = 0 any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_industrialists = 0 any_interest_group = { is_interest_group_type = ig_industrialists is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_rural_folk = 0 any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_petty_bourgeoisie = 0 any_interest_group = { is_interest_group_type = ig_petty_bourgeoisie is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+		AND = { var:ywc_kor_public_opp_trade_unions = 0 any_interest_group = { is_interest_group_type = ig_trade_unions is_in_government = no ig_clout >= 0.05 ig_approval < 0 } }
+	}
+}
+
+# Continuity: a suppressed movement category that did not exist in the recorded snapshot
+# (bit still 0) now appearing interrupts the run. Existential category only.
+ywc_kor_public_new_suppressed_appeared = {
+	AND = {
+		var:ywc_kor_public_suppressed_category = 0
+		ywc_kor_public_suppressed_movement_present = yes
+	}
+}
+
+# A real suppressed political movement already present in the world: same movement is
+# suppressed and radicalism >= .25. This records an existential category only; it never
+# creates, suppresses or legitimizes an underground organization.
+ywc_kor_public_suppressed_movement_present = {
+	any_political_movement = {
+		is_being_suppressed = yes
+		political_movement_radicalism >= 0.25
+	}
+}
+
+
+# Bounded, non-recoverable KOR public coordination; exact original state only.
+ywc_kor_workshops_open = { has_variable = ywc_v03_kor_v03_kor_workshops_credit_started var:ywc_v03_kor_v03_kor_workshops_credit_started = 1 NOT = { has_variable = ywc_v03_kor_v03_kor_workshops_credit_settled } }
+ywc_kor_workshops_site_available = { any_scope_state = { owner = ROOT any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ywc_kor_workshops_pilot_owned = { has_variable = ywc_kor_workshops_pilot exists = var:ywc_kor_workshops_pilot var:ywc_kor_workshops_pilot = { owner = ROOT } }
+ywc_kor_workshops_common = { ywc_kor_workshops_pilot_owned = yes NOT = { is_at_war = yes } NOT = { in_default = yes } NOT = { has_modifier = declared_bankruptcy } var:ywc_kor_workshops_pilot = { owner = ROOT any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } } }
+ywc_kor_workshops_office_ready = { ywc_kor_workshops_common = yes var:ywc_kor_workshops_pilot = { owner = ROOT any_scope_pop = { is_pop_type = laborers is_employed = yes standard_of_living >= 10 workplace ?= { is_building_type = building_textile_mill occupancy >= 0.5 weekly_profit > 0 cash_reserves_ratio >= 0.25 building_has_goods_shortage = no } } } }
+ywc_kor_workshops_infrastructure_ready = { ywc_kor_workshops_common = yes var:ywc_kor_workshops_pilot = { owner = ROOT market_access >= 0.5 } }
+ywc_kor_workshops_home_ready = { ywc_kor_workshops_common = yes var:ywc_kor_workshops_pilot = { owner = ROOT any_scope_pop = { is_pop_type = peasants is_employed = yes standard_of_living >= 8 workplace ?= { is_building_type = building_subsistence_farm occupancy >= 0.5 building_has_goods_shortage = no has_active_production_method = pm_home_workshops_building_subsistence_farm } } } }
+ywc_kor_workshops_finite_ready = { ywc_kor_workshops_common = yes }
+ywc_kor_workshops_selected_current = { OR = { AND = { var:ywc_kor_workshops_mode = 1 ywc_kor_workshops_office_ready = yes } AND = { var:ywc_kor_workshops_mode = 2 ywc_kor_workshops_infrastructure_ready = yes } AND = { var:ywc_kor_workshops_mode = 3 ywc_kor_workshops_home_ready = yes } AND = { var:ywc_kor_workshops_mode = 4 ywc_kor_workshops_finite_ready = yes } } }
+ywc_kor_workshops_program_due_current = { has_variable = ywc_kor_workshops_program_due var:ywc_kor_workshops_program_due > 0 OR = { AND = { var:ywc_kor_workshops_mode = 1 has_variable = ywc_kor_workshops_cost_1 var:ywc_kor_workshops_program_due = var:ywc_kor_workshops_cost_1 } AND = { var:ywc_kor_workshops_mode = 2 has_variable = ywc_kor_workshops_cost_2 var:ywc_kor_workshops_program_due = var:ywc_kor_workshops_cost_2 } AND = { var:ywc_kor_workshops_mode = 3 has_variable = ywc_kor_workshops_cost_3 var:ywc_kor_workshops_program_due = var:ywc_kor_workshops_cost_3 } AND = { var:ywc_kor_workshops_mode = 4 has_variable = ywc_kor_workshops_cost_4 var:ywc_kor_workshops_program_due = var:ywc_kor_workshops_cost_4 } } }
+ywc_kor_workshops_school_history = { ywc_kor_revenue_prior_school_coop = yes var:ywc_v03_kor_v03_kor_school_factions_started = 1 var:ywc_v03_kor_v03_kor_school_factions_settled = 1 var:ywc_kor_school_established = 1 var:ywc_kor_school_coop_paid = 1 var:ywc_kor_school_filing_fee_paid = 1 var:ywc_kor_school_old_invoice_paid = 1 var:ywc_kor_school_funding_decided = 1 var:ywc_kor_school_appointment_decided = 1 var:ywc_kor_school_six_months_complete = 1 }
+ywc_kor_workshops_military_earned = { has_variable = ywc_v03_kor_v03_kor_military_accounts_started var:ywc_v03_kor_v03_kor_military_accounts_started = 1 has_variable = ywc_v03_kor_v03_kor_military_accounts_settled var:ywc_v03_kor_v03_kor_military_accounts_settled = 1 has_variable = ywc_v03_kor_v03_kor_military_accounts_outcome var:ywc_v03_kor_v03_kor_military_accounts_outcome = 2 has_variable = ywc_kor_supply_route var:ywc_kor_supply_route = 2 has_variable = ywc_kor_reporting_mode var:ywc_kor_reporting_mode = 2 has_variable = ywc_kor_any_outcome var:ywc_kor_any_outcome = 1 has_variable = ywc_kor_provincial_report_right var:ywc_kor_provincial_report_right = 1 has_variable = ywc_kor_outcome_provincial_supply var:ywc_kor_outcome_provincial_supply = 1 has_variable = ywc_kor_audit_paid var:ywc_kor_audit_paid = 1 has_variable = ywc_kor_invoice_review_paid var:ywc_kor_invoice_review_paid = 1 has_variable = ywc_kor_supply_account_accepted var:ywc_kor_supply_account_accepted = 1 has_variable = ywc_kor_audit_public var:ywc_kor_audit_public = 1 has_variable = ywc_kor_review_complete var:ywc_kor_review_complete = 1 has_variable = ywc_kor_service_review_complete var:ywc_kor_service_review_complete = 1 has_variable = ywc_kor_six_months_complete var:ywc_kor_six_months_complete = 1 has_variable = ywc_kor_nine_months_complete var:ywc_kor_nine_months_complete = 1 has_variable = ywc_kor_translation_contract_started var:ywc_kor_translation_contract_started = 1 has_variable = ywc_kor_translation_contract_paid_months var:ywc_kor_translation_contract_paid_months >= 12 has_variable = ywc_kor_veteran_contract_started var:ywc_kor_veteran_contract_started = 1 has_variable = ywc_kor_veteran_contract_paid_months var:ywc_kor_veteran_contract_paid_months >= 12 NOT = { has_variable = ywc_kor_arc_abandoned } NOT = { has_variable = ywc_kor_scope_narrowed } }
+ywc_kor_workshops_military_history = { ywc_kor_workshops_military_earned = yes ywc_kor_v03_route_execution_ready = yes }
+ywc_kor_workshops_program_paid = { has_variable = ywc_kor_workshops_program_paid var:ywc_kor_workshops_program_paid = 1 has_variable = ywc_kor_workshops_program_paid_amount var:ywc_kor_workshops_program_paid_amount > 0 has_variable = ywc_kor_workshops_program_due var:ywc_kor_workshops_program_paid_amount = var:ywc_kor_workshops_program_due has_variable = ywc_kor_workshops_program_mode var:ywc_kor_workshops_program_mode = var:ywc_kor_workshops_mode has_variable = ywc_kor_workshops_program_pilot OR = { AND = { var:ywc_kor_workshops_mode = 1 has_variable = ywc_kor_workshops_cost_1 var:ywc_kor_workshops_program_paid_amount = var:ywc_kor_workshops_cost_1 } AND = { var:ywc_kor_workshops_mode = 2 has_variable = ywc_kor_workshops_cost_2 var:ywc_kor_workshops_program_paid_amount = var:ywc_kor_workshops_cost_2 } AND = { var:ywc_kor_workshops_mode = 3 has_variable = ywc_kor_workshops_cost_3 var:ywc_kor_workshops_program_paid_amount = var:ywc_kor_workshops_cost_3 } AND = { var:ywc_kor_workshops_mode = 4 has_variable = ywc_kor_workshops_cost_4 var:ywc_kor_workshops_program_paid_amount = var:ywc_kor_workshops_cost_4 } } }
+ywc_kor_workshops_program_current = { ywc_kor_workshops_program_paid = yes ywc_kor_workshops_pilot_owned = yes var:ywc_kor_workshops_program_pilot = var:ywc_kor_workshops_pilot }
+ywc_kor_workshops_signed = { has_variable = ywc_kor_workshops_signed var:ywc_kor_workshops_signed = 1 has_variable = ywc_kor_workshops_sign_mode var:ywc_kor_workshops_sign_mode = var:ywc_kor_workshops_mode has_variable = ywc_kor_workshops_sign_pilot }
+ywc_kor_workshops_signed_current = { ywc_kor_workshops_signed = yes ywc_kor_workshops_pilot_owned = yes var:ywc_kor_workshops_sign_pilot = var:ywc_kor_workshops_pilot }
+ywc_kor_workshops_accepted = { has_variable = ywc_kor_workshops_accepted var:ywc_kor_workshops_accepted = 1 has_variable = ywc_kor_workshops_accept_mode var:ywc_kor_workshops_accept_mode = var:ywc_kor_workshops_mode has_variable = ywc_kor_workshops_accept_pilot }
+ywc_kor_workshops_review_paid = { has_variable = ywc_kor_workshops_review_paid var:ywc_kor_workshops_review_paid = 1 has_variable = ywc_kor_workshops_review_paid_amount var:ywc_kor_workshops_review_paid_amount > 0 has_variable = ywc_kor_workshops_review_mode var:ywc_kor_workshops_review_mode = var:ywc_kor_workshops_mode has_variable = ywc_kor_workshops_review_pilot has_variable = ywc_kor_workshops_review_source has_variable = ywc_kor_workshops_base var:ywc_kor_workshops_base > 0 OR = { AND = { var:ywc_kor_workshops_review_source = 1 var:ywc_kor_workshops_review_paid_amount = var:ywc_kor_workshops_base } AND = { var:ywc_kor_workshops_review_source = 2 has_variable = ywc_kor_workshops_review_discount var:ywc_kor_workshops_review_paid_amount = var:ywc_kor_workshops_review_discount ywc_kor_workshops_military_earned = yes } } }
+ywc_kor_workshops_witness_current = { OR = { AND = { var:ywc_kor_workshops_witness = 1 ywc_kor_workshops_school_history = yes } var:ywc_kor_workshops_witness = 2 } }
+ywc_kor_workshops_identity_match = { exists = var:ywc_kor_workshops_pilot var:ywc_kor_workshops_program_pilot = var:ywc_kor_workshops_pilot var:ywc_kor_workshops_sign_pilot = var:ywc_kor_workshops_pilot var:ywc_kor_workshops_accept_pilot = var:ywc_kor_workshops_pilot }
+ywc_kor_workshops_identity_current = { ywc_kor_workshops_pilot_owned = yes ywc_kor_workshops_identity_match = yes }
+ywc_kor_workshops_historical = { ywc_kor_workshops_program_paid = yes ywc_kor_workshops_signed = yes ywc_kor_workshops_accepted = yes ywc_kor_workshops_review_paid = yes has_variable = ywc_kor_workshops_review_mature var:ywc_kor_workshops_review_mature = 1 has_variable = ywc_kor_workshops_review_streak var:ywc_kor_workshops_review_streak >= 6 NOT = { has_variable = ywc_kor_workshops_review_interrupted } }
+ywc_kor_workshops_full_ready = { ywc_kor_workshops_historical = yes ywc_kor_workshops_selected_current = yes ywc_kor_workshops_witness_current = yes ywc_kor_workshops_identity_current = yes var:ywc_kor_workshops_review_pilot = var:ywc_kor_workshops_pilot var:ywc_kor_workshops_mode < 4 OR = { NOT = { var:ywc_kor_workshops_review_source = 2 } ywc_kor_workshops_military_history = yes } }
+ywc_kor_workshops_limited_ready = { ywc_kor_workshops_historical = yes ywc_kor_workshops_selected_current = yes ywc_kor_workshops_witness_current = yes ywc_kor_workshops_identity_current = yes var:ywc_kor_workshops_review_pilot = var:ywc_kor_workshops_pilot var:ywc_kor_workshops_mode = 4 OR = { NOT = { var:ywc_kor_workshops_review_source = 2 } ywc_kor_workshops_military_history = yes } }
+ywc_kor_workshops_setback_ready = { ywc_kor_workshops_historical = yes OR = { AND = { NOT = { exists = var:ywc_kor_workshops_pilot } NOT = { exists = var:ywc_kor_workshops_program_pilot } NOT = { exists = var:ywc_kor_workshops_sign_pilot } NOT = { exists = var:ywc_kor_workshops_accept_pilot } NOT = { exists = var:ywc_kor_workshops_review_pilot } } AND = { exists = var:ywc_kor_workshops_pilot ywc_kor_workshops_identity_match = yes var:ywc_kor_workshops_review_pilot = var:ywc_kor_workshops_pilot } } OR = { NOT = { ywc_kor_workshops_pilot_owned = yes } NOT = { ywc_kor_workshops_selected_current = yes } NOT = { ywc_kor_workshops_witness_current = yes } AND = { var:ywc_kor_workshops_review_source = 2 NOT = { ywc_kor_workshops_military_history = yes } } } }
+ywc_kor_workshops_at_1110 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_program var:ywc_kor_workshops_stage = 1110 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 1 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1110 } }
+ywc_kor_workshops_at_1111 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_program var:ywc_kor_workshops_stage = 1111 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 2 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1111 } }
+ywc_kor_workshops_at_1112 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_program var:ywc_kor_workshops_stage = 1112 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 3 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1112 } }
+ywc_kor_workshops_at_1113 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_program var:ywc_kor_workshops_stage = 1113 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 4 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1113 } }
+ywc_kor_workshops_at_1114 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_review var:ywc_kor_workshops_stage = 1114 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 5 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1114 } }
+ywc_kor_workshops_at_1115 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_review var:ywc_kor_workshops_stage = 1115 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 6 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1115 } }
+ywc_kor_workshops_at_1116 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_review var:ywc_kor_workshops_stage = 1116 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 7 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1116 } }
+ywc_kor_workshops_at_1117 = { ywc_kor_workshops_open = yes has_journal_entry = ywc_je_v03_kor_workshops_review var:ywc_kor_workshops_stage = 1117 var:ywc_v03_kor_v03_kor_workshops_credit_last_event = 8 has_variable = ywc_kor_workshops_popup_epoch exists = scope:ywc_kor_workshops_popup_epoch scope:ywc_kor_workshops_popup_epoch = var:ywc_kor_workshops_popup_epoch OR = { NOT = { has_variable = ywc_kor_workshops_pending_event } var:ywc_kor_workshops_pending_event = 1117 } }
+
+
+# --- v03_kor_country_language (late) --------------------------------------
+ywc_kor_language_open = {
+	has_variable = ywc_v03_kor_v03_kor_country_language_started
+	NOT = { has_variable = ywc_v03_kor_v03_kor_country_language_settled }
+	NOT = { has_variable = ywc_kor_language_outcome }
+	NOT = { has_variable = ywc_kor_language_withdrawn }
+}
+ywc_kor_language_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+ywc_kor_language_best_state = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_pop = {
+			is_pop_type = clerks
+			is_employed = yes
+			workplace ?= { is_building_type = building_port occupancy >= 0.25 building_has_goods_shortage = no }
+		}
+	}
+}
+ywc_kor_language_current_broken = {
+	OR = {
+		is_at_war = yes
+		NOT = { ywc_kor_language_finance_safe = yes }
+		in_default = yes
+	}
+}
+ywc_kor_language_at_1200 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1200 }
+ywc_kor_language_at_1201 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1201 }
+ywc_kor_language_at_1202 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1202 }
+ywc_kor_language_at_1203 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1203 }
+ywc_kor_language_at_1204 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1204 }
+ywc_kor_language_at_1205 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1205 }
+ywc_kor_language_at_1206 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1206 }
+ywc_kor_language_at_1207 = { has_variable = ywc_kor_language_stage var:ywc_kor_language_stage = 1207 }
+ywc_kor_language_full_terminal = {
+	OR = { has_variable = ywc_kor_language_review_mature has_variable = ywc_kor_language_review_interrupted }
+	ywc_kor_language_finance_safe = yes
+}
+ywc_kor_language_close_full_ready = {
+	ywc_kor_language_at_1207 = yes
+	ywc_kor_language_full_terminal = yes
+	NOT = { has_variable = ywc_kor_language_outcome }
+}
+ywc_kor_language_close_limited_ready = {
+	ywc_kor_language_at_1207 = yes
+	NOT = { has_variable = ywc_kor_language_outcome }
+	ywc_kor_language_finance_safe = yes
+}
+ywc_kor_language_close_setback_ready = {
+	ywc_kor_language_at_1207 = yes
+	NOT = { has_variable = ywc_kor_language_outcome }
+}
+# --- v03_kor_independent_diplomacy (late) ----------------------------------
+ywc_kor_diplomacy_open = {
+	has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_started
+	NOT = { has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_settled }
+	NOT = { has_variable = ywc_kor_diplomacy_outcome }
+	NOT = { has_variable = ywc_kor_diplomacy_withdrawn }
+}
+ywc_kor_diplomacy_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+ywc_kor_diplomacy_has_port = {
+	any_scope_state = {
+		owner = ROOT
+		any_scope_building = { is_building_type = building_port occupancy >= 0.1 }
+	}
+}
+ywc_kor_diplomacy_current_broken = {
+	OR = {
+		is_at_war = yes
+		NOT = { ywc_kor_diplomacy_finance_safe = yes }
+		in_default = yes
+	}
+}
+ywc_kor_diplomacy_at_1210 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1210 }
+ywc_kor_diplomacy_at_1211 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1211 }
+ywc_kor_diplomacy_at_1212 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1212 }
+ywc_kor_diplomacy_at_1213 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1213 }
+ywc_kor_diplomacy_at_1214 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1214 }
+ywc_kor_diplomacy_at_1215 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1215 }
+ywc_kor_diplomacy_at_1216 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1216 }
+ywc_kor_diplomacy_at_1217 = { has_variable = ywc_kor_diplomacy_stage var:ywc_kor_diplomacy_stage = 1217 }
+ywc_kor_diplomacy_full_terminal = {
+	OR = { has_variable = ywc_kor_diplomacy_review_mature has_variable = ywc_kor_diplomacy_review_interrupted }
+	ywc_kor_diplomacy_finance_safe = yes
+}
+ywc_kor_diplomacy_close_full_ready = {
+	ywc_kor_diplomacy_at_1217 = yes
+	ywc_kor_diplomacy_full_terminal = yes
+	NOT = { has_variable = ywc_kor_diplomacy_outcome }
+}
+ywc_kor_diplomacy_close_limited_ready = {
+	ywc_kor_diplomacy_at_1217 = yes
+	NOT = { has_variable = ywc_kor_diplomacy_outcome }
+	ywc_kor_diplomacy_finance_safe = yes
+}
+ywc_kor_diplomacy_close_setback_ready = {
+	ywc_kor_diplomacy_at_1217 = yes
+	NOT = { has_variable = ywc_kor_diplomacy_outcome }
+}
+# --- v03_kor_social_obligations (late) -------------------------------------
+ywc_kor_oblig_open = {
+	has_variable = ywc_v03_kor_v03_kor_social_obligations_started
+	NOT = { has_variable = ywc_v03_kor_v03_kor_social_obligations_settled }
+	NOT = { has_variable = ywc_kor_oblig_outcome }
+	NOT = { has_variable = ywc_kor_oblig_withdrawn }
+}
+ywc_kor_oblig_finance_safe = {
+	bureaucracy >= 0
+	net_fixed_income >= 0
+	NOT = { in_default = yes }
+	NOT = { has_modifier = declared_bankruptcy }
+}
+ywc_kor_oblig_current_broken = {
+	OR = {
+		is_at_war = yes
+		NOT = { ywc_kor_oblig_finance_safe = yes }
+		in_default = yes
+	}
+}
+ywc_kor_oblig_at_1220 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1220 }
+ywc_kor_oblig_at_1221 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1221 }
+ywc_kor_oblig_at_1222 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1222 }
+ywc_kor_oblig_at_1223 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1223 }
+ywc_kor_oblig_at_1224 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1224 }
+ywc_kor_oblig_at_1225 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1225 }
+ywc_kor_oblig_at_1226 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1226 }
+ywc_kor_oblig_at_1227 = { has_variable = ywc_kor_oblig_stage var:ywc_kor_oblig_stage = 1227 }
+ywc_kor_oblig_full_terminal = {
+	OR = { has_variable = ywc_kor_oblig_review_mature has_variable = ywc_kor_oblig_review_interrupted }
+	ywc_kor_oblig_finance_safe = yes
+}
+ywc_kor_oblig_close_full_ready = {
+	ywc_kor_oblig_at_1227 = yes
+	ywc_kor_oblig_full_terminal = yes
+	NOT = { has_variable = ywc_kor_oblig_outcome }
+}
+ywc_kor_oblig_close_limited_ready = {
+	ywc_kor_oblig_at_1227 = yes
+	NOT = { has_variable = ywc_kor_oblig_outcome }
+	ywc_kor_oblig_finance_safe = yes
+}
+ywc_kor_oblig_close_setback_ready = {
+	ywc_kor_oblig_at_1227 = yes
+	NOT = { has_variable = ywc_kor_oblig_outcome }
+}

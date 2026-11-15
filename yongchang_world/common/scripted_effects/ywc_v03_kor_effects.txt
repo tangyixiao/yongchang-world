@@ -1,0 +1,3314 @@
+# KOR-local military budget. The opening snapshot uses the official yearly gross
+# government income divided by 52; each actual debit is separately guarded.
+ywc_kor_capture_cost_base = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ready_supply_months } }
+		set_variable = { name = ywc_kor_ready_supply_months value = 0 }
+	}
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_cost_captured } }
+		set_variable = { name = ywc_kor_weekly_cost value = yearly_gross_income }
+		change_variable = { name = ywc_kor_weekly_cost divide = 52 }
+		clamp_variable = { name = ywc_kor_weekly_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_kor_cost_captured value = 1 }
+	}
+}
+
+ywc_kor_pay_audit_once = {
+	if = {
+		limit = {
+			net_fixed_income >= 0
+			NOT = { has_variable = ywc_kor_audit_paid }
+		}
+		ywc_kor_capture_cost_base = yes
+		if = {
+			limit = { gold_reserves >= var:ywc_kor_weekly_cost }
+			add_treasury = { value = var:ywc_kor_weekly_cost multiply = -1 }
+			set_variable = { name = ywc_kor_audit_paid value = 1 }
+		}
+	}
+}
+
+ywc_kor_start_translation_contract_once = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_translation_contract_started } net_fixed_income >= 0 }
+		ywc_kor_capture_cost_base = yes
+		if = {
+			limit = { gold_reserves >= { value = var:ywc_kor_weekly_cost multiply = 0.0833333333 } }
+			set_variable = { name = ywc_kor_translation_contract_started value = 1 }
+			set_variable = { name = ywc_kor_translation_contract_paid_months value = 0 }
+		}
+	}
+}
+
+ywc_kor_start_veteran_contract_once = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_veteran_contract_started } net_fixed_income >= 0 }
+		ywc_kor_capture_cost_base = yes
+		if = {
+			limit = { gold_reserves >= { value = var:ywc_kor_weekly_cost multiply = 0.0833333333 } }
+			set_variable = { name = ywc_kor_veteran_contract_started value = 1 }
+			set_variable = { name = ywc_kor_veteran_contract_paid_months value = 0 }
+		}
+	}
+}
+
+ywc_kor_pay_invoice_once = {
+	if = {
+		limit = { net_fixed_income >= 0 NOT = { has_variable = ywc_kor_invoice_review_paid } }
+		ywc_kor_capture_cost_base = yes
+		if = {
+			limit = { gold_reserves >= var:ywc_kor_weekly_cost }
+			add_treasury = { value = var:ywc_kor_weekly_cost multiply = -1 }
+			set_variable = { name = ywc_kor_invoice_review_paid value = 1 }
+		}
+	}
+}
+
+ywc_kor_choose_court_supply = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_arc_abandoned } net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } army_size > 0 }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_supply_route } }
+		ywc_kor_pay_audit_once = yes
+		if = {
+			limit = { has_variable = ywc_kor_audit_paid }
+			set_variable = { name = ywc_kor_supply_route value = 1 }
+			set_variable = { name = ywc_kor_court_command_commitment value = 1 }
+			set_variable = { name = ywc_kor_observation_due value = 1 months = 6 }
+		}
+	}
+
+    }
+}
+
+ywc_kor_choose_provincial_supply = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_arc_abandoned } net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } army_size > 0 }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_supply_route } }
+		ywc_kor_pay_audit_once = yes
+		if = {
+			limit = { has_variable = ywc_kor_audit_paid }
+			set_variable = { name = ywc_kor_supply_route value = 2 }
+			set_variable = { name = ywc_kor_provincial_report_right value = 1 }
+			set_variable = { name = ywc_kor_observation_due value = 1 months = 6 }
+		}
+	}
+
+    }
+}
+
+ywc_kor_choose_limited_legacy = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_arc_abandoned } net_fixed_income >= 0 in_default = no NOT = { has_modifier = declared_bankruptcy } }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_supply_route } }
+		ywc_kor_pay_audit_once = yes
+		if = {
+			limit = { has_variable = ywc_kor_audit_paid }
+			set_variable = { name = ywc_kor_supply_route value = 3 }
+			set_variable = { name = ywc_kor_legacy_ceiling value = 1 }
+			set_variable = { name = ywc_kor_observation_due value = 1 months = 6 }
+		}
+	}
+
+    }
+}
+
+ywc_kor_pay_monthly_supply = {
+	if = {
+		limit = {
+			has_variable = ywc_kor_supply_route
+			ywc_kor_v03_route_execution_ready = yes
+		}
+		change_variable = { name = ywc_kor_ready_supply_months add = 1 }
+		set_variable = { name = ywc_kor_last_supply_installment value = 1 }
+	}
+}
+
+# Optional local training and veteran transition contracts are finite: each
+# selected contract pays at most twelve monthly installments totaling one
+# captured week of income. A short lock prevents two JE pulses charging twice.
+ywc_kor_pay_selected_contracts = {
+	if = {
+		limit = {
+			OR = { has_variable = ywc_kor_translation_contract_started has_variable = ywc_kor_veteran_contract_started }
+			NOT = { has_variable = ywc_kor_contract_month_lock }
+		}
+		set_variable = { name = ywc_kor_contract_month_lock value = 1 days = 27 }
+		ywc_kor_capture_cost_base = yes
+		set_variable = { name = ywc_kor_contract_monthly_installment value = var:ywc_kor_weekly_cost }
+		change_variable = { name = ywc_kor_contract_monthly_installment multiply = 0.0833333333 }
+		if = {
+			limit = { has_variable = ywc_kor_translation_contract_started var:ywc_kor_translation_contract_paid_months < 12 net_fixed_income >= 0 gold_reserves >= var:ywc_kor_contract_monthly_installment }
+			add_treasury = { value = var:ywc_kor_contract_monthly_installment multiply = -1 }
+			change_variable = { name = ywc_kor_translation_contract_paid_months add = 1 }
+		}
+		if = {
+			limit = { has_variable = ywc_kor_veteran_contract_started var:ywc_kor_veteran_contract_paid_months < 12 net_fixed_income >= 0 gold_reserves >= var:ywc_kor_contract_monthly_installment }
+			add_treasury = { value = var:ywc_kor_contract_monthly_installment multiply = -1 }
+			change_variable = { name = ywc_kor_veteran_contract_paid_months add = 1 }
+		}
+	}
+}
+
+# A send records a fresh, explicit participant pair and immutable numeric terms.
+ywc_kor_instructor_send_shu = {
+	if = {
+		limit = { ywc_kor_instructor_can_offer_shu = yes }
+		c:SHU = { save_scope_as = ywc_kor_request_partner }
+		ywc_kor_instructor_send_captured_offer = yes
+	}
+}
+
+ywc_kor_instructor_send_jhg = {
+	if = {
+		limit = { ywc_kor_instructor_can_offer_jhg = yes }
+		c:JHG = { save_scope_as = ywc_kor_request_partner }
+		ywc_kor_instructor_send_captured_offer = yes
+	}
+}
+
+ywc_kor_instructor_send_captured_offer = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_request_partner
+			OR = {
+				AND = { scope:ywc_kor_request_partner ?= c:SHU ywc_kor_instructor_can_offer_shu = yes }
+				AND = { scope:ywc_kor_request_partner ?= c:JHG ywc_kor_instructor_can_offer_jhg = yes }
+			}
+		}
+		if = { limit = { NOT = { has_variable = ywc_kor_instructor_generation } } set_variable = { name = ywc_kor_instructor_generation value = 0 } }
+		change_variable = { name = ywc_kor_instructor_generation add = 1 }
+		set_variable = { name = ywc_kor_instructor_partner value = scope:ywc_kor_request_partner }
+		set_variable = { name = ywc_kor_instructor_state value = 1 }
+		set_variable = { name = ywc_kor_instructor_request_timer value = 1 months = 3 }
+		set_variable = { name = ywc_kor_instructor_request_total value = var:ywc_kor_weekly_cost }
+		set_variable = { name = ywc_kor_instructor_request_months value = 12 }
+		remove_variable = ywc_kor_instructor_notice_open_serial
+		remove_variable = ywc_kor_instructor_notice_event
+		save_scope_as = ywc_kor_requester
+		save_scope_value_as = { name = ywc_kor_request_generation value = var:ywc_kor_instructor_generation }
+		save_scope_value_as = { name = ywc_kor_request_total value = var:ywc_kor_instructor_request_total }
+		save_scope_value_as = { name = ywc_kor_request_months value = var:ywc_kor_instructor_request_months }
+		scope:ywc_kor_request_partner = { trigger_event = { id = ywc_kor.1030 } }
+	}
+}
+
+ywc_kor_instructor_accept_offer = {
+	if = {
+		limit = { ywc_kor_instructor_signable = yes }
+		set_variable = { name = ywc_kor_instructor_answer_requester value = scope:ywc_kor_requester }
+		set_variable = { name = ywc_kor_instructor_answer_generation value = scope:ywc_kor_request_generation }
+		set_variable = { name = ywc_kor_instructor_answer value = 1 }
+		set_variable = { name = ywc_kor_instructor_answer_total value = scope:ywc_kor_request_total }
+		set_variable = { name = ywc_kor_instructor_answer_months value = scope:ywc_kor_request_months }
+		scope:ywc_kor_requester = {
+			set_variable = { name = ywc_kor_instructor_contract_partner value = scope:ywc_kor_request_partner }
+			set_variable = { name = ywc_kor_instructor_contract_generation value = scope:ywc_kor_request_generation }
+			set_variable = { name = ywc_kor_instructor_contract_total value = scope:ywc_kor_request_total }
+			set_variable = { name = ywc_kor_instructor_contract_installment value = scope:ywc_kor_request_total }
+			change_variable = { name = ywc_kor_instructor_contract_installment divide = 12 }
+			set_variable = { name = ywc_kor_instructor_paid_count value = 0 }
+			set_variable = { name = ywc_kor_instructor_paid_total value = 0 }
+			set_variable = { name = ywc_kor_instructor_balance value = scope:ywc_kor_request_total }
+			set_variable = { name = ywc_kor_instructor_due_count value = 0 }
+			remove_variable = ywc_kor_instructor_service_start_month
+			remove_variable = ywc_kor_instructor_last_processed_calendar_month
+			remove_variable = ywc_kor_instructor_service_term_active
+			remove_variable = ywc_kor_instructor_end_scheduled_generation
+			remove_variable = ywc_kor_instructor_service_withdrawn_generation
+			remove_variable = ywc_kor_instructor_creditor_invalid_generation
+			remove_variable = ywc_kor_instructor_request_timer
+			set_variable = { name = ywc_kor_instructor_state value = 2 }
+			set_variable = { name = ywc_kor_instructor_notice_reason value = 1 }
+			ywc_kor_instructor_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_instructor_refuse_offer = {
+	if = {
+		limit = { ywc_kor_instructor_signable = yes }
+		set_variable = { name = ywc_kor_instructor_answer_requester value = scope:ywc_kor_requester }
+		set_variable = { name = ywc_kor_instructor_answer_generation value = scope:ywc_kor_request_generation }
+		set_variable = { name = ywc_kor_instructor_answer value = 2 }
+		set_variable = { name = ywc_kor_instructor_answer_total value = scope:ywc_kor_request_total }
+		set_variable = { name = ywc_kor_instructor_answer_months value = scope:ywc_kor_request_months }
+		scope:ywc_kor_requester = {
+			remove_variable = ywc_kor_instructor_request_timer
+			set_variable = { name = ywc_kor_instructor_state value = 3 }
+			set_variable = { name = ywc_kor_instructor_notice_reason value = 2 }
+			ywc_kor_instructor_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_instructor_publish_notice = {
+	if = {
+		limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } }
+		if = { limit = { NOT = { has_variable = ywc_kor_instructor_notice_serial } } set_variable = { name = ywc_kor_instructor_notice_serial value = 0 } }
+		change_variable = { name = ywc_kor_instructor_notice_serial add = 1 }
+		set_variable = { name = ywc_kor_instructor_notice_event value = 1031 }
+		set_variable = { name = ywc_kor_instructor_notice_generation value = var:ywc_kor_instructor_generation }
+		set_variable = { name = ywc_kor_instructor_notice_request_state value = var:ywc_kor_instructor_state }
+		remove_variable = ywc_kor_instructor_notice_partner
+		if = {
+			limit = { exists = var:ywc_kor_instructor_partner var:ywc_kor_instructor_partner = { is_country_alive = yes } }
+			set_variable = { name = ywc_kor_instructor_notice_partner value = var:ywc_kor_instructor_partner }
+		}
+	}
+}
+
+ywc_kor_instructor_invalidate_pending = {
+	if = {
+		limit = { var:ywc_kor_instructor_state ?= 1 NOT = { has_variable = ywc_kor_instructor_request_timer } }
+		set_variable = { name = ywc_kor_instructor_state value = 4 }
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 3 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+	if = {
+		limit = {
+			var:ywc_kor_instructor_state ?= 1
+			OR = {
+				NOT = { exists = var:ywc_kor_instructor_partner }
+				NOT = { ywc_kor_instructor_requester_ready = yes }
+				AND = { var:ywc_kor_instructor_partner ?= c:SHU NOT = { c:SHU = { is_country_alive = yes relations:c:KOR >= 0 any_scope_state = { owner = c:SHU any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no } } } } }
+				AND = { var:ywc_kor_instructor_partner ?= c:JHG NOT = { c:JHG = { is_country_alive = yes relations:c:KOR >= 0 any_scope_state = { owner = c:JHG any_scope_building = { is_building_type = building_barrack occupancy >= 0.8 building_has_goods_shortage = no } } } } }
+			}
+		}
+		remove_variable = ywc_kor_instructor_request_timer
+		set_variable = { name = ywc_kor_instructor_state value = 5 }
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 4 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+}
+
+ywc_kor_instructor_refresh_status = {
+	ywc_kor_instructor_invalidate_pending = yes
+	if = {
+		limit = {
+			has_variable = ywc_kor_instructor_contract_generation
+			var:ywc_kor_instructor_state ?= 2
+			OR = {
+				NOT = { ywc_kor_instructor_service_eligible = yes }
+				var:ywc_kor_instructor_paid_count < var:ywc_kor_instructor_due_count
+				var:ywc_kor_instructor_creditor_invalid_generation ?= var:ywc_kor_instructor_contract_generation
+			}
+			NOT = { var:ywc_kor_instructor_notice_reason ?= 5 }
+		}
+		remove_modifier = ywc_v03_kor_paid_instructor_training
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 5 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+	if = {
+		limit = {
+			var:ywc_kor_instructor_state ?= 2
+			var:ywc_kor_instructor_notice_reason ?= 5
+			ywc_kor_instructor_service_eligible = yes
+			var:ywc_kor_instructor_paid_count >= var:ywc_kor_instructor_due_count
+			has_variable = ywc_kor_instructor_service_term_active
+			NOT = { var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation }
+		}
+		set_variable = { name = ywc_kor_instructor_notice_reason value = 6 }
+		ywc_kor_instructor_publish_notice = yes
+	}
+}
+
+# This helper has one owner: the KOR country-monthly on_action. It never runs
+# from a journal pulse, and its calendar token is independent of the old 27-day
+# domestic payment lock.
+ywc_kor_instructor_monthly = {
+	if = {
+		limit = { has_variable = ywc_kor_instructor_contract_generation }
+		save_scope_as = ywc_kor_requester
+		if = { limit = { exists = var:ywc_kor_instructor_contract_partner } var:ywc_kor_instructor_contract_partner = { save_scope_as = ywc_kor_request_partner } }
+		set_variable = { name = ywc_kor_instructor_current_month value = ywc_kor_current_calendar_month }
+		if = {
+			limit = { NOT = { var:ywc_kor_instructor_last_processed_calendar_month ?= var:ywc_kor_instructor_current_month } }
+			set_variable = { name = ywc_kor_instructor_last_processed_calendar_month value = var:ywc_kor_instructor_current_month }
+			remove_modifier = ywc_v03_kor_paid_instructor_training
+			if = {
+				limit = { NOT = { has_variable = ywc_kor_instructor_service_start_month } }
+				set_variable = { name = ywc_kor_instructor_service_start_month value = var:ywc_kor_instructor_current_month }
+				set_variable = { name = ywc_kor_instructor_service_term_active value = 1 months = 12 }
+				if = {
+					limit = { NOT = { var:ywc_kor_instructor_end_scheduled_generation ?= var:ywc_kor_instructor_contract_generation } }
+					save_scope_as = ywc_kor_service_end_owner
+					save_scope_value_as = { name = ywc_kor_service_end_generation value = var:ywc_kor_instructor_contract_generation }
+					set_variable = { name = ywc_kor_instructor_end_scheduled_generation value = var:ywc_kor_instructor_contract_generation }
+					trigger_event = { id = ywc_kor.1032 months = 12 }
+				}
+			}
+			set_variable = { name = ywc_kor_instructor_computed_due value = var:ywc_kor_instructor_current_month }
+			change_variable = { name = ywc_kor_instructor_computed_due add = { value = var:ywc_kor_instructor_service_start_month multiply = -1 } }
+			change_variable = { name = ywc_kor_instructor_computed_due add = 1 }
+			clamp_variable = { name = ywc_kor_instructor_computed_due min = 0 max = 12 }
+			if = {
+				limit = { var:ywc_kor_instructor_computed_due > var:ywc_kor_instructor_due_count }
+				set_variable = { name = ywc_kor_instructor_due_count value = var:ywc_kor_instructor_computed_due }
+			}
+			if = {
+				limit = {
+					NOT = { exists = var:ywc_kor_instructor_contract_partner }
+				}
+				set_variable = { name = ywc_kor_instructor_creditor_invalid_generation value = var:ywc_kor_instructor_contract_generation }
+			}
+			if = {
+				limit = { exists = var:ywc_kor_instructor_contract_partner var:ywc_kor_instructor_contract_partner = { is_country_alive = no } }
+				set_variable = { name = ywc_kor_instructor_creditor_invalid_generation value = var:ywc_kor_instructor_contract_generation }
+			}
+			if = {
+				limit = {
+					ywc_kor_instructor_contract_collectible = yes
+					var:ywc_kor_instructor_paid_count < var:ywc_kor_instructor_due_count
+					var:ywc_kor_instructor_paid_count < 12
+				}
+				set_variable = { name = ywc_kor_instructor_transfer_amount value = var:ywc_kor_instructor_contract_installment }
+				if = {
+					limit = { var:ywc_kor_instructor_paid_count = 11 }
+					set_variable = { name = ywc_kor_instructor_transfer_amount value = var:ywc_kor_instructor_contract_total }
+					change_variable = { name = ywc_kor_instructor_transfer_amount add = { value = var:ywc_kor_instructor_paid_total multiply = -1 } }
+				}
+				if = {
+					limit = {
+						ywc_kor_v03_finance_safe = yes
+						gold_reserves >= var:ywc_kor_instructor_transfer_amount
+						var:ywc_kor_instructor_transfer_amount > 0
+						ywc_kor_instructor_contract_collectible = yes
+					}
+					save_scope_as = ywc_kor_requester
+					var:ywc_kor_instructor_contract_partner = {
+						save_scope_as = ywc_kor_request_partner
+						if = {
+							limit = { is_country_alive = yes scope:ywc_kor_request_partner ?= this scope:ywc_kor_requester = { ywc_kor_v03_finance_safe = yes gold_reserves >= var:ywc_kor_instructor_transfer_amount } }
+							scope:ywc_kor_requester = { add_treasury = { value = var:ywc_kor_instructor_transfer_amount multiply = -1 } }
+							add_treasury = { value = scope:ywc_kor_requester.var:ywc_kor_instructor_transfer_amount }
+							scope:ywc_kor_requester = {
+								change_variable = { name = ywc_kor_instructor_paid_count add = 1 }
+								change_variable = { name = ywc_kor_instructor_paid_total add = var:ywc_kor_instructor_transfer_amount }
+								set_variable = { name = ywc_kor_instructor_balance value = var:ywc_kor_instructor_contract_total }
+								change_variable = { name = ywc_kor_instructor_balance add = { value = var:ywc_kor_instructor_paid_total multiply = -1 } }
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					var:ywc_kor_instructor_current_month < { value = var:ywc_kor_instructor_service_start_month add = 12 }
+					has_variable = ywc_kor_instructor_service_term_active
+					NOT = { var:ywc_kor_instructor_service_ended_generation ?= var:ywc_kor_instructor_contract_generation }
+					NOT = { var:ywc_kor_instructor_service_withdrawn_generation ?= var:ywc_kor_instructor_contract_generation }
+					NOT = { var:ywc_kor_instructor_creditor_invalid_generation ?= var:ywc_kor_instructor_contract_generation }
+					ywc_kor_instructor_service_eligible = yes
+					var:ywc_kor_instructor_paid_count >= var:ywc_kor_instructor_due_count
+				}
+				add_modifier = { name = ywc_v03_kor_paid_instructor_training months = 1 }
+			}
+			ywc_kor_instructor_refresh_status = yes
+		}
+	}
+	if = { limit = { var:ywc_kor_instructor_state ?= 1 } ywc_kor_instructor_invalidate_pending = yes }
+}
+
+ywc_kor_instructor_end_service = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_service_end_owner
+			scope:ywc_kor_service_end_owner ?= this
+			has_variable = ywc_kor_instructor_contract_generation
+			var:ywc_kor_instructor_contract_generation ?= scope:ywc_kor_service_end_generation
+			NOT = { var:ywc_kor_instructor_service_ended_generation ?= scope:ywc_kor_service_end_generation }
+		}
+		remove_modifier = ywc_v03_kor_paid_instructor_training
+		set_variable = { name = ywc_kor_instructor_service_ended_generation value = scope:ywc_kor_service_end_generation }
+		remove_variable = ywc_kor_instructor_service_term_active
+	}
+}
+
+ywc_kor_instructor_withdraw_service = {
+	if = {
+		limit = { has_variable = ywc_kor_instructor_contract_generation }
+		remove_modifier = ywc_v03_kor_paid_instructor_training
+		set_variable = { name = ywc_kor_instructor_service_withdrawn_generation value = var:ywc_kor_instructor_contract_generation }
+		set_variable = { name = ywc_kor_instructor_service_ended_generation value = var:ywc_kor_instructor_contract_generation }
+		remove_variable = ywc_kor_instructor_service_term_active
+	}
+	ywc_kor_instructor_retire_host = yes
+}
+
+ywc_kor_instructor_retire_host = {
+	if = { limit = { var:ywc_kor_instructor_state ?= 1 } set_variable = { name = ywc_kor_instructor_state value = 6 } remove_variable = ywc_kor_instructor_request_timer }
+	remove_variable = ywc_kor_instructor_notice_event
+	remove_variable = ywc_kor_instructor_notice_open_serial
+}
+
+ywc_kor_instructor_consume_notice = {
+	if = {
+		limit = { ywc_kor_instructor_notice_choice_matches = yes }
+		remove_variable = ywc_kor_instructor_notice_open_serial
+	}
+}
+
+ywc_kor_instructor_choose_local = {
+	if = {
+		limit = { ywc_kor_instructor_notice_choice_matches = yes ywc_kor_v03_finance_safe = yes ywc_kor_v03_has_translation_employer = yes }
+		ywc_kor_instructor_consume_notice = yes
+		ywc_kor_start_translation_contract_once = yes
+		if = { limit = { has_variable = ywc_kor_translation_contract_started } set_variable = { name = ywc_kor_local_translation_funded value = 1 } set_variable = { name = ywc_kor_pending_event value = 1005 } }
+	}
+}
+
+ywc_kor_instructor_choose_narrow = {
+	if = {
+		limit = { ywc_kor_instructor_notice_choice_matches = yes }
+		ywc_kor_instructor_consume_notice = yes
+		set_variable = { name = ywc_kor_procurement_narrowed value = 1 }
+		set_variable = { name = ywc_kor_pending_event value = 1005 }
+	}
+}
+
+ywc_kor_open_military_accounts_once = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_arc_open } }
+		set_variable = { name = ywc_kor_arc_open value = 1 }
+		ywc_kor_capture_cost_base = yes
+		set_variable = { name = ywc_kor_pending_event value = 1000 }
+	}
+}
+
+ywc_kor_claim_military_accounts = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_started }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+		}
+		ywc_v03_initialize_country = yes
+		if = {
+			limit = {
+				NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_started }
+				var:ywc_v03_active_arc_count < 3
+				var:ywc_v03_visible_task_count < 6
+			}
+			set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_started value = 1 }
+			set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_last_event value = 0 }
+			change_variable = { name = ywc_v03_active_arc_count add = 1 }
+			change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		}
+	}
+}
+
+ywc_kor_close_as_court_supply = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 1 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes ywc_kor_v03_court_execution_ready = yes }
+		set_variable = { name = ywc_kor_outcome_court_supply value = 1 }
+		set_variable = { name = ywc_kor_any_outcome value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 1 }
+		ywc_kor_release_military_accounts = yes
+	}
+}
+
+ywc_kor_close_as_provincial_supply = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } NOT = { has_variable = ywc_kor_scope_narrowed } var:ywc_kor_supply_route = 2 has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete has_variable = ywc_kor_provincial_report_right ywc_kor_v03_route_execution_ready = yes ywc_kor_v03_provincial_execution_ready = yes }
+		set_variable = { name = ywc_kor_outcome_provincial_supply value = 1 }
+		set_variable = { name = ywc_kor_any_outcome value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 2 }
+		ywc_kor_release_military_accounts = yes
+	}
+}
+
+ywc_kor_close_as_limited_legacy = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } OR = { AND = { var:ywc_kor_supply_route = 3 has_variable = ywc_kor_legacy_ceiling } AND = { has_variable = ywc_kor_scope_narrowed ywc_kor_v03_reduced_execution_ready = yes } } has_variable = ywc_kor_review_complete has_variable = ywc_kor_service_review_complete has_variable = ywc_kor_six_months_complete has_variable = ywc_kor_nine_months_complete ywc_kor_v03_route_execution_ready = yes }
+		set_variable = { name = ywc_kor_outcome_limited_legacy value = 1 }
+		set_variable = { name = ywc_kor_any_outcome value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 3 }
+		ywc_kor_release_military_accounts = yes
+	}
+}
+
+ywc_kor_close_as_breach = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_any_outcome } OR = { has_variable = ywc_kor_arc_abandoned is_at_war = yes in_default = yes has_modifier = declared_bankruptcy NOT = { ywc_kor_v03_finance_safe = yes } NOT = { ywc_kor_v03_has_owned_state = yes } var:ywc_kor_ready_supply_months < 6 } }
+		set_variable = { name = ywc_kor_outcome_withdrawn_breach value = 1 }
+		set_variable = { name = ywc_kor_any_outcome value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_outcome value = 4 }
+		ywc_kor_instructor_withdraw_service = yes
+		ywc_kor_release_military_accounts = yes
+	}
+}
+
+ywc_kor_release_military_accounts = {
+	if = {
+		limit = { has_variable = ywc_v03_kor_v03_kor_military_accounts_started NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } var:ywc_v03_kor_v03_kor_military_accounts_outcome > 0 }
+		set_variable = { name = ywc_v03_kor_v03_kor_military_accounts_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		ywc_kor_instructor_retire_host = yes
+		ywc_kor_bridge_military_accounts = yes
+	}
+}
+
+# Keep the old KOR reform thread moving only after this arc has a real result.
+# Preserve any chapter-one result already written by the legacy campaign.
+ywc_kor_bridge_military_accounts = {
+	if = {
+		limit = { NOT = { has_variable = ywc_campaign_kor_c1_outcome } }
+		if = {
+			limit = { var:ywc_v03_kor_v03_kor_military_accounts_outcome = 1 }
+			set_variable = { name = ywc_campaign_kor_c1_outcome value = 1 }
+			set_variable = { name = ywc_je_flavor_kor_reform_1_resolved value = 1 }
+		}
+		else_if = {
+			limit = { OR = { var:ywc_v03_kor_v03_kor_military_accounts_outcome = 2 var:ywc_v03_kor_v03_kor_military_accounts_outcome = 3 } }
+			set_variable = { name = ywc_campaign_kor_c1_outcome value = 2 }
+			set_variable = { name = ywc_je_flavor_kor_reform_1_resolved value = 1 }
+		}
+		else_if = {
+			limit = { var:ywc_v03_kor_v03_kor_military_accounts_outcome = 4 }
+			set_variable = { name = ywc_campaign_kor_c1_outcome value = 3 }
+			set_variable = { name = ywc_je_flavor_kor_reform_1_failed value = 1 }
+		}
+	}
+	if = {
+		limit = {
+			NOT = { has_journal_entry = ywc_je_flavor_kor_reform_2 }
+			NOT = { has_variable = ywc_je_flavor_kor_reform_2_resolved }
+			NOT = { has_variable = ywc_je_flavor_kor_reform_2_failed }
+		}
+		add_journal_entry = { type = ywc_je_flavor_kor_reform_2 }
+	}
+}
+
+ywc_kor_choose_school_coop = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled } NOT = { has_variable = ywc_kor_school_withdrawn } NOT = { has_variable = ywc_kor_school_established } NOT = { has_variable = ywc_kor_school_compromise } ywc_kor_school_coop_ready = yes }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_school_filing_fee_paid } }
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_school_archive_fee
+			}
+			add_treasury = { value = var:ywc_kor_school_archive_fee multiply = -1 }
+			set_variable = { name = ywc_kor_school_coop_paid value = 1 }
+			set_variable = { name = ywc_kor_school_filing_fee_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_school_filing_fee_paid }
+		set_variable = { name = ywc_kor_school_route value = 1 }
+	}
+
+    }
+}
+
+ywc_kor_choose_school_office = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled } NOT = { has_variable = ywc_kor_school_withdrawn } NOT = { has_variable = ywc_kor_school_established } NOT = { has_variable = ywc_kor_school_compromise } ywc_kor_school_office_ready = yes }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_school_filing_fee_paid } }
+		set_variable = { name = ywc_kor_school_office_fee value = var:ywc_kor_school_archive_fee }
+		change_variable = { name = ywc_kor_school_office_fee multiply = 1.5 }
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_school_office_fee
+			}
+			add_treasury = { value = var:ywc_kor_school_office_fee multiply = -1 }
+			set_variable = { name = ywc_kor_school_office_paid value = 1 }
+			set_variable = { name = ywc_kor_school_filing_fee_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_school_filing_fee_paid }
+		set_variable = { name = ywc_kor_school_route value = 2 }
+	}
+
+    }
+}
+
+ywc_kor_choose_school_limited = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled } NOT = { has_variable = ywc_kor_school_withdrawn } NOT = { has_variable = ywc_kor_school_established } NOT = { has_variable = ywc_kor_school_compromise } ywc_kor_school_limited_ready = yes }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_school_filing_fee_paid } }
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_school_archive_fee
+			}
+			add_treasury = { value = var:ywc_kor_school_archive_fee multiply = -1 }
+			set_variable = { name = ywc_kor_school_limited_paid value = 1 }
+			set_variable = { name = ywc_kor_school_filing_fee_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_school_filing_fee_paid }
+		set_variable = { name = ywc_kor_school_route value = 3 }
+	}
+
+    }
+}
+
+ywc_kor_choose_school_employer_university = {
+	set_variable = { name = ywc_kor_school_employer value = 1 }
+	set_variable = { name = ywc_kor_school_employer_confirmed value = 0 }
+	if = {
+		limit = { ywc_kor_school_university_ready = yes }
+		set_variable = { name = ywc_kor_school_employer_confirmed value = 1 }
+	}
+}
+
+ywc_kor_choose_school_employer_office = {
+	set_variable = { name = ywc_kor_school_employer value = 2 }
+	set_variable = { name = ywc_kor_school_employer_confirmed value = 0 }
+	if = {
+		limit = { ywc_kor_school_employer_office_ready = yes }
+		set_variable = { name = ywc_kor_school_employer_confirmed value = 1 }
+	}
+}
+
+ywc_kor_close_school_as_established = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_school_factions_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
+			NOT = { has_variable = ywc_kor_school_withdrawn }
+			has_variable = ywc_kor_school_six_months_complete
+			ywc_kor_school_full_ready = yes
+			ywc_kor_school_observation_target_ready = yes
+		}
+		set_variable = { name = ywc_kor_school_established value = 1 }
+		set_variable = { name = ywc_kor_school_pending_event value = 1017 }
+	}
+}
+
+ywc_kor_close_school_as_compromise = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_school_factions_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
+			NOT = { has_variable = ywc_kor_school_withdrawn }
+			has_variable = ywc_kor_school_limited_six_months_complete
+			ywc_kor_school_limited_ready = yes
+			ywc_kor_school_observation_target_ready = yes
+		}
+		set_variable = { name = ywc_kor_school_compromise value = 1 }
+		set_variable = { name = ywc_kor_school_pending_event value = 1017 }
+	}
+}
+
+ywc_kor_close_school_as_breach = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_school_factions_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
+			NOT = { has_variable = ywc_kor_school_withdrawn }
+		}
+		set_variable = { name = ywc_kor_school_withdrawn value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 4 }
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_school_factions_started NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled } }
+			set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
+			change_variable = { name = ywc_v03_active_arc_count add = -1 }
+			change_variable = { name = ywc_v03_visible_task_count add = -1 }
+			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		}
+	}
+}
+
+ywc_kor_school_finalize = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_school_factions_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
+			has_variable = ywc_kor_school_established
+			has_variable = ywc_kor_school_six_months_complete
+			ywc_kor_school_observation_target_ready = yes
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 1 }
+		if = { limit = { var:ywc_kor_school_route = 2 } set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 2 } }
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		remove_variable = ywc_kor_school_12_notice
+		remove_variable = ywc_kor_school_36_notice
+		remove_variable = ywc_kor_school_notice_event
+		remove_variable = ywc_kor_school_12_notice
+		remove_variable = ywc_kor_school_36_notice
+		remove_variable = ywc_kor_school_notice_event
+	}
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_school_factions_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_school_factions_settled }
+			has_variable = ywc_kor_school_compromise
+			has_variable = ywc_kor_school_limited_six_months_complete
+			ywc_kor_school_observation_target_ready = yes
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_outcome value = 3 }
+		set_variable = { name = ywc_v03_kor_v03_kor_school_factions_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+ywc_kor_school_record_old_account = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_kor_school_old_invoice_paid }
+		}
+		set_variable = { name = ywc_kor_school_setback_reserve value = 0 }
+		if = {
+			limit = {
+				has_variable = ywc_v03_kor_v03_kor_military_accounts_outcome
+				var:ywc_v03_kor_v03_kor_military_accounts_outcome = 4
+			}
+			set_variable = { name = ywc_kor_school_setback_reserve value = var:ywc_kor_school_archive_fee }
+			change_variable = { name = ywc_kor_school_setback_reserve multiply = 0.5 }
+		}
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_school_setback_reserve
+			}
+			add_treasury = { value = var:ywc_kor_school_setback_reserve multiply = -1 }
+			set_variable = { name = ywc_kor_school_old_invoice_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_school_old_invoice_paid }
+		set_variable = { name = ywc_kor_school_old_account_recorded value = 1 }
+		set_variable = { name = ywc_kor_school_old_account_translation_months value = 0 }
+		if = {
+			limit = { has_variable = ywc_kor_translation_contract_started }
+			set_variable = { name = ywc_kor_school_old_account_translation_months value = var:ywc_kor_translation_contract_paid_months }
+		}
+		set_variable = { name = ywc_kor_school_old_account_veteran_months value = 0 }
+		if = {
+			limit = { has_variable = ywc_kor_veteran_contract_started }
+			set_variable = { name = ywc_kor_school_old_account_veteran_months value = var:ywc_kor_veteran_contract_paid_months }
+		}
+		set_variable = { name = ywc_kor_school_old_account_instructor_generation value = 0 }
+		set_variable = { name = ywc_kor_school_old_account_instructor_paid_count value = 0 }
+		set_variable = { name = ywc_kor_school_old_account_instructor_balance value = 0 }
+		if = {
+			limit = { has_variable = ywc_kor_instructor_contract_generation }
+			set_variable = { name = ywc_kor_school_old_account_instructor_generation value = var:ywc_kor_instructor_contract_generation }
+			set_variable = { name = ywc_kor_school_old_account_instructor_paid_count value = var:ywc_kor_instructor_paid_count }
+			set_variable = { name = ywc_kor_school_old_account_instructor_balance value = var:ywc_kor_instructor_balance }
+		}
+	}
+}
+
+ywc_kor_school_reset_observation = {
+	remove_variable = ywc_kor_school_observation_timer
+	remove_variable = ywc_kor_school_observation_started
+	remove_variable = ywc_kor_school_six_months_complete
+	remove_variable = ywc_kor_school_limited_timer
+	remove_variable = ywc_kor_school_limited_started
+	remove_variable = ywc_kor_school_limited_six_months_complete
+}
+
+ywc_kor_school_monthly_review = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_kor_school_withdrawn }
+		}
+		if = {
+			limit = { ywc_kor_school_observation_target_ready = yes }
+			if = {
+				limit = { has_variable = ywc_kor_school_observation_started NOT = { has_variable = ywc_kor_school_observation_timer } }
+				set_variable = { name = ywc_kor_school_six_months_complete value = 1 }
+				remove_variable = ywc_kor_school_observation_started
+			}
+			if = {
+				limit = { NOT = { has_variable = ywc_kor_school_observation_started } NOT = { has_variable = ywc_kor_school_six_months_complete } }
+				set_variable = { name = ywc_kor_school_observation_timer value = 1 months = 6 }
+				set_variable = { name = ywc_kor_school_observation_started value = 1 }
+			}
+			if = {
+				limit = { var:ywc_kor_school_route = 3 }
+				if = {
+					limit = { has_variable = ywc_kor_school_limited_started NOT = { has_variable = ywc_kor_school_limited_timer } }
+					set_variable = { name = ywc_kor_school_limited_six_months_complete value = 1 }
+					remove_variable = ywc_kor_school_limited_started
+				}
+				if = {
+					limit = { NOT = { has_variable = ywc_kor_school_limited_started } NOT = { has_variable = ywc_kor_school_limited_six_months_complete } }
+					set_variable = { name = ywc_kor_school_limited_timer value = 1 months = 6 }
+					set_variable = { name = ywc_kor_school_limited_started value = 1 }
+				}
+			}
+			remove_variable = ywc_kor_school_blocked_timer_started
+			remove_variable = ywc_kor_school_blocked_12_due
+			remove_variable = ywc_kor_school_blocked_36_due
+			remove_variable = ywc_kor_school_12_notice
+			remove_variable = ywc_kor_school_36_notice
+			remove_variable = ywc_kor_school_notice_event
+		}
+		else = {
+			remove_variable = ywc_kor_school_observation_timer
+			remove_variable = ywc_kor_school_observation_started
+			remove_variable = ywc_kor_school_six_months_complete
+			remove_variable = ywc_kor_school_limited_timer
+			remove_variable = ywc_kor_school_limited_started
+			remove_variable = ywc_kor_school_limited_six_months_complete
+			if = {
+				limit = { has_variable = ywc_kor_school_route }
+				if = {
+					limit = { NOT = { has_variable = ywc_kor_school_blocked_timer_started } }
+					set_variable = { name = ywc_kor_school_blocked_timer_started value = 1 }
+					set_variable = { name = ywc_kor_school_blocked_12_due value = 1 days = 365 }
+					set_variable = { name = ywc_kor_school_blocked_36_due value = 1 days = 1095 }
+				}
+				if = {
+					limit = { has_variable = ywc_kor_school_blocked_timer_started NOT = { has_variable = ywc_kor_school_blocked_12_due } NOT = { has_variable = ywc_kor_school_12_notice } NOT = { has_variable = ywc_kor_school_notice_event } }
+					set_variable = { name = ywc_kor_school_12_notice value = 1 }
+					set_variable = { name = ywc_kor_school_notice_event value = 1016 }
+				}
+				if = {
+					limit = { has_variable = ywc_kor_school_blocked_timer_started NOT = { has_variable = ywc_kor_school_blocked_36_due } NOT = { has_variable = ywc_kor_school_36_notice } NOT = { has_variable = ywc_kor_school_notice_event } }
+					set_variable = { name = ywc_kor_school_36_notice value = 1 }
+					set_variable = { name = ywc_kor_school_notice_event value = 1016 }
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_variable = ywc_kor_school_final_review_waiting
+			has_variable = ywc_kor_school_six_months_complete
+			NOT = { has_variable = ywc_kor_school_pending_event }
+		}
+		remove_variable = ywc_kor_school_final_review_waiting
+		set_variable = { name = ywc_kor_school_pending_event value = 1016 }
+	}
+}
+
+ywc_kor_school_defer_notice = {
+	remove_variable = ywc_kor_school_notice_event
+	if = { limit = { NOT = { has_variable = ywc_kor_school_pending_event } } set_variable = { name = ywc_kor_school_pending_event value = 1016 } }
+}
+
+ywc_kor_choose_port_designated = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } NOT = { has_variable = ywc_kor_ports_withdrawn } NOT = { has_variable = ywc_kor_ports_established } NOT = { has_variable = ywc_kor_ports_compromise } ywc_kor_ports_designated_ready = yes }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ports_filing_fee_paid } }
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_port_fee
+			}
+			add_treasury = { value = var:ywc_kor_port_fee multiply = -1 }
+			set_variable = { name = ywc_kor_ports_designated_paid value = 1 }
+			set_variable = { name = ywc_kor_ports_filing_fee_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_ports_filing_fee_paid }
+		set_variable = { name = ywc_kor_ports_route value = 1 }
+		set_variable = { name = ywc_kor_ports_fee value = var:ywc_kor_port_fee }
+	}
+
+    }
+}
+
+ywc_kor_choose_port_general = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } NOT = { has_variable = ywc_kor_ports_withdrawn } NOT = { has_variable = ywc_kor_ports_established } NOT = { has_variable = ywc_kor_ports_compromise } ywc_kor_ports_general_ready = yes }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ports_filing_fee_paid } }
+		set_variable = { name = ywc_kor_ports_general_fee value = var:ywc_kor_port_fee }
+		change_variable = { name = ywc_kor_ports_general_fee multiply = 1.5 }
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_ports_general_fee
+			}
+			add_treasury = { value = var:ywc_kor_ports_general_fee multiply = -1 }
+			set_variable = { name = ywc_kor_ports_general_paid value = 1 }
+			set_variable = { name = ywc_kor_ports_filing_fee_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_ports_filing_fee_paid }
+		set_variable = { name = ywc_kor_ports_route value = 2 }
+		set_variable = { name = ywc_kor_ports_fee value = var:ywc_kor_port_fee }
+	}
+
+    }
+}
+
+ywc_kor_choose_port_shore = {
+    if = { limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } NOT = { has_variable = ywc_kor_ports_withdrawn } NOT = { has_variable = ywc_kor_ports_established } NOT = { has_variable = ywc_kor_ports_compromise } ywc_kor_ports_shore_ready = yes }
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ports_filing_fee_paid } }
+		if = {
+			limit = {
+				NOT = { in_default = yes }
+				NOT = { has_modifier = declared_bankruptcy }
+				gold_reserves >= var:ywc_kor_port_fee
+			}
+			add_treasury = { value = var:ywc_kor_port_fee multiply = -1 }
+			set_variable = { name = ywc_kor_ports_shore_paid value = 1 }
+			set_variable = { name = ywc_kor_ports_filing_fee_paid value = 1 }
+		}
+	}
+	if = {
+		limit = { has_variable = ywc_kor_ports_filing_fee_paid }
+		if = {
+			limit = { OR = { has_variable = ywc_kor_ports_designated_paid has_variable = ywc_kor_ports_general_paid } }
+			set_variable = { name = ywc_kor_ports_shore_prior_funding_credit value = 1 }
+		}
+		set_variable = { name = ywc_kor_ports_route value = 3 }
+		set_variable = { name = ywc_kor_ports_fee value = var:ywc_kor_port_fee }
+	}
+
+    }
+}
+
+ywc_kor_close_ports_as_established = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_controlled_ports_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled }
+			NOT = { has_variable = ywc_kor_ports_established }
+			NOT = { has_variable = ywc_kor_ports_compromise }
+			NOT = { has_variable = ywc_kor_ports_withdrawn }
+			has_variable = ywc_kor_ports_six_months_complete
+			ywc_kor_ports_observation_target_ready = yes
+			ywc_kor_ports_full_ready = yes
+		}
+		set_variable = { name = ywc_kor_ports_established value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_outcome value = 1 }
+		if = {
+			limit = { var:ywc_kor_ports_route = 2 }
+			set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_outcome value = 2 }
+		}
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } }
+			set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_settled value = 1 }
+			change_variable = { name = ywc_v03_active_arc_count add = -1 }
+			change_variable = { name = ywc_v03_visible_task_count add = -1 }
+			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		}
+		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
+	}
+}
+
+ywc_kor_close_ports_as_compromise = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_controlled_ports_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled }
+			NOT = { has_variable = ywc_kor_ports_established }
+			NOT = { has_variable = ywc_kor_ports_compromise }
+			NOT = { has_variable = ywc_kor_ports_withdrawn }
+			has_variable = ywc_kor_ports_limited_six_months_complete
+			ywc_kor_ports_observation_target_ready = yes
+			ywc_kor_ports_shore_ready = yes
+		}
+		set_variable = { name = ywc_kor_ports_compromise value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_outcome value = 3 }
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } }
+			set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_settled value = 1 }
+			change_variable = { name = ywc_v03_active_arc_count add = -1 }
+			change_variable = { name = ywc_v03_visible_task_count add = -1 }
+			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		}
+		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
+	}
+}
+
+ywc_kor_close_ports_as_breach = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_controlled_ports_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled }
+			NOT = { has_variable = ywc_kor_ports_established }
+			NOT = { has_variable = ywc_kor_ports_compromise }
+			NOT = { has_variable = ywc_kor_ports_withdrawn }
+		}
+		set_variable = { name = ywc_kor_ports_withdrawn value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_outcome value = 4 }
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_started NOT = { has_variable = ywc_v03_kor_v03_kor_controlled_ports_settled } }
+			set_variable = { name = ywc_v03_kor_v03_kor_controlled_ports_settled value = 1 }
+			change_variable = { name = ywc_v03_active_arc_count add = -1 }
+			change_variable = { name = ywc_v03_visible_task_count add = -1 }
+			clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+			clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+		}
+	}
+}
+
+ywc_kor_ports_authorize_review = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ports_prior_contracts_checked } }
+		set_variable = { name = ywc_kor_ports_prior_contracts_checked value = 1 }
+	}
+}
+
+ywc_kor_ports_record_prior_outcomes = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ports_prior_outcome_read } }
+		set_variable = { name = ywc_kor_ports_prior_outcome_read value = 1 }
+		set_variable = { name = ywc_kor_ports_prior_school_outcome value = 0 }
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_school_factions_outcome }
+			set_variable = { name = ywc_kor_ports_prior_school_outcome value = var:ywc_v03_kor_v03_kor_school_factions_outcome }
+		}
+		set_variable = { name = ywc_kor_ports_prior_military_outcome value = 0 }
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_military_accounts_outcome }
+			set_variable = { name = ywc_kor_ports_prior_military_outcome value = var:ywc_v03_kor_v03_kor_military_accounts_outcome }
+		}
+		set_variable = { name = ywc_kor_ports_prior_campaign_outcome value = 0 }
+		if = {
+			limit = { has_variable = ywc_campaign_kor_c1_outcome }
+			set_variable = { name = ywc_kor_ports_prior_campaign_outcome value = var:ywc_campaign_kor_c1_outcome }
+		}
+		set_variable = { name = ywc_kor_ports_prior_contracts_clear value = 0 }
+		if = {
+			limit = { ywc_kor_ports_old_contracts_clear = yes }
+			set_variable = { name = ywc_kor_ports_prior_contracts_clear value = 1 }
+		}
+		set_variable = { name = ywc_kor_ports_prior_setback value = 0 }
+		if = {
+			limit = { has_variable = ywc_v03_kor_v03_kor_military_accounts_outcome var:ywc_v03_kor_v03_kor_military_accounts_outcome = 4 }
+			set_variable = { name = ywc_kor_ports_prior_setback value = 1 }
+		}
+	}
+}
+
+ywc_kor_ports_record_school_route = {
+	if = {
+		limit = { NOT = { has_variable = ywc_kor_ports_school_route_read } }
+		set_variable = { name = ywc_kor_ports_school_route_read value = 1 }
+		set_variable = { name = ywc_kor_ports_school_route_snapshot value = 0 }
+		if = {
+			limit = { has_variable = ywc_kor_school_route }
+			set_variable = { name = ywc_kor_ports_school_route_snapshot value = var:ywc_kor_school_route }
+		}
+	}
+}
+
+ywc_kor_ports_reset_observation = {
+	remove_variable = ywc_kor_ports_observation_timer
+	remove_variable = ywc_kor_ports_observation_started
+	remove_variable = ywc_kor_ports_six_months_complete
+	remove_variable = ywc_kor_ports_limited_timer
+	remove_variable = ywc_kor_ports_limited_started
+	remove_variable = ywc_kor_ports_limited_six_months_complete
+}
+
+ywc_kor_ports_monthly_review = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_kor_ports_established }
+			NOT = { has_variable = ywc_kor_ports_compromise }
+			NOT = { has_variable = ywc_kor_ports_withdrawn }
+		}
+		if = {
+			limit = { ywc_kor_ports_observation_target_ready = yes }
+			remove_variable = ywc_kor_ports_blocked_timer_started
+			remove_variable = ywc_kor_ports_blocked_12_due
+			remove_variable = ywc_kor_ports_blocked_36_due
+			remove_variable = ywc_kor_ports_12_notice
+			remove_variable = ywc_kor_ports_36_notice
+			remove_variable = ywc_kor_ports_notice_event
+			if = {
+				limit = { has_variable = ywc_kor_ports_blocked_months }
+				set_variable = { name = ywc_kor_ports_blocked_months value = 0 }
+			}
+			if = {
+				limit = { has_variable = ywc_kor_ports_observation_started NOT = { has_variable = ywc_kor_ports_observation_timer } }
+				set_variable = { name = ywc_kor_ports_six_months_complete value = 1 }
+				remove_variable = ywc_kor_ports_observation_started
+			}
+			if = {
+				limit = { NOT = { has_variable = ywc_kor_ports_observation_started } NOT = { has_variable = ywc_kor_ports_six_months_complete } }
+				set_variable = { name = ywc_kor_ports_observation_timer value = 1 months = 6 }
+				set_variable = { name = ywc_kor_ports_observation_started value = 1 }
+			}
+			if = {
+				limit = { var:ywc_kor_ports_route = 3 }
+				if = {
+					limit = { has_variable = ywc_kor_ports_limited_started NOT = { has_variable = ywc_kor_ports_limited_timer } }
+					set_variable = { name = ywc_kor_ports_limited_six_months_complete value = 1 }
+					remove_variable = ywc_kor_ports_limited_started
+				}
+				if = {
+					limit = { NOT = { has_variable = ywc_kor_ports_limited_started } NOT = { has_variable = ywc_kor_ports_limited_six_months_complete } }
+					set_variable = { name = ywc_kor_ports_limited_timer value = 1 months = 6 }
+					set_variable = { name = ywc_kor_ports_limited_started value = 1 }
+				}
+			}
+		}
+		else = {
+			remove_variable = ywc_kor_ports_observation_timer
+			remove_variable = ywc_kor_ports_observation_started
+			remove_variable = ywc_kor_ports_six_months_complete
+			remove_variable = ywc_kor_ports_limited_timer
+			remove_variable = ywc_kor_ports_limited_started
+			remove_variable = ywc_kor_ports_limited_six_months_complete
+			if = {
+				limit = { has_variable = ywc_kor_ports_route }
+				if = {
+					limit = { NOT = { has_variable = ywc_kor_ports_blocked_months } }
+					set_variable = { name = ywc_kor_ports_blocked_months value = 0 }
+				}
+				change_variable = { name = ywc_kor_ports_blocked_months add = 1 }
+				if = {
+					limit = { NOT = { has_variable = ywc_kor_ports_blocked_timer_started } }
+					set_variable = { name = ywc_kor_ports_blocked_timer_started value = 1 }
+					set_variable = { name = ywc_kor_ports_blocked_12_due value = 1 days = 365 }
+					set_variable = { name = ywc_kor_ports_blocked_36_due value = 1 days = 1095 }
+				}
+				if = {
+					limit = { has_variable = ywc_kor_ports_blocked_timer_started NOT = { has_variable = ywc_kor_ports_blocked_12_due } NOT = { has_variable = ywc_kor_ports_12_notice } NOT = { has_variable = ywc_kor_ports_notice_event } }
+					set_variable = { name = ywc_kor_ports_12_notice value = 1 }
+					set_variable = { name = ywc_kor_ports_notice_event value = 1022 }
+				}
+				if = {
+					limit = { has_variable = ywc_kor_ports_blocked_timer_started NOT = { has_variable = ywc_kor_ports_blocked_36_due } NOT = { has_variable = ywc_kor_ports_36_notice } NOT = { has_variable = ywc_kor_ports_notice_event } }
+					set_variable = { name = ywc_kor_ports_36_notice value = 1 }
+					set_variable = { name = ywc_kor_ports_notice_event value = 1022 }
+				}
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_variable = ywc_kor_ports_final_review_waiting
+			has_variable = ywc_kor_ports_six_months_complete
+			NOT = { has_variable = ywc_kor_ports_pending_event }
+		}
+		remove_variable = ywc_kor_ports_final_review_waiting
+		set_variable = { name = ywc_kor_ports_pending_event value = 1023 }
+	}
+}
+
+ywc_kor_ports_defer_notice = {
+	remove_variable = ywc_kor_ports_notice_event
+	if = { limit = { NOT = { has_variable = ywc_kor_ports_pending_event } } set_variable = { name = ywc_kor_ports_pending_event value = 1022 } }
+}
+# KOR 1007 procurement: an inquiry is free; only the actual signed contract
+# carries the captured total T, three monthly inspection/invoice opportunities
+# and matched debits/credits against the saved exact creditor.
+ywc_kor_procurement_send_shu = {
+	if = {
+		limit = { ywc_kor_procurement_can_offer_shu = yes }
+		c:SHU = { save_scope_as = ywc_kor_procurement_partner }
+		ywc_kor_procurement_send_captured_inquiry = yes
+	}
+}
+
+ywc_kor_procurement_send_jhg = {
+	if = {
+		limit = { ywc_kor_procurement_can_offer_jhg = yes }
+		c:JHG = { save_scope_as = ywc_kor_procurement_partner }
+		ywc_kor_procurement_send_captured_inquiry = yes
+	}
+}
+
+ywc_kor_procurement_send_captured_inquiry = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_procurement_partner
+			OR = {
+				AND = { scope:ywc_kor_procurement_partner ?= c:SHU ywc_kor_procurement_can_offer_shu = yes }
+				AND = { scope:ywc_kor_procurement_partner ?= c:JHG ywc_kor_procurement_can_offer_jhg = yes }
+			}
+		}
+		if = { limit = { NOT = { has_variable = ywc_kor_procurement_generation } } set_variable = { name = ywc_kor_procurement_generation value = 0 } }
+		change_variable = { name = ywc_kor_procurement_generation add = 1 }
+		ywc_kor_procurement_cancel_unsigned = yes
+		set_variable = { name = ywc_kor_procurement_partner value = scope:ywc_kor_procurement_partner }
+		set_variable = { name = ywc_kor_procurement_state value = 1 }
+		set_variable = { name = ywc_kor_procurement_request_timer value = 1 months = 3 }
+		set_variable = { name = ywc_kor_procurement_total value = var:ywc_kor_weekly_cost }
+		remove_variable = ywc_kor_procurement_notice_open_serial
+		remove_variable = ywc_kor_procurement_notice_event
+		save_scope_as = ywc_kor_procurement_requester
+		save_scope_value_as = { name = ywc_kor_procurement_request_generation value = var:ywc_kor_procurement_generation }
+		save_scope_value_as = { name = ywc_kor_procurement_request_total value = var:ywc_kor_procurement_total }
+		scope:ywc_kor_procurement_partner = { trigger_event = { id = ywc_kor.1033 } }
+	}
+}
+
+ywc_kor_procurement_authorize_quote = {
+	if = {
+		limit = { ywc_kor_procurement_authorizable = yes }
+		set_variable = { name = ywc_kor_procurement_answer_requester value = scope:ywc_kor_procurement_requester }
+		set_variable = { name = ywc_kor_procurement_answer_generation value = scope:ywc_kor_procurement_request_generation }
+		set_variable = { name = ywc_kor_procurement_answer value = 1 }
+		set_variable = { name = ywc_kor_procurement_answer_total value = scope:ywc_kor_procurement_request_total }
+		scope:ywc_kor_procurement_requester = {
+			set_variable = { name = ywc_kor_procurement_quote_generation value = scope:ywc_kor_procurement_request_generation }
+			set_variable = { name = ywc_kor_procurement_quote_total value = scope:ywc_kor_procurement_request_total }
+			set_variable = { name = ywc_kor_procurement_state value = 2 }
+			set_variable = { name = ywc_kor_procurement_notice_reason value = 1 }
+			ywc_kor_procurement_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_procurement_refuse_quote = {
+	if = {
+		limit = { ywc_kor_procurement_authorizable = yes }
+		set_variable = { name = ywc_kor_procurement_answer_requester value = scope:ywc_kor_procurement_requester }
+		set_variable = { name = ywc_kor_procurement_answer_generation value = scope:ywc_kor_procurement_request_generation }
+		set_variable = { name = ywc_kor_procurement_answer value = 2 }
+		set_variable = { name = ywc_kor_procurement_answer_total value = scope:ywc_kor_procurement_request_total }
+		scope:ywc_kor_procurement_requester = {
+			remove_variable = ywc_kor_procurement_quote_generation
+			remove_variable = ywc_kor_procurement_quote_total
+			remove_variable = ywc_kor_procurement_request_timer
+			set_variable = { name = ywc_kor_procurement_state value = 3 }
+			set_variable = { name = ywc_kor_procurement_notice_reason value = 2 }
+			ywc_kor_procurement_publish_notice = yes
+		}
+	}
+}
+
+ywc_kor_procurement_publish_notice = {
+	if = {
+		limit = { NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled } }
+		if = { limit = { NOT = { has_variable = ywc_kor_procurement_notice_serial } } set_variable = { name = ywc_kor_procurement_notice_serial value = 0 } }
+		change_variable = { name = ywc_kor_procurement_notice_serial add = 1 }
+		set_variable = { name = ywc_kor_procurement_notice_event value = 1034 }
+		set_variable = { name = ywc_kor_procurement_notice_generation value = var:ywc_kor_procurement_generation }
+		set_variable = { name = ywc_kor_procurement_notice_request_state value = var:ywc_kor_procurement_state }
+		remove_variable = ywc_kor_procurement_notice_partner
+		if = {
+			limit = { exists = var:ywc_kor_procurement_partner var:ywc_kor_procurement_partner = { is_country_alive = yes } }
+			set_variable = { name = ywc_kor_procurement_notice_partner value = var:ywc_kor_procurement_partner }
+		}
+	}
+}
+
+ywc_kor_procurement_cancel_unsigned = {
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+		}
+		remove_variable = ywc_kor_procurement_request_timer
+		remove_variable = ywc_kor_procurement_quote_generation
+		remove_variable = ywc_kor_procurement_quote_total
+		remove_variable = ywc_kor_procurement_partner
+		set_variable = { name = ywc_kor_procurement_state value = 7 }
+	}
+}
+
+ywc_kor_procurement_invalidate_pending = {
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+			NOT = { has_variable = ywc_kor_procurement_request_timer }
+		}
+		ywc_kor_procurement_cancel_unsigned = yes
+		set_variable = { name = ywc_kor_procurement_state value = 4 }
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 3 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+			NOT = { ywc_kor_procurement_unsigned_intact = yes }
+		}
+		ywc_kor_procurement_cancel_unsigned = yes
+		set_variable = { name = ywc_kor_procurement_state value = 5 }
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 4 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+}
+
+ywc_kor_procurement_refresh_status = {
+	ywc_kor_procurement_invalidate_pending = yes
+	if = {
+		limit = {
+			var:ywc_kor_procurement_state ?= 6
+			OR = {
+				NOT = { ywc_kor_procurement_service_eligible = yes }
+				NOT = { ywc_kor_procurement_route_intact = yes }
+				NOT = { ywc_kor_procurement_flow_current = yes }
+				var:ywc_kor_procurement_creditor_invalid_generation ?= var:ywc_kor_procurement_contract_generation
+			}
+			NOT = { var:ywc_kor_procurement_notice_reason ?= 5 }
+		}
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 5 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+	if = {
+		limit = {
+			var:ywc_kor_procurement_state ?= 6
+			var:ywc_kor_procurement_notice_reason ?= 5
+			ywc_kor_procurement_service_eligible = yes
+			ywc_kor_procurement_route_intact = yes
+			ywc_kor_procurement_flow_current = yes
+			has_variable = ywc_kor_procurement_window_active
+			NOT = { var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation }
+		}
+		set_variable = { name = ywc_kor_procurement_notice_reason value = 6 }
+		ywc_kor_procurement_publish_notice = yes
+	}
+}
+
+# Signature captures the exact current route objects and the immutable terms.
+ywc_kor_procurement_prepare_signing = {
+	save_scope_as = ywc_kor_procurement_requester
+	if = { limit = { exists = var:ywc_kor_procurement_partner } var:ywc_kor_procurement_partner = { save_scope_as = ywc_kor_procurement_partner } }
+	save_scope_value_as = { name = ywc_kor_procurement_request_generation value = var:ywc_kor_procurement_generation }
+	save_scope_value_as = { name = ywc_kor_procurement_request_total value = var:ywc_kor_procurement_quote_total }
+}
+
+ywc_kor_procurement_sign_contract = {
+	if = {
+		limit = { ywc_kor_procurement_signable = yes }
+		ywc_kor_procurement_prepare_signing = yes
+		every_scope_state = {
+			limit = { ywc_kor_procurement_dest_candidate_here = yes }
+			save_scope_as = ywc_kor_procurement_dest_state
+		}
+		scope:ywc_kor_procurement_partner = {
+			every_scope_state = {
+				limit = { ywc_kor_procurement_source_candidate_here = yes }
+				save_scope_as = ywc_kor_procurement_source_state
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:ywc_kor_procurement_dest_state
+				exists = scope:ywc_kor_procurement_source_state
+				scope:ywc_kor_procurement_source_state = {
+					owner ?= scope:ywc_kor_procurement_partner
+					state_goods_production = { target = sg:small_arms value > 0 }
+					state_exports = { target = scope:ywc_kor_procurement_dest_state goods = g:small_arms value >= 5 }
+					NOT = { market ?= scope:ywc_kor_procurement_dest_state.market }
+				}
+				scope:ywc_kor_procurement_dest_state = {
+					owner ?= c:KOR
+					state_imports = { target = scope:ywc_kor_procurement_source_state goods = g:small_arms value >= 5 }
+				}
+			}
+			set_variable = { name = ywc_kor_procurement_contract_partner value = scope:ywc_kor_procurement_partner }
+			set_variable = { name = ywc_kor_procurement_contract_generation value = scope:ywc_kor_procurement_request_generation }
+			set_variable = { name = ywc_kor_procurement_contract_total value = scope:ywc_kor_procurement_request_total }
+			set_variable = { name = ywc_kor_procurement_source_state value = scope:ywc_kor_procurement_source_state }
+			set_variable = { name = ywc_kor_procurement_dest_state value = scope:ywc_kor_procurement_dest_state }
+			set_variable = { name = ywc_kor_procurement_source_market value = scope:ywc_kor_procurement_source_state.market }
+			set_variable = { name = ywc_kor_procurement_dest_market value = scope:ywc_kor_procurement_dest_state.market }
+			set_variable = { name = ywc_kor_procurement_paid_count value = 0 }
+			set_variable = { name = ywc_kor_procurement_paid_total value = 0 }
+			set_variable = { name = ywc_kor_procurement_earned_count value = 0 }
+			set_variable = { name = ywc_kor_procurement_earned_total value = 0 }
+			remove_variable = ywc_kor_procurement_request_timer
+			remove_variable = ywc_kor_procurement_quote_generation
+			remove_variable = ywc_kor_procurement_quote_total
+			remove_variable = ywc_kor_procurement_window_start_month
+			remove_variable = ywc_kor_procurement_window_active
+			remove_variable = ywc_kor_procurement_window_ended_generation
+			remove_variable = ywc_kor_procurement_outcome_generation
+			remove_variable = ywc_kor_procurement_creditor_invalid_generation
+			remove_variable = ywc_kor_procurement_last_processed_calendar_month
+			remove_variable = ywc_kor_procurement_end_scheduled_generation
+			set_variable = { name = ywc_kor_procurement_window_start_month value = ywc_kor_current_calendar_month }
+			set_variable = { name = ywc_kor_procurement_window_active value = 1 }
+			set_variable = { name = ywc_kor_procurement_state value = 6 }
+			set_variable = { name = ywc_kor_procurement_notice_reason value = 7 }
+			if = {
+				limit = { NOT = { var:ywc_kor_procurement_end_scheduled_generation ?= var:ywc_kor_procurement_contract_generation } }
+				save_scope_as = ywc_kor_procurement_end_owner
+				save_scope_value_as = { name = ywc_kor_procurement_end_generation value = var:ywc_kor_procurement_contract_generation }
+				set_variable = { name = ywc_kor_procurement_end_scheduled_generation value = var:ywc_kor_procurement_contract_generation }
+				trigger_event = { id = ywc_kor.1035 months = 3 }
+			}
+			ywc_kor_procurement_publish_notice = yes
+		}
+	}
+}
+
+# This helper has one owner: the KOR country-monthly on_action. Its calendar
+# token is independent of the old 27-day domestic payment lock and of the
+# instructor monthly token.
+ywc_kor_procurement_monthly = {
+	if = {
+		limit = { has_variable = ywc_kor_procurement_contract_generation }
+		save_scope_as = ywc_kor_procurement_requester
+		if = { limit = { exists = var:ywc_kor_procurement_contract_partner } var:ywc_kor_procurement_contract_partner = { save_scope_as = ywc_kor_procurement_provider } }
+		if = { limit = { exists = var:ywc_kor_procurement_source_state } save_scope_value_as = { name = ywc_kor_procurement_source_state value = var:ywc_kor_procurement_source_state } }
+		if = { limit = { exists = var:ywc_kor_procurement_dest_state } save_scope_value_as = { name = ywc_kor_procurement_dest_state value = var:ywc_kor_procurement_dest_state } }
+		if = { limit = { exists = var:ywc_kor_procurement_source_market } save_scope_value_as = { name = ywc_kor_procurement_source_market value = var:ywc_kor_procurement_source_market } }
+		if = { limit = { exists = var:ywc_kor_procurement_dest_market } save_scope_value_as = { name = ywc_kor_procurement_dest_market value = var:ywc_kor_procurement_dest_market } }
+		set_variable = { name = ywc_kor_procurement_current_month value = ywc_kor_current_calendar_month }
+		if = {
+			limit = { NOT = { var:ywc_kor_procurement_last_processed_calendar_month ?= var:ywc_kor_procurement_current_month } }
+			set_variable = { name = ywc_kor_procurement_last_processed_calendar_month value = var:ywc_kor_procurement_current_month }
+			if = {
+				limit = {
+					has_variable = ywc_kor_procurement_window_active
+					NOT = { has_variable = ywc_v03_kor_v03_kor_military_accounts_settled }
+					var:ywc_kor_procurement_current_month < { value = var:ywc_kor_procurement_window_start_month add = 3 }
+					ywc_kor_procurement_inspection_ready = yes
+				}
+				set_variable = { name = ywc_kor_procurement_earned_installment value = var:ywc_kor_procurement_contract_total }
+				change_variable = { name = ywc_kor_procurement_earned_installment divide = 3 }
+				if = {
+					limit = { var:ywc_kor_procurement_earned_count >= 2 }
+					set_variable = { name = ywc_kor_procurement_earned_installment value = var:ywc_kor_procurement_contract_total }
+					change_variable = { name = ywc_kor_procurement_earned_installment add = { value = var:ywc_kor_procurement_earned_total multiply = -1 } }
+				}
+				if = {
+					limit = { var:ywc_kor_procurement_earned_installment > 0 }
+					change_variable = { name = ywc_kor_procurement_earned_count add = 1 }
+					change_variable = { name = ywc_kor_procurement_earned_total add = var:ywc_kor_procurement_earned_installment }
+				}
+			}
+			if = {
+				limit = {
+					NOT = { exists = var:ywc_kor_procurement_contract_partner }
+				}
+				set_variable = { name = ywc_kor_procurement_creditor_invalid_generation value = var:ywc_kor_procurement_contract_generation }
+			}
+			if = {
+				limit = { exists = var:ywc_kor_procurement_contract_partner var:ywc_kor_procurement_contract_partner = { is_country_alive = no } }
+				set_variable = { name = ywc_kor_procurement_creditor_invalid_generation value = var:ywc_kor_procurement_contract_generation }
+			}
+			ywc_kor_procurement_settle_installment = yes
+			if = {
+				limit = {
+					has_variable = ywc_kor_procurement_window_start_month
+					NOT = { var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation }
+					OR = {
+						NOT = { has_variable = ywc_kor_procurement_window_active }
+						var:ywc_kor_procurement_current_month >= { value = var:ywc_kor_procurement_window_start_month add = 3 }
+					}
+				}
+				remove_variable = ywc_kor_procurement_window_active
+				set_variable = { name = ywc_kor_procurement_window_ended_generation value = var:ywc_kor_procurement_contract_generation }
+			}
+			if = {
+				limit = {
+					var:ywc_kor_procurement_window_ended_generation ?= var:ywc_kor_procurement_contract_generation
+					NOT = { var:ywc_kor_procurement_outcome_generation ?= var:ywc_kor_procurement_contract_generation }
+				}
+				ywc_kor_procurement_evaluate_outcome = yes
+			}
+			ywc_kor_procurement_refresh_status = yes
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				var:ywc_kor_procurement_state ?= 1
+				var:ywc_kor_procurement_state ?= 2
+			}
+		}
+		ywc_kor_procurement_invalidate_pending = yes
+	}
+}
+
+ywc_kor_procurement_settle_installment = {
+	if = {
+		limit = { ywc_kor_procurement_contract_collectible = yes }
+		set_variable = { name = ywc_kor_procurement_transfer_amount value = var:ywc_kor_procurement_earned_total }
+		change_variable = { name = ywc_kor_procurement_transfer_amount add = { value = var:ywc_kor_procurement_paid_total multiply = -1 } }
+		set_variable = { name = ywc_kor_procurement_installment_basis value = var:ywc_kor_procurement_contract_total }
+		change_variable = { name = ywc_kor_procurement_installment_basis divide = 3 }
+		if = {
+			limit = { var:ywc_kor_procurement_transfer_amount > var:ywc_kor_procurement_installment_basis }
+			set_variable = { name = ywc_kor_procurement_transfer_amount value = var:ywc_kor_procurement_installment_basis }
+		}
+		if = {
+			limit = {
+				var:ywc_kor_procurement_transfer_amount > 0
+				ywc_kor_v03_finance_safe = yes
+				gold_reserves >= var:ywc_kor_procurement_transfer_amount
+			}
+			add_treasury = { value = var:ywc_kor_procurement_transfer_amount multiply = -1 }
+			var:ywc_kor_procurement_contract_partner = {
+				add_treasury = { value = scope:ywc_kor_procurement_requester.var:ywc_kor_procurement_transfer_amount }
+			}
+			change_variable = { name = ywc_kor_procurement_paid_count add = 1 }
+			change_variable = { name = ywc_kor_procurement_paid_total add = var:ywc_kor_procurement_transfer_amount }
+		}
+	}
+}
+
+ywc_kor_procurement_evaluate_outcome = {
+	if = {
+		limit = {
+			has_variable = ywc_kor_procurement_contract_generation
+			NOT = { var:ywc_kor_procurement_outcome_generation ?= var:ywc_kor_procurement_contract_generation }
+		}
+		set_variable = { name = ywc_kor_procurement_outcome_generation value = var:ywc_kor_procurement_contract_generation }
+		if = {
+			limit = {
+				var:ywc_kor_procurement_paid_count >= 2
+				ywc_kor_v03_route_execution_ready = yes
+			}
+			set_variable = { name = ywc_kor_procurement_success value = 1 }
+		}
+		else_if = {
+			limit = { var:ywc_kor_procurement_paid_count >= 1 }
+			set_variable = { name = ywc_kor_procurement_partial value = 1 }
+			set_variable = { name = ywc_kor_scope_narrowed value = 1 }
+		}
+		else = {
+			set_variable = { name = ywc_kor_procurement_suspended value = 1 }
+		}
+		if = {
+			limit = { NOT = { has_variable = ywc_kor_pending_event } }
+			set_variable = { name = ywc_kor_pending_event value = 1008 }
+		}
+	}
+}
+
+# Hidden endpoint: removes only this generation's own term marker. It never
+# touches debt, paid counts, queues, outcomes or instructor state.
+ywc_kor_procurement_end_window = {
+	if = {
+		limit = {
+			exists = scope:ywc_kor_procurement_end_owner
+			scope:ywc_kor_procurement_end_owner ?= this
+			has_variable = ywc_kor_procurement_contract_generation
+			var:ywc_kor_procurement_contract_generation ?= scope:ywc_kor_procurement_end_generation
+			NOT = { var:ywc_kor_procurement_window_ended_generation ?= scope:ywc_kor_procurement_end_generation }
+		}
+		remove_variable = ywc_kor_procurement_window_active
+		set_variable = { name = ywc_kor_procurement_window_ended_generation value = scope:ywc_kor_procurement_end_generation }
+	}
+}
+
+ywc_kor_procurement_consume_notice = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		remove_variable = ywc_kor_procurement_notice_open_serial
+	}
+}
+
+ywc_kor_procurement_choose_decline = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		if = { limit = { NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1008 } }
+	}
+}
+
+ywc_kor_procurement_choose_wait = {
+	if = {
+		limit = {
+			ywc_kor_procurement_notice_choice_matches = yes
+			OR = { var:ywc_kor_procurement_state ?= 1 var:ywc_kor_procurement_state ?= 2 }
+		}
+		ywc_kor_procurement_consume_notice = yes
+	}
+}
+
+ywc_kor_procurement_choose_status = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		ywc_kor_procurement_consume_notice = yes
+	}
+}
+
+ywc_kor_procurement_choose_domestic = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		if = { limit = { NOT = { has_variable = ywc_kor_pending_event } } set_variable = { name = ywc_kor_pending_event value = 1008 } }
+	}
+}
+
+ywc_kor_procurement_choose_retry_shu = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes ywc_kor_procurement_can_offer_shu = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		ywc_kor_procurement_send_shu = yes
+	}
+}
+
+ywc_kor_procurement_choose_retry_jhg = {
+	if = {
+		limit = { ywc_kor_procurement_notice_choice_matches = yes ywc_kor_procurement_can_offer_jhg = yes }
+		ywc_kor_procurement_consume_notice = yes
+		ywc_kor_procurement_cancel_unsigned = yes
+		ywc_kor_procurement_send_jhg = yes
+	}
+}
+
+# M3 KOR provincial revenue effects (v03_kor_provincial_revenue). Append-only.
+# Claim once captures B = opening yearly_gross_income / 52 (min 100) and the pilot.
+ywc_kor_revenue_claim_once = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started }
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+			ywc_kor_revenue_has_any_owned_state = yes
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		set_variable = { name = ywc_kor_revenue_budget value = yearly_gross_income }
+		change_variable = { name = ywc_kor_revenue_budget divide = 52 }
+		clamp_variable = { name = ywc_kor_revenue_budget min = 100 max = 1000000000 }
+		set_variable = { name = ywc_kor_revenue_stage value = 1100 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1100 }
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_last_event value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_phase value = 1 }
+	}
+}
+
+# 1100: capture the one currently owned KOR pilot state object and choose a mode
+# and target. The pending event is consumed here through stage advancement.
+ywc_kor_revenue_set_pilot_and_mode = {
+	if = {
+		limit = { ywc_kor_revenue_at_1100 = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }
+		every_scope_state = {
+			limit = { owner = c:KOR }
+			save_scope_as = ywc_kor_revenue_pilot_state
+		}
+		if = {
+			limit = { exists = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_pilot_state value = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_target value = 1 }
+			if = { limit = { var:ywc_kor_revenue_mode_choice = 1 } set_variable = { name = ywc_kor_revenue_mode value = 1 } }
+			else_if = { limit = { var:ywc_kor_revenue_mode_choice = 2 } set_variable = { name = ywc_kor_revenue_mode value = 2 } }
+			else_if = { limit = { var:ywc_kor_revenue_mode_choice = 3 } set_variable = { name = ywc_kor_revenue_mode value = 3 } }
+			set_variable = { name = ywc_kor_revenue_stage value = 1101 }
+			set_variable = { name = ywc_kor_revenue_pending_event value = 1101 }
+			remove_variable = ywc_kor_revenue_mode_choice
+		}
+	}
+}
+
+# 1100 finite choice: set an explicit base mode 3 (project grants) so mode/target
+# always carry exact values; target 2 then overrides the full project taxes, sponsor
+# and farmland as the conservative finite goal. No mode 0 / missing variable.
+ywc_kor_revenue_set_pilot_finite = {
+	if = {
+		limit = { ywc_kor_revenue_at_1100 = yes NOT = { has_variable = ywc_kor_revenue_pilot_state } }
+		every_scope_state = {
+			limit = { owner = c:KOR }
+			save_scope_as = ywc_kor_revenue_pilot_state
+		}
+		if = {
+			limit = { exists = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_pilot_state value = scope:ywc_kor_revenue_pilot_state }
+			set_variable = { name = ywc_kor_revenue_mode value = 3 }
+			set_variable = { name = ywc_kor_revenue_target value = 2 }
+			set_variable = { name = ywc_kor_revenue_finite_chosen value = 1 }
+			set_variable = { name = ywc_kor_revenue_stage value = 1101 }
+			set_variable = { name = ywc_kor_revenue_pending_event value = 1101 }
+		}
+	}
+}
+
+# 1100 wait keeps the pending event and consumes nothing.
+ywc_kor_revenue_wait_1100 = {
+	if = { limit = { ywc_kor_revenue_at_1100 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1101 charter fee: atomic recheck of current cash/default/bankruptcy, then real debit.
+# Only a completed debit writes paid + positive amount. Never refunded, never recharged.
+ywc_kor_revenue_pay_charter_once = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1101 = yes
+			NOT = { has_variable = ywc_kor_revenue_charter_paid }
+			ywc_kor_revenue_can_pay_charter = yes
+		}
+		set_variable = { name = ywc_kor_revenue_charter_paid_amount value = var:ywc_kor_revenue_budget }
+		if = { limit = { ywc_kor_revenue_charter_half = yes } change_variable = { name = ywc_kor_revenue_charter_paid_amount multiply = 0.5 } }
+		if = { limit = { var:ywc_kor_revenue_mode = 2 } change_variable = { name = ywc_kor_revenue_charter_paid_amount multiply = 2 } }
+		add_treasury = { value = var:ywc_kor_revenue_charter_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_revenue_charter_paid value = 1 }
+		set_variable = { name = ywc_kor_revenue_charter_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_charter_mode value = var:ywc_kor_revenue_mode }
+		set_variable = { name = ywc_kor_revenue_charter_target value = var:ywc_kor_revenue_target }
+		if = { limit = { ywc_kor_revenue_prior_provincial_contract = yes } set_variable = { name = ywc_kor_revenue_charter_source_provincial value = 1 } }
+		if = { limit = { ywc_kor_revenue_prior_court_contract = yes } set_variable = { name = ywc_kor_revenue_charter_source_court value = 1 } }
+		set_variable = { name = ywc_kor_revenue_stage value = 1102 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1102 }
+	}
+}
+
+ywc_kor_revenue_wait_1101 = {
+	if = { limit = { ywc_kor_revenue_at_1101 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1102: settle the real reviewer / responsibility terms by current mode, recording
+# which source contract was read without granting new funding. Under the explicit
+# finite target only the fresh current local office (4) may audit; a historical
+# school/port role is never adopted for target2.
+ywc_kor_revenue_choose_reviewer = {
+	if = {
+		limit = { ywc_kor_revenue_at_1102 = yes ywc_kor_revenue_reviewer_office = yes }
+		if = { limit = { var:ywc_kor_revenue_target = 2 } set_variable = { name = ywc_kor_revenue_reviewer value = 4 } }
+		else_if = { limit = { ywc_kor_revenue_prior_school = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 1 } }
+		else_if = { limit = { ywc_kor_revenue_prior_ports = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 2 } }
+		else_if = { limit = { ywc_kor_revenue_prior_provincial_contract = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 3 } }
+		else = { set_variable = { name = ywc_kor_revenue_reviewer value = 4 } }
+		set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_stage value = 1103 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1103 }
+	}
+}
+
+# Current reviewer/source duty revalidation at any later node. The recorded
+# reviewer must still hold its genuinely earned CURRENT qualification (1 school,
+# 2 ports, 3 provincial, 4 the fresh current local office); a cached role whose
+# old contract lost its live posts/route is defunct and cannot remain the adopted
+# responsibility source. Calling this where an old privilege silently persisted
+# rebinds to the real reviewer 4 at the same pilot; nothing is granted for free.
+ywc_kor_revenue_pick_current_reviewer = {
+	if = { limit = { var:ywc_kor_revenue_reviewer = 1 ywc_kor_revenue_prior_school = yes } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+	else_if = { limit = { var:ywc_kor_revenue_reviewer = 2 ywc_kor_revenue_prior_ports = yes } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+	else_if = { limit = { var:ywc_kor_revenue_reviewer = 3 ywc_kor_revenue_prior_provincial_contract = yes } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+	else_if = { limit = { ywc_kor_revenue_reviewer_office = yes } set_variable = { name = ywc_kor_revenue_reviewer value = 4 } set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state } }
+}
+
+# Explicit return to 1102 when the adopted reviewer's current duty was lost before
+# the seal. It changes no bill and no paid amount: it only reopens the reviewer
+# choice so a genuinely present source, or the fresh current local office (4), can
+# be selected again. Working wait/withdraw stay available in 1103 itself.
+ywc_kor_revenue_reselect_reviewer = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1103 = yes
+			var:ywc_kor_revenue_phase = 1
+			has_variable = ywc_kor_revenue_charter_paid
+			var:ywc_kor_revenue_charter_paid_amount > 0
+			has_variable = ywc_kor_revenue_reviewer
+			NOT = { ywc_kor_revenue_reviewer_current_duty = yes }
+		}
+		set_variable = { name = ywc_kor_revenue_stage value = 1102 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1102 }
+	}
+}
+
+ywc_kor_revenue_wait_1102 = {
+	if = { limit = { ywc_kor_revenue_at_1102 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1103: sign against the CURRENT selected policy, reviewer terms and paid charter,
+# with exact mode/target/pilot snapshots and phase 1. If the selected policy has just
+# lost its law or duties, signing is not allowed. Valid signing sets phase 2 and hands
+# off to JE2; losing state afterwards must still admit JE2/exit (JE2 is not gated on
+# current ownership or capacity).
+ywc_kor_revenue_sign = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1103 = yes
+			var:ywc_kor_revenue_phase = 1
+			has_variable = ywc_kor_revenue_charter_paid
+			var:ywc_kor_revenue_charter_paid_amount > 0
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_mode_chosen = yes
+			ywc_kor_revenue_target_chosen = yes
+			ywc_kor_revenue_pilot_owned = yes
+			ywc_kor_revenue_reviewer_office = yes
+			ywc_kor_revenue_selected_current_ready = yes
+			ywc_kor_revenue_both_snapshots_match = yes
+		}
+		ywc_kor_revenue_pick_current_reviewer = yes
+		set_variable = { name = ywc_kor_revenue_phase value = 2 }
+		set_variable = { name = ywc_kor_revenue_sign_mode value = var:ywc_kor_revenue_mode }
+		set_variable = { name = ywc_kor_revenue_sign_target value = var:ywc_kor_revenue_target }
+		set_variable = { name = ywc_kor_revenue_sign_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_settlement_ready value = 1 }
+		ywc_kor_revenue_begin_review = yes
+		add_journal_entry = { type = ywc_je_v03_kor_provincial_revenue_review }
+	}
+}
+
+# Completes JE1 by opening the review journal once, after 1103 actually signed.
+ywc_kor_revenue_open_review_once = {
+	if = {
+		limit = {
+			ywc_kor_revenue_open = yes
+			has_variable = ywc_kor_revenue_settlement_ready
+			NOT = { has_journal_entry = ywc_je_v03_kor_provincial_revenue_review }
+		}
+		add_journal_entry = { type = ywc_je_v03_kor_provincial_revenue_review }
+	}
+}
+
+# JE2 entry guard: only start the run if 1103 did not already begin it. Never
+# resets an already-running or matured review.
+ywc_kor_revenue_review_claimed_once = {
+	if = {
+		limit = {
+			ywc_kor_revenue_open = yes
+			has_variable = ywc_kor_revenue_settlement_ready
+			NOT = { has_variable = ywc_kor_revenue_review_running }
+			NOT = { has_variable = ywc_kor_revenue_review_mature }
+		}
+		ywc_kor_revenue_begin_review = yes
+	}
+}
+
+ywc_kor_revenue_wait_1103 = {
+	if = { limit = { ywc_kor_revenue_at_1103 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# Starts JE2's running observation. A one-day tick guards a same-day duplicate.
+ywc_kor_revenue_begin_review = {
+	set_variable = { name = ywc_kor_revenue_phase value = 2 }
+	set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+	set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+	set_variable = { name = ywc_kor_revenue_review_started value = 1 }
+	remove_variable = ywc_kor_revenue_review_mature
+	remove_variable = ywc_kor_revenue_review_interrupted
+	remove_variable = ywc_kor_revenue_review_ticked
+	set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+	set_variable = { name = ywc_kor_revenue_stage value = 1104 }
+	set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+}
+
+# Monthly observation. Only while 1104 and running, and only one tick per day.
+# Any failed current condition clears streak/mature/running and marks interrupted.
+ywc_kor_revenue_track_review = {
+	if = {
+		limit = { ywc_kor_revenue_open = yes var:ywc_kor_revenue_stage = 1104 has_variable = ywc_kor_revenue_review_running NOT = { has_variable = ywc_kor_revenue_review_ticked } }
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+		if = {
+			limit = {
+				OR = {
+					NOT = { ywc_kor_revenue_selected_current_ready = yes }
+					NOT = { ywc_kor_revenue_reviewer_current_duty = yes }
+				}
+			}
+			set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+			remove_variable = ywc_kor_revenue_review_mature
+			remove_variable = ywc_kor_revenue_review_running
+			set_variable = { name = ywc_kor_revenue_review_interrupted value = 1 }
+		}
+		else_if = {
+			limit = { NOT = { has_variable = ywc_kor_revenue_review_mature } }
+			change_variable = { name = ywc_kor_revenue_review_streak add = 1 }
+			if = { limit = { var:ywc_kor_revenue_review_streak >= 6 } set_variable = { name = ywc_kor_revenue_review_mature value = 1 } }
+		}
+	}
+}
+
+# 1104: bill the real review fee only after the genuine six-month maturity. Paying
+# must NOT reset the run: keep mature/streak, stop running, and advance to submit.
+ywc_kor_revenue_pay_review_and_run = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			NOT = { has_variable = ywc_kor_revenue_review_paid }
+			ywc_kor_revenue_can_pay_review = yes
+		}
+		set_variable = { name = ywc_kor_revenue_review_paid_amount value = var:ywc_kor_revenue_budget }
+		if = { limit = { var:ywc_kor_revenue_target = 2 } change_variable = { name = ywc_kor_revenue_review_paid_amount multiply = 0.5 } }
+		else_if = { limit = { var:ywc_kor_revenue_mode = 3 } change_variable = { name = ywc_kor_revenue_review_paid_amount multiply = 0.5 } }
+		else_if = { limit = { var:ywc_kor_revenue_mode = 2 } change_variable = { name = ywc_kor_revenue_review_paid_amount multiply = 1.5 } }
+		if = { limit = { var:ywc_kor_revenue_mode = 2 var:ywc_kor_revenue_target = 1 ywc_kor_revenue_prior_court_contract = yes } set_variable = { name = ywc_kor_revenue_review_paid_amount value = var:ywc_kor_revenue_budget } }
+		add_treasury = { value = var:ywc_kor_revenue_review_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_revenue_review_paid value = 1 }
+		set_variable = { name = ywc_kor_revenue_review_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_review_mode value = var:ywc_kor_revenue_mode }
+		set_variable = { name = ywc_kor_revenue_review_target value = var:ywc_kor_revenue_target }
+		if = { limit = { ywc_kor_revenue_prior_court_contract = yes } set_variable = { name = ywc_kor_revenue_review_source_court value = 1 } }
+		remove_variable = ywc_kor_revenue_review_running
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+	}
+}
+
+# Explicit restart after an interruption. It does NOT require the future review bill
+# (impossible before first maturity); it requires the real charter, a signed selection
+# and reviewer bound to the same pilot/mode/target, and currently valid duties. It
+# clears old maturity/request/streak and starts six fresh, preserving any real paid bill.
+ywc_kor_revenue_restart_review = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			has_variable = ywc_kor_revenue_charter_paid
+			var:ywc_kor_revenue_charter_paid_amount > 0
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_mode_chosen = yes
+			ywc_kor_revenue_target_chosen = yes
+			ywc_kor_revenue_both_snapshots_match = yes
+			ywc_kor_revenue_selected_current_ready = yes
+			ywc_kor_revenue_finance_safe = yes
+		}
+		ywc_kor_revenue_pick_current_reviewer = yes
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+		remove_variable = ywc_kor_revenue_review_mature
+		remove_variable = ywc_kor_revenue_review_interrupted
+		remove_variable = ywc_kor_revenue_requested
+		remove_variable = ywc_kor_revenue_review_ticked
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+	}
+}
+
+ywc_kor_revenue_wait_1104 = {
+	if = { limit = { ywc_kor_revenue_at_1104 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1104 submit: requires both real fees already paid and the same matured proof and
+# current selected duties. Stop running and advance to 1105 without re-charging.
+ywc_kor_revenue_submit_review = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			ywc_kor_revenue_both_fees_paid = yes
+			has_variable = ywc_kor_revenue_review_mature
+			var:ywc_kor_revenue_review_streak >= 6
+			NOT = { has_variable = ywc_kor_revenue_review_interrupted }
+			ywc_kor_revenue_both_snapshots_match = yes
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_reviewer_current_duty = yes
+		}
+		remove_variable = ywc_kor_revenue_review_running
+		set_variable = { name = ywc_kor_revenue_stage value = 1105 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1105 }
+	}
+}
+
+# Narrow a full policy to the explicit finite target AFTER maturity. This is a real
+# re-sign: it binds target 2 with the current local finite reviewer/snapshot, keeps both
+# actual paid bills (no second bill, no refund), clears requested/streak/mature/
+# interrupted, returns to phase 2 stage 1104 running behind the creation-day tick, and
+# requires six FRESH monthly observations. It does NOT advance to 1105, so an old cached
+# full request can never settle the new finite goal.
+ywc_kor_revenue_narrow_to_finite = {
+	if = {
+		limit = {
+			ywc_kor_revenue_at_1104 = yes
+			ywc_kor_revenue_both_fees_paid = yes
+			has_variable = ywc_kor_revenue_review_mature
+			has_variable = ywc_kor_revenue_reviewer
+			ywc_kor_revenue_finance_safe = yes
+		}
+		set_variable = { name = ywc_kor_revenue_target value = 2 }
+		set_variable = { name = ywc_kor_revenue_finite_chosen value = 1 }
+		set_variable = { name = ywc_kor_revenue_charter_target value = 2 }
+		set_variable = { name = ywc_kor_revenue_review_target value = 2 }
+		set_variable = { name = ywc_kor_revenue_reviewer value = 4 }
+		set_variable = { name = ywc_kor_revenue_reviewer_pilot value = var:ywc_kor_revenue_pilot_state }
+		set_variable = { name = ywc_kor_revenue_phase value = 2 }
+		remove_variable = ywc_kor_revenue_requested
+		remove_variable = ywc_kor_revenue_review_mature
+		remove_variable = ywc_kor_revenue_review_interrupted
+		remove_variable = ywc_kor_revenue_review_ticked
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_revenue_stage value = 1104 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+	}
+}
+
+# 1105: reread current law/government groups/posts/turmoil and the current
+# reviewer/source duty, recording public responsibility without changing it. A
+# reviewer whose old contract has since lost its live posts/route is defunct: the
+# real current local office (4) audits at the same pilot instead; if no current
+# duty remains, responsibility is the genuine setback class.
+ywc_kor_revenue_review_responsibility = {
+	if = {
+		limit = { ywc_kor_revenue_at_1105 = yes }
+		ywc_kor_revenue_pick_current_reviewer = yes
+		if = { limit = { ywc_kor_revenue_reviewer_current_duty = yes ywc_kor_revenue_full_conditions = yes } set_variable = { name = ywc_kor_revenue_responsibility value = 1 } }
+		else_if = { limit = { ywc_kor_revenue_reviewer_current_duty = yes ywc_kor_revenue_target2_finite = yes } set_variable = { name = ywc_kor_revenue_responsibility value = 2 } }
+		else = { set_variable = { name = ywc_kor_revenue_responsibility value = 3 } }
+		set_variable = { name = ywc_kor_revenue_stage value = 1106 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1106 }
+	}
+}
+
+ywc_kor_revenue_wait_1105 = {
+	if = { limit = { ywc_kor_revenue_at_1105 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1106: verify paid accounts, responsibility source and current state; a recount
+# returns to 1104 without charging either fee again. A defunct reviewer is rebound
+# to the real current local office (4) at the same pilot before proceeding.
+ywc_kor_revenue_verify_and_close = {
+	if = {
+		limit = { ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes }
+		ywc_kor_revenue_pick_current_reviewer = yes
+		set_variable = { name = ywc_kor_revenue_stage value = 1107 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1107 }
+	}
+}
+
+ywc_kor_revenue_recount = {
+	if = {
+		limit = { ywc_kor_revenue_at_1106 = yes ywc_kor_revenue_both_fees_paid = yes }
+		remove_variable = ywc_kor_revenue_review_mature
+		remove_variable = ywc_kor_revenue_review_interrupted
+		remove_variable = ywc_kor_revenue_requested
+		remove_variable = ywc_kor_revenue_review_ticked
+		set_variable = { name = ywc_kor_revenue_review_streak value = 0 }
+		set_variable = { name = ywc_kor_revenue_review_running value = 1 }
+		set_variable = { name = ywc_kor_revenue_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_revenue_stage value = 1104 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = 1104 }
+	}
+}
+
+ywc_kor_revenue_wait_1106 = {
+	if = { limit = { ywc_kor_revenue_at_1106 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# 1107 terminal settling. Each request records the intent AND, after rechecking the
+# same current facts at execution time, immediately runs the matching close. This is
+# the single reachable UI sequence: one guarded choice settles the arc. A stale intent
+# whose facts no longer hold close nothing (so a recovered setback stays inert).
+ywc_kor_revenue_request_full = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_full = yes }
+		set_variable = { name = ywc_kor_revenue_requested value = 1 }
+		ywc_kor_revenue_close_full = yes
+	}
+}
+ywc_kor_revenue_request_finite = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_finite = yes }
+		set_variable = { name = ywc_kor_revenue_requested value = 2 }
+		ywc_kor_revenue_close_finite = yes
+	}
+}
+ywc_kor_revenue_request_setback = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes ywc_kor_revenue_terminal_setback = yes }
+		set_variable = { name = ywc_kor_revenue_requested value = 3 }
+		ywc_kor_revenue_close_setback = yes
+	}
+}
+
+ywc_kor_revenue_close_full = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes has_variable = ywc_kor_revenue_requested var:ywc_kor_revenue_requested = 1 ywc_kor_revenue_terminal_full = yes }
+		set_variable = { name = ywc_kor_revenue_outcome value = 1 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+ywc_kor_revenue_close_finite = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes has_variable = ywc_kor_revenue_requested var:ywc_kor_revenue_requested = 2 ywc_kor_revenue_terminal_finite = yes }
+		set_variable = { name = ywc_kor_revenue_outcome value = 2 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+ywc_kor_revenue_close_setback = {
+	if = {
+		limit = { ywc_kor_revenue_at_1107 = yes has_variable = ywc_kor_revenue_requested var:ywc_kor_revenue_requested = 3 ywc_kor_revenue_terminal_setback = yes }
+		set_variable = { name = ywc_kor_revenue_outcome value = 3 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+
+ywc_kor_revenue_wait_1107 = {
+	if = { limit = { ywc_kor_revenue_at_1107 = yes } remove_variable = ywc_kor_revenue_pending_event }
+}
+
+# Active voluntary exit: legal at any live stage of this arc, records outcome 4,
+# releases exactly this arc's slots once.
+ywc_kor_revenue_withdraw = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+			ywc_kor_revenue_live_stage = yes
+		}
+		set_variable = { name = ywc_kor_revenue_outcome value = 4 }
+		set_variable = { name = ywc_kor_revenue_withdrawn value = 1 }
+		ywc_kor_revenue_release_once = yes
+	}
+}
+
+# Release is idempotent and touches only this arc. Paid fees and old contracts are
+# preserved; it never clears generated witnesses, reservations or other queues.
+ywc_kor_revenue_release_once = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_provincial_revenue_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_provincial_revenue_settled }
+			has_variable = ywc_kor_revenue_outcome
+			var:ywc_kor_revenue_outcome > 0
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_settled value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_provincial_revenue_outcome value = var:ywc_kor_revenue_outcome }
+		remove_variable = ywc_kor_revenue_pending_event
+		remove_variable = ywc_kor_revenue_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+# Queue preparation: only advance the stage-bound event when nothing is pending.
+ywc_kor_revenue_prepare_queue = {
+	if = {
+		limit = { ywc_kor_revenue_open = yes NOT = { has_variable = ywc_kor_revenue_pending_event } var:ywc_kor_revenue_stage >= 1100 var:ywc_kor_revenue_stage <= 1107 }
+		set_variable = { name = ywc_kor_revenue_pending_event value = var:ywc_kor_revenue_stage }
+	}
+}
+
+# M5 KOR court public effects (v03_kor_court_public). Append-only.
+# Claim once captures B = opening yearly_gross_income / 52 (min 100, max 1e9) and the
+# first currently owned state via a saved-scope guard, then stores public_pilot_state.
+ywc_kor_public_claim_once = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_started }
+			NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_settled }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+			ywc_kor_public_has_any_owned_state = yes
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		set_variable = { name = ywc_kor_public_budget value = yearly_gross_income }
+		change_variable = { name = ywc_kor_public_budget divide = 52 }
+		clamp_variable = { name = ywc_kor_public_budget min = 100 max = 1000000000 }
+		every_scope_state = {
+			limit = { owner = c:KOR NOT = { exists = scope:ywc_kor_public_first_pilot } }
+			save_scope_as = ywc_kor_public_first_pilot
+		}
+		if = {
+			limit = { exists = scope:ywc_kor_public_first_pilot }
+			set_variable = { name = ywc_kor_public_pilot_state value = scope:ywc_kor_public_first_pilot }
+		}
+		set_variable = { name = ywc_kor_public_stage value = 1120 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1120 }
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_last_event value = 0 }
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_phase value = 1 }
+	}
+}
+
+# 1120: choose the policy and target. The pilot was already captured by claim; no
+# re-capture happens here. The pending event advances to 1121.
+ywc_kor_public_set_mode_court_open = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 1 }
+		set_variable = { name = ywc_kor_public_target value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+ywc_kor_public_set_mode_local_delegates = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 2 }
+		set_variable = { name = ywc_kor_public_target value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+ywc_kor_public_set_mode_conservative = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 3 }
+		set_variable = { name = ywc_kor_public_target value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+# 1120 finite choice: explicit mode 3 / target 2 for the conservative finite goal.
+ywc_kor_public_set_finite = {
+	if = {
+		limit = { ywc_kor_public_at_1120 = yes has_variable = ywc_kor_public_pilot_state NOT = { has_variable = ywc_kor_public_mode } }
+		set_variable = { name = ywc_kor_public_mode value = 3 }
+		set_variable = { name = ywc_kor_public_target value = 2 }
+		set_variable = { name = ywc_kor_public_finite_chosen value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1121 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1121 }
+	}
+}
+
+ywc_kor_public_wait_1120 = {
+	if = { limit = { ywc_kor_public_at_1120 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1121 petition fee: atomic recheck of current cash/default/bankruptcy, then real debit.
+# Only a completed debit writes paid + positive amount. Never refunded, never recharged.
+ywc_kor_public_pay_petition_once = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1121 = yes
+			NOT = { has_variable = ywc_kor_public_petition_paid }
+			ywc_kor_public_can_pay_petition = yes
+		}
+		set_variable = { name = ywc_kor_public_petition_paid_amount value = var:ywc_kor_public_budget }
+		if = { limit = { ywc_kor_public_petition_half = yes } change_variable = { name = ywc_kor_public_petition_paid_amount multiply = 0.5 } }
+		if = { limit = { var:ywc_kor_public_mode = 2 NOT = { ywc_kor_public_petition_prior_written_shares = yes } } change_variable = { name = ywc_kor_public_petition_paid_amount multiply = 2 } }
+		add_treasury = { value = var:ywc_kor_public_petition_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_public_petition_paid value = 1 }
+		set_variable = { name = ywc_kor_public_petition_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_petition_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_petition_target value = var:ywc_kor_public_target }
+		if = { limit = { var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 ywc_kor_public_petition_prior_written_shares = yes } set_variable = { name = ywc_kor_public_petition_source_written_shares value = 1 } }
+		set_variable = { name = ywc_kor_public_handler value = 4 }
+		if = { limit = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 } set_variable = { name = ywc_kor_public_handler value = 1 } }
+		if = { limit = { var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 } set_variable = { name = ywc_kor_public_handler value = 2 } }
+		if = { limit = { var:ywc_kor_public_mode = 3 var:ywc_kor_public_target = 1 } set_variable = { name = ywc_kor_public_handler value = 3 } }
+		set_variable = { name = ywc_kor_public_handler_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_stage value = 1122 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1122 }
+	}
+}
+
+ywc_kor_public_wait_1121 = {
+	if = { limit = { ywc_kor_public_at_1121 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1122: choose the professional witness by real current posts at the saved pilot.
+# New witness kind 1: academics -> university or bureaucrats/clerks -> office at .8.
+# Reuse coop (2) / office (3): old paid school source, .5 posts. Conservative full (4)
+# office .5; finite (5) office .25. The witness triple is mode/target/pilot-bound.
+ywc_kor_public_choose_new_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid OR = { ywc_kor_public_pilot_academic_post = yes ywc_kor_public_pilot_clerk_post_full = yes } }
+		set_variable = { name = ywc_kor_public_witness_kind value = 1 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_coop_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid ywc_kor_revenue_prior_school_coop = yes ywc_kor_public_pilot_academic_post_half = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 2 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_school_route_snapshot value = 1 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_office_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid ywc_kor_revenue_prior_school_office = yes ywc_kor_public_pilot_clerk_post_half = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 3 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_school_route_snapshot value = 2 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_conservative_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid var:ywc_kor_public_target = 1 var:ywc_kor_public_mode = 3 ywc_kor_public_pilot_office_half = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 4 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+ywc_kor_public_choose_finite_witness = {
+	if = {
+		limit = { ywc_kor_public_at_1122 = yes has_variable = ywc_kor_public_petition_paid var:ywc_kor_public_target = 2 ywc_kor_public_pilot_office_bounded = yes }
+		set_variable = { name = ywc_kor_public_witness_kind value = 5 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_witness_target value = var:ywc_kor_public_target }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_stage value = 1123 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1123 }
+	}
+}
+
+# Record the actual out-of-government, dissatisfied IG opposition categories as bits.
+# 0 only means this real query found no such category, not a substituted world fact.
+ywc_kor_public_record_opposition = {
+	set_variable = { name = ywc_kor_public_opp_landowners value = 0 }
+	set_variable = { name = ywc_kor_public_opp_devout value = 0 }
+	set_variable = { name = ywc_kor_public_opp_armed_forces value = 0 }
+	set_variable = { name = ywc_kor_public_opp_intelligentsia value = 0 }
+	set_variable = { name = ywc_kor_public_opp_industrialists value = 0 }
+	set_variable = { name = ywc_kor_public_opp_rural_folk value = 0 }
+	set_variable = { name = ywc_kor_public_opp_petty_bourgeoisie value = 0 }
+	set_variable = { name = ywc_kor_public_opp_trade_unions value = 0 }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_landowners is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_landowners value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_devout is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_devout value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_armed_forces is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_armed_forces value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_intelligentsia is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_intelligentsia value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_industrialists is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_industrialists value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_rural_folk is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_rural_folk value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_petty_bourgeoisie is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_petty_bourgeoisie value = 1 } }
+	if = { limit = { any_interest_group = { is_interest_group_type = ig_trade_unions is_in_government = no ig_clout >= 0.05 ig_approval < 0 } } set_variable = { name = ywc_kor_public_opp_trade_unions value = 1 } }
+}
+
+# Record the existential suppressed-movement category (same movement suppressed +
+# radicalism >= .25). This is a suppression fact, never "an underground organization
+# formed"; the public answer never claims to represent or lift its suppression.
+ywc_kor_public_record_suppressed = {
+	set_variable = { name = ywc_kor_public_suppressed_category value = 0 }
+	if = { limit = { ywc_kor_public_suppressed_movement_present = yes } set_variable = { name = ywc_kor_public_suppressed_category value = 1 } }
+}
+
+ywc_kor_public_wait_1122 = {
+	if = { limit = { ywc_kor_public_at_1122 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1123: sign responsibility against the CURRENT earned handler/witness and first fee.
+# It never requires the signature it is about to write or the future accept. Valid
+# signing sets phase 2, stage 1124, and the settlement-ready marker that lets JE2
+# auto-activate via its native possible trigger (no literal add_journal_entry, so the
+# catalog direct_add count stays zero). JE2 activates regardless of later capacity or
+# state loss.
+ywc_kor_public_sign_responsibility = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1123 = yes
+			var:ywc_kor_public_phase = 1
+			has_variable = ywc_kor_public_petition_paid
+			var:ywc_kor_public_petition_paid_amount > 0
+			has_variable = ywc_kor_public_handler
+			has_variable = ywc_kor_public_witness_kind
+			ywc_kor_public_mode_chosen = yes
+			ywc_kor_public_target_chosen = yes
+			ywc_kor_public_pilot_owned = yes
+			ywc_kor_public_selected_current_ready = yes
+			ywc_kor_public_witness_current_duty = yes
+			ywc_kor_public_petition_snapshot_match = yes
+			ywc_kor_public_adopted_written_shares_current = yes
+			ywc_kor_public_adopted_school_source_current = yes
+		}
+		set_variable = { name = ywc_kor_public_phase value = 2 }
+		set_variable = { name = ywc_kor_public_sign_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_sign_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_sign_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_signed value = 1 }
+		set_variable = { name = ywc_kor_public_settlement_ready value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1124 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1124 }
+	}
+}
+
+ywc_kor_public_wait_1123 = {
+	if = { limit = { ywc_kor_public_at_1123 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1124 sealed-case reply clause: if a suppressed movement category is present, the
+# extra option records a sealed case reply (office .5 full / .25 finite) BEFORE the
+# route reply. Without the movement the option is not offered.
+ywc_kor_public_record_sealed_case = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes ywc_kor_public_suppressed_movement_present = yes }
+		set_variable = { name = ywc_kor_public_sealed_case_recorded value = 1 }
+	}
+}
+
+# 1124 route reply: reread the current witness source, opposition list and legal
+# boundary, record accept triple + channel, and genuinely start the review. When a real
+# suppressed movement category is present, the sealed case clause must already be
+# recorded (the extra option above), so the reply never half-mutates.
+ywc_kor_public_accept_court_read = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 ywc_kor_public_law_court_speech = yes ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 1 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+ywc_kor_public_accept_local_open = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 ywc_kor_public_law_assembly_speech = yes ywc_kor_public_law_voting_power = yes ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 2 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+ywc_kor_public_accept_sealed_royal = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_mode = 3 var:ywc_kor_public_target = 1 ywc_kor_public_law_conservative_speech = yes ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 3 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+ywc_kor_public_accept_bounded_clerk = {
+	if = {
+		limit = { ywc_kor_public_at_1124 = yes var:ywc_kor_public_target = 2 ywc_kor_public_witness_current_duty = yes ywc_kor_public_adopted_written_shares_current = yes ywc_kor_public_adopted_school_source_current = yes OR = { ywc_kor_public_suppressed_movement_present = no has_variable = ywc_kor_public_sealed_case_recorded } }
+		set_variable = { name = ywc_kor_public_accept_channel value = 4 }
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_accept_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_accept_target value = var:ywc_kor_public_target }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		ywc_kor_public_start_review = yes
+	}
+}
+
+# Begin the six-month observation from 1124. It re-checks that the sealed case clause is
+# satisfied, then initializes streak 0, starts running behind a one-day tick gate, and
+# advances to stage 1125.
+ywc_kor_public_start_review = {
+	if = {
+		limit = {
+			OR = {
+				ywc_kor_public_suppressed_movement_present = no
+				has_variable = ywc_kor_public_sealed_case_recorded
+			}
+		}
+		remove_variable = ywc_kor_public_review_running
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1125 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1125 }
+	}
+}
+
+ywc_kor_public_wait_1124 = {
+	if = { limit = { ywc_kor_public_at_1124 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# Monthly observation at stage 1125 in two phases: (a) counting while review_running,
+# (b) a continuous mature watch after maturity that clears mature/streak on any ordinary
+# current loss. Counting still runs while explicitly running even when both fees are
+# already paid (a paid recount or finite re-sign must earn six FRESH months); the stage
+# 1125 gate alone suppresses any late 1126/1127 post-payment mutation, which preserves the
+# genuinely paid earned maturity for honest setback. At streak 6 the run stops
+# (review_running removed).
+ywc_kor_public_track_review = {
+	if = {
+		limit = {
+			ywc_kor_public_open = yes
+			var:ywc_kor_public_stage = 1125
+			NOT = { has_variable = ywc_kor_public_review_ticked }
+			OR = { has_variable = ywc_kor_public_review_running has_variable = ywc_kor_public_review_mature }
+		}
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		if = {
+			limit = {
+				OR = {
+					NOT = { ywc_kor_public_selected_current_ready = yes }
+					NOT = { ywc_kor_public_witness_current_duty = yes }
+					NOT = { ywc_kor_public_channel_current_legal = yes }
+					ywc_kor_public_new_opposition_appeared = yes
+					ywc_kor_public_new_suppressed_appeared = yes
+					NOT = { ywc_kor_public_adopted_school_source_current = yes }
+					NOT = { ywc_kor_public_adopted_written_shares_current = yes }
+				}
+			}
+			set_variable = { name = ywc_kor_public_review_streak value = 0 }
+			remove_variable = ywc_kor_public_review_mature
+			remove_variable = ywc_kor_public_review_running
+			set_variable = { name = ywc_kor_public_review_interrupted value = 1 }
+		}
+		else_if = {
+			limit = { NOT = { has_variable = ywc_kor_public_review_mature } }
+			change_variable = { name = ywc_kor_public_review_streak add = 1 }
+			if = { limit = { var:ywc_kor_public_review_streak >= 6 } set_variable = { name = ywc_kor_public_review_mature value = 1 } remove_variable = ywc_kor_public_review_running }
+		}
+	}
+}
+
+# 1125: bill the real review fee only after genuine six-month maturity. Paying must NOT
+# reset the run: keep mature/streak, stop running, and advance to 1126.
+ywc_kor_public_pay_review_and_run = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			NOT = { has_variable = ywc_kor_public_review_paid }
+			ywc_kor_public_can_pay_review = yes
+		}
+		set_variable = { name = ywc_kor_public_review_paid_amount value = var:ywc_kor_public_budget }
+		if = { limit = { ywc_kor_public_review_half = yes } change_variable = { name = ywc_kor_public_review_paid_amount multiply = 0.5 } }
+		else_if = { limit = { var:ywc_kor_public_mode = 2 } change_variable = { name = ywc_kor_public_review_paid_amount multiply = 1.5 } }
+		if = { limit = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 ywc_kor_public_review_school_discount = yes } set_variable = { name = ywc_kor_public_review_paid_amount value = var:ywc_kor_public_budget } change_variable = { name = ywc_kor_public_review_paid_amount multiply = 0.75 } }
+		if = { limit = { var:ywc_kor_public_mode = 2 var:ywc_kor_public_target = 1 ywc_kor_public_petition_prior_written_shares = yes } set_variable = { name = ywc_kor_public_review_paid_amount value = var:ywc_kor_public_budget } }
+		add_treasury = { value = var:ywc_kor_public_review_paid_amount multiply = -1 }
+		set_variable = { name = ywc_kor_public_review_paid value = 1 }
+		set_variable = { name = ywc_kor_public_review_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_review_mode value = var:ywc_kor_public_mode }
+		set_variable = { name = ywc_kor_public_review_target value = var:ywc_kor_public_target }
+		if = { limit = { var:ywc_kor_public_mode = 1 var:ywc_kor_public_target = 1 ywc_kor_public_review_school_discount = yes } set_variable = { name = ywc_kor_public_review_source_school value = 1 } }
+		remove_variable = ywc_kor_public_review_running
+		set_variable = { name = ywc_kor_public_stage value = 1126 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1126 }
+	}
+}
+
+# Free advance after payment: positive paid amount + mature + current, no cash gate and
+# no recharge. It advances to 1126 without charging again.
+ywc_kor_public_advance_paid_review = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			ywc_kor_public_both_fees_paid = yes
+			has_variable = ywc_kor_public_review_mature
+			var:ywc_kor_public_review_streak >= 6
+			NOT = { has_variable = ywc_kor_public_review_interrupted }
+			ywc_kor_public_selected_current_ready = yes
+			ywc_kor_public_historical_identity_complete = yes
+			ywc_kor_public_witness_current_duty = yes
+			ywc_kor_public_channel_current_legal = yes
+			ywc_kor_public_new_opposition_appeared = no
+			ywc_kor_public_new_suppressed_appeared = no
+			ywc_kor_public_adopted_school_source_current = yes
+			ywc_kor_public_adopted_written_shares_current = yes
+		}
+		remove_variable = ywc_kor_public_review_running
+		set_variable = { name = ywc_kor_public_stage value = 1126 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1126 }
+	}
+}
+
+# Explicit restart after interruption: refresh the current opposition/sealed records and
+# start six fresh, preserving any real paid bill. It does not require matching the old
+# failed opposition snapshot first.
+ywc_kor_public_restart_review = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			has_variable = ywc_kor_public_petition_paid
+			var:ywc_kor_public_petition_paid_amount > 0
+			has_variable = ywc_kor_public_witness_kind
+			ywc_kor_public_mode_chosen = yes
+			ywc_kor_public_target_chosen = yes
+			ywc_kor_public_petition_snapshot_match = yes
+			ywc_kor_public_selected_current_ready = yes
+			ywc_kor_public_finance_safe = yes
+			ywc_kor_public_witness_current_duty = yes
+			ywc_kor_public_channel_current_legal = yes
+			ywc_kor_public_adopted_written_shares_current = yes
+			ywc_kor_public_adopted_school_source_current = yes
+		}
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		remove_variable = ywc_kor_public_sealed_case_recorded
+		if = { limit = { ywc_kor_public_suppressed_movement_present = yes } set_variable = { name = ywc_kor_public_sealed_case_recorded value = 1 } }
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_requested
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+	}
+}
+
+# Narrow a full policy to the explicit finite target AFTER maturity. This is a real
+# re-sign: mode 3 target 2, handler 4, witness 5, channel 4, and all matching sign/accept
+# triples rewritten, preserving both paid bills. It requires the current bounded office
+# and finance, not the mature proof (an interruption may already have cleared it), and
+# starts six fresh months from zero.
+ywc_kor_public_narrow_to_finite = {
+	if = {
+		limit = {
+			ywc_kor_public_at_1125 = yes
+			ywc_kor_public_both_fees_paid = yes
+			has_variable = ywc_kor_public_witness_kind
+			ywc_kor_public_finance_safe = yes
+			ywc_kor_public_pilot_office_bounded = yes
+		}
+		set_variable = { name = ywc_kor_public_mode value = 3 }
+		set_variable = { name = ywc_kor_public_target value = 2 }
+		set_variable = { name = ywc_kor_public_finite_chosen value = 1 }
+		set_variable = { name = ywc_kor_public_petition_mode value = 3 }
+		set_variable = { name = ywc_kor_public_petition_target value = 2 }
+		set_variable = { name = ywc_kor_public_petition_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_review_mode value = 3 }
+		set_variable = { name = ywc_kor_public_review_target value = 2 }
+		set_variable = { name = ywc_kor_public_review_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_handler value = 4 }
+		set_variable = { name = ywc_kor_public_handler_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_kind value = 5 }
+		set_variable = { name = ywc_kor_public_witness_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_witness_mode value = 3 }
+		set_variable = { name = ywc_kor_public_witness_target value = 2 }
+		set_variable = { name = ywc_kor_public_sign_mode value = 3 }
+		set_variable = { name = ywc_kor_public_sign_target value = 2 }
+		set_variable = { name = ywc_kor_public_sign_pilot value = var:ywc_kor_public_pilot_state }
+		set_variable = { name = ywc_kor_public_accept_channel value = 4 }
+		set_variable = { name = ywc_kor_public_accept_mode value = 3 }
+		set_variable = { name = ywc_kor_public_accept_target value = 2 }
+		set_variable = { name = ywc_kor_public_accept_pilot value = var:ywc_kor_public_pilot_state }
+		remove_variable = ywc_kor_public_petition_source_written_shares
+		remove_variable = ywc_kor_public_review_source_school
+		ywc_kor_public_record_opposition = yes
+		ywc_kor_public_record_suppressed = yes
+		set_variable = { name = ywc_kor_public_phase value = 2 }
+		remove_variable = ywc_kor_public_requested
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1125 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1125 }
+	}
+}
+
+ywc_kor_public_wait_1125 = {
+	if = { limit = { ywc_kor_public_at_1125 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+ywc_kor_public_recount = {
+	if = {
+		limit = { OR = { ywc_kor_public_at_1126 = yes ywc_kor_public_at_1127 = yes } ywc_kor_public_both_fees_paid = yes }
+		remove_variable = ywc_kor_public_review_mature
+		remove_variable = ywc_kor_public_review_interrupted
+		remove_variable = ywc_kor_public_requested
+		remove_variable = ywc_kor_public_review_ticked
+		set_variable = { name = ywc_kor_public_review_streak value = 0 }
+		set_variable = { name = ywc_kor_public_review_running value = 1 }
+		set_variable = { name = ywc_kor_public_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1125 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1125 }
+	}
+}
+
+ywc_kor_public_wait_1126 = {
+	if = { limit = { ywc_kor_public_at_1126 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# 1127 terminal settling. Each request at 1126 records the intent and advances to 1127;
+# each close at 1127 rechecks the same current facts and settles. A stale intent whose
+# facts no longer hold closes nothing (so a recovered setback stays inert).
+ywc_kor_public_request_full = {
+	if = {
+		limit = { ywc_kor_public_at_1126 = yes ywc_kor_public_terminal_full = yes }
+		set_variable = { name = ywc_kor_public_requested value = 1 }
+		set_variable = { name = ywc_kor_public_stage value = 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1127 }
+	}
+}
+
+ywc_kor_public_request_finite = {
+	if = {
+		limit = { ywc_kor_public_at_1126 = yes ywc_kor_public_terminal_finite = yes }
+		set_variable = { name = ywc_kor_public_requested value = 2 }
+		set_variable = { name = ywc_kor_public_stage value = 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1127 }
+	}
+}
+
+ywc_kor_public_request_setback = {
+	if = {
+		limit = { ywc_kor_public_at_1126 = yes ywc_kor_public_terminal_setback = yes }
+		set_variable = { name = ywc_kor_public_requested value = 3 }
+		set_variable = { name = ywc_kor_public_stage value = 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = 1127 }
+	}
+}
+
+ywc_kor_public_close_full = {
+	if = {
+		limit = { ywc_kor_public_at_1127 = yes has_variable = ywc_kor_public_requested var:ywc_kor_public_requested = 1 ywc_kor_public_terminal_full = yes }
+		set_variable = { name = ywc_kor_public_outcome value = 1 }
+		ywc_kor_public_release_once = yes
+	}
+}
+
+ywc_kor_public_close_finite = {
+	if = {
+		limit = { ywc_kor_public_at_1127 = yes has_variable = ywc_kor_public_requested var:ywc_kor_public_requested = 2 ywc_kor_public_terminal_finite = yes }
+		set_variable = { name = ywc_kor_public_outcome value = 2 }
+		ywc_kor_public_release_once = yes
+	}
+}
+
+ywc_kor_public_close_setback = {
+	if = {
+		limit = { ywc_kor_public_at_1127 = yes has_variable = ywc_kor_public_requested var:ywc_kor_public_requested = 3 ywc_kor_public_terminal_setback = yes }
+		set_variable = { name = ywc_kor_public_outcome value = 3 }
+		ywc_kor_public_release_once = yes
+	}
+}
+
+ywc_kor_public_wait_1127 = {
+	if = { limit = { ywc_kor_public_at_1127 = yes } remove_variable = ywc_kor_public_pending_event }
+}
+
+# Voluntary exit body: records outcome 4 and releases exactly this arc once. It is only
+# ever reached through a per-stage withdraw wrapper that already checked the exact
+# at_N origin, so a cached old button can never re-enter a generic live guard.
+ywc_kor_public_do_withdraw = {
+	set_variable = { name = ywc_kor_public_outcome value = 4 }
+	set_variable = { name = ywc_kor_public_withdrawn value = 1 }
+	ywc_kor_public_release_once = yes
+}
+
+# Per-stage withdraw wrappers. Each checks the exact origin at_N (phase/JE/stage/own
+# ordinal receipt/pending missing-or-own-N/open-not-settled), then runs the shared body.
+ywc_kor_public_withdraw_1120 = {
+	if = { limit = { ywc_kor_public_at_1120 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1121 = {
+	if = { limit = { ywc_kor_public_at_1121 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1122 = {
+	if = { limit = { ywc_kor_public_at_1122 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1123 = {
+	if = { limit = { ywc_kor_public_at_1123 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1124 = {
+	if = { limit = { ywc_kor_public_at_1124 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1125 = {
+	if = { limit = { ywc_kor_public_at_1125 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1126 = {
+	if = { limit = { ywc_kor_public_at_1126 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+ywc_kor_public_withdraw_1127 = {
+	if = { limit = { ywc_kor_public_at_1127 = yes } ywc_kor_public_do_withdraw = yes }
+}
+
+# Release is idempotent and touches only this arc. Paid fees and old contracts are
+# preserved; it never clears generated witnesses, reservations or other queues.
+ywc_kor_public_release_once = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_kor_v03_kor_court_public_started
+			NOT = { has_variable = ywc_v03_kor_v03_kor_court_public_settled }
+			has_variable = ywc_kor_public_outcome
+			var:ywc_kor_public_outcome > 0
+		}
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_settled value = 1 }
+		set_variable = { name = ywc_v03_kor_v03_kor_court_public_outcome value = var:ywc_kor_public_outcome }
+		remove_variable = ywc_kor_public_pending_event
+		remove_variable = ywc_kor_public_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+# Queue preparation: only advance the stage-bound event when nothing is pending.
+ywc_kor_public_prepare_queue = {
+	if = {
+		limit = { ywc_kor_public_open = yes NOT = { has_variable = ywc_kor_public_pending_event } var:ywc_kor_public_stage >= 1120 var:ywc_kor_public_stage <= 1127 }
+		set_variable = { name = ywc_kor_public_pending_event value = var:ywc_kor_public_stage }
+	}
+}
+
+
+# Public-service expenses are not loans and do not credit a private account.
+ywc_kor_workshops_claim = { if = { limit = { has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes NOT = { has_variable = ywc_v03_kor_v03_kor_workshops_credit_started } ywc_kor_workshops_site_available = yes }
+ set_variable = { name = ywc_v03_kor_v03_kor_workshops_credit_started value = 1 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 }
+ set_variable = { name = ywc_kor_workshops_popup_epoch value = 0 } set_variable = { name = ywc_kor_workshops_base value = yearly_gross_income } change_variable = { name = ywc_kor_workshops_base divide = 52 } clamp_variable = { name = ywc_kor_workshops_base min = 100 max = 1000000000 }
+ set_variable = { name = ywc_kor_workshops_cost_1 value = var:ywc_kor_workshops_base }
+ set_variable = { name = ywc_kor_workshops_cost_2 value = var:ywc_kor_workshops_base } change_variable = { name = ywc_kor_workshops_cost_2 multiply = 2 }
+ set_variable = { name = ywc_kor_workshops_cost_3 value = var:ywc_kor_workshops_base } change_variable = { name = ywc_kor_workshops_cost_3 multiply = 0.5 }
+ set_variable = { name = ywc_kor_workshops_cost_4 value = var:ywc_kor_workshops_base } change_variable = { name = ywc_kor_workshops_cost_4 multiply = 0.25 }
+ set_variable = { name = ywc_kor_workshops_review_discount value = var:ywc_kor_workshops_base } change_variable = { name = ywc_kor_workshops_review_discount multiply = 0.5 }
+ every_scope_state = { limit = { owner = ROOT any_scope_pop = { is_pop_type = bureaucrats is_employed = yes workplace ?= { is_building_type = building_government_administration occupancy >= 0.5 building_has_goods_shortage = no } } ROOT = { NOT = { has_variable = ywc_kor_workshops_pilot } } } save_scope_as = ywc_kor_workshops_candidate ROOT = { set_variable = { name = ywc_kor_workshops_pilot value = scope:ywc_kor_workshops_candidate } } }
+ set_variable = { name = ywc_kor_workshops_stage value = 1110 } set_variable = { name = ywc_kor_workshops_pending_event value = 1110 }
+} }
+ywc_kor_workshops_program_payment = { if = { limit = { ywc_kor_workshops_at_1111 = yes ywc_kor_workshops_selected_current = yes NOT = { has_variable = ywc_kor_workshops_program_paid } ywc_kor_workshops_program_due_current = yes gold_reserves >= var:ywc_kor_workshops_program_due }
+ add_treasury = { value = var:ywc_kor_workshops_program_due multiply = -1 } set_variable = { name = ywc_kor_workshops_program_paid value = 1 } set_variable = { name = ywc_kor_workshops_program_paid_amount value = var:ywc_kor_workshops_program_due } set_variable = { name = ywc_kor_workshops_program_mode value = var:ywc_kor_workshops_mode } set_variable = { name = ywc_kor_workshops_program_pilot value = var:ywc_kor_workshops_pilot }
+ if = { limit = { var:ywc_kor_workshops_mode = 1 } var:ywc_kor_workshops_pilot = { add_modifier = { name = ywc_kor_workshops_office_service months = 24 } } }
+ else_if = { limit = { var:ywc_kor_workshops_mode = 2 } var:ywc_kor_workshops_pilot = { add_modifier = { name = ywc_kor_workshops_infrastructure months = 24 } } }
+ else_if = { limit = { var:ywc_kor_workshops_mode = 3 } var:ywc_kor_workshops_pilot = { add_modifier = { name = ywc_kor_workshops_home_workshops months = 24 } } }
+ set_variable = { name = ywc_kor_workshops_stage value = 1112 } set_variable = { name = ywc_kor_workshops_pending_event value = 1112 }
+} }
+ywc_kor_workshops_start_review = { if = { limit = { ywc_kor_workshops_open = yes var:ywc_kor_workshops_stage = 1115 ywc_kor_workshops_program_paid = yes ywc_kor_workshops_signed = yes ywc_kor_workshops_accepted = yes ywc_kor_workshops_selected_current = yes ywc_kor_workshops_witness_current = yes ywc_kor_workshops_identity_current = yes NOT = { has_variable = ywc_kor_workshops_review_running } OR = { NOT = { has_variable = ywc_kor_workshops_review_mature } has_variable = ywc_kor_workshops_review_interrupted } } set_variable = { name = ywc_kor_workshops_review_running value = 1 } set_variable = { name = ywc_kor_workshops_review_streak value = 0 } set_variable = { name = ywc_kor_workshops_review_month value = ywc_kor_current_calendar_month } set_variable = { name = ywc_kor_workshops_review_timer value = 1 months = 6 } remove_variable = ywc_kor_workshops_review_mature remove_variable = ywc_kor_workshops_review_interrupted } }
+ywc_kor_workshops_monthly = { if = { limit = { ywc_kor_workshops_open = yes var:ywc_kor_workshops_stage = 1115 has_variable = ywc_kor_workshops_review_running var:ywc_kor_workshops_review_running = 1 }
+ if = { limit = { OR = { NOT = { ywc_kor_workshops_selected_current = yes } NOT = { ywc_kor_workshops_witness_current = yes } NOT = { ywc_kor_workshops_identity_current = yes } NOT = { ywc_kor_workshops_program_paid = yes } NOT = { ywc_kor_workshops_signed = yes } NOT = { ywc_kor_workshops_accepted = yes } } }
+  remove_variable = ywc_kor_workshops_review_running remove_variable = ywc_kor_workshops_review_timer remove_variable = ywc_kor_workshops_review_mature set_variable = { name = ywc_kor_workshops_review_streak value = 0 } set_variable = { name = ywc_kor_workshops_review_interrupted value = 1 } set_variable = { name = ywc_kor_workshops_pending_event value = 1115 }
+ } else_if = { limit = { NOT = { var:ywc_kor_workshops_review_month = ywc_kor_current_calendar_month } } set_variable = { name = ywc_kor_workshops_review_month value = ywc_kor_current_calendar_month } change_variable = { name = ywc_kor_workshops_review_streak add = 1 }
+ } }
+ if = { limit = { ywc_kor_workshops_open = yes var:ywc_kor_workshops_stage = 1115 has_variable = ywc_kor_workshops_review_running var:ywc_kor_workshops_review_running = 1 has_variable = ywc_kor_workshops_review_streak var:ywc_kor_workshops_review_streak >= 6 NOT = { has_variable = ywc_kor_workshops_review_timer } } remove_variable = ywc_kor_workshops_review_running set_variable = { name = ywc_kor_workshops_review_mature value = 1 } set_variable = { name = ywc_kor_workshops_pending_event value = 1115 } }
+ if = { limit = { ywc_kor_workshops_open = yes var:ywc_kor_workshops_stage = 1115 has_variable = ywc_kor_workshops_review_mature var:ywc_kor_workshops_review_mature = 1 NOT = { has_variable = ywc_kor_workshops_review_paid } OR = { NOT = { ywc_kor_workshops_selected_current = yes } NOT = { ywc_kor_workshops_witness_current = yes } NOT = { ywc_kor_workshops_identity_current = yes } NOT = { ywc_kor_workshops_program_paid = yes } NOT = { ywc_kor_workshops_signed = yes } NOT = { ywc_kor_workshops_accepted = yes } } }
+  remove_variable = ywc_kor_workshops_review_mature set_variable = { name = ywc_kor_workshops_review_streak value = 0 } set_variable = { name = ywc_kor_workshops_review_interrupted value = 1 } set_variable = { name = ywc_kor_workshops_pending_event value = 1115 }
+ }
+}
+ywc_kor_workshops_remove_service = { if = { limit = { exists = var:ywc_kor_workshops_pilot } var:ywc_kor_workshops_pilot = { remove_modifier = ywc_kor_workshops_office_service remove_modifier = ywc_kor_workshops_infrastructure remove_modifier = ywc_kor_workshops_home_workshops } } }
+ywc_kor_workshops_release = { if = { limit = { ywc_kor_workshops_open = yes has_variable = ywc_kor_workshops_outcome var:ywc_kor_workshops_outcome > 0 } set_variable = { name = ywc_v03_kor_v03_kor_workshops_credit_outcome value = var:ywc_kor_workshops_outcome } set_variable = { name = ywc_v03_kor_v03_kor_workshops_credit_settled value = 1 } remove_variable = ywc_kor_workshops_pending_event remove_variable = ywc_kor_workshops_review_running remove_variable = ywc_kor_workshops_review_timer change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 } clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } } }
+ywc_kor_workshops_withdraw = { if = { limit = { ywc_kor_workshops_open = yes } ywc_kor_workshops_remove_service = yes set_variable = { name = ywc_kor_workshops_outcome value = 4 } ywc_kor_workshops_release = yes } }
+
+
+# ---------------------------------------------------------------------------
+# v03_kor_country_language (late, ywc_kor.1200..1209)
+# Costs captured here are national school and print expenditure: they are
+# never private tuition income. Payment is only recorded when the treasury
+# actually pays, so an unpaid plan never claims an outcome it did not fund.
+# ---------------------------------------------------------------------------
+ywc_v03_claim_arc_kor_v03_kor_country_language = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+		NOT = { has_variable = ywc_v03_kor_v03_kor_country_language_started }
+		NOT = { has_variable = ywc_v03_kor_v03_kor_country_language_settled }
+		var:ywc_v03_active_arc_count < 3
+		var:ywc_v03_visible_task_count < 6 }
+		set_variable = { name = ywc_v03_kor_v03_kor_country_language_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		ywc_kor_language_capture_cost_base = yes
+	}
+}
+ywc_kor_language_capture_cost_base = {
+	if = { limit = { NOT = { has_variable = ywc_kor_language_cost_captured } }
+ywc_kor_language_review_opened_once = {
+	if = { limit = { ywc_kor_language_open = yes NOT = { has_variable = ywc_kor_language_review_opened } }
+		set_variable = { name = ywc_kor_language_review_opened value = 1 } }
+}
+		set_variable = { name = ywc_kor_language_cost value = yearly_gross_income }
+		change_variable = { name = ywc_kor_language_cost divide = 52 }
+		clamp_variable = { name = ywc_kor_language_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_kor_language_cost_captured value = 1 } }
+}
+ywc_kor_language_open_once = {
+	if = { limit = { ywc_kor_language_open = yes NOT = { has_variable = ywc_kor_language_stage } }
+		set_variable = { name = ywc_kor_language_stage value = 1200 }
+		set_variable = { name = ywc_kor_language_phase value = 1 }
+		set_variable = { name = ywc_kor_language_pending_event value = 1200 }
+		set_variable = { name = ywc_kor_language_last_event value = 0 }
+		set_variable = { name = ywc_kor_language_review_streak value = 0 }
+	}
+}
+ywc_kor_language_pay_press_once = {
+	if = { limit = { ywc_kor_language_open = yes NOT = { has_variable = ywc_kor_language_press_paid } ywc_kor_language_finance_safe = yes }
+		ywc_kor_language_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_language_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_language_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_language_press_paid value = 1 } } }
+}
+ywc_kor_language_pay_classroom_once = {
+	if = { limit = { ywc_kor_language_open = yes NOT = { has_variable = ywc_kor_language_classroom_paid } ywc_kor_language_finance_safe = yes }
+		ywc_kor_language_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_language_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_language_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_language_classroom_paid value = 1 }
+			random_scope_state = { limit = { owner = ROOT ywc_kor_language_best_state = yes }
+				add_building_workers = { building = building_urban_center workers = 1500 } } } }
+}
+ywc_kor_language_classic_print_once = {
+	if = { limit = { ywc_kor_language_open = yes NOT = { has_variable = ywc_kor_language_classic_paid } ywc_kor_language_finance_safe = yes }
+		ywc_kor_language_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_language_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_language_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_language_classic_paid value = 1 } } }
+}
+ywc_kor_language_prepare_queue = {
+	if = { limit = { ywc_kor_language_open = yes NOT = { has_variable = ywc_kor_language_queue_written } }
+		set_variable = { name = ywc_kor_language_queue_written value = 1 } }
+}
+ywc_kor_language_start_review = {
+	if = { limit = { ywc_kor_language_open = yes }
+		set_variable = { name = ywc_kor_language_review_running value = 1 }
+		set_variable = { name = ywc_kor_language_review_streak value = 0 }
+		set_variable = { name = ywc_kor_language_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_language_review_month value = ywc_nmg_current_calendar_month }
+		remove_variable = ywc_kor_language_review_mature
+		remove_variable = ywc_kor_language_review_interrupted }
+}
+ywc_kor_language_track_review = {
+	if = { limit = { ywc_kor_language_open = yes has_variable = ywc_kor_language_review_running }
+		if = { limit = { ywc_kor_language_current_broken = yes }
+			set_variable = { name = ywc_kor_language_review_streak value = 0 }
+			remove_variable = ywc_kor_language_review_mature
+			remove_variable = ywc_kor_language_review_running
+			set_variable = { name = ywc_kor_language_review_interrupted value = 1 } }
+		else_if = { limit = { NOT = { has_variable = ywc_kor_language_review_ticked } }
+			set_variable = { name = ywc_kor_language_review_ticked value = 1 days = 1 }
+			if = { limit = { NOT = { has_variable = ywc_kor_language_review_month } }
+				set_variable = { name = ywc_kor_language_review_month value = ywc_nmg_current_calendar_month } }
+			if = { limit = {
+				NOT = { has_variable = ywc_kor_language_review_mature }
+				NOT = { var:ywc_kor_language_review_month = ywc_nmg_current_calendar_month } }
+				set_variable = { name = ywc_kor_language_review_month value = ywc_nmg_current_calendar_month }
+				change_variable = { name = ywc_kor_language_review_streak add = 1 }
+				if = { limit = { var:ywc_kor_language_review_streak >= 6 }
+					set_variable = { name = ywc_kor_language_review_mature value = 1 }
+					remove_variable = ywc_kor_language_review_running } } } }
+}
+ywc_kor_language_close_full = {
+	if = { limit = { ywc_kor_language_close_full_ready = yes }
+		set_variable = { name = ywc_kor_language_outcome value = 1 }
+		ywc_v03_release_arc_kor_v03_kor_country_language = yes }
+}
+ywc_kor_language_close_limited = {
+	if = { limit = { ywc_kor_language_close_limited_ready = yes }
+		set_variable = { name = ywc_kor_language_outcome value = 2 }
+		ywc_v03_release_arc_kor_v03_kor_country_language = yes }
+}
+ywc_kor_language_close_setback = {
+	if = { limit = { ywc_kor_language_close_setback_ready = yes }
+		set_variable = { name = ywc_kor_language_outcome value = 3 }
+		ywc_v03_release_arc_kor_v03_kor_country_language = yes }
+}
+ywc_v03_release_arc_kor_v03_kor_country_language = {
+	if = { limit = {
+		has_variable = ywc_v03_kor_v03_kor_country_language_started
+		NOT = { has_variable = ywc_v03_kor_v03_kor_country_language_settled }
+		has_variable = ywc_kor_language_outcome
+		var:ywc_kor_language_outcome > 0 }
+		set_variable = { name = ywc_v03_kor_v03_kor_country_language_outcome value = var:ywc_kor_language_outcome }
+		set_variable = { name = ywc_v03_kor_v03_kor_country_language_settled value = 1 }
+		remove_variable = ywc_kor_language_pending_event
+		remove_variable = ywc_kor_language_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+ywc_kor_language_close_withdrawn = {
+	if = { limit = {
+		has_variable = ywc_v03_kor_v03_kor_country_language_started
+		NOT = { has_variable = ywc_v03_kor_v03_kor_country_language_settled } }
+		set_variable = { name = ywc_kor_language_withdrawn value = 1 }
+		if = { limit = { NOT = { has_variable = ywc_kor_language_outcome } }
+			set_variable = { name = ywc_kor_language_outcome value = 4 } }
+		set_variable = { name = ywc_v03_kor_v03_kor_country_language_outcome value = var:ywc_kor_language_outcome }
+		set_variable = { name = ywc_v03_kor_v03_kor_country_language_settled value = 1 }
+		remove_variable = ywc_kor_language_pending_event
+		remove_variable = ywc_kor_language_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+# ---------------------------------------------------------------------------
+# v03_kor_independent_diplomacy (late, ywc_kor.1210..1219)
+# ---------------------------------------------------------------------------
+ywc_v03_claim_arc_kor_v03_kor_independent_diplomacy = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+		NOT = { has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_started }
+		NOT = { has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_settled }
+		var:ywc_v03_active_arc_count < 3
+		var:ywc_v03_visible_task_count < 6 }
+		set_variable = { name = ywc_v03_kor_v03_kor_independent_diplomacy_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		ywc_kor_diplomacy_capture_cost_base = yes
+	}
+}
+ywc_kor_diplomacy_capture_cost_base = {
+	if = { limit = { NOT = { has_variable = ywc_kor_diplomacy_cost_captured } }
+ywc_kor_diplomacy_review_opened_once = {
+	if = { limit = { ywc_kor_diplomacy_open = yes NOT = { has_variable = ywc_kor_diplomacy_review_opened } }
+		set_variable = { name = ywc_kor_diplomacy_review_opened value = 1 } }
+}
+		set_variable = { name = ywc_kor_diplomacy_cost value = yearly_gross_income }
+		change_variable = { name = ywc_kor_diplomacy_cost divide = 52 }
+		clamp_variable = { name = ywc_kor_diplomacy_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_kor_diplomacy_cost_captured value = 1 } }
+}
+ywc_kor_diplomacy_open_once = {
+	if = { limit = { ywc_kor_diplomacy_open = yes NOT = { has_variable = ywc_kor_diplomacy_stage } }
+		set_variable = { name = ywc_kor_diplomacy_stage value = 1210 }
+		set_variable = { name = ywc_kor_diplomacy_phase value = 1 }
+		set_variable = { name = ywc_kor_diplomacy_pending_event value = 1210 }
+		set_variable = { name = ywc_kor_diplomacy_last_event value = 0 }
+		set_variable = { name = ywc_kor_diplomacy_review_streak value = 0 }
+	}
+}
+ywc_kor_diplomacy_pay_mission_once = {
+	if = { limit = { ywc_kor_diplomacy_open = yes NOT = { has_variable = ywc_kor_diplomacy_mission_paid } ywc_kor_diplomacy_finance_safe = yes }
+		ywc_kor_diplomacy_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_diplomacy_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_diplomacy_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_diplomacy_mission_paid value = 1 } } }
+}
+ywc_kor_diplomacy_pay_port_office_once = {
+	if = { limit = { ywc_kor_diplomacy_open = yes NOT = { has_variable = ywc_kor_diplomacy_office_paid } ywc_kor_diplomacy_finance_safe = yes }
+		ywc_kor_diplomacy_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_diplomacy_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_diplomacy_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_diplomacy_office_paid value = 1 }
+			random_scope_state = { limit = { owner = ROOT is_coastal = yes }
+				add_building_workers = { building = building_port workers = 1000 } } } }
+}
+ywc_kor_diplomacy_prepare_queue = {
+	if = { limit = { ywc_kor_diplomacy_open = yes NOT = { has_variable = ywc_kor_diplomacy_queue_written } }
+		set_variable = { name = ywc_kor_diplomacy_queue_written value = 1 } }
+}
+ywc_kor_diplomacy_start_review = {
+	if = { limit = { ywc_kor_diplomacy_open = yes }
+		set_variable = { name = ywc_kor_diplomacy_review_running value = 1 }
+		set_variable = { name = ywc_kor_diplomacy_review_streak value = 0 }
+		set_variable = { name = ywc_kor_diplomacy_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_diplomacy_review_month value = ywc_nmg_current_calendar_month }
+		remove_variable = ywc_kor_diplomacy_review_mature
+		remove_variable = ywc_kor_diplomacy_review_interrupted }
+}
+ywc_kor_diplomacy_track_review = {
+	if = { limit = { ywc_kor_diplomacy_open = yes has_variable = ywc_kor_diplomacy_review_running }
+		if = { limit = { ywc_kor_diplomacy_current_broken = yes }
+			set_variable = { name = ywc_kor_diplomacy_review_streak value = 0 }
+			remove_variable = ywc_kor_diplomacy_review_mature
+			remove_variable = ywc_kor_diplomacy_review_running
+			set_variable = { name = ywc_kor_diplomacy_review_interrupted value = 1 } }
+		else_if = { limit = { NOT = { has_variable = ywc_kor_diplomacy_review_ticked } }
+			set_variable = { name = ywc_kor_diplomacy_review_ticked value = 1 days = 1 }
+			if = { limit = { NOT = { has_variable = ywc_kor_diplomacy_review_month } }
+				set_variable = { name = ywc_kor_diplomacy_review_month value = ywc_nmg_current_calendar_month } }
+			if = { limit = {
+				NOT = { has_variable = ywc_kor_diplomacy_review_mature }
+				NOT = { var:ywc_kor_diplomacy_review_month = ywc_nmg_current_calendar_month } }
+				set_variable = { name = ywc_kor_diplomacy_review_month value = ywc_nmg_current_calendar_month }
+				change_variable = { name = ywc_kor_diplomacy_review_streak add = 1 }
+				if = { limit = { var:ywc_kor_diplomacy_review_streak >= 6 }
+					set_variable = { name = ywc_kor_diplomacy_review_mature value = 1 }
+					remove_variable = ywc_kor_diplomacy_review_running } } } }
+}
+ywc_kor_diplomacy_close_full = {
+	if = { limit = { ywc_kor_diplomacy_close_full_ready = yes }
+		set_variable = { name = ywc_kor_diplomacy_outcome value = 1 }
+		ywc_v03_release_arc_kor_v03_kor_independent_diplomacy = yes }
+}
+ywc_kor_diplomacy_close_limited = {
+	if = { limit = { ywc_kor_diplomacy_close_limited_ready = yes }
+		set_variable = { name = ywc_kor_diplomacy_outcome value = 2 }
+		ywc_v03_release_arc_kor_v03_kor_independent_diplomacy = yes }
+}
+ywc_kor_diplomacy_close_setback = {
+	if = { limit = { ywc_kor_diplomacy_close_setback_ready = yes }
+		set_variable = { name = ywc_kor_diplomacy_outcome value = 3 }
+		ywc_v03_release_arc_kor_v03_kor_independent_diplomacy = yes }
+}
+ywc_v03_release_arc_kor_v03_kor_independent_diplomacy = {
+	if = { limit = {
+		has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_started
+		NOT = { has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_settled }
+		has_variable = ywc_kor_diplomacy_outcome
+		var:ywc_kor_diplomacy_outcome > 0 }
+		set_variable = { name = ywc_v03_kor_v03_kor_independent_diplomacy_outcome value = var:ywc_kor_diplomacy_outcome }
+		set_variable = { name = ywc_v03_kor_v03_kor_independent_diplomacy_settled value = 1 }
+		remove_variable = ywc_kor_diplomacy_pending_event
+		remove_variable = ywc_kor_diplomacy_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+ywc_kor_diplomacy_close_withdrawn = {
+	if = { limit = {
+		has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_started
+		NOT = { has_variable = ywc_v03_kor_v03_kor_independent_diplomacy_settled } }
+		set_variable = { name = ywc_kor_diplomacy_withdrawn value = 1 }
+		if = { limit = { NOT = { has_variable = ywc_kor_diplomacy_outcome } }
+			set_variable = { name = ywc_kor_diplomacy_outcome value = 4 } }
+		set_variable = { name = ywc_v03_kor_v03_kor_independent_diplomacy_outcome value = var:ywc_kor_diplomacy_outcome }
+		set_variable = { name = ywc_v03_kor_v03_kor_independent_diplomacy_settled value = 1 }
+		remove_variable = ywc_kor_diplomacy_pending_event
+		remove_variable = ywc_kor_diplomacy_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+# ---------------------------------------------------------------------------
+# v03_kor_social_obligations (late, ywc_kor.1220..1229)
+# ---------------------------------------------------------------------------
+ywc_v03_claim_arc_kor_v03_kor_social_obligations = {
+	ywc_v03_initialize_country = yes
+	if = { limit = {
+		NOT = { has_variable = ywc_v03_kor_v03_kor_social_obligations_started }
+		NOT = { has_variable = ywc_v03_kor_v03_kor_social_obligations_settled }
+		var:ywc_v03_active_arc_count < 3
+		var:ywc_v03_visible_task_count < 6 }
+		set_variable = { name = ywc_v03_kor_v03_kor_social_obligations_started value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		ywc_kor_oblig_capture_cost_base = yes
+	}
+}
+ywc_kor_oblig_capture_cost_base = {
+	if = { limit = { NOT = { has_variable = ywc_kor_oblig_cost_captured } }
+ywc_kor_oblig_review_opened_once = {
+	if = { limit = { ywc_kor_oblig_open = yes NOT = { has_variable = ywc_kor_oblig_review_opened } }
+		set_variable = { name = ywc_kor_oblig_review_opened value = 1 } }
+}
+		set_variable = { name = ywc_kor_oblig_cost value = yearly_gross_income }
+		change_variable = { name = ywc_kor_oblig_cost divide = 52 }
+		clamp_variable = { name = ywc_kor_oblig_cost min = 100 max = 1000000000 }
+		set_variable = { name = ywc_kor_oblig_cost_captured value = 1 } }
+}
+ywc_kor_oblig_open_once = {
+	if = { limit = { ywc_kor_oblig_open = yes NOT = { has_variable = ywc_kor_oblig_stage } }
+		set_variable = { name = ywc_kor_oblig_stage value = 1220 }
+		set_variable = { name = ywc_kor_oblig_phase value = 1 }
+		set_variable = { name = ywc_kor_oblig_pending_event value = 1220 }
+		set_variable = { name = ywc_kor_oblig_last_event value = 0 }
+		set_variable = { name = ywc_kor_oblig_review_streak value = 0 }
+	}
+}
+ywc_kor_oblig_pay_granary_once = {
+	if = { limit = { ywc_kor_oblig_open = yes NOT = { has_variable = ywc_kor_oblig_granary_paid } ywc_kor_oblig_finance_safe = yes }
+		ywc_kor_oblig_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_oblig_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_oblig_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_oblig_granary_paid value = 1 } } }
+}
+ywc_kor_oblig_enact_poor_laws_once = {
+	if = { limit = { ywc_kor_oblig_open = yes NOT = { has_variable = ywc_kor_oblig_enacted } NOT = { has_law = law_poor_laws } }
+		add_enact_modifier = ywc_granary_relief_push
+		set_variable = { name = ywc_kor_oblig_enacted value = 1 } }
+}
+ywc_kor_oblig_pay_poor_laws_once = {
+	if = { limit = { ywc_kor_oblig_open = yes has_variable = ywc_kor_oblig_enacted NOT = { has_variable = ywc_kor_oblig_poor_paid } ywc_kor_oblig_finance_safe = yes }
+		ywc_kor_oblig_capture_cost_base = yes
+		if = { limit = { gold_reserves >= { value = var:ywc_kor_oblig_cost multiply = 0.5 } }
+			add_treasury = { value = var:ywc_kor_oblig_cost multiply = -0.5 }
+			set_variable = { name = ywc_kor_oblig_poor_paid value = 1 } } }
+}
+ywc_kor_oblig_prepare_queue = {
+	if = { limit = { ywc_kor_oblig_open = yes NOT = { has_variable = ywc_kor_oblig_queue_written } }
+		set_variable = { name = ywc_kor_oblig_queue_written value = 1 } }
+}
+ywc_kor_oblig_start_review = {
+	if = { limit = { ywc_kor_oblig_open = yes }
+		set_variable = { name = ywc_kor_oblig_review_running value = 1 }
+		set_variable = { name = ywc_kor_oblig_review_streak value = 0 }
+		set_variable = { name = ywc_kor_oblig_review_ticked value = 1 days = 1 }
+		set_variable = { name = ywc_kor_oblig_review_month value = ywc_nmg_current_calendar_month }
+		remove_variable = ywc_kor_oblig_review_mature
+		remove_variable = ywc_kor_oblig_review_interrupted }
+}
+ywc_kor_oblig_track_review = {
+	if = { limit = { ywc_kor_oblig_open = yes has_variable = ywc_kor_oblig_review_running }
+		if = { limit = { ywc_kor_oblig_current_broken = yes }
+			set_variable = { name = ywc_kor_oblig_review_streak value = 0 }
+			remove_variable = ywc_kor_oblig_review_mature
+			remove_variable = ywc_kor_oblig_review_running
+			set_variable = { name = ywc_kor_oblig_review_interrupted value = 1 } }
+		else_if = { limit = { NOT = { has_variable = ywc_kor_oblig_review_ticked } }
+			set_variable = { name = ywc_kor_oblig_review_ticked value = 1 days = 1 }
+			if = { limit = { NOT = { has_variable = ywc_kor_oblig_review_month } }
+				set_variable = { name = ywc_kor_oblig_review_month value = ywc_nmg_current_calendar_month } }
+			if = { limit = {
+				NOT = { has_variable = ywc_kor_oblig_review_mature }
+				NOT = { var:ywc_kor_oblig_review_month = ywc_nmg_current_calendar_month } }
+				set_variable = { name = ywc_kor_oblig_review_month value = ywc_nmg_current_calendar_month }
+				change_variable = { name = ywc_kor_oblig_review_streak add = 1 }
+				if = { limit = { var:ywc_kor_oblig_review_streak >= 4 }
+					set_variable = { name = ywc_kor_oblig_review_mature value = 1 }
+					remove_variable = ywc_kor_oblig_review_running } } } }
+}
+ywc_kor_oblig_close_full = {
+	if = { limit = { ywc_kor_oblig_close_full_ready = yes }
+		set_variable = { name = ywc_kor_oblig_outcome value = 1 }
+		ywc_v03_release_arc_kor_v03_kor_social_obligations = yes }
+}
+ywc_kor_oblig_close_limited = {
+	if = { limit = { ywc_kor_oblig_close_limited_ready = yes }
+		set_variable = { name = ywc_kor_oblig_outcome value = 2 }
+		ywc_v03_release_arc_kor_v03_kor_social_obligations = yes }
+}
+ywc_kor_oblig_close_setback = {
+	if = { limit = { ywc_kor_oblig_close_setback_ready = yes }
+		set_variable = { name = ywc_kor_oblig_outcome value = 3 }
+		ywc_v03_release_arc_kor_v03_kor_social_obligations = yes }
+}
+ywc_v03_release_arc_kor_v03_kor_social_obligations = {
+	if = { limit = {
+		has_variable = ywc_v03_kor_v03_kor_social_obligations_started
+		NOT = { has_variable = ywc_v03_kor_v03_kor_social_obligations_settled }
+		has_variable = ywc_kor_oblig_outcome
+		var:ywc_kor_oblig_outcome > 0 }
+		set_variable = { name = ywc_v03_kor_v03_kor_social_obligations_outcome value = var:ywc_kor_oblig_outcome }
+		set_variable = { name = ywc_v03_kor_v03_kor_social_obligations_settled value = 1 }
+		remove_variable = ywc_kor_oblig_pending_event
+		remove_variable = ywc_kor_oblig_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}
+ywc_kor_oblig_close_withdrawn = {
+	if = { limit = {
+		has_variable = ywc_v03_kor_v03_kor_social_obligations_started
+		NOT = { has_variable = ywc_v03_kor_v03_kor_social_obligations_settled } }
+		set_variable = { name = ywc_kor_oblig_withdrawn value = 1 }
+		if = { limit = { NOT = { has_variable = ywc_kor_oblig_outcome } }
+			set_variable = { name = ywc_kor_oblig_outcome value = 4 } }
+		set_variable = { name = ywc_v03_kor_v03_kor_social_obligations_outcome value = var:ywc_kor_oblig_outcome }
+		set_variable = { name = ywc_v03_kor_v03_kor_social_obligations_settled value = 1 }
+		remove_variable = ywc_kor_oblig_pending_event
+		remove_variable = ywc_kor_oblig_review_running
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } }
+}

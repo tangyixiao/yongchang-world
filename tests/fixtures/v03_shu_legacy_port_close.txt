@@ -1,0 +1,29 @@
+ywc_shu_port_close_unified = {
+	if = {
+		limit = {
+			has_variable = ywc_v03_shu_v03_shu_port_treasury_started
+			NOT = { has_variable = ywc_v03_shu_v03_shu_port_treasury_settled }
+			NOT = { has_variable = ywc_shu_port_outcome }
+			ywc_shu_port_terminal_unified_ready = yes
+		}
+		set_variable = { name = ywc_shu_port_outcome value = 1 }
+		if = {
+			limit = { has_variable = ywc_shu_port_advance_unpaid }
+			if = {
+				limit = { gold_reserves >= { value = var:ywc_shu_port_principal } }
+				add_treasury = { value = var:ywc_shu_port_principal multiply = -1 }
+				remove_variable = ywc_shu_port_advance_unpaid
+				set_variable = { name = ywc_shu_port_advance_repaid value = 1 }
+			}
+			else = {
+				add_modifier = { modifier = ywc_shu_local_credit_arrears months = 12 }
+			}
+		}
+		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_outcome value = var:ywc_shu_port_outcome }
+		set_variable = { name = ywc_v03_shu_v03_shu_port_treasury_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}

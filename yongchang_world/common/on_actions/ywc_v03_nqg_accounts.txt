@@ -1,0 +1,63 @@
+﻿on_monthly_pulse_country = { on_actions = { ywc_v03_nqg_accounts_monthly } }
+
+ywc_v03_nqg_accounts_monthly = {
+	effect = {
+		if = {
+			limit = {
+				c:NQG ?= this
+				OR = {
+					var:ywc_nqg_aid_state ?= 1
+					var:ywc_nqg_aid_state ?= 2
+					has_variable = ywc_nqg_aid_contract_generation
+				}
+			}
+			ywc_nqg_aid_monthly = yes
+		}
+		if = {
+			limit = {
+				c:NQG ?= this
+				OR = {
+					var:ywc_nqg_port_treaty_state ?= 1
+					var:ywc_nqg_port_treaty_state ?= 2
+					has_variable = ywc_nqg_port_treaty_contract_generation
+				}
+			}
+			ywc_nqg_port_treaty_monthly = yes
+		}
+	}
+}
+
+# The installed on_become_subject callback has Root = country. Pending
+# inquiries close immediately; previously signed obligations remain untouched.
+on_become_subject = { on_actions = { ywc_v03_nqg_became_subject } }
+
+ywc_v03_nqg_became_subject = {
+	effect = {
+		if = {
+			limit = { c:NQG ?= this }
+			if = {
+				limit = { OR = { var:ywc_nqg_aid_state ?= 1 var:ywc_nqg_aid_state ?= 2 } }
+				ywc_nqg_aid_cancel_unsigned = yes
+				set_variable = { name = ywc_nqg_aid_state value = 5 }
+				set_variable = { name = ywc_nqg_winter_aid_notice_reason value = 4 }
+				ywc_nqg_aid_publish_notice = yes
+			}
+			if = {
+				limit = { OR = { var:ywc_nqg_port_treaty_state ?= 1 var:ywc_nqg_port_treaty_state ?= 2 } }
+				ywc_nqg_port_treaty_cancel_unsigned = yes
+				set_variable = { name = ywc_nqg_port_treaty_state value = 5 }
+			}
+		}
+	}
+}
+
+# Installed callback: Root = the state whose ownership changed. Removing our
+# unique modifiers here prevents them lingering on the new owner's state.
+on_state_owner_change = { on_actions = { ywc_v03_nqg_port_state_owner_changed } }
+
+ywc_v03_nqg_port_state_owner_changed = {
+	effect = {
+		remove_modifier = ywc_nqg_port_concession_50
+		remove_modifier = ywc_nqg_port_concession_60
+	}
+}

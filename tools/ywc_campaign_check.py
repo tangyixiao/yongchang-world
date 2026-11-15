@@ -137,7 +137,7 @@ def journal_block(journal: str, text: str) -> str | None:
     return match.group(0) if match else None
 
 
-def check_journals(countries: dict, starts: str, journal_texts: dict[str, str], problems: list[str]) -> None:
+def check_journals(countries: dict, starts: str, journal_texts: dict[str, str], problems: list[str], legacy_effects: str = "") -> None:
     for short, config in countries.items():
         for chapter in (1, 2, 3):
             journal = f"ywc_je_flavor_{config['journal_stem']}_{chapter}"
@@ -149,8 +149,19 @@ def check_journals(countries: dict, starts: str, journal_texts: dict[str, str], 
             events = [config["preludes"][str(chapter)]] + [
                 f"ywc_{short}.{99 + (chapter - 1) * 5 + position}" for position in range(1, 6)
             ]
-            for event_id in events:
-                if f"trigger_event = {{ id = {event_id} }}" not in block:
+            for position, event_id in enumerate(events):
+                direct = f"trigger_event = {{ id = {event_id} }}"
+                if short == "shu":
+                    # Follow the authored fair sender and verify its exact target;
+                    # merely mentioning a helper is insufficient.
+                    index = 9 + (chapter - 1) * 6 + position
+                    name = f"ywc_shu_legacy_try_{index}"
+                    sender = journal_block(name, legacy_effects)
+                    if (f"{name} = yes" not in block or sender is None
+                            or sender.count(direct) != 1
+                            or f"ywc_shu_legacy_dispatch_{index} = yes" not in sender):
+                        problems.append(f"{journal}: fair sender does not fire {event_id}")
+                elif direct not in block:
                     problems.append(f"{journal}: does not fire {event_id}")
             for suffix in ("resolved", "failed"):
                 if f"has_variable = ywc_je_flavor_{config['journal_stem']}_{chapter}_{suffix}" not in block:
@@ -311,7 +322,7 @@ def main() -> int:
     }
 
     check_events(events, countries, crises, script, problems)
-    check_journals(countries, starts, journal_texts, problems)
+    check_journals(countries, starts, journal_texts, problems, _read(root, Path("yongchang_world/common/scripted_effects/ywc_shu_legacy_delivery_effects.txt")))
     check_crisis_journals(crises, journal_texts.get("ywc_large_campaign_crises.txt", ""), effects, problems)
     check_helpers(effects, problems)
     check_modifiers(script, effects, modifiers, problems)

@@ -273,7 +273,13 @@ class PlayableRouteTest(unittest.TestCase):
         ):
             journal = block_for(self.bootstrap_journal, je_id)
             self.assertIn(f"NOT = {{ has_variable = {pending} }}", journal)
-            self.assertIn(f"set_variable = {{ name = {pending} value = 1 }}", journal)
+            if event_id == "ywc_bootstrap.1":
+                helper = (ROOT / "yongchang_world/common/scripted_effects/ywc_shu_legacy_delivery_effects.txt").read_text("utf-8-sig")
+                self.assertIn("ywc_shu_legacy_try_1 = yes", journal)
+                self.assertIn("trigger_event = { id = ywc_bootstrap.1 }", block_for(helper, "ywc_shu_legacy_try_1"))
+                self.assertIn("set_variable = { name = ywc_eternal_yongchang_pending value = 1 days = 60 }", block_for(helper, "ywc_shu_legacy_ack_1"))
+            else:
+                self.assertIn(f"set_variable = {{ name = {pending} value = 1 }}", journal)
             event = block_for(self.bootstrap_events, event_id)
             self.assertIn("duration = 1", event)
             self.assertIn(f"remove_variable = {pending}", event)
