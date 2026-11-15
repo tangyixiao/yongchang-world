@@ -1,0 +1,113 @@
+﻿# Regional SOL (F04) support effects. The between-villages journal opens only
+# from a settled rota line: the due marker is written unconditionally so the
+# entry can also open on its own once a task slot frees, never silently.
+ywc_sol_open_b_je = {
+	set_variable = { name = ywc_sol_b_due value = 1 }
+	if = {
+		limit = {
+			NOT = { has_journal_entry = ywc_je_v03_sol_b }
+			NOT = { has_variable = ywc_sol_b_started }
+			NOT = { has_variable = ywc_sol_b_settled }
+			is_country_alive = yes
+			var:ywc_v03_visible_task_count < 6
+		}
+		add_journal_entry = { type = ywc_je_v03_sol_b }
+	}
+}
+
+# Capacity claims run inside each journal's immediate effect and are retried
+# from the same journal's monthly pulse (one arc slot plus one visible task for
+# line A, one further visible task for line B), so an entry activated in the
+# same tick another arc took the last slot simply claims when a slot frees
+# instead of wedging unclaimed. SOL is not on the shared startup tag list, so a
+# real claim initializes the shared v0.3 counters first; the fund snapshot is
+# captured at claim time and every payment re-checks the treasury when the
+# option actually executes.
+ywc_sol_claim_arc_a = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_sol_a_started }
+			is_country_alive = yes
+		}
+		ywc_v03_initialize_country = yes
+		if = {
+			limit = {
+				var:ywc_v03_active_arc_count < 3
+				var:ywc_v03_visible_task_count < 6
+			}
+			set_variable = { name = ywc_sol_a_started value = 1 }
+			set_variable = { name = ywc_sol_a_stage value = 1300 }
+			set_variable = { name = ywc_sol_a_pending value = 1300 }
+			set_variable = { name = ywc_sol_a_captured_income value = yearly_gross_income }
+			change_variable = { name = ywc_sol_a_captured_income divide = 52 }
+			clamp_variable = { name = ywc_sol_a_captured_income min = 100 max = 1000000000 }
+			set_variable = { name = ywc_sol_a_fee value = var:ywc_sol_a_captured_income }
+			set_variable = { name = ywc_sol_a_half_fee value = var:ywc_sol_a_captured_income }
+			change_variable = { name = ywc_sol_a_half_fee divide = 2 }
+			set_variable = { name = ywc_sol_a_double_fee value = var:ywc_sol_a_captured_income }
+			change_variable = { name = ywc_sol_a_double_fee multiply = 2 }
+			change_variable = { name = ywc_v03_active_arc_count add = 1 }
+			change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		}
+	}
+}
+
+ywc_sol_claim_arc_b = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_sol_b_started }
+			NOT = { has_variable = ywc_sol_b_settled }
+			is_country_alive = yes
+			has_variable = ywc_sol_b_due
+		}
+		ywc_v03_initialize_country = yes
+		if = {
+			limit = {
+				var:ywc_v03_visible_task_count < 6
+			}
+			set_variable = { name = ywc_sol_b_started value = 1 }
+			set_variable = { name = ywc_sol_b_stage value = 1303 }
+			set_variable = { name = ywc_sol_b_pending value = 1303 }
+			set_variable = { name = ywc_sol_b_captured_income value = yearly_gross_income }
+			change_variable = { name = ywc_sol_b_captured_income divide = 52 }
+			clamp_variable = { name = ywc_sol_b_captured_income min = 100 max = 1000000000 }
+			set_variable = { name = ywc_sol_b_fee value = var:ywc_sol_b_captured_income }
+			set_variable = { name = ywc_sol_b_half_fee value = var:ywc_sol_b_captured_income }
+			change_variable = { name = ywc_sol_b_half_fee divide = 2 }
+			set_variable = { name = ywc_sol_b_double_fee value = var:ywc_sol_b_captured_income }
+			change_variable = { name = ywc_sol_b_double_fee multiply = 2 }
+			change_variable = { name = ywc_v03_visible_task_count add = 1 }
+		}
+	}
+}
+
+# Releases subtract exactly what the matching claim added and are idempotent:
+# on_complete/on_fail can only run once per journal, and the settled marker
+# keeps a stray second call from double-freeing the slot.
+ywc_sol_release_arc_a = {
+	if = {
+		limit = {
+			has_variable = ywc_sol_a_started
+			NOT = { has_variable = ywc_sol_a_settled }
+			var:ywc_sol_a_outcome > 0
+		}
+		set_variable = { name = ywc_sol_a_settled value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+ywc_sol_release_arc_b = {
+	if = {
+		limit = {
+			has_variable = ywc_sol_b_started
+			NOT = { has_variable = ywc_sol_b_settled }
+			var:ywc_sol_b_outcome > 0
+		}
+		set_variable = { name = ywc_sol_b_settled value = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
