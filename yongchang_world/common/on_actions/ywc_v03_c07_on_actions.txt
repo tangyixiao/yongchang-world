@@ -1,0 +1,75 @@
+﻿# Crisis C07 债务、矿权与公法: entry hooks. Initialization follows the shared
+# startup pattern with per-country exists guards; the monthly hook adds the
+# crisis journals only after real eligibility, one instance per holder
+# country. Every holder branch of each journal's is_shown_when_inactive has
+# a matching add_journal_entry path here.
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c07_after_lobby } }
+
+ywc_v03_c07_after_lobby = {
+	effect = {
+		every_country = {
+			limit = {
+				# Exists-check comparisons: a tag absent from the current world must
+				# not raise "Event target link c returned an unset scope".
+				OR = {
+					c:LAN ?= this
+					c:WBK ?= this
+					c:SHU ?= this
+					c:KOR ?= this
+					c:DMG ?= this
+					c:NMG ?= this
+				}
+			}
+			ywc_v03_initialize_country = yes
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c07_monthly } }
+
+ywc_v03_c07_monthly = {
+	effect = {
+		# Journal 1: registration and answers. A country with real registered
+		# mining, fiscal distress and a mining-state labour/land conflict opens
+		# the case as host and mounts one qualified funder; the mounted funder
+		# enters through its case_open flag.
+		if = { limit = {
+				ywc_c07_case_ready_local = yes
+				NOT = { has_journal_entry = ywc_je_v03_c07_contract_annex }
+			}
+			add_journal_entry = { type = ywc_je_v03_c07_contract_annex }
+		}
+		if = { limit = {
+				ywc_c07_is_pool_tag = yes
+				var:ywc_c07_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c07_started }
+				NOT = { has_journal_entry = ywc_je_v03_c07_contract_annex }
+			}
+			add_journal_entry = { type = ywc_je_v03_c07_contract_annex }
+		}
+		# Journal 2: interest and public duty, for countries that entered the
+		# execution phase.
+		if = { limit = {
+				ywc_c07_is_pool_tag = yes
+				has_variable = ywc_c07_started
+				var:ywc_c07_execution_open ?= 1
+				NOT = { has_variable = ywc_c07_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c07_interest_public_duty }
+			}
+			add_journal_entry = { type = ywc_je_v03_c07_interest_public_duty }
+		}
+		# Journal 3: renegotiation, settlement and aftermath.
+		if = { limit = {
+				ywc_c07_is_pool_tag = yes
+				has_variable = ywc_c07_started
+				var:ywc_c07_settlement_open ?= 1
+				NOT = { has_variable = ywc_c07_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c07_who_stays_after }
+			}
+			add_journal_entry = { type = ywc_je_v03_c07_who_stays_after }
+		}
+	}
+}
