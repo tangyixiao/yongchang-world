@@ -19,14 +19,903 @@
         "JHG"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t04_order_wage_dispute",
+          "title": {
+            "zh": "同一订单的不同工价",
+            "en": "One Order, Different Wage Sheets"
+          },
+          "desc": {
+            "zh": "澜沧的矿场与作坊接下一份可核验的外销订单，本地工价、雇工与现行法律互相矛盾；靖海的买方在另一端等待交期与工价的答复。",
+            "en": "Lan Xang's mines and workshops have taken a verifiable export order while local wages, employment and current law contradict one another; the Jinghai buyer waits at the other end for a term and a wage answer."
+          },
+          "script": "{ is_shown_when_inactive = { c:LAN ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t04_started } } possible = { c:LAN ?= this ywc_v03_has_capacity = yes ywc_t04_partner_current = yes ywc_t04_producer_need = yes NOT = { has_variable = ywc_t04_started } } immediate = { set_variable = { name = ywc_t04_started value = 1 } set_variable = { name = ywc_t04_stage value = 1150 } set_variable = { name = ywc_t04_pending value = 1150 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } } on_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t04_stage ?= 1151 var:ywc_t04_stage ?= 1153 var:ywc_t04_stage ?= 1156 var:ywc_t04_stage ?= 1157 } NOT = { ywc_t04_partner_current = yes } NOT = { has_variable = ywc_t04_outcome } } c:JHG ?= { remove_variable = ywc_t04_pending } set_variable = { name = ywc_t04_stage value = 1155 } set_variable = { name = ywc_t04_pending value = 1155 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } if = { limit = { ywc_t04_lan_delivery_1150 = yes } trigger_event = { id = ywc_society.1150 } } if = { limit = { ywc_t04_lan_delivery_1152 = yes } trigger_event = { id = ywc_society.1152 } } if = { limit = { ywc_t04_lan_delivery_1154 = yes } trigger_event = { id = ywc_society.1154 } } if = { limit = { ywc_t04_lan_delivery_1155 = yes } trigger_event = { id = ywc_society.1155 } } } } on_complete = { ywc_t04_release_capacity = yes } on_fail = { ywc_t04_release_capacity = yes } }",
+          "goal": "{ OR = { var:ywc_t04_outcome ?= 1 var:ywc_t04_outcome ?= 2 var:ywc_t04_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t04_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1150",
+          "title": {
+            "zh": "订单压到工棚",
+            "en": "The Order Presses into the Workshops"
+          },
+          "desc": {
+            "zh": "靖海订单附着自己的交期与验货章程。矿场和作坊要么摊派加产赶工，要么按现有工力分批接下；工价与雇工现状须先由澜沧自行核对。",
+            "en": "The order from Jinghai carries its own delivery term and inspection rules. The mines and workshops either press extra shifts to fill it or accept it in batches at existing strength; wages and employment must be audited by Lan Xang itself."
+          },
+          "trigger": "{ ywc_t04_lan_delivery_1150 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_lan_delivery_1150 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "accept_scale",
+              "label": {
+                "zh": "接单摊派加产，按期赶工",
+                "en": "Scale production to the order and press the schedule"
+              },
+              "trigger": "{ ywc_t04_lan_at_1150 = yes ywc_t04_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1150 = yes ywc_t04_partner_current = yes } set_variable = { name = ywc_t04_order_mode value = 1 } set_variable = { name = ywc_t04_stage value = 1151 } set_variable = { name = ywc_t04_pending value = 1151 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1151 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，交期交由买方提出。",
+                "en": "Records this decision; the buyer sets the term."
+              }
+            },
+            {
+              "key": "accept_phased",
+              "label": {
+                "zh": "接单但按现有工力分批",
+                "en": "Accept the order in batches at existing strength"
+              },
+              "trigger": "{ ywc_t04_lan_at_1150 = yes ywc_t04_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1150 = yes ywc_t04_partner_current = yes } set_variable = { name = ywc_t04_order_mode value = 2 } set_variable = { name = ywc_t04_stage value = 1151 } set_variable = { name = ywc_t04_pending value = 1151 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1151 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，交期交由买方提出。",
+                "en": "Records this decision; the buyer sets the term."
+              }
+            },
+            {
+              "key": "local_only",
+              "label": {
+                "zh": "撤下外港订单，只做本地现货",
+                "en": "Withdraw the export order and sell only locally"
+              },
+              "trigger": "{ ywc_t04_lan_at_1150 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1150 = yes } set_variable = { name = ywc_t04_order_mode value = 3 } set_variable = { name = ywc_t04_outcome value = 3 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "订单撤下，本条线以拒绝结局收束。",
+                "en": "The order is withdrawn; the arc closes as a refusal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对工价与雇工",
+                "en": "Wait and audit wages and employment again"
+              },
+              "trigger": "{ ywc_t04_lan_at_1150 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1150 = yes } set_variable = { name = ywc_t04_pending value = 1150 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "订单压到工棚",
+            "en": "The Order Presses into the Workshops"
+          },
+          "reads": [
+            "LAN mining and industry employment",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "LAN order mode",
+            "LAN next stage",
+            "LAN local refusal outcome",
+            "JHG pending delivery",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1151",
+          "title": {
+            "zh": "买方要求的期限",
+            "en": "The Term the Buyer Demands"
+          },
+          "desc": {
+            "zh": "靖海账房按订单规模提出交期：限期加验，或宽限并预付定金。订单也可以就此撤回。已付的定金不会在复议时再收一次。",
+            "en": "Jinghai's counting house proposes a term for the order: a short deadline with inspection, or a relaxed term with an advance. The order may also be withdrawn. An advance already paid is not collected twice on reconsideration."
+          },
+          "trigger": "{ ywc_t04_jhg_delivery_1151 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_jhg_delivery_1151 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "strict",
+              "label": {
+                "zh": "限期加验，逾期罚减",
+                "en": "A short term with inspection and penalty"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1151 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1151 = yes } set_variable = { name = ywc_t04_term value = 1 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1152 } set_variable = { name = ywc_t04_pending value = 1152 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "交期与验货章程留档；澜沧将面对工价争议。",
+                "en": "The term and inspection rules are filed; Lan Xang faces the wage dispute."
+              }
+            },
+            {
+              "key": "relax_advance",
+              "label": {
+                "zh": "宽限交期并支付 500 定金",
+                "en": "Relax the term and pay 500 in advance"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1151 = yes NOT = { has_variable = ywc_t04_advance_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1151 = yes NOT = { has_variable = ywc_t04_advance_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t04_advance_paid value = 1 } set_variable = { name = ywc_t04_term value = 2 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1152 } set_variable = { name = ywc_t04_pending value = 1152 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国库支付 500。",
+                "en": "Jinghai pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "定金留档，不向澜沧转款；澜沧将面对工价争议。",
+                "en": "The advance is filed, no transfer to Lan Xang; Lan Xang faces the wage dispute."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回订单，另作他议",
+                "en": "Withdraw the order for other arrangements"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1151 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1151 = yes } set_variable = { name = ywc_t04_term value = 3 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_outcome value = 3 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "订单撤回，澜沧以拒绝结局结案。",
+                "en": "The order is withdrawn; Lan Xang closes the arc as a refusal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1151 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1151 = yes } set_variable = { name = ywc_t04_pending value = 1151 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "买方要求的期限",
+            "en": "The Term the Buyer Demands"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "LAN stage and partner identity"
+          ],
+          "writes": [
+            "JHG term record",
+            "JHG advance payment",
+            "LAN next stage",
+            "LAN refusal outcome on withdrawal",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1152",
+          "title": {
+            "zh": "同业第一次联名",
+            "en": "The Trades' First Joint Petition"
+          },
+          "desc": {
+            "zh": "矿场与作坊的雇工第一次联名呈递工价争议。结社权利越弱，联名越容易散去，也有人提议改行地方供役顶替外港订单。",
+            "en": "Employed miners and workshop hands submit their first joint petition over wages. The weaker the right of association, the more easily the petition disperses, and some propose substituting local corvée for the export order."
+          },
+          "trigger": "{ ywc_t04_lan_delivery_1152 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_lan_delivery_1152 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "hear",
+              "label": {
+                "zh": "听禀并许诺核对工价",
+                "en": "Hear the petition and promise a wage audit"
+              },
+              "trigger": "{ ywc_t04_lan_at_1152 = yes ywc_t04_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1152 = yes ywc_t04_partner_current = yes } set_variable = { name = ywc_t04_petition value = 1 } set_variable = { name = ywc_t04_stage value = 1153 } set_variable = { name = ywc_t04_pending value = 1153 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1153 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "联名记录留档；买方将听到外港工价的传闻。",
+                "en": "The petition is filed; the buyer will hear the outer-port wage rumors."
+              }
+            },
+            {
+              "key": "suppress",
+              "label": {
+                "zh": "压下联名，按旧章赶工",
+                "en": "Suppress the petition and work to the old rules"
+              },
+              "trigger": "{ ywc_t04_lan_at_1152 = yes ywc_t04_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1152 = yes ywc_t04_partner_current = yes } set_variable = { name = ywc_t04_petition value = 2 } set_variable = { name = ywc_t04_stage value = 1153 } set_variable = { name = ywc_t04_pending value = 1153 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1153 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "联名被压下留档；买方将听到外港工价的传闻。",
+                "en": "The petition is suppressed and filed; the buyer will hear the outer-port wage rumors."
+              }
+            },
+            {
+              "key": "corvee",
+              "label": {
+                "zh": "改行地方供役顶替订单",
+                "en": "Substitute local corvée for the order"
+              },
+              "trigger": "{ ywc_t04_lan_at_1152 = yes ywc_t04_partner_current = yes ywc_t04_labor_weak = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1152 = yes ywc_t04_partner_current = yes ywc_t04_labor_weak = yes } set_variable = { name = ywc_t04_petition value = 3 } set_variable = { name = ywc_t04_stage value = 1153 } set_variable = { name = ywc_t04_pending value = 1153 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1153 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "仅在缺乏结社权利时可选。",
+                "en": "Available only without the right of association."
+              }
+            },
+            {
+              "key": "disperse",
+              "label": {
+                "zh": "联名散去，按旧工价分批交货",
+                "en": "Let the petition disperse and deliver in batches at the old wage"
+              },
+              "trigger": "{ ywc_t04_lan_at_1152 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1152 = yes } set_variable = { name = ywc_t04_petition value = 4 } set_variable = { name = ywc_t04_proposed_outcome value = 2 } set_variable = { name = ywc_t04_stage value = 1155 } set_variable = { name = ywc_t04_pending value = 1155 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "转入本地检查与结案；不依赖买方。",
+                "en": "Proceeds to local inspection and closure; does not depend on the buyer."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对联名章程",
+                "en": "Wait and review the petition rules again"
+              },
+              "trigger": "{ ywc_t04_lan_at_1152 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1152 = yes } set_variable = { name = ywc_t04_pending value = 1152 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "同业第一次联名",
+            "en": "The Trades' First Joint Petition"
+          },
+          "reads": [
+            "LAN pending delivery",
+            "LAN labour association law",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "LAN petition record",
+            "LAN proposed outcome on dispersal",
+            "LAN next stage",
+            "JHG pending delivery",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1153",
+          "title": {
+            "zh": "外港工价的传闻",
+            "en": "Rumors of Wages at the Outer Ports"
+          },
+          "desc": {
+            "zh": "外港行情传到靖海：别处矿场与作坊给出的工价更高。买方要么承认工价加价采购，要么压价照旧，也可以另派估价人实地核定。",
+            "en": "News of the outer ports reaches Jinghai: mines and workshops elsewhere pay higher wages. The buyer may acknowledge the wage and raise the purchase price, hold the old price, or send an assessor to verify on site."
+          },
+          "trigger": "{ ywc_t04_jhg_delivery_1153 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_jhg_delivery_1153 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "match_pay",
+              "label": {
+                "zh": "支付 1000，承认外港工价",
+                "en": "Pay 1,000 to acknowledge the outer-port wage"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1153 = yes NOT = { has_variable = ywc_t04_contract_paid } gold_reserves >= 1000 }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1153 = yes NOT = { has_variable = ywc_t04_contract_paid } gold_reserves >= 1000 } add_treasury = -1000 set_variable = { name = ywc_t04_contract_paid value = 1 } set_variable = { name = ywc_t04_contract value = 1 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1154 } set_variable = { name = ywc_t04_pending value = 1154 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国库支付 1000。",
+                "en": "Jinghai pays 1,000 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "工价记录留档；澜沧迎来交货日。",
+                "en": "The wage decision is filed; Lan Xang faces its delivery day."
+              }
+            },
+            {
+              "key": "hold_price",
+              "label": {
+                "zh": "压价照旧，按原单执行",
+                "en": "Hold the old price and execute the original order"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1153 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1153 = yes } set_variable = { name = ywc_t04_contract value = 2 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1154 } set_variable = { name = ywc_t04_pending value = 1154 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "工价记录留档；澜沧迎来交货日。",
+                "en": "The wage decision is filed; Lan Xang faces its delivery day."
+              }
+            },
+            {
+              "key": "assess",
+              "label": {
+                "zh": "另派估价人实地核定",
+                "en": "Send an assessor to verify on site"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1153 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1153 = yes } set_variable = { name = ywc_t04_contract value = 3 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1154 } set_variable = { name = ywc_t04_pending value = 1154 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "估价记录留档；澜沧迎来交货日。",
+                "en": "The assessment is filed; Lan Xang faces its delivery day."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1153 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1153 = yes } set_variable = { name = ywc_t04_pending value = 1153 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "外港工价的传闻",
+            "en": "Rumors of Wages at the Outer Ports"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG contract decision",
+            "JHG payment record",
+            "LAN next stage",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1154",
+          "title": {
+            "zh": "停工后的交货日",
+            "en": "The Delivery Day After the Stoppage"
+          },
+          "desc": {
+            "zh": "工棚停工之后仍是交货日。补足工价按期交货要动用国库；照常交货不补工价亦可；若买方仍可联系，可以扣货待谈。",
+            "en": "After the stoppage the delivery day still comes. Settling the wage arrears and delivering on time takes treasury funds; shipping as-is without settling is also possible; if the buyer is still reachable, the goods may be held for talks."
+          },
+          "trigger": "{ ywc_t04_lan_delivery_1154 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_lan_delivery_1154 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "settle_deliver",
+              "label": {
+                "zh": "支付 800 补足工价，按期交货",
+                "en": "Pay 800 to settle wage arrears and deliver on time"
+              },
+              "trigger": "{ ywc_t04_lan_at_1154 = yes NOT = { has_variable = ywc_t04_arrears_paid } gold_reserves >= 800 }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1154 = yes NOT = { has_variable = ywc_t04_arrears_paid } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t04_arrears_paid value = 1 } set_variable = { name = ywc_t04_delivery value = 1 } set_variable = { name = ywc_t04_proposed_outcome value = 1 } set_variable = { name = ywc_t04_stage value = 1155 } set_variable = { name = ywc_t04_pending value = 1155 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "澜沧国库支付 800。",
+                "en": "Lan Xang pays 800 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "工价补足留档；澜沧将迎来检查员。",
+                "en": "The arrears settlement is filed; Lan Xang will face the inspector."
+              }
+            },
+            {
+              "key": "ship_as_is",
+              "label": {
+                "zh": "照常交货，不补工价",
+                "en": "Deliver as-is without settling wages"
+              },
+              "trigger": "{ ywc_t04_lan_at_1154 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1154 = yes } set_variable = { name = ywc_t04_delivery value = 2 } set_variable = { name = ywc_t04_proposed_outcome value = 2 } set_variable = { name = ywc_t04_stage value = 1155 } set_variable = { name = ywc_t04_pending value = 1155 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "交货记录留档；澜沧将迎来检查员。",
+                "en": "The delivery record is filed; Lan Xang will face the inspector."
+              }
+            },
+            {
+              "key": "halt_hold",
+              "label": {
+                "zh": "扣货待谈，重开工价议程",
+                "en": "Hold the goods and reopen the wage agenda"
+              },
+              "trigger": "{ ywc_t04_lan_at_1154 = yes ywc_t04_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1154 = yes ywc_t04_partner_current = yes } set_variable = { name = ywc_t04_delivery value = 3 } set_variable = { name = ywc_t04_stage value = 1156 } set_variable = { name = ywc_t04_pending value = 1156 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1156 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "扣货记录留档；买方须就订单去向作答。",
+                "en": "The hold is filed; the buyer must answer where the order goes."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对交货章程",
+                "en": "Wait and review the delivery rules again"
+              },
+              "trigger": "{ ywc_t04_lan_at_1154 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1154 = yes } set_variable = { name = ywc_t04_pending value = 1154 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "停工后的交货日",
+            "en": "The Delivery Day After the Stoppage"
+          },
+          "reads": [
+            "LAN pending delivery",
+            "petition and order records",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "LAN delivery decision",
+            "LAN wage arrears payment",
+            "LAN proposed outcome",
+            "LAN next stage",
+            "JHG pending delivery",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1155",
+          "title": {
+            "zh": "检查员进入作坊",
+            "en": "The Inspector Enters the Workshop"
+          },
+          "desc": {
+            "zh": "交货之后检查员进入作坊核对工场安全。现行法律越完备，整改越有依据；若买方已无法联系，澜沧可按已做的决定结案。已付的整改费用不会在复议时再收一次。",
+            "en": "After delivery the inspector enters the workshop to check workplace safety. The more complete the current law, the firmer the basis for rectification; if the buyer can no longer be reached, Lan Xang may close on the decisions it has already made. A paid rectification is not collected twice on reconsideration."
+          },
+          "trigger": "{ ywc_t04_lan_delivery_1155 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_lan_delivery_1155 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "allow_rectify",
+              "label": {
+                "zh": "支付 600 允许检查并整改",
+                "en": "Pay 600 to allow inspection and rectify"
+              },
+              "trigger": "{ ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes NOT = { has_variable = ywc_t04_rectify_paid } gold_reserves >= 600 }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes NOT = { has_variable = ywc_t04_rectify_paid } gold_reserves >= 600 } add_treasury = -600 set_variable = { name = ywc_t04_rectify_paid value = 1 } set_variable = { name = ywc_t04_inspection value = 1 } set_variable = { name = ywc_t04_stage value = 1156 } set_variable = { name = ywc_t04_pending value = 1156 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1156 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "澜沧国库支付 600。",
+                "en": "Lan Xang pays 600 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "整改记录留档；买方须就订单去向作答。",
+                "en": "The rectification is filed; the buyer must answer where the order goes."
+              }
+            },
+            {
+              "key": "reuse_rectify",
+              "label": {
+                "zh": "沿用已付的整改记录",
+                "en": "Reuse the paid rectification record"
+              },
+              "trigger": "{ ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes var:ywc_t04_rectify_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes var:ywc_t04_rectify_paid ?= 1 } set_variable = { name = ywc_t04_inspection value = 1 } set_variable = { name = ywc_t04_stage value = 1156 } set_variable = { name = ywc_t04_pending value = 1156 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1156 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "沿用已付整改记录；买方须就订单去向作答。",
+                "en": "Reuses the paid rectification; the buyer must answer where the order goes."
+              }
+            },
+            {
+              "key": "refuse_inspect",
+              "label": {
+                "zh": "拒绝检查，闭门自办",
+                "en": "Refuse the inspection and proceed privately"
+              },
+              "trigger": "{ ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes } set_variable = { name = ywc_t04_inspection value = 2 } set_variable = { name = ywc_t04_stage value = 1156 } set_variable = { name = ywc_t04_pending value = 1156 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1156 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝记录留档；买方须就订单去向作答。",
+                "en": "The refusal is filed; the buyer must answer where the order goes."
+              }
+            },
+            {
+              "key": "law_partial",
+              "label": {
+                "zh": "循现行法律仅查安全项",
+                "en": "Inspect only safety items under current law"
+              },
+              "trigger": "{ ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes ywc_t04_has_safety_law = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1155 = yes ywc_t04_partner_current = yes ywc_t04_has_safety_law = yes } set_variable = { name = ywc_t04_inspection value = 3 } set_variable = { name = ywc_t04_stage value = 1156 } set_variable = { name = ywc_t04_pending value = 1156 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t04_pending value = 1156 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "需要现行监察或劳工保护法律。",
+                "en": "Requires current regulatory or worker protection law."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "对方已不可联系，按本地决定结案",
+                "en": "Close on local decisions because the buyer is unreachable"
+              },
+              "trigger": "{ ywc_t04_lan_at_1155 = yes NOT = { ywc_t04_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1155 = yes NOT = { ywc_t04_partner_current = yes } } if = { limit = { var:ywc_t04_proposed_outcome ?= 1 } set_variable = { name = ywc_t04_outcome value = 1 } } else_if = { limit = { var:ywc_t04_proposed_outcome ?= 2 } set_variable = { name = ywc_t04_outcome value = 2 } } else_if = { limit = { var:ywc_t04_rectify_paid ?= 1 } set_variable = { name = ywc_t04_outcome value = 2 } } else = { set_variable = { name = ywc_t04_outcome value = 4 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按已做的决定结案；不依赖买方。",
+                "en": "Closes on decisions already made; does not depend on the buyer."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对整改范围",
+                "en": "Wait and review the rectification scope again"
+              },
+              "trigger": "{ ywc_t04_lan_at_1155 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_lan_at_1155 = yes } set_variable = { name = ywc_t04_pending value = 1155 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "检查员进入作坊",
+            "en": "The Inspector Enters the Workshop"
+          },
+          "reads": [
+            "LAN pending delivery",
+            "LAN workplace safety law",
+            "buyer reachability"
+          ],
+          "writes": [
+            "LAN inspection record",
+            "LAN rectification payment",
+            "LAN next stage",
+            "JHG pending delivery",
+            "LAN local outcome on partner loss",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1156",
+          "title": {
+            "zh": "缩单、谈判或另寻供应",
+            "en": "Shrink, Renegotiate, or Find Another Supplier"
+          },
+          "desc": {
+            "zh": "靖海必须给这份订单一个去向：重签合同维持订单、缩单减量，或在别处有真实供应时改订他处。",
+            "en": "Jinghai must decide where this order goes: renegotiate and keep it, shrink it, or order elsewhere where a real alternative supply exists."
+          },
+          "trigger": "{ ywc_t04_jhg_delivery_1156 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_jhg_delivery_1156 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "renegotiate",
+              "label": {
+                "zh": "重签合同，维持订单",
+                "en": "Renegotiate the contract and keep the order"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1156 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1156 = yes } set_variable = { name = ywc_t04_buyer_decision value = 1 } set_variable = { name = ywc_t04_pending value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "重签记录留档；买方将给出恢复生产条件的最后答复。",
+                "en": "The renegotiation is filed; the buyer gives its final word on resuming production."
+              }
+            },
+            {
+              "key": "shrink",
+              "label": {
+                "zh": "缩单减量，按新价分批",
+                "en": "Shrink the order and take batches at the new price"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1156 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1156 = yes } set_variable = { name = ywc_t04_buyer_decision value = 2 } set_variable = { name = ywc_t04_pending value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "缩单记录留档；买方将给出恢复生产条件的最后答复。",
+                "en": "The shrink decision is filed; the buyer gives its final word on resuming production."
+              }
+            },
+            {
+              "key": "switch",
+              "label": {
+                "zh": "另寻供应，改订他处",
+                "en": "Switch to another supplier"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1156 = yes ywc_t04_alt_supply = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1156 = yes ywc_t04_alt_supply = yes } set_variable = { name = ywc_t04_buyer_decision value = 3 } set_variable = { name = ywc_t04_pending value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_stage value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "需要他国工业或矿业可供改订。",
+                "en": "Requires industry or mining elsewhere to reorder from."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1156 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1156 = yes } set_variable = { name = ywc_t04_pending value = 1156 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "缩单、谈判或另寻供应",
+            "en": "Shrink, Renegotiate, or Find Another Supplier"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "alternative supply in KOR, SHU or WBK",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG buyer decision",
+            "JHG pending delivery for the final word",
+            "LAN next stage",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1157",
+          "title": {
+            "zh": "恢复生产的条件",
+            "en": "The Conditions for Resuming Production"
+          },
+          "desc": {
+            "zh": "买方对恢复生产的条件作最后答复：按新约恢复、有限恢复，或终断合同改购他处。澜沧的账册会记下这一结局。",
+            "en": "The buyer gives its final answer on resuming production: resume under the new terms, resume in limited volume, or break the contract and order elsewhere. Lan Xang's ledger records the outcome."
+          },
+          "trigger": "{ ywc_t04_jhg_delivery_1157 = yes }",
+          "immediate": "{ if = { limit = { ywc_t04_jhg_delivery_1157 = yes } remove_variable = ywc_t04_pending if = { limit = { NOT = { has_variable = ywc_t04_popup_epoch } } set_variable = { name = ywc_t04_popup_epoch value = 0 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t04_popup_epoch value = var:ywc_t04_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "resume_accorded",
+              "label": {
+                "zh": "按新约恢复生产",
+                "en": "Resume production under the new terms"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1157 = yes NOT = { var:ywc_t04_buyer_decision ?= 3 } }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1157 = yes NOT = { var:ywc_t04_buyer_decision ?= 3 } } change_relations = { country = c:LAN value = 5 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_outcome value = 1 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "靖海对澜沧关系增加 5。",
+                "en": "Jinghai gains 5 relations with Lan Xang."
+              }
+            },
+            {
+              "key": "resume_limited",
+              "label": {
+                "zh": "有限恢复，缩单续做",
+                "en": "Resume in limited volume"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1157 = yes NOT = { var:ywc_t04_buyer_decision ?= 3 } }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1157 = yes NOT = { var:ywc_t04_buyer_decision ?= 3 } } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_outcome value = 2 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "有限恢复记录留档，双方各自保留工价与预算。",
+                "en": "The limited resumption is filed; each side keeps its own wages and budget."
+              }
+            },
+            {
+              "key": "break_switch",
+              "label": {
+                "zh": "终断合同，改购他处",
+                "en": "Break the contract and order elsewhere"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1157 = yes OR = { ywc_t04_alt_supply = yes var:ywc_t04_buyer_decision ?= 3 } }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1157 = yes OR = { ywc_t04_alt_supply = yes var:ywc_t04_buyer_decision ?= 3 } } change_relations = { country = c:LAN value = -10 } change_variable = { name = ywc_t04_popup_epoch add = 1 } c:LAN = { set_variable = { name = ywc_t04_outcome value = 3 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "靖海对澜沧关系减少 10。",
+                "en": "Jinghai loses 10 relations with Lan Xang."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ ywc_t04_jhg_at_1157 = yes }",
+              "effect": "{ if = { limit = { ywc_t04_jhg_at_1157 = yes } set_variable = { name = ywc_t04_pending value = 1157 } change_variable = { name = ywc_t04_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "恢复生产的条件",
+            "en": "The Conditions for Resuming Production"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "JHG buyer decision record"
+          ],
+          "writes": [
+            "LAN outcome",
+            "relations change",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t04_wage_accepted",
+        "v03_t04_wage_limited",
+        "v03_t04_wage_refused",
+        "v03_t04_wage_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
