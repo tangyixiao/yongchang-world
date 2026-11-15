@@ -64,6 +64,37 @@ ywc_je_v03_khq_b = {
     fail = { var:ywc_khq_b_outcome ?= 4 }
 }
 
+ywc_je_v03_hul_a = {
+    is_shown_when_inactive = { c:HUL ?= this NOT = { has_variable = ywc_hul_a_started } }
+    possible = { c:HUL ?= this is_country_alive = yes NOT = { has_variable = ywc_hul_a_started } country_has_building_group_levels = { type = bg_agriculture value > 0 } ywc_v03_has_capacity = yes }
+    immediate = { ywc_v03_regional_hul_claim_a = yes }
+    on_monthly_pulse = { effect = {
+    if = { limit = { ywc_hul_delivery_1200 = yes } trigger_event = { id = ywc_regional.1200 } }
+    if = { limit = { ywc_hul_delivery_1201 = yes } trigger_event = { id = ywc_regional.1201 } }
+    if = { limit = { ywc_hul_delivery_1202 = yes } trigger_event = { id = ywc_regional.1202 } }
+    if = { limit = { has_variable = ywc_hul_a_review_clock NOT = { has_variable = ywc_hul_a_review_open } NOT = { has_variable = ywc_hul_a_outcome } is_country_alive = yes } if = { limit = { in_default = no NOT = { has_modifier = declared_bankruptcy } } if = { limit = { var:ywc_hul_fence_mode ?= 1 var:ywc_hul_market_storage_built ?= 1 } set_variable = { name = ywc_hul_a_outcome value = 1 } } else = { set_variable = { name = ywc_hul_a_outcome value = 2 } } } else = { set_variable = { name = ywc_hul_a_outcome value = 2 } set_variable = { name = ywc_hul_a_review_missed_payments value = 1 } } remove_variable = ywc_hul_a_review_clock }
+    } }
+    on_complete = { remove_variable = ywc_hul_a_pending remove_variable = ywc_hul_a_stage ywc_v03_regional_hul_release_a = yes }
+    on_fail = { remove_variable = ywc_hul_a_pending remove_variable = ywc_hul_a_stage ywc_v03_regional_hul_release_a = yes }
+    complete = { OR = { var:ywc_hul_a_outcome ?= 1 var:ywc_hul_a_outcome ?= 2 } }
+    fail = { var:ywc_hul_a_outcome ?= 4 }
+}
+
+ywc_je_v03_hul_b = {
+    is_shown_when_inactive = { c:HUL ?= this NOT = { has_variable = ywc_hul_b_started } }
+    possible = { c:HUL ?= this is_country_alive = yes has_variable = ywc_hul_b_started NOT = { has_variable = ywc_hul_b_released } }
+    immediate = { ywc_v03_regional_hul_claim_b = yes }
+    on_monthly_pulse = { effect = {
+    if = { limit = { ywc_hul_delivery_1203 = yes } trigger_event = { id = ywc_regional.1203 } }
+    if = { limit = { ywc_hul_delivery_1204 = yes } trigger_event = { id = ywc_regional.1204 } }
+    if = { limit = { ywc_hul_delivery_1205 = yes } trigger_event = { id = ywc_regional.1205 } }
+    } }
+    on_complete = { remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage ywc_v03_regional_hul_release_b = yes }
+    on_fail = { remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage ywc_v03_regional_hul_release_b = yes }
+    complete = { OR = { var:ywc_hul_b_outcome ?= 1 var:ywc_hul_b_outcome ?= 2 var:ywc_hul_b_outcome ?= 4 } }
+    fail = { var:ywc_hul_b_outcome ?= 3 }
+}
+
 ywc_je_v03_sol_a = {
     is_shown_when_inactive = { c:SOL ?= this NOT = { has_variable = ywc_sol_a_started } }
     possible = { c:SOL ?= this is_country_alive = yes ywc_v03_has_capacity = yes NOT = { has_variable = ywc_sol_a_started } }

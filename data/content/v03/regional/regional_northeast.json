@@ -1237,14 +1237,573 @@
         "AMR"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_hul_a",
+          "title": {
+            "zh": "冬营共议",
+            "en": "The Winter Council"
+          },
+          "desc": {
+            "zh": "呼伦的冬天从来不是私事：栅栏、边市与过冬的骑队，每一件都要各部围着同一堆火分摊。谁出草料、谁让道、谁受保护，账算得清，春天才守得住。",
+            "en": "Winter on the Hulun steppe has never been a private matter: fences, market days and overwintering riders must all be settled around the same fire. Whoever shares the fodder, the road and the protection decides whether spring holds."
+          },
+          "script": "{\nis_shown_when_inactive = { c:HUL ?= this NOT = { has_variable = ywc_hul_a_started } }\npossible = { c:HUL ?= this is_country_alive = yes NOT = { has_variable = ywc_hul_a_started } country_has_building_group_levels = { type = bg_agriculture value > 0 } ywc_v03_has_capacity = yes }\nimmediate = { ywc_v03_regional_hul_claim_a = yes }\non_monthly_pulse = { effect = {\nif = { limit = { ywc_hul_delivery_1200 = yes } trigger_event = { id = ywc_regional.1200 } }\nif = { limit = { ywc_hul_delivery_1201 = yes } trigger_event = { id = ywc_regional.1201 } }\nif = { limit = { ywc_hul_delivery_1202 = yes } trigger_event = { id = ywc_regional.1202 } }\nif = { limit = { has_variable = ywc_hul_a_review_clock NOT = { has_variable = ywc_hul_a_review_open } NOT = { has_variable = ywc_hul_a_outcome } is_country_alive = yes } if = { limit = { in_default = no NOT = { has_modifier = declared_bankruptcy } } if = { limit = { var:ywc_hul_fence_mode ?= 1 var:ywc_hul_market_storage_built ?= 1 } set_variable = { name = ywc_hul_a_outcome value = 1 } } else = { set_variable = { name = ywc_hul_a_outcome value = 2 } } } else = { set_variable = { name = ywc_hul_a_outcome value = 2 } set_variable = { name = ywc_hul_a_review_missed_payments value = 1 } } remove_variable = ywc_hul_a_review_clock }\n} }\non_complete = { remove_variable = ywc_hul_a_pending remove_variable = ywc_hul_a_stage ywc_v03_regional_hul_release_a = yes }\non_fail = { remove_variable = ywc_hul_a_pending remove_variable = ywc_hul_a_stage ywc_v03_regional_hul_release_a = yes }\n}",
+          "goal": "{ OR = { var:ywc_hul_a_outcome ?= 1 var:ywc_hul_a_outcome ?= 2 } }",
+          "exit_conditions": "{ var:ywc_hul_a_outcome ?= 4 }"
+        },
+        {
+          "id": "ywc_je_v03_hul_b",
+          "title": {
+            "zh": "互市不能换成驻留",
+            "en": "Trade Cannot Be Paid in Garrisons"
+          },
+          "desc": {
+            "zh": "冬营的许诺签得再多，也换不回草原的规矩：外军可借道过冬，不可长驻；边市可扩大，不可拿主权抵账。呼伦联盟要把这句话写进盟约，还要让新入盟的城镇也认得它。",
+            "en": "No promise signed over a winter fire buys back what the steppe holds by custom: foreign riders may pass the cold season by granted term, they may not stand garrison; the market may widen, it may not be mortgaged. The Hulun league means to write that sentence into its compact - and make every newly joined town able to read it."
+          },
+          "script": "{\nis_shown_when_inactive = { c:HUL ?= this NOT = { has_variable = ywc_hul_b_started } }\npossible = { c:HUL ?= this is_country_alive = yes has_variable = ywc_hul_b_started NOT = { has_variable = ywc_hul_b_released } }\nimmediate = { ywc_v03_regional_hul_claim_b = yes }\non_monthly_pulse = { effect = {\nif = { limit = { ywc_hul_delivery_1203 = yes } trigger_event = { id = ywc_regional.1203 } }\nif = { limit = { ywc_hul_delivery_1204 = yes } trigger_event = { id = ywc_regional.1204 } }\nif = { limit = { ywc_hul_delivery_1205 = yes } trigger_event = { id = ywc_regional.1205 } }\n} }\non_complete = { remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage ywc_v03_regional_hul_release_b = yes }\non_fail = { remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage ywc_v03_regional_hul_release_b = yes }\n}",
+          "goal": "{ OR = { var:ywc_hul_b_outcome ?= 1 var:ywc_hul_b_outcome ?= 2 var:ywc_hul_b_outcome ?= 4 } }",
+          "exit_conditions": "{ var:ywc_hul_b_outcome ?= 3 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_regional.1200",
+          "title": {
+            "zh": "冬营里多了一道栅栏",
+            "en": "A New Fence in the Winter Camp"
+          },
+          "desc": {
+            "zh": "去年冬天，一场夜风雪冲开了阿巴该部的牛栏，牲口混进了邻部的冬营地。各部长老聚到呼伦湖边：栅栏修在哪、谁来看、钱从哪出——再没有一本共同的册子，明年还得照旧吵一遍。",
+            "en": "Last winter a night blizzard tore open the Abaga pens and the herds drifted into a neighbour's winter camp. The elders gather by Hulun Lake: where the fence runs, who watches it and who pays - without one shared ledger, next winter will argue the same fight again."
+          },
+          "trigger": "{ ywc_hul_delivery_1200 = yes }",
+          "immediate": "{ if = { limit = { ywc_hul_delivery_1200 = yes } remove_variable = ywc_hul_a_pending if = { limit = { NOT = { has_variable = ywc_hul_popup_epoch } } set_variable = { name = ywc_hul_popup_epoch value = 0 } } change_variable = { name = ywc_hul_popup_epoch add = 1 } save_scope_value_as = { name = ywc_hul_popup_epoch value = var:ywc_hul_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "shared_watch_fence",
+              "label": {
+                "zh": "共修一道栅栏：轮值看护，费用共摊",
+                "en": "Raise one shared fence: rotating watch, shared cost"
+              },
+              "trigger": "{ ywc_hul_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1200 = yes gold_reserves >= var:ywc_hul_a_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_hul_a_fee multiply = -1 } set_variable = { name = ywc_hul_fence_mode value = 1 } set_variable = { name = ywc_hul_a_stage value = 1201 } set_variable = { name = ywc_hul_a_pending value = 1201 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } else = { set_variable = { name = ywc_hul_a_pending value = 1200 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "栅栏工料与轮值口粮：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Fence timber and watch rations: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "各部按份出丁轮流看守，走失牲口由当值一部先赔；下一站议边市开放的天数。",
+                "en": "Each clan sends watchers in rotation and the duty clan answers for strays first; the market days follow."
+              }
+            },
+            {
+              "key": "small_self_fence",
+              "label": {
+                "zh": "自修小栅：只护本部冬营",
+                "en": "A smaller fence of our own: guard our own camp only"
+              },
+              "trigger": "{ ywc_hul_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1200 = yes } set_variable = { name = ywc_hul_fence_mode value = 2 } set_variable = { name = ywc_hul_fence_self_funded value = 1 } set_variable = { name = ywc_hul_a_stage value = 1201 } set_variable = { name = ywc_hul_a_pending value = 1201 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接国库支出；工料由本部自筹。",
+                "en": "No direct treasury expense; materials raised by the clan itself."
+              },
+              "consequence_note": {
+                "zh": "省钱且不担轮值之责，但邻部牲口仍会踩进营地；越界的积怨记入冬营册。",
+                "en": "It saves cost and spares the rotation, but neighbouring herds will still trample the pens; the grudge enters the winter ledger."
+              }
+            },
+            {
+              "key": "wait_at_1200",
+              "label": {
+                "zh": "先各修各的，账后再算",
+                "en": "Mend each pen apart for now; settle accounts later"
+              },
+              "trigger": "{ ywc_hul_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1200 = yes } set_variable = { name = ywc_hul_a_pending value = 1200 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "决定押后；走失与越界的争执照旧。",
+                "en": "The decision is postponed; strays and trespass go on as before."
+              }
+            },
+            {
+              "key": "withdraw_at_1200",
+              "label": {
+                "zh": "此议作罢，凭旧例自理",
+                "en": "Drop the council; each camp keeps its old custom"
+              },
+              "trigger": "{ ywc_hul_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1200 = yes } set_variable = { name = ywc_hul_a_outcome value = 4 } remove_variable = ywc_hul_a_pending remove_variable = ywc_hul_a_stage change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "本线结束，各部循旧例自理；护边与互市诸议不再合账。",
+                "en": "This line ends and custom continues; watch and market questions are never pooled."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "开线：定冬营栅栏的共护方式",
+            "en": "Opening: settle how the winter fences are guarded"
+          },
+          "reads": [
+            "treasury and default status",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_hul_fence_mode",
+            "self-funded fence record",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1201",
+          "title": {
+            "zh": "边市开放的天数",
+            "en": "How Many Days the Border Market Opens"
+          },
+          "desc": {
+            "zh": "边市上的货堆比去年厚了一倍，可开放的天数还是旧例那几天：迟来的商队把货原样驮回去，宿营的柴火钱倒花了不少。开放几天、仓储谁出，长老们要一个说得出口的数。",
+            "en": "The market's piles have doubled since last year, yet the old custom still allows only the same few days: late caravans turn back with their goods untouched, having burned good firewood camping for nothing. How many days, and who pays for storage, is the number the elders must be able to say out loud."
+          },
+          "trigger": "{ ywc_hul_delivery_1201 = yes }",
+          "immediate": "{ if = { limit = { ywc_hul_delivery_1201 = yes } remove_variable = ywc_hul_a_pending if = { limit = { NOT = { has_variable = ywc_hul_popup_epoch } } set_variable = { name = ywc_hul_popup_epoch value = 0 } } change_variable = { name = ywc_hul_popup_epoch add = 1 } save_scope_value_as = { name = ywc_hul_popup_epoch value = var:ywc_hul_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "long_market_storage",
+              "label": {
+                "zh": "开足整季：建可负担的仓储",
+                "en": "Open the full season: build affordable storage"
+              },
+              "trigger": "{ ywc_hul_at_1201 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1201 = yes gold_reserves >= var:ywc_hul_a_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_hul_a_fee multiply = -1 } set_variable = { name = ywc_hul_market_days value = 1 } set_variable = { name = ywc_hul_market_storage_built value = 1 } set_variable = { name = ywc_hul_a_stage value = 1202 } set_variable = { name = ywc_hul_a_pending value = 1202 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } else = { set_variable = { name = ywc_hul_a_pending value = 1201 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "仓储棚圈与市吏工食：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Storage sheds and market clerks: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "迟到商队有处卸货，过冬部众换得盐茶铁器；仓储账入预算，执事复核按此结算。",
+                "en": "Late caravans finally have somewhere to unload and the camps trade for salt, tea and iron; the storage bill enters the budget and the review settles on it."
+              }
+            },
+            {
+              "key": "short_market_no_storage",
+              "label": {
+                "zh": "照旧几天：仓储各部自便",
+                "en": "Keep the old few days; storage is each clan's own affair"
+              },
+              "trigger": "{ ywc_hul_at_1201 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1201 = yes } set_variable = { name = ywc_hul_market_days value = 2 } set_variable = { name = ywc_hul_market_storage_deferred value = 1 } set_variable = { name = ywc_hul_a_stage value = 1202 } set_variable = { name = ywc_hul_a_pending value = 1202 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "账面最省；迟来的货照旧原路驮回，怨言记入冬营册。",
+                "en": "The ledger stays lean; late goods still turn back the way they came, and the complaint enters the winter ledger."
+              }
+            },
+            {
+              "key": "keep_old_days",
+              "label": {
+                "zh": "只添记档，天数不动",
+                "en": "Record it, change nothing; the days stand"
+              },
+              "trigger": "{ ywc_hul_at_1201 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1201 = yes } set_variable = { name = ywc_hul_market_days value = 0 } set_variable = { name = ywc_hul_market_rule_deferred value = 1 } set_variable = { name = ywc_hul_a_stage value = 1202 } set_variable = { name = ywc_hul_a_pending value = 1202 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "旧例照行，天数的争议留到执事复核时再算。",
+                "en": "The old rule stands; the days dispute waits for the steward's review."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "定边市开放的时长与仓储承担",
+            "en": "Set the market's length and who carries storage"
+          },
+          "reads": [
+            "treasury and default status",
+            "fence decision recorded earlier"
+          ],
+          "writes": [
+            "ywc_hul_market_days",
+            "storage deferral record",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1202",
+          "title": {
+            "zh": "护边者要求过冬",
+            "en": "The Border Guard Asks to Winter Over"
+          },
+          "desc": {
+            "zh": "一支外来的护边骑队在大雪前赶到盟边，领队递上人情与刀：只求借冬营地过一冬，开春就走。老人们认得这种“就走”——留住的就是驻留。给不给、给多久、给什么权，得一次说清。",
+            "en": "A foreign guard column reaches the league's edge ahead of the snow, its captain offering gifts and a blade: only a winter ground to rest, gone by thaw. The elders know that phrase - what stays the winter tends to stay for good. What is granted, for how long and with what rights must be said plainly, once."
+          },
+          "trigger": "{ ywc_hul_delivery_1202 = yes }",
+          "immediate": "{ if = { limit = { ywc_hul_delivery_1202 = yes } remove_variable = ywc_hul_a_pending if = { limit = { NOT = { has_variable = ywc_hul_popup_epoch } } set_variable = { name = ywc_hul_popup_epoch value = 0 } } change_variable = { name = ywc_hul_popup_epoch add = 1 } save_scope_value_as = { name = ywc_hul_popup_epoch value = var:ywc_hul_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "winter_with_terms",
+              "label": {
+                "zh": "受其过冬：明写权限与期限",
+                "en": "Grant the winter: write the rights and the term down"
+              },
+              "trigger": "{ ywc_hul_at_1202 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1202 = yes gold_reserves >= var:ywc_hul_a_half_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_hul_a_half_fee multiply = -1 } set_variable = { name = ywc_hul_winter_grant value = 1 } set_variable = { name = ywc_hul_winter_term_years value = 2 } set_variable = { name = ywc_hul_winter_permission_recorded value = 1 } set_variable = { name = ywc_hul_winter_no_land_transfer value = 1 } set_variable = { name = ywc_hul_a_review_clock value = 1 days = 365 } ywc_v03_regional_hul_open_b = yes change_variable = { name = ywc_hul_popup_epoch add = 1 } } else = { set_variable = { name = ywc_hul_a_pending value = 1202 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "冬营地盘与柴料折价：开启时半月财政收入（存钱不足则此案暂缓）。",
+                "en": "Winter ground and fodder at half rate: half a week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "骑队限于指定营地、两年为期、不得置地，期满即撤；执事一年内复核此约的执行。",
+                "en": "The riders keep to a named camp for two stated years, may hold no land, and leave when the term ends; the steward reviews the grant within the year."
+              }
+            },
+            {
+              "key": "winter_no_arms",
+              "label": {
+                "zh": "只许空手过冬：不带军械不设哨",
+                "en": "Winter unarmed only: no arms, no posts"
+              },
+              "trigger": "{ ywc_hul_at_1202 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1202 = yes } set_variable = { name = ywc_hul_winter_grant value = 2 } set_variable = { name = ywc_hul_winter_unarmed_record value = 1 } set_variable = { name = ywc_hul_a_review_clock value = 1 days = 365 } ywc_v03_regional_hul_open_b = yes change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "人情给了，兵刃没给；骑队若嫌苛刻自会早走，盟内诸部安心。",
+                "en": "The courtesy is given but no blade is allowed; riders who find it harsh leave early, and the clans rest easy."
+              }
+            },
+            {
+              "key": "refuse_winter",
+              "label": {
+                "zh": "不借冬营：自募小队守边",
+                "en": "Refuse the camp: hire a small watch of our own"
+              },
+              "trigger": "{ ywc_hul_at_1202 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1202 = yes } set_variable = { name = ywc_hul_winter_grant value = 0 } set_variable = { name = ywc_hul_self_guard_smaller value = 1 } set_variable = { name = ywc_hul_a_review_clock value = 1 days = 365 } ywc_v03_regional_hul_open_b = yes change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无直接国库支出；守边丁口由各部自摊。",
+                "en": "No direct treasury expense; the watch is levied clan by clan."
+              },
+              "consequence_note": {
+                "zh": "骑队另寻去路，边界本冬自担较少规模的守备；执事复核时按自守之实结算。",
+                "en": "The column finds another road and the league keeps a smaller watch of its own this winter; the review settles on that self-guarded fact."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "裁定护边骑队过冬之约，并开启互市与盟约线",
+            "en": "Settle the guard's winter grant and open the trade-and-compact line"
+          },
+          "reads": [
+            "treasury and default status",
+            "fence and market decisions recorded earlier"
+          ],
+          "writes": [
+            "ywc_hul_winter_grant and term record",
+            "twelve-month review clock",
+            "opens ywc_je_v03_hul_b"
+          ]
+        },
+        {
+          "id": "ywc_regional.1203",
+          "title": {
+            "zh": "商路的第二个出口",
+            "en": "A Second Outlet for the Caravan Road"
+          },
+          "desc": {
+            "zh": "边市南边的商路历来只出一道口，过口就进了邻邦的税卡，今年税卡又加了价。商人们问：能不能在东边再开一道出口，绕开别人的秤？可那一道口，也要借人家的道。",
+            "en": "The market's caravans have always left through one gap southward, straight into a neighbour's toll station, and this year the toll has risen again. The traders ask: may a second outlet open eastward, past another people's scale? Only that outlet, too, runs over someone else's road."
+          },
+          "trigger": "{ ywc_hul_delivery_1203 = yes }",
+          "immediate": "{ if = { limit = { ywc_hul_delivery_1203 = yes } remove_variable = ywc_hul_b_pending if = { limit = { NOT = { has_variable = ywc_hul_popup_epoch } } set_variable = { name = ywc_hul_popup_epoch value = 0 } } change_variable = { name = ywc_hul_popup_epoch add = 1 } save_scope_value_as = { name = ywc_hul_popup_epoch value = var:ywc_hul_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "partner_outlet_split",
+              "label": {
+                "zh": "借道东出：与守道者分利",
+                "en": "Open eastward over the neighbour's road: share the toll"
+              },
+              "trigger": "{ ywc_hul_at_1203 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1203 = yes gold_reserves >= var:ywc_hul_b_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_hul_b_fee multiply = -1 } set_variable = { name = ywc_hul_route_outlet value = 1 } set_variable = { name = ywc_hul_route_partner_share value = 1 } set_variable = { name = ywc_hul_b_stage value = 1204 } set_variable = { name = ywc_hul_b_pending value = 1204 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } else = { set_variable = { name = ywc_hul_b_pending value = 1203 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "开道与分利首期：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Road works and the first toll share: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "第二道口开了，但借道之利年年与人分享；此约写进对外记录，邻线可读。",
+                "en": "The second outlet opens, but the road's gain is shared year by year; the concession enters the external record for later lines to read."
+              }
+            },
+            {
+              "key": "own_outlet_small",
+              "label": {
+                "zh": "自开小口：量少但不欠人情",
+                "en": "Open a small gap of our own: less trade, no favours owed"
+              },
+              "trigger": "{ ywc_hul_at_1203 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1203 = yes } set_variable = { name = ywc_hul_route_outlet value = 2 } set_variable = { name = ywc_hul_route_self_run value = 1 } set_variable = { name = ywc_hul_b_stage value = 1204 } set_variable = { name = ywc_hul_b_pending value = 1204 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接国库支出；小口由商队自修自护。",
+                "en": "No direct treasury expense; the traders build and guard the gap themselves."
+              },
+              "consequence_note": {
+                "zh": "出口握在自己手里，货量有限；南边税卡的加价只能咽下大半。",
+                "en": "The outlet stays in the league's own hands with thin traffic; most of the southern toll rise must simply be swallowed."
+              }
+            },
+            {
+              "key": "keep_single_outlet",
+              "label": {
+                "zh": "仍走南口：议价照旧",
+                "en": "Keep the single southern outlet; bargain as before"
+              },
+              "trigger": "{ ywc_hul_at_1203 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1203 = yes } set_variable = { name = ywc_hul_route_outlet value = 0 } set_variable = { name = ywc_hul_route_outlet_deferred value = 1 } set_variable = { name = ywc_hul_b_stage value = 1204 } set_variable = { name = ywc_hul_b_pending value = 1204 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "单口的依赖原样保留；税卡再涨时，联盟只能照付或压市。",
+                "en": "The single-outlet dependence stands; if the toll rises again the league can only pay it or choke the market."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "裁定商路第二出口的开法与依人程度",
+            "en": "Settle how a second road outlet opens and on whom it leans"
+          },
+          "reads": [
+            "treasury and default status",
+            "A-line winter terms recorded earlier"
+          ],
+          "writes": [
+            "ywc_hul_route_outlet and partner-share record",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1204",
+          "title": {
+            "zh": "新城镇怎样参加议事",
+            "en": "How the New Towns Join the Council"
+          },
+          "desc": {
+            "zh": "边市与东口养出了两座新镇，镇上的人纳税、守栅、赶集样样不缺，唯独议事的老帐篷进不去——席位跟着老氏族走。新镇递了话：要么给席位，要么给说法。",
+            "en": "The market and the east outlet have raised two new towns whose people pay dues, mind the fences and drive the carts, yet cannot enter the old council tent - seats there follow the old clans. The towns have sent word: give us seats, or give us a reason."
+          },
+          "trigger": "{ ywc_hul_delivery_1204 = yes }",
+          "immediate": "{ if = { limit = { ywc_hul_delivery_1204 = yes } remove_variable = ywc_hul_b_pending if = { limit = { NOT = { has_variable = ywc_hul_popup_epoch } } set_variable = { name = ywc_hul_popup_epoch value = 0 } } change_variable = { name = ywc_hul_popup_epoch add = 1 } save_scope_value_as = { name = ywc_hul_popup_epoch value = var:ywc_hul_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "town_seats_paid",
+              "label": {
+                "zh": "予席：新镇按份纳费入议",
+                "en": "Seat them: the towns buy in by assessed share"
+              },
+              "trigger": "{ ywc_hul_at_1204 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1204 = yes gold_reserves >= var:ywc_hul_b_half_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_hul_b_half_fee multiply = -1 } set_variable = { name = ywc_hul_council_mode value = 1 } set_variable = { name = ywc_hul_town_seats_opened value = 1 } set_variable = { name = ywc_hul_b_stage value = 1205 } set_variable = { name = ywc_hul_b_pending value = 1205 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } else = { set_variable = { name = ywc_hul_b_pending value = 1204 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "议事帐扩建与书记工食：开启时半月财政收入（存钱不足则此案暂缓）。",
+                "en": "Widening the council tent and clerk wages: half a week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "新镇席位按纳费份额定，预算自此多一笔常项；老氏族的不满留在册上。",
+                "en": "Town seats follow the assessed share and the budget gains a standing line; the old clans' displeasure stays on the record."
+              }
+            },
+            {
+              "key": "town_observers",
+              "label": {
+                "zh": "予观察席：可听政不可署押",
+                "en": "Observer seats: heard in council, but no seal"
+              },
+              "trigger": "{ ywc_hul_at_1204 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1204 = yes } set_variable = { name = ywc_hul_council_mode value = 2 } set_variable = { name = ywc_hul_town_observer_record value = 1 } set_variable = { name = ywc_hul_b_stage value = 1205 } set_variable = { name = ywc_hul_b_pending value = 1205 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "新镇能听能言，不能落押；市面上的章程仍由老氏族定。",
+                "en": "The towns may listen and speak but set no seal; the market's rules stay with the old clans."
+              }
+            },
+            {
+              "key": "old_clans_first",
+              "label": {
+                "zh": "旧制照行：镇务归镇，盟务归部",
+                "en": "The old order stands: towns mind towns, clans mind the league"
+              },
+              "trigger": "{ ywc_hul_at_1204 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1204 = yes } set_variable = { name = ywc_hul_council_mode value = 0 } set_variable = { name = ywc_hul_town_queue_grievance value = 1 } set_variable = { name = ywc_hul_b_stage value = 1205 } set_variable = { name = ywc_hul_b_pending value = 1205 } change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "新镇自设镇议，盟议照旧；两本章程的出入留给最后一站。",
+                "en": "The towns set their own small councils and the league's stands unchanged; the gap between the two charters passes to the final stage."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "裁定新城镇在盟议中的席位与负担",
+            "en": "Settle the new towns' seats and burdens in the council"
+          },
+          "reads": [
+            "treasury and default status",
+            "outlet decision recorded earlier"
+          ],
+          "writes": [
+            "ywc_hul_council_mode",
+            "town grievance record",
+            "final stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1205",
+          "title": {
+            "zh": "没有常驻外军的盟约",
+            "en": "A Compact Without Resident Foreign Troops"
+          },
+          "desc": {
+            "zh": "冬营的约、边市的日子、东口的账、新镇的席，样样摊在毡案上。长老们要落笔的是最后一行：这份盟约里永远不写“外军长驻”——互市换不来驻留，谁都不能拿这一条讨价还价。",
+            "en": "The winter terms, the market days, the outlet ledgers and the town seats all lie open on the felt. One last line is left to write: this compact shall never read \"foreign troops stand resident\" - trade cannot be paid in garrisons, and no partner may haggle over that sentence."
+          },
+          "trigger": "{ ywc_hul_delivery_1205 = yes }",
+          "immediate": "{ if = { limit = { ywc_hul_delivery_1205 = yes } remove_variable = ywc_hul_b_pending if = { limit = { NOT = { has_variable = ywc_hul_popup_epoch } } set_variable = { name = ywc_hul_popup_epoch value = 0 } } change_variable = { name = ywc_hul_popup_epoch add = 1 } save_scope_value_as = { name = ywc_hul_popup_epoch value = var:ywc_hul_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "charter_no_garrison",
+              "label": {
+                "zh": "章程定笔：互市不换驻留",
+                "en": "Charter the last line: trade is never paid in garrisons"
+              },
+              "trigger": "{ ywc_hul_at_1205 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1205 = yes } set_variable = { name = ywc_hul_b_outcome value = 1 } set_variable = { name = ywc_hul_treaty_no_garrison value = 1 } remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无一次性支出；盟约自此以册传代。",
+                "en": "No one-off expense; the compact passes down by the ledger from here."
+              },
+              "consequence_note": {
+                "zh": "制度巩固：过冬借营必须明写权限与期限、不得置地；MGL/NQG、危机 C02/C03 与主题 T10/T12 各线读取此记录。",
+                "en": "Consolidation: every winter grant must carry written rights, a term and no land; the MGL/NQG lines, crises C02/C03 and themes T10/T12 may read this record."
+              }
+            },
+            {
+              "key": "quota_compromise",
+              "label": {
+                "zh": "限额妥协：借营名额逐年核减",
+                "en": "A quota compromise: winter grants count down year by year"
+              },
+              "trigger": "{ ywc_hul_at_1205 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1205 = yes } set_variable = { name = ywc_hul_b_outcome value = 2 } set_variable = { name = ywc_hul_treaty_quota value = 1 } remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无一次性支出。",
+                "en": "No one-off expense."
+              },
+              "consequence_note": {
+                "zh": "外军借营设逐年递减的限额：既守规矩又留了口子，写入对外记录。",
+                "en": "Winter grants run under a quota that shrinks each year - the rule holds while a crack stays open; it enters the external record."
+              }
+            },
+            {
+              "key": "withdraw_compact",
+              "label": {
+                "zh": "收回此议：盟约暂缺末行",
+                "en": "Withdraw the line: the compact's last line stays blank"
+              },
+              "trigger": "{ ywc_hul_at_1205 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1205 = yes } set_variable = { name = ywc_hul_b_outcome value = 3 } set_variable = { name = ywc_hul_treaty_withdrawn value = 1 } remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "本线撤回：末行空着，诸部照旧例自理；此记录供邻线自行提起。",
+                "en": "The line is withdrawn: the last line stays blank and the clans keep to custom; later lines may raise it anew."
+              }
+            },
+            {
+              "key": "keep_old_compact",
+              "label": {
+                "zh": "保留旧约：只添册不换契",
+                "en": "Keep the old compact: add to the ledger, replace nothing"
+              },
+              "trigger": "{ ywc_hul_at_1205 = yes }",
+              "effect": "{ if = { limit = { ywc_hul_at_1205 = yes } set_variable = { name = ywc_hul_b_outcome value = 4 } set_variable = { name = ywc_hul_treaty_old_kept value = 1 } remove_variable = ywc_hul_b_pending remove_variable = ywc_hul_b_stage change_variable = { name = ywc_hul_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无一次性支出。",
+                "en": "No one-off expense."
+              },
+              "consequence_note": {
+                "zh": "旧契照用，新册只记今冬诸议；代际争议留给下一代重开。",
+                "en": "The old compact stands and the new ledger records this winter only; the generational dispute is left for the next to reopen."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "收束：定“无驻留”盟约的终局并登记余波",
+            "en": "Settlement: fix the no-garrison compact's ending and record the aftermath"
+          },
+          "reads": [
+            "all prior HUL decisions: fence, market, winter terms, outlet, council",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_hul_b_outcome settlement",
+            "no-garrison treaty record for MGL/NQG, crises C02/C03 and themes T10/T12"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_hul_winter_shared_watch",
+        "v03_hul_winter_limited",
+        "v03_hul_compact_charter_no_garrison",
+        "v03_hul_compact_quota_compromise",
+        "v03_hul_compact_old_kept",
+        "v03_hul_compact_withdrawn"
+      ],
+      "legacy_links": []
     },
     {
       "slug": "v03_regional_sol_compact",

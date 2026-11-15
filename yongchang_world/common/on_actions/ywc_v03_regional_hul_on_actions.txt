@@ -1,0 +1,25 @@
+﻿# Regional HUL (F03) startup hook. Additive to the shared lobby hook; guarded
+# so a world without HUL never dereferences a missing tag. The shared v0.3
+# startup initializes country-layer owners only, so this hook initializes the
+# capacity counters for HUL itself before offering journal A; journal B opens
+# only from a real winter-terms choice inside event ywc_regional.1202.
+on_game_started_after_lobby = { on_actions = { ywc_v03_regional_hul_after_lobby } }
+
+ywc_v03_regional_hul_after_lobby = {
+	effect = {
+		if = {
+			limit = { exists = c:HUL }
+			c:HUL = {
+				ywc_v03_initialize_country = yes
+				if = {
+					limit = {
+						is_country_alive = yes
+						NOT = { has_variable = ywc_hul_a_started }
+						NOT = { has_journal_entry = ywc_je_v03_hul_a }
+					}
+					add_journal_entry = { type = ywc_je_v03_hul_a }
+				}
+			}
+		}
+	}
+}
