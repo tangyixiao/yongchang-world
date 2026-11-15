@@ -1,0 +1,198 @@
+﻿# Crisis C05 太平洋自治争议: scripted effects. Every cross-country state
+# transition writes BOTH sides inside one effect, each cross-scope write is
+# guarded by an if-limit that re-checks the target's live state, and no effect
+# removes ywc_c05_pending right before a gated trigger_event.
+
+# Shared receipt: consume the pending marker, advance the popup epoch, save the
+# epoch scope for the option at_ triggers, and start the 90-day major-event
+# cooldown. Called only from event immediates whose limit already verified the
+# delivery trigger, so the removal never precedes a gated trigger_event.
+ywc_c05_receive_major = { remove_variable = ywc_c05_pending if = { limit = { NOT = { has_variable = ywc_c05_popup_epoch } } set_variable = { name = ywc_c05_popup_epoch value = 0 } } change_variable = { name = ywc_c05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_c05_popup_epoch value = var:ywc_c05_popup_epoch } ywc_v03_mark_major_delivered = yes }
+
+# Release this country's single crisis arc slot; only effective once.
+ywc_c05_release_capacity = { if = { limit = { var:ywc_c05_started ?= 1 NOT = { has_variable = ywc_c05_released } } set_variable = { name = ywc_c05_released value = 1 } change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 } clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } } }
+
+# Terminal closers. Pending is cleared only here, where no further delivery
+# depends on it, together with the final outcome and the slot release.
+ywc_c05_close_status_quo = { set_variable = { name = ywc_c05_outcome value = 3 } set_variable = { name = ywc_c05_roster_done value = 1 } set_variable = { name = ywc_c05_wait_age value = 0 } if = { limit = { has_variable = ywc_c05_pending } remove_variable = ywc_c05_pending } ywc_c05_release_capacity = yes }
+ywc_c05_close_withdrawn = { set_variable = { name = ywc_c05_outcome value = 4 } set_variable = { name = ywc_c05_roster_done value = 1 } set_variable = { name = ywc_c05_wait_age value = 0 } if = { limit = { has_variable = ywc_c05_pending } remove_variable = ywc_c05_pending } ywc_c05_release_capacity = yes }
+ywc_c05_close_no_talks = { set_variable = { name = ywc_c05_outcome value = 6 } set_variable = { name = ywc_c05_roster_done value = 1 } set_variable = { name = ywc_c05_wait_age value = 0 } if = { limit = { has_variable = ywc_c05_pending } remove_variable = ywc_c05_pending } ywc_c05_release_capacity = yes }
+
+# Initiator (NMG only): after the mandate is drafted, open the answer round.
+# The initiator mounts its own waiting stage and, in the same effect, mounts
+# the answer stage on the required counterparty and on every qualifying,
+# still-living, not-yet-settled third country.
+ywc_c05_open_responses = {
+	set_variable = { name = ywc_c05_stage value = 1413 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+	if = {
+		limit = { c:MEX ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_outcome } } }
+		set_variable = { name = ywc_c05_invited_mex value = 1 }
+		c:MEX = { set_variable = { name = ywc_c05_case_open value = 1 } set_variable = { name = ywc_c05_role value = 2 } set_variable = { name = ywc_c05_stage value = 1402 } set_variable = { name = ywc_c05_pending value = 1402 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { ywc_c05_usa_available_nmg = yes c:USA ?= { NOT = { has_variable = ywc_c05_outcome } } }
+		set_variable = { name = ywc_c05_invited_usa value = 1 }
+		c:USA = { set_variable = { name = ywc_c05_case_open value = 1 } set_variable = { name = ywc_c05_role value = 3 } set_variable = { name = ywc_c05_stage value = 1403 } set_variable = { name = ywc_c05_pending value = 1403 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { ywc_c05_shu_available_nmg = yes c:SHU ?= { NOT = { has_variable = ywc_c05_outcome } } }
+		set_variable = { name = ywc_c05_invited_shu value = 1 }
+		c:SHU = { set_variable = { name = ywc_c05_case_open value = 1 } set_variable = { name = ywc_c05_role value = 3 } set_variable = { name = ywc_c05_stage value = 1403 } set_variable = { name = ywc_c05_pending value = 1403 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { ywc_c05_jhg_available_nmg = yes c:JHG ?= { NOT = { has_variable = ywc_c05_outcome } } }
+		set_variable = { name = ywc_c05_invited_jhg value = 1 }
+		c:JHG = { set_variable = { name = ywc_c05_case_open value = 1 } set_variable = { name = ywc_c05_role value = 3 } set_variable = { name = ywc_c05_stage value = 1403 } set_variable = { name = ywc_c05_pending value = 1403 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { ywc_c05_nqg_available_nmg = yes c:NQG ?= { NOT = { has_variable = ywc_c05_outcome } } }
+		set_variable = { name = ywc_c05_invited_nqg value = 1 }
+		c:NQG = { set_variable = { name = ywc_c05_case_open value = 1 } set_variable = { name = ywc_c05_role value = 3 } set_variable = { name = ywc_c05_stage value = 1403 } set_variable = { name = ywc_c05_pending value = 1403 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+}
+
+# Initiator: all invited parties have answered (or the record elapsed). The
+# initiator enters its own execution phase and, in the same effect, routes the
+# required counterparty: an accepting MEX joins the appointment phase; an
+# unanswered or refusing MEX is remounted onto the reconsideration waiting
+# stage, overwriting any stale pending instead of deleting it.
+ywc_c05_init_after_responses = {
+	set_variable = { name = ywc_c05_roster_done value = 1 }
+	set_variable = { name = ywc_c05_signatory value = 1 }
+	set_variable = { name = ywc_c05_budget_open value = 1 }
+	set_variable = { name = ywc_c05_review_open value = 1 }
+	set_variable = { name = ywc_c05_stage value = 1404 }
+	set_variable = { name = ywc_c05_pending value = 1404 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+	if = {
+		limit = { c:MEX ?= { is_country_alive = yes OR = { var:ywc_c05_mex_response ?= 1 var:ywc_c05_mex_response ?= 2 } NOT = { has_variable = ywc_c05_outcome } } }
+		c:MEX = { set_variable = { name = ywc_c05_budget_open value = 1 } set_variable = { name = ywc_c05_review_open value = 1 } set_variable = { name = ywc_c05_stage value = 1405 } set_variable = { name = ywc_c05_pending value = 1405 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:MEX ?= { is_country_alive = yes OR = { NOT = { has_variable = ywc_c05_mex_response } var:ywc_c05_mex_response ?= 3 } NOT = { has_variable = ywc_c05_outcome } } }
+		c:MEX = { set_variable = { name = ywc_c05_review_open value = 1 } set_variable = { name = ywc_c05_stage value = 1418 } set_variable = { name = ywc_c05_wait_age value = 0 } }
+	}
+}
+
+# Initiator: mount the remittance review on the required counterparty and hold
+# at the verdict-waiting stage. Called from the explanation options only.
+ywc_c05_mount_remit_review = {
+	set_variable = { name = ywc_c05_stage value = 1417 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+	if = {
+		limit = { c:MEX ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_outcome } } }
+		c:MEX = { set_variable = { name = ywc_c05_stage value = 1414 } set_variable = { name = ywc_c05_pending value = 1414 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+}
+
+# Required counterparty: settle the remittance verdict and, in the same
+# effect, release the initiator from its verdict-waiting stage onto the draft
+# stage (only while the initiator still waits).
+ywc_c05_after_remit_verdict = {
+	set_variable = { name = ywc_c05_stage value = 1418 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	if = {
+		limit = { c:NMG ?= { is_country_alive = yes var:ywc_c05_stage ?= 1417 NOT = { has_variable = ywc_c05_outcome } } }
+		c:NMG = { set_variable = { name = ywc_c05_stage value = 1408 } set_variable = { name = ywc_c05_pending value = 1408 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+}
+
+# Initiator: after the draft is written, hold at the veto-waiting stage and,
+# in the same effect, mount the veto stage on the required counterparty.
+ywc_c05_mount_veto_review = {
+	set_variable = { name = ywc_c05_stage value = 1420 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+	if = {
+		limit = { c:MEX ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_outcome } } }
+		c:MEX = { set_variable = { name = ywc_c05_stage value = 1409 } set_variable = { name = ywc_c05_pending value = 1409 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+}
+
+# Required counterparty: after ratifying or deferring, open the confirmation
+# round on itself and, in the same effect, release the initiator from its
+# veto-waiting stage (only while the initiator still waits).
+ywc_c05_mount_confirm_round = {
+	set_variable = { name = ywc_c05_stage value = 1416 }
+	set_variable = { name = ywc_c05_pending value = 1416 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+	if = {
+		limit = { c:NMG ?= { is_country_alive = yes var:ywc_c05_stage ?= 1420 NOT = { has_variable = ywc_c05_outcome } } }
+		c:NMG = { set_variable = { name = ywc_c05_stage value = 1415 } set_variable = { name = ywc_c05_pending value = 1415 } set_variable = { name = ywc_c05_wait_age value = 0 } change_variable = { name = ywc_c05_popup_epoch add = 1 } }
+	}
+}
+
+# Initiator: confirm the full pact. Reached only when the option trigger has
+# verified the federal confirmation and the funded payroll.
+ywc_c05_settle_full = {
+	set_variable = { name = ywc_c05_settle_choice value = 1 }
+	set_variable = { name = ywc_c05_outcome value = 1 }
+	set_variable = { name = ywc_c05_stage value = 1412 }
+	set_variable = { name = ywc_c05_pending value = 1412 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+}
+
+# Initiator: confirm the limited pact.
+ywc_c05_settle_limited = {
+	set_variable = { name = ywc_c05_settle_choice value = 2 }
+	set_variable = { name = ywc_c05_outcome value = 2 }
+	set_variable = { name = ywc_c05_stage value = 1412 }
+	set_variable = { name = ywc_c05_pending value = 1412 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	change_variable = { name = ywc_c05_popup_epoch add = 1 }
+}
+
+# Aftermath write-back: record the verdict on every participating country so
+# the follow-up lines can read one shared record.
+ywc_c05_aftermath_kept = {
+	set_variable = { name = ywc_c05_aftermath value = 1 }
+	set_variable = { name = ywc_c05_stage value = 1419 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c05_pending } remove_variable = ywc_c05_pending }
+	ywc_c05_release_capacity = yes
+	if = { limit = { c:MEX ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:MEX = { set_variable = { name = ywc_c05_aftermath value = 1 } } }
+	if = { limit = { c:USA ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:USA = { set_variable = { name = ywc_c05_aftermath value = 1 } } }
+	if = { limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:SHU = { set_variable = { name = ywc_c05_aftermath value = 1 } } }
+	if = { limit = { c:JHG ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:JHG = { set_variable = { name = ywc_c05_aftermath value = 1 } } }
+	if = { limit = { c:NQG ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:NQG = { set_variable = { name = ywc_c05_aftermath value = 1 } } }
+}
+ywc_c05_aftermath_broken = {
+	set_variable = { name = ywc_c05_aftermath value = 2 }
+	set_variable = { name = ywc_c05_outcome value = 5 }
+	set_variable = { name = ywc_c05_stage value = 1419 }
+	set_variable = { name = ywc_c05_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c05_pending } remove_variable = ywc_c05_pending }
+	ywc_c05_release_capacity = yes
+	if = { limit = { c:MEX ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:MEX = { set_variable = { name = ywc_c05_aftermath value = 2 } } }
+	if = { limit = { c:USA ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:USA = { set_variable = { name = ywc_c05_aftermath value = 2 } } }
+	if = { limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:SHU = { set_variable = { name = ywc_c05_aftermath value = 2 } } }
+	if = { limit = { c:JHG ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:JHG = { set_variable = { name = ywc_c05_aftermath value = 2 } } }
+	if = { limit = { c:NQG ?= { is_country_alive = yes has_variable = ywc_c05_case_open } } c:NQG = { set_variable = { name = ywc_c05_aftermath value = 2 } } }
+}
+
+# Required counterparty: once its own congress has accepted the text and the
+# initiator has settled, mirror the joint result on its own scope, mark the
+# aftermath and release its slot. Called from the accept option and from the
+# monthly mirror branch; the limit makes repeated calls safe.
+ywc_c05_mex_mirror_settle = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_c05_outcome }
+			c:NMG ?= { is_country_alive = yes OR = { var:ywc_c05_outcome ?= 1 var:ywc_c05_outcome ?= 2 var:ywc_c05_outcome ?= 3 } }
+		}
+		if = { limit = { c:NMG ?= { var:ywc_c05_outcome ?= 1 } } set_variable = { name = ywc_c05_outcome value = 1 } }
+		else_if = { limit = { c:NMG ?= { var:ywc_c05_outcome ?= 2 } } set_variable = { name = ywc_c05_outcome value = 2 } }
+		else = { set_variable = { name = ywc_c05_outcome value = 3 } }
+		set_variable = { name = ywc_c05_aftermath value = 1 }
+		set_variable = { name = ywc_c05_stage value = 1419 }
+		set_variable = { name = ywc_c05_wait_age value = 0 }
+		if = { limit = { has_variable = ywc_c05_pending } remove_variable = ywc_c05_pending }
+		ywc_c05_release_capacity = yes
+	}
+}
