@@ -2478,13 +2478,619 @@
         "AMR"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_amr_a",
+          "title": {
+            "zh": "江岸共同渔场",
+            "en": "The Common Fishery on the River Bank"
+          },
+          "desc": {
+            "zh": "江湾的渔猎地、靠船的木台与下江的木税，如今记在三本册子上：盟册记村社的旧例，买主的契纸记码头与木排，新来的渔户哪一本都不在。黑水盟要先对齐这三本账，才谈得上河口的长久之计。",
+            "en": "The fishing grounds of the river bend, the mooring platform and the timber dues downstream now sit in three books: the league roll keeps the villages' old custom, the buyers' contracts keep the wharf and the rafts, and the newcomer fishers are in none of them. The Blackwater League must square these three accounts before the estuary can hold anything lasting."
+          },
+          "script": "{\nis_shown_when_inactive = { c:AMR ?= this NOT = { has_variable = ywc_amr_a_started } }\npossible = { c:AMR ?= this is_country_alive = yes NOT = { has_variable = ywc_amr_a_started } ywc_v03_has_capacity = yes }\nimmediate = { ywc_amr_claim_arc_a = yes }\non_monthly_pulse = { effect = {\nywc_amr_claim_arc_a = yes\nif = { limit = { ywc_amr_delivery_1400 = yes } trigger_event = { id = ywc_regional.1400 } }\nif = { limit = { ywc_amr_delivery_1401 = yes } trigger_event = { id = ywc_regional.1401 } }\nif = { limit = { ywc_amr_delivery_1402 = yes } trigger_event = { id = ywc_regional.1402 } }\n} }\non_complete = { ywc_amr_release_arc_a = yes }\non_fail = { ywc_amr_release_arc_a = yes }\n}",
+          "goal": "{ OR = { var:ywc_amr_a_outcome ?= 1 var:ywc_amr_a_outcome ?= 2 } }",
+          "exit_conditions": "{ var:ywc_amr_a_outcome ?= 4 }"
+        },
+        {
+          "id": "ywc_je_v03_amr_b",
+          "title": {
+            "zh": "河口有了长住者",
+            "en": "The Estuary Gains Permanent Residents"
+          },
+          "desc": {
+            "zh": "江岸的账既已结算，河口要面对外面的政策与里面的新一代：南来的章程认不认盟约，不再随季节离开的家庭记在哪一册，续写江岸之约时谁的名字可以落笔。这些账都要按江岸的旧例一件件落定。",
+            "en": "With the river-bank accounts settled, the estuary faces policy without and a new generation within: whether the southern offices' rules acknowledge the league compact, which roll holds the families that no longer leave with the seasons, and whose names may sign when the riverbank compact is written anew. Each account must be settled by the league's own custom, one by one."
+          },
+          "script": "{\nis_shown_when_inactive = { c:AMR ?= this NOT = { has_variable = ywc_amr_b_started } }\npossible = { c:AMR ?= this is_country_alive = yes has_variable = ywc_amr_b_due NOT = { has_variable = ywc_amr_b_started } NOT = { has_variable = ywc_amr_b_settled } ywc_v03_has_capacity = yes }\nimmediate = { ywc_amr_claim_arc_b = yes }\non_monthly_pulse = { effect = {\nywc_amr_claim_arc_b = yes\nif = { limit = { ywc_amr_delivery_1403 = yes } trigger_event = { id = ywc_regional.1403 } }\nif = { limit = { ywc_amr_delivery_1404 = yes } trigger_event = { id = ywc_regional.1404 } }\nif = { limit = { ywc_amr_delivery_1405 = yes } trigger_event = { id = ywc_regional.1405 } }\n} }\non_complete = { ywc_amr_release_arc_b = yes }\non_fail = { ywc_amr_release_arc_b = yes }\n}",
+          "goal": "{ OR = { var:ywc_amr_b_outcome ?= 1 var:ywc_amr_b_outcome ?= 2 var:ywc_amr_b_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_amr_b_outcome ?= 4 }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_regional.1400",
+          "title": {
+            "zh": "先到江湾的网",
+            "en": "The Nets That Reached the Bay First"
+          },
+          "desc": {
+            "zh": "江湾一年两汛，汛前各家下网的次序向来按盟册的旧例：哪一村先立栅、哪一家先下网，都写在旧约的附页里。可这两年在同一片水里下网的不再只有盟内的村社——新迁来的垦户与南边木排上的伙夫也下了网，旧册上却寻不到他们的名字。管册的长老把盟册摊开：这片渔猎地，按谁的名分算？",
+            "en": "The river bend runs two fishing seasons a year, and the order of casting nets has always followed the league roll: which village raises its weir first, which household casts first, all written in the compact's appendix. Yet for two years the same water has held nets beyond the league's villages — newly settled households and the cooks of the southern timber rafts cast too, and the old roll has no entry for them. The roll-keeper spreads the book open: by whose standing are these fishing grounds counted?"
+          },
+          "trigger": "{ ywc_amr_delivery_1400 = yes }",
+          "immediate": "{ if = { limit = { ywc_amr_delivery_1400 = yes } remove_variable = ywc_amr_a_pending if = { limit = { NOT = { has_variable = ywc_amr_popup_epoch } } set_variable = { name = ywc_amr_popup_epoch value = 0 } } change_variable = { name = ywc_amr_popup_epoch add = 1 } save_scope_value_as = { name = ywc_amr_popup_epoch value = var:ywc_amr_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "joint_grounds_register",
+              "label": {
+                "zh": "两册并录：盟册与村社、新户的网册同缴一处",
+                "en": "Enter both rolls: league, villages and newcomer nets filed together"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1400 = yes gold_reserves >= var:ywc_amr_a_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_amr_a_fee multiply = -1 } set_variable = { name = ywc_amr_grounds_registry value = 1 } set_variable = { name = ywc_amr_a_stage value = 1401 } set_variable = { name = ywc_amr_a_pending value = 1401 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1400 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "勘汛造册工本：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Survey and roll fee: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "村社旧例与新户的网册并录一处，汛期次序自此有册可依；下一站议靠船的木台。",
+                "en": "The villages' custom and the newcomers' nets share one roll, and the season's order has a book to fall back on; the mooring platform question follows."
+              },
+              "trigger": "{ ywc_amr_at_1400 = yes }"
+            },
+            {
+              "key": "league_roll_first",
+              "label": {
+                "zh": "旧盟册为准：新户附册候记",
+                "en": "The old league roll decides: newcomers wait in an appendix"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1400 = yes } set_variable = { name = ywc_amr_grounds_registry value = 2 } set_variable = { name = ywc_amr_village_appeal_lost value = 1 } set_variable = { name = ywc_amr_a_stage value = 1401 } set_variable = { name = ywc_amr_a_pending value = 1401 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1400 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "省下造册工本，村社满意，但新户的网无所凭据；不满将累积到河口一节。",
+                "en": "The fee is saved and the villages are satisfied, but the newcomers' nets have no written ground; grievance carries into the estuary question."
+              },
+              "trigger": "{ ywc_amr_at_1400 = yes }"
+            },
+            {
+              "key": "wait_at_1400",
+              "label": {
+                "zh": "两册先各管各，汛期次序照旧例",
+                "en": "Let each roll keep its own book; the season keeps the old order"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1400 = yes } set_variable = { name = ywc_amr_a_pending value = 1400 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1400 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "决定押后，重复下网的争执继续存在。",
+                "en": "The decision is postponed; the quarrel over shared water remains."
+              },
+              "trigger": "{ ywc_amr_at_1400 = yes }"
+            },
+            {
+              "key": "withdraw_at_1400",
+              "label": {
+                "zh": "此线不办，渔猎地仍循旧例",
+                "en": "Drop this line; the grounds keep to the old custom"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1400 = yes } set_variable = { name = ywc_amr_a_outcome value = 4 } remove_variable = ywc_amr_a_pending remove_variable = ywc_amr_a_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1400 } } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "本线结束，旧例继续；河口长住一线不再开启。",
+                "en": "This line ends and the old custom continues; the estuary line will not open."
+              },
+              "trigger": "{ ywc_amr_at_1400 = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "开线：登记江湾渔猎地的实际使用与共用名分",
+            "en": "Opening: register who actually uses the fishing grounds and under whose standing"
+          },
+          "reads": [
+            "actual weir, net and hunting use around the river bend",
+            "league member roll and newcomer households",
+            "treasury and default status",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_amr_grounds_registry mode",
+            "village appeal loss record",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1401",
+          "title": {
+            "zh": "谁来修靠船的木台",
+            "en": "Who Repairs the Mooring Platform"
+          },
+          "desc": {
+            "zh": "江湾的木台是汛季靠船卸货的地方，如今桩木朽了大半。盟会公议要修，账上却没有现钱；下江的木材买主愿意出全份工料，条件是把码头三成泊位折成他们的专位；村社的长老只肯各修各段，说盟里的台子盟里修。台子等不起，这笔账要现在算。",
+            "en": "The mooring platform at the river bend takes the season's boats and cargoes, and most of its piles have rotted. The league council wants it repaired and the treasury has no ready silver; the timber buyers downstream will pay for the whole work in exchange for three of every ten berths held as their own; the village elders will only repair their own stretches, saying the league's platform is the league's to mend. The platform cannot wait and the account must be settled now."
+          },
+          "trigger": "{ ywc_amr_delivery_1401 = yes }",
+          "immediate": "{ if = { limit = { ywc_amr_delivery_1401 = yes } remove_variable = ywc_amr_a_pending if = { limit = { NOT = { has_variable = ywc_amr_popup_epoch } } set_variable = { name = ywc_amr_popup_epoch value = 0 } } change_variable = { name = ywc_amr_popup_epoch add = 1 } save_scope_value_as = { name = ywc_amr_popup_epoch value = var:ywc_amr_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "league_public_works",
+              "label": {
+                "zh": "盟库公修：全段木台照旧例翻修",
+                "en": "The league repairs it whole: the platform rebuilt by custom"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1401 = yes gold_reserves >= var:ywc_amr_a_double_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_amr_a_double_fee multiply = -1 } set_variable = { name = ywc_amr_wharf_mode value = 1 } set_variable = { name = ywc_amr_review_due value = 1 } set_variable = { name = ywc_amr_review_clock value = 1 days = 365 } set_variable = { name = ywc_amr_a_stage value = 1402 } set_variable = { name = ywc_amr_a_pending value = 1402 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1401 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "翻修工料款：开启时两周财政收入（存钱不足则此案暂缓）。",
+                "en": "Rebuilding works: two weeks of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "码头泊位照旧例各归各，村社买主都无话可说；十二个月后按执行结果复核本线。",
+                "en": "Berths keep their old divisions and neither villages nor buyers gainsay it; the line is rechecked after twelve months of execution."
+              },
+              "trigger": "{ ywc_amr_at_1401 = yes }"
+            },
+            {
+              "key": "timber_contract",
+              "label": {
+                "zh": "买主承修：工料折三年专位，村社泊段让出",
+                "en": "The buyers rebuild it: works priced in three years of reserved berths"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1401 = yes } set_variable = { name = ywc_amr_wharf_mode value = 2 } set_variable = { name = ywc_amr_toll_conceded value = 1 } set_variable = { name = ywc_amr_review_due value = 1 } set_variable = { name = ywc_amr_review_clock value = 1 days = 365 } set_variable = { name = ywc_amr_a_stage value = 1402 } set_variable = { name = ywc_amr_a_pending value = 1402 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1401 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无直接支出；码头三成泊位折给买主专用三年。",
+                "en": "No direct expense; three of every ten berths go to the buyers for three years."
+              },
+              "consequence_note": {
+                "zh": "木台照样翻修，村社的泊段却被让出；让权记录留到复核一并结算。",
+                "en": "The platform is rebuilt all the same, but the villages' berths are conceded; the concession record settles with the review."
+              },
+              "trigger": "{ ywc_amr_at_1401 = yes }"
+            },
+            {
+              "key": "narrow_self_repair",
+              "label": {
+                "zh": "限段自修：只修盟用泊位，村社埠头照旧",
+                "en": "Narrow self-repair: mend only the league's berths"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1401 = yes gold_reserves >= var:ywc_amr_a_half_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_amr_a_half_fee multiply = -1 } set_variable = { name = ywc_amr_wharf_mode value = 3 } set_variable = { name = ywc_amr_review_due value = 1 } set_variable = { name = ywc_amr_review_clock value = 1 days = 365 } set_variable = { name = ywc_amr_a_stage value = 1402 } set_variable = { name = ywc_amr_a_pending value = 1402 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1401 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "半段工料款：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Half-run works: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "村社埠头与买主泊位照旧朽着，汛季的怨言会留到复核；本线按有限结果结算。",
+                "en": "The village landings and buyers' berths rot on, and the season's grievance carries into the review; this line settles as a limited result."
+              },
+              "trigger": "{ ywc_amr_at_1401 = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "选定靠船木台的修缮承担方式并开启一年执行复核",
+            "en": "Choose who repairs the mooring platform and start the year-long execution review"
+          },
+          "reads": [
+            "raft and village boat use at the landings",
+            "grounds registry mode from the previous choice",
+            "treasury and default status",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_amr_wharf_mode decision",
+            "timber berth concession record",
+            "one-year review clock and due marker",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1402",
+          "title": {
+            "zh": "木材买主的新条件",
+            "en": "The Timber Buyers' New Terms"
+          },
+          "desc": {
+            "zh": "一年期满，木台与渔册的账摆上了盟会的案子，木材买主也带来了新条件：与其岁岁议租，不如立一纸出口特许，把下江的木税包销三年，盟里一次收清，村社的渔道与薪林却要让出一段。共管港务能保住裁断——买主、村社与盟会同署理事——却要盟里按年出文书钱。",
+            "en": "The year is up and the platform and roll accounts lie before the council, and the timber buyers bring new terms: instead of renting year by year, grant a written export franchise letting them contract the downstream timber dues for three years at one settlement — while the villages' fish runs and firewood stands give up a stretch. A joint port authority preserves adjudication — buyers, villages and the council hearing cases at one table — but the league pays a standing clerk's bill for it."
+          },
+          "trigger": "{ ywc_amr_delivery_1402 = yes }",
+          "immediate": "{ if = { limit = { ywc_amr_delivery_1402 = yes } remove_variable = ywc_amr_a_pending if = { limit = { NOT = { has_variable = ywc_amr_popup_epoch } } set_variable = { name = ywc_amr_popup_epoch value = 0 } } change_variable = { name = ywc_amr_popup_epoch add = 1 } save_scope_value_as = { name = ywc_amr_popup_epoch value = var:ywc_amr_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "joint_port_authority",
+              "label": {
+                "zh": "共管港务：买主、村社与盟会同署裁断",
+                "en": "A joint port authority: buyers, villages and council share the bench"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1402 = yes } if = { limit = { var:ywc_amr_grounds_registry ?= 1 var:ywc_amr_wharf_mode ?= 1 } set_variable = { name = ywc_amr_a_outcome value = 1 } } else = { set_variable = { name = ywc_amr_a_outcome value = 2 } } set_variable = { name = ywc_amr_timber_mode value = 1 } set_variable = { name = ywc_amr_port_authority_joint value = 1 } ywc_amr_open_b_je = yes remove_variable = ywc_amr_a_pending remove_variable = ywc_amr_a_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1402 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无一次性支出；文书费用自此按年入常例预算。",
+                "en": "No one-off expense; the clerk's bill enters the standing budget yearly."
+              },
+              "consequence_note": {
+                "zh": "裁断权仍归盟会，村社使用权保住；渔册与木台俱齐则为整理达标，否则按有限结果结算；河口线随后提起。",
+                "en": "Adjudication stays with the council and the villages keep their uses; with both the grounds roll and the platform whole the line counts as consolidated, otherwise it settles as limited; the estuary line follows."
+              },
+              "trigger": "{ ywc_amr_at_1402 = yes }"
+            },
+            {
+              "key": "franchise_export",
+              "label": {
+                "zh": "出口特许：木税包销三年，渔道薪林让出一段",
+                "en": "Grant the export franchise: timber dues contracted for three years, commons narrowed"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1402 = yes } set_variable = { name = ywc_amr_timber_mode value = 2 } set_variable = { name = ywc_amr_village_grounds_narrowed value = 1 } set_variable = { name = ywc_amr_a_outcome value = 2 } ywc_amr_open_b_je = yes remove_variable = ywc_amr_a_pending remove_variable = ywc_amr_a_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1402 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接支出；包销款按契约季度入账。",
+                "en": "No direct expense; the contracted dues enter by the quarter."
+              },
+              "consequence_note": {
+                "zh": "财政靠包销款周转，村社使用权被压缩；本线按有限结果结算，河口线随后提起。",
+                "en": "The treasury turns on the contracted dues while the villages' uses are narrowed; this line settles as a limited result and the estuary line follows."
+              },
+              "trigger": "{ ywc_amr_at_1402 = yes }"
+            },
+            {
+              "key": "defer_review",
+              "label": {
+                "zh": "复核再挂一年：等下一轮呈报",
+                "en": "Hang the review another year: wait for the next round of reports"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1402 = yes } set_variable = { name = ywc_amr_a_pending value = 1402 } set_variable = { name = ywc_amr_review_clock value = 1 days = 365 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_a_pending value = 1402 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "结算押后一年，木台与渔册的账照旧挂着。",
+                "en": "Settlement is postponed a year; the platform and roll accounts stay open."
+              },
+              "trigger": "{ ywc_amr_at_1402 = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "执行复核结算：确定渔场与木台的整理结果并提起河口线",
+            "en": "Execution-review settlement: fix the fishery and platform result and raise the estuary line"
+          },
+          "reads": [
+            "grounds registry and wharf decisions recorded earlier",
+            "one-year review clock expiry",
+            "timber buyers' standing export terms"
+          ],
+          "writes": [
+            "ywc_amr_a_outcome settlement",
+            "timber mode and port authority record",
+            "due marker that lets the estuary line open"
+          ]
+        },
+        {
+          "id": "ywc_regional.1403",
+          "title": {
+            "zh": "河口的两种规矩",
+            "en": "Two Sets of Rules at the Estuary"
+          },
+          "desc": {
+            "zh": "南边的政策文书到了河口：官署愿把河口的通商登记收进他们的东北册子，木税按他们的则例抽收，口岸的断案也请照他们的章程。盟册与南册对同一张契各写各的批语。河口从此有两种规矩——认哪一种为主、两种怎么并用，要盟会现在定。",
+            "en": "The southern policy letters have reached the estuary: the offices would fold the estuary's trade registration into their northeastern rolls, collect the timber dues by their own schedule, and hear the harbour's cases under their own rules. The league roll and the southern roll already write different notes on the same contract. The estuary now holds two sets of rules — which leads, and how the two run together, is the council's to fix now."
+          },
+          "trigger": "{ ywc_amr_delivery_1403 = yes }",
+          "immediate": "{ if = { limit = { ywc_amr_delivery_1403 = yes } remove_variable = ywc_amr_b_pending if = { limit = { NOT = { has_variable = ywc_amr_popup_epoch } } set_variable = { name = ywc_amr_popup_epoch value = 0 } } change_variable = { name = ywc_amr_popup_epoch add = 1 } save_scope_value_as = { name = ywc_amr_popup_epoch value = var:ywc_amr_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "league_compact_primary",
+              "label": {
+                "zh": "以盟约为主：南来政策备册通报，不入境设署",
+                "en": "The compact leads: the southern offices file notice only, no bureau inside"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1403 = yes } set_variable = { name = ywc_amr_external_mode value = 1 } set_variable = { name = ywc_amr_policy_registered_local value = 1 } set_variable = { name = ywc_amr_b_stage value = 1404 } set_variable = { name = ywc_amr_b_pending value = 1404 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1403 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "通商登记仍在盟册，南册留档备查；对外的名分照两国各办。",
+                "en": "Trade registration stays on the league roll with the southern roll held for reference; external standing keeps its two-country footing."
+              },
+              "trigger": "{ ywc_amr_at_1403 = yes }"
+            },
+            {
+              "key": "joint_policy_registry",
+              "label": {
+                "zh": "与南边合册：通商登记两册并录，抽税各归各",
+                "en": "Register with the south: both rolls take the trade, dues split as agreed"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1403 = yes gold_reserves >= var:ywc_amr_b_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_amr_b_fee multiply = -1 } set_variable = { name = ywc_amr_external_mode value = 2 } set_variable = { name = ywc_amr_joint_policy_record value = 1 } set_variable = { name = ywc_amr_b_stage value = 1404 } set_variable = { name = ywc_amr_b_pending value = 1404 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1403 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "合册誊录工本：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Transcription cost for the joint roll: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "河口的契券两册并录，抽税各归各；争执由两会合断。",
+                "en": "The estuary's contracts enter both rolls with dues split as agreed; disputes are heard jointly."
+              },
+              "trigger": "{ ywc_amr_at_1403 = yes c:NQG ?= { is_country_alive = yes } }"
+            },
+            {
+              "key": "southern_policy_first",
+              "label": {
+                "zh": "让南方章程先行：港务文书照南册办理，盟约只管村社",
+                "en": "The southern rules go first: harbour papers follow the southern roll, the compact keeps the villages"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1403 = yes } set_variable = { name = ywc_amr_external_mode value = 3 } set_variable = { name = ywc_amr_policy_precedence_record value = 1 } set_variable = { name = ywc_amr_b_stage value = 1404 } set_variable = { name = ywc_amr_b_pending value = 1404 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1403 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "省下誊录工本，村社事务不出盟册，但口岸断案从此引南方则例；让权记录留到收束一站。",
+                "en": "The fee is saved and village matters stay inside the compact, but harbour cases now cite the southern schedule; the concession record carries to the final stage."
+              },
+              "trigger": "{ ywc_amr_at_1403 = yes }"
+            },
+            {
+              "key": "defer_at_1403",
+              "label": {
+                "zh": "两册并行不决，文书暂由驿房分存",
+                "en": "Let the two rolls wait; the post house keeps the papers apart"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1403 = yes } set_variable = { name = ywc_amr_b_pending value = 1403 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1403 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "决定押后，同一张契两种批语的日子照旧过下去。",
+                "en": "The decision is postponed; one contract keeps carrying two sets of notes."
+              },
+              "trigger": "{ ywc_amr_at_1403 = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "裁定外来政策与盟约在河口的主从",
+            "en": "Decide whether outside policy or the league compact leads at the estuary"
+          },
+          "reads": [
+            "NQG and SHU northeast policy offices as the external counterparties",
+            "fishery and platform records from journal A",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_amr_external_mode decision",
+            "policy precedence record for crisis C02 and themes T03/T05/T10",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1404",
+          "title": {
+            "zh": "不再随季节离开的家庭",
+            "en": "The Families That No Longer Leave With the Seasons"
+          },
+          "desc": {
+            "zh": "先前冬来春去的渔户，这几年干脆留在了河口：屋基扎下了，孩子生在江岸，网具也换成了过冬的粗纲。盟册只认随季节来去的用例，长住之家在册上没有名目。村社问他们的渔道该让几分，买主问他们的工该雇谁，长老们只问一句：这些人算盟里的人，还是算客？",
+            "en": "The fishers who once came for winter and left with spring have simply stayed: house posts stand at the estuary, children are born on the river bank, and the nets have been swapped for the heavy winter mesh. The league roll knows only seasonal use and has no entry for year-round households. The villages ask how much of the fish runs to yield, the buyers whom to hire, and the elders ask one question: are these families the league's own, or guests?"
+          },
+          "trigger": "{ ywc_amr_delivery_1404 = yes }",
+          "immediate": "{ if = { limit = { ywc_amr_delivery_1404 = yes } remove_variable = ywc_amr_b_pending if = { limit = { NOT = { has_variable = ywc_amr_popup_epoch } } set_variable = { name = ywc_amr_popup_epoch value = 0 } } change_variable = { name = ywc_amr_popup_epoch add = 1 } save_scope_value_as = { name = ywc_amr_popup_epoch value = var:ywc_amr_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "resident_roll_opened",
+              "label": {
+                "zh": "长住之家入册：渔道、薪林、泊位照册均分",
+                "en": "Enroll the settled families: fish runs, firewood and berths divided by the roll"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1404 = yes gold_reserves >= var:ywc_amr_b_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_amr_b_fee multiply = -1 } set_variable = { name = ywc_amr_resident_mode value = 1 } set_variable = { name = ywc_amr_resident_roll_opened value = 1 } set_variable = { name = ywc_amr_b_stage value = 1405 } set_variable = { name = ywc_amr_b_pending value = 1405 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1404 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "造册与划界工本：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Roll and boundary fee: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "长住之家自盟册有名目，使用权照册均分；村社与旧户为谁让多让少的争议会留到最后。",
+                "en": "The settled families gain their entry and uses divided by the roll; over who yields what, the villages and old households carry their dispute to the last stage."
+              },
+              "trigger": "{ ywc_amr_at_1404 = yes }"
+            },
+            {
+              "key": "winter_guest_custom",
+              "label": {
+                "zh": "冬客照旧：盟册不改，长住之家按客例纳用",
+                "en": "Winter guests by custom: the roll stands, settled families pay as guests"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1404 = yes } set_variable = { name = ywc_amr_resident_mode value = 2 } set_variable = { name = ywc_amr_winter_guest_record value = 1 } set_variable = { name = ywc_amr_b_stage value = 1405 } set_variable = { name = ywc_amr_b_pending value = 1405 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1404 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "省下造册工本，长住之家纳用却不入册；不满将写进最后一站的记录。",
+                "en": "The fee is saved while the settled families pay dues without a roll entry; their grievance enters the final stage's record."
+              },
+              "trigger": "{ ywc_amr_at_1404 = yes }"
+            },
+            {
+              "key": "custom_enrollment",
+              "label": {
+                "zh": "以约入册：承约认役者入盟册，余者候记",
+                "en": "Enroll by compact: those who accept its obligations enter the roll"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1404 = yes } set_variable = { name = ywc_amr_resident_mode value = 3 } set_variable = { name = ywc_amr_custom_enrollment_record value = 1 } set_variable = { name = ywc_amr_b_stage value = 1405 } set_variable = { name = ywc_amr_b_pending value = 1405 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1404 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "入册以承约为凭；未承约的住户名目仍悬着，留待收束一站。",
+                "en": "The roll opens to those who accept the compact's obligations; households that have not stay in suspense until the final stage."
+              },
+              "trigger": "{ ywc_amr_at_1404 = yes }"
+            },
+            {
+              "key": "defer_at_1404",
+              "label": {
+                "zh": "长住之家名目暂缓：旧例再议",
+                "en": "Defer the settled families' standing: the custom is to be argued again"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1404 = yes } set_variable = { name = ywc_amr_b_pending value = 1404 } change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1404 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "名目押后，江岸的不安与旧例的争议原样带入末站。",
+                "en": "The standing is deferred; the river bank's unease and the custom's dispute pass intact to the final stage."
+              },
+              "trigger": "{ ywc_amr_at_1404 = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "裁定河口长住家庭在盟册中的地位",
+            "en": "Decide the settled families' standing on the league roll"
+          },
+          "reads": [
+            "external policy decision recorded earlier",
+            "year-round households outside the seasonal commons",
+            "treasury and default status"
+          ],
+          "writes": [
+            "ywc_amr_resident_mode decision",
+            "winter guest or enrollment record",
+            "final stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1405",
+          "title": {
+            "zh": "江岸之约由谁继承",
+            "en": "Who Inherits the Riverbank Compact"
+          },
+          "desc": {
+            "zh": "当年按手立约的长老，有的故去，有的下不了江滩。盟册、木契、南册与长住之家的名目都摊在案上：续写江岸之约的时候，河口长住者、盟内村社与下江买主，谁的名字可以落在纸上？这一代盟人要落的，是最后一笔。",
+            "en": "The elders who pressed their hands to the compact have died or can no longer walk the bank. The league roll, the timber contracts, the southern roll and the settled families' entries all lie open: when the riverbank compact is written anew, whose names may fall upon the page — the estuary's settled households, the league's villages, or the buyers downstream? That is the last line this generation of league folk sets."
+          },
+          "trigger": "{ ywc_amr_delivery_1405 = yes }",
+          "immediate": "{ if = { limit = { ywc_amr_delivery_1405 = yes } remove_variable = ywc_amr_b_pending if = { limit = { NOT = { has_variable = ywc_amr_popup_epoch } } set_variable = { name = ywc_amr_popup_epoch value = 0 } } change_variable = { name = ywc_amr_popup_epoch add = 1 } save_scope_value_as = { name = ywc_amr_popup_epoch value = var:ywc_amr_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "compact_renewed_broadly",
+              "label": {
+                "zh": "广续盟约：村社、长住者与买主同列约册，继序写成年例",
+                "en": "Renew broadly: villages, settled families and buyers sign alike, renewal made yearly custom"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1405 = yes gold_reserves >= var:ywc_amr_b_half_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_amr_b_half_fee multiply = -1 } set_variable = { name = ywc_amr_b_outcome value = 1 } set_variable = { name = ywc_amr_compact_renewed value = 1 } remove_variable = ywc_amr_b_pending remove_variable = ywc_amr_b_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1405 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "续约仪费：开启时半月财政收入（存钱不足则此案暂缓）。",
+                "en": "Renewal assembly cost: half a week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "制度自此巩固：三册之人同具盟约，继序写成年例；渔场、木台与河口名目的记录一并入约正文。",
+                "en": "The institution is consolidated: all three rolls' people sign the compact and renewal becomes standing custom; the fishery, platform and estuary records enter the compact's own text."
+              },
+              "trigger": "{ ywc_amr_at_1405 = yes }"
+            },
+            {
+              "key": "quota_compromise",
+              "label": {
+                "zh": "限额妥协：河口席位以定额为限，超额候补",
+                "en": "A quota compromise: estuary seats under a fixed cap, the rest wait in line"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1405 = yes } set_variable = { name = ywc_amr_b_outcome value = 2 } set_variable = { name = ywc_amr_quota_compromise value = 1 } remove_variable = ywc_amr_b_pending remove_variable = ywc_amr_b_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1405 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "盟约续了，席位有限额；超额的河口人家候补，争议留待下一代再提。",
+                "en": "The compact renews with capped seats; estuary households beyond the cap wait in line, and the dispute is left to the next generation."
+              },
+              "trigger": "{ ywc_amr_at_1405 = yes }"
+            },
+            {
+              "key": "old_compact_retained",
+              "label": {
+                "zh": "旧约仍用：盟册不改，长住者附册候记",
+                "en": "The old compact stands: the roll is unchanged, settled families wait in an appendix"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1405 = yes } set_variable = { name = ywc_amr_b_outcome value = 3 } set_variable = { name = ywc_amr_old_compact_kept value = 1 } remove_variable = ywc_amr_b_pending remove_variable = ywc_amr_b_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1405 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "旧约原样保留，续约之权归盟内长老；河口与买主的诉求记录在案，不改旧制。",
+                "en": "The old compact continues as it was, renewed by the league's elders alone; the estuary's and buyers' claims stay on record without changing the old order."
+              },
+              "trigger": "{ ywc_amr_at_1405 = yes }"
+            },
+            {
+              "key": "withdraw_at_1405",
+              "label": {
+                "zh": "此线收回，各册各管",
+                "en": "Withdraw the line; each roll keeps to itself"
+              },
+              "effect": "{ if = { limit = { ywc_amr_at_1405 = yes } set_variable = { name = ywc_amr_b_outcome value = 4 } remove_variable = ywc_amr_b_pending remove_variable = ywc_amr_b_stage change_variable = { name = ywc_amr_popup_epoch add = 1 } } else = { set_variable = { name = ywc_amr_b_pending value = 1405 } } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "已付的各项费用不退；江岸之约的续问由后续线自行提起。",
+                "en": "Paid costs are not refunded; the renewal question may be raised anew by later lines."
+              },
+              "trigger": "{ ywc_amr_at_1405 = yes }"
+            }
+          ],
+          "purpose": {
+            "zh": "收束：定江岸之约的继承方式并登记余波",
+            "en": "Settlement: fix who inherits the riverbank compact and record the aftermath"
+          },
+          "reads": [
+            "all prior AMR decisions: grounds, platform, timber, external policy, residents",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_amr_b_outcome settlement with renewal, quota or retained-compact records",
+            "cross-line record readable by crisis C02 and themes T03/T05/T10"
+          ]
+        }
+      ],
       "outcomes": [
-        "pending"
+        "v03_amr_fishery_grounds_accepted",
+        "v03_amr_fishery_grounds_limited",
+        "v03_amr_estuary_charter_accepted",
+        "v03_amr_estuary_quota_compromise",
+        "v03_amr_estuary_old_covenant",
+        "v03_amr_estuary_withdrawn"
       ],
       "legacy_links": [
-        "pending"
+        "ywc_je_frontier_amr"
       ]
     }
   ]
