@@ -1,0 +1,56 @@
+﻿# Theme T11 "Roads, Post and Information": shared partner and phase guards.
+# MGL (Khalkha) is the relay-line country (JE owner); OIR is the adjacent line
+# partner whose own section must be real on both ends.
+
+# Partner reachability: OIR must be alive and still diplomatically relevant to
+# MGL. Usable from MGL scope and from inside c:MGL blocks.
+ywc_t11_partner_current = {
+ c:OIR ?= { is_country_alive = yes has_diplomatic_relevance = c:MGL }
+}
+
+# Entry: MGL holds a real understaffed administration on the line (the actual
+# bottleneck) and a real remount supply; OIR is alive, relevant to MGL and has
+# its own staffed station end so the shared line is real on both sides.
+ywc_t11_entry_ready = {
+ c:MGL ?= this
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_government_administration occupancy < 0.6 } }
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_livestock_ranch occupancy >= 0.3 } }
+ c:OIR = {
+  is_country_alive = yes
+  has_diplomatic_relevance = c:MGL
+  any_scope_state = { owner = c:OIR any_scope_building = { is_building_type = building_government_administration occupancy >= 0.3 } }
+ }
+}
+
+# A still-staffed administration must exist where a shared repair fund would be
+# managed (maintenance option on the closing event).
+ywc_t11_admin_present = {
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_government_administration } }
+}
+
+# MGL-side delivery: owner state only; no partner condition, so every MGL
+# stage stays deliverable even when OIR is gone.
+ywc_t11_mgl_delivery_1500 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1500 var:ywc_t11_pending ?= 1500 ywc_v03_can_deliver_major = yes }
+ywc_t11_mgl_at_1500 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1500 scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch }
+ywc_t11_mgl_delivery_1502 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1502 var:ywc_t11_pending ?= 1502 ywc_v03_can_deliver_major = yes }
+ywc_t11_mgl_at_1502 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1502 scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch }
+ywc_t11_mgl_delivery_1503 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1503 var:ywc_t11_pending ?= 1503 ywc_v03_can_deliver_major = yes }
+ywc_t11_mgl_at_1503 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1503 scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch }
+ywc_t11_mgl_delivery_1505 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1505 var:ywc_t11_pending ?= 1505 ywc_v03_can_deliver_major = yes }
+ywc_t11_mgl_at_1505 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1505 scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch }
+ywc_t11_mgl_delivery_1507 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1507 var:ywc_t11_pending ?= 1507 ywc_v03_can_deliver_major = yes }
+ywc_t11_mgl_at_1507 = { c:MGL ?= this has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1507 scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch }
+
+# MGL still waiting at a hand-off stage (withdraw-option guard on OIR side).
+ywc_t11_mgl_waits_1501 = { c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1501 } }
+ywc_t11_mgl_waits_1504 = { c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1504 } }
+ywc_t11_mgl_waits_1506 = { c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1506 } }
+
+# OIR-side delivery: pending on OIR, mirrored stage on the MGL owner, and
+# mutual reachability so the request cannot fire at a vanished partner.
+ywc_t11_oir_delivery_1501 = { c:OIR ?= this var:ywc_t11_pending ?= 1501 ywc_v03_can_deliver_major = yes c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1501 ywc_t11_partner_current = yes } }
+ywc_t11_oir_at_1501 = { c:OIR ?= this scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1501 ywc_t11_partner_current = yes } }
+ywc_t11_oir_delivery_1504 = { c:OIR ?= this var:ywc_t11_pending ?= 1504 ywc_v03_can_deliver_major = yes c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1504 ywc_t11_partner_current = yes } }
+ywc_t11_oir_at_1504 = { c:OIR ?= this scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1504 ywc_t11_partner_current = yes } }
+ywc_t11_oir_delivery_1506 = { c:OIR ?= this var:ywc_t11_pending ?= 1506 ywc_v03_can_deliver_major = yes c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1506 ywc_t11_partner_current = yes } }
+ywc_t11_oir_at_1506 = { c:OIR ?= this scope:ywc_t11_popup_epoch ?= var:ywc_t11_popup_epoch c:MGL ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t11_roads_post_information var:ywc_t11_stage ?= 1506 ywc_t11_partner_current = yes } }

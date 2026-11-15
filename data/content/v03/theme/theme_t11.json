@@ -21,14 +21,841 @@
         "NMG"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t11_roads_post_information",
+          "title": {
+            "zh": "驿路尽头的邻段",
+            "en": "The Neighbor's End of the Post Line"
+          },
+          "desc": {
+            "zh": "喀尔喀台站的过境文书屡屡迟误，通往卫拉特方向的干线各段都要真实的人手、驿马与款项才能接通。本朝先按时代与已有技艺在旧驿、铁路与电线之间择路整修，再与卫拉特核验台站、土地与商信诸务，最后商定由谁岁修这条共同线路；拒绝或有限接受也是有效的结局。",
+            "en": "Khalkha relay stations keep holding up transit papers, and every section of the line toward Oirat needs real staff, remounts and money before it can be joined. The court first picks between the old relay, a railway section and the wire according to era and researched technique, then audits the stations, the land and the merchant letters with Oirat, and finally settles who maintains the shared line; refusal or a limited acceptance is an equally valid ending."
+          },
+          "script": "{\nis_shown_when_inactive = { c:MGL ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t11_started } }\npossible = { c:MGL ?= this ywc_v03_has_capacity = yes ywc_t11_entry_ready = yes NOT = { has_variable = ywc_t11_started } }\nimmediate = { set_variable = { name = ywc_t11_started value = 1 } set_variable = { name = ywc_t11_stage value = 1500 } set_variable = { name = ywc_t11_pending value = 1500 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } }\non_monthly_pulse = { effect = {\nif = { limit = { OR = { var:ywc_t11_stage ?= 1501 var:ywc_t11_stage ?= 1504 var:ywc_t11_stage ?= 1506 } NOT = { ywc_t11_partner_current = yes } } if = { limit = { var:ywc_t11_stage ?= 1501 } set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 } } else_if = { limit = { var:ywc_t11_stage ?= 1504 } set_variable = { name = ywc_t11_stage value = 1505 } set_variable = { name = ywc_t11_pending value = 1505 } } else = { set_variable = { name = ywc_t11_stage value = 1507 } set_variable = { name = ywc_t11_pending value = 1507 } set_variable = { name = ywc_t11_proposed_outcome value = 2 } } set_variable = { name = ywc_t11_partner_lost value = 1 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR ?= { remove_variable = ywc_t11_pending } }\nif = { limit = { OR = { var:ywc_t11_stage ?= 1501 var:ywc_t11_stage ?= 1504 var:ywc_t11_stage ?= 1506 } } if = { limit = { NOT = { has_variable = ywc_t11_wait_months } } set_variable = { name = ywc_t11_wait_months value = 1 } } else = { change_variable = { name = ywc_t11_wait_months add = 1 } } if = { limit = { var:ywc_t11_wait_months >= 6 } set_variable = { name = ywc_t11_outcome value = 4 } set_variable = { name = ywc_t11_stage value = 1507 } remove_variable = ywc_t11_pending set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR ?= { remove_variable = ywc_t11_pending } } }\nif = { limit = { ywc_t11_mgl_delivery_1500 = yes } trigger_event = { id = ywc_society.1500 } }\nif = { limit = { ywc_t11_mgl_delivery_1502 = yes } trigger_event = { id = ywc_society.1502 } }\nif = { limit = { ywc_t11_mgl_delivery_1503 = yes } trigger_event = { id = ywc_society.1503 } }\nif = { limit = { ywc_t11_mgl_delivery_1505 = yes } trigger_event = { id = ywc_society.1505 } }\nif = { limit = { ywc_t11_mgl_delivery_1507 = yes } trigger_event = { id = ywc_society.1507 } }\n} }\non_complete = { ywc_t11_release_capacity = yes }\non_fail = { ywc_t11_release_capacity = yes }\n}",
+          "goal": "{ OR = { var:ywc_t11_outcome ?= 1 var:ywc_t11_outcome ?= 2 var:ywc_t11_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t11_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1500",
+          "title": {
+            "zh": "迟到的命令",
+            "en": "The Order That Arrived Late"
+          },
+          "desc": {
+            "zh": "一纸调令在路上走了两个月才到台站。台站缺少人手与驿马，通往卫拉特方向的干线各段都需先核账：国库、已有铁路与线路技艺决定本段先修什么。",
+            "en": "An order took two months on the road to reach the station. Staff and remounts are short, and every section of the line toward Oirat must first be audited: the treasury, any existing railway and the researched techniques decide what is repaired first."
+          },
+          "trigger": "{ ywc_t11_mgl_delivery_1500 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_mgl_delivery_1500 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "restore",
+              "label": {
+                "zh": "付 500 整修本段驿路台站",
+                "en": "Pay 500 to restore the relay section"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1500 = yes NOT = { has_variable = ywc_t11_work_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1500 = yes NOT = { has_variable = ywc_t11_work_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t11_work_paid value = 1 } set_variable = { name = ywc_t11_work_class value = 1 } if = { limit = { ywc_t11_partner_current = yes } set_variable = { name = ywc_t11_stage value = 1501 } set_variable = { name = ywc_t11_pending value = 1501 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1501 } } } else = { set_variable = { name = ywc_t11_partner_lost value = 1 } set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 500。",
+                "en": "Khalkha pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "旧驿先行，邻国接到接通本段的决定。",
+                "en": "The old relay goes first; Oirat is told the section will be joined."
+              }
+            },
+            {
+              "key": "railway",
+              "label": {
+                "zh": "付 800 接通已有铁路的一段",
+                "en": "Pay 800 to attach a researched railway section"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1500 = yes has_technology_researched = railways NOT = { has_variable = ywc_t11_work_paid } gold_reserves >= 800 any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_railway } } }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1500 = yes has_technology_researched = railways NOT = { has_variable = ywc_t11_work_paid } gold_reserves >= 800 any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_railway } } } add_treasury = -800 set_variable = { name = ywc_t11_work_paid value = 1 } set_variable = { name = ywc_t11_work_class value = 2 } if = { limit = { ywc_t11_partner_current = yes } set_variable = { name = ywc_t11_stage value = 1501 } set_variable = { name = ywc_t11_pending value = 1501 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1501 } } } else = { set_variable = { name = ywc_t11_partner_lost value = 1 } set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 800；不凭空添建铁路，只接已有路段。",
+                "en": "Khalkha pays 800; no railway is conjured, only an existing line is joined."
+              },
+              "consequence_note": {
+                "zh": "铁路段入线，邻国接到接通本段的决定。",
+                "en": "The railway section joins the line; Oirat is told the section will be joined."
+              }
+            },
+            {
+              "key": "telegraph",
+              "label": {
+                "zh": "付 800 沿线架设电报线",
+                "en": "Pay 800 to string the wire along the line"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1500 = yes has_technology_researched = electric_telegraph NOT = { has_variable = ywc_t11_work_paid } gold_reserves >= 800 }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1500 = yes has_technology_researched = electric_telegraph NOT = { has_variable = ywc_t11_work_paid } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t11_work_paid value = 1 } set_variable = { name = ywc_t11_work_class value = 3 } if = { limit = { ywc_t11_partner_current = yes } set_variable = { name = ywc_t11_stage value = 1501 } set_variable = { name = ywc_t11_pending value = 1501 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1501 } } } else = { set_variable = { name = ywc_t11_partner_lost value = 1 } set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 800。",
+                "en": "Khalkha pays 800 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "电文先行，邻国接到接通本段的决定。",
+                "en": "The wire goes first; Oirat is told the section will be joined."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核账",
+                "en": "Wait and review the books again"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1500 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1500 = yes } set_variable = { name = ywc_t11_pending value = 1500 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "迟到的命令",
+            "en": "The Order That Arrived Late"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "real administration and remount supply",
+            "treasury, researched railway and telegraph technique"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "work class and payment record",
+            "MGL stage 1501 with pending, OIR pending 1501",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1501",
+          "title": {
+            "zh": "邻国愿意接通的一段",
+            "en": "The Section the Neighbor Will Connect"
+          },
+          "desc": {
+            "zh": "喀尔喀整修本段的消息传到卫拉特。卫拉特官署先要核对自家台站是否可堪衔接，然后决定出资修衔接段、只修到交界，还是不予接通；无论答复如何，喀尔喀的台站勘验都不会停摆。",
+            "en": "Word of Khalkha's repairs reaches Oirat. Its office must first confirm its own stations can take a joining section, then fund the section, build only to the border, or refuse the connection; whatever the answer, Khalkha's station audit does not pause."
+          },
+          "trigger": "{ ywc_t11_oir_delivery_1501 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_oir_delivery_1501 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "connect",
+              "label": {
+                "zh": "付 400 修本国衔接段",
+                "en": "Pay 400 to build the joining section"
+              },
+              "trigger": "{ ywc_t11_oir_at_1501 = yes NOT = { has_variable = ywc_t11_oir_section_paid } gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1501 = yes NOT = { has_variable = ywc_t11_oir_section_paid } gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t11_oir_section_paid value = 1 } set_variable = { name = ywc_t11_oir_offer value = 1 } set_variable = { name = ywc_t11_oir_notice value = 1 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 }  change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 400；不向喀尔喀转款。",
+                "en": "Oirat pays 400 from its treasury; nothing is transferred to Khalkha."
+              },
+              "consequence_note": {
+                "zh": "衔接段成行，喀尔喀收到答复并续勘台站。",
+                "en": "The joining section is built; Khalkha receives the answer and continues the station audit."
+              }
+            },
+            {
+              "key": "limited",
+              "label": {
+                "zh": "本国只修到交界",
+                "en": "Build only up to the border"
+              },
+              "trigger": "{ ywc_t11_oir_at_1501 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1501 = yes } set_variable = { name = ywc_t11_oir_offer value = 2 } set_variable = { name = ywc_t11_oir_notice value = 2 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 }  change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "只接交界，喀尔喀收到有限答复并续勘台站。",
+                "en": "Only the border is joined; Khalkha receives the limited answer and continues the station audit."
+              }
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "不予接通，各行其驿",
+                "en": "Refuse the connection and keep separate relays"
+              },
+              "trigger": "{ ywc_t11_oir_at_1501 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1501 = yes } set_variable = { name = ywc_t11_oir_offer value = 3 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1502 } set_variable = { name = ywc_t11_pending value = 1502 } set_variable = { name = ywc_t11_partner_declined value = 1 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝接通；喀尔喀收到拒绝记录，后续只在自段办理。",
+                "en": "The connection is refused; Khalkha records the refusal and proceeds on its own section only."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t11_oir_at_1501 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1501 = yes } set_variable = { name = ywc_t11_pending value = 1501 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；悬而不决逾半年，线路将作过期收束。",
+                "en": "Records this decision; if the line sits unanswered for over half a year it lapses."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "对方已另行办理，撤回此议",
+                "en": "The line has moved on; withdraw the request"
+              },
+              "trigger": "{ NOT = { ywc_t11_mgl_waits_1501 = yes } }",
+              "effect": "{ if = { limit = { NOT = { ywc_t11_mgl_waits_1501 = yes } } remove_variable = ywc_t11_pending change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回本国答复，仅清理本次挂起记录。",
+                "en": "Withdraws the answer and clears only this pending record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "邻国愿意接通的一段",
+            "en": "The Section the Neighbor Will Connect"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "MGL mirrored stage and reachability"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "OIR offer and section payment record",
+            "MGL stage 1502 with pending, popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1502",
+          "title": {
+            "zh": "邮驿由谁检查",
+            "en": "Who Inspects the Post Relay"
+          },
+          "desc": {
+            "zh": "本段驿路要立定例：台站的文书、马匹与账目由谁查。本旗可以自勘，也可以请卫拉特台员会同勘验；勘验记录两边都要能翻到。",
+            "en": "The relay section needs its standing rule: who inspects the papers, horses and accounts of the stations. The banner may inspect on its own or invite Oirat stationmen for a joint audit; the record must be readable on both sides."
+          },
+          "trigger": "{ ywc_t11_mgl_delivery_1502 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_mgl_delivery_1502 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "own_office",
+              "label": {
+                "zh": "由本旗台站自勘",
+                "en": "Inspect with the own banner stations"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1502 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1502 = yes } set_variable = { name = ywc_t11_inspect value = 1 } set_variable = { name = ywc_t11_stage value = 1503 } set_variable = { name = ywc_t11_pending value = 1503 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1503 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "自勘入档，进入线路占地一项。",
+                "en": "The self-inspection is filed; the case moves to the land question."
+              }
+            },
+            {
+              "key": "joint",
+              "label": {
+                "zh": "请对方台员会同勘验",
+                "en": "Invite Oirat stationmen to inspect jointly"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1502 = yes ywc_t11_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1502 = yes ywc_t11_partner_current = yes } set_variable = { name = ywc_t11_inspect value = 2 } set_variable = { name = ywc_t11_stage value = 1503 } set_variable = { name = ywc_t11_pending value = 1503 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1503 } set_variable = { name = ywc_t11_oir_joint_inspect value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "会同勘验记双份，两边档册各存一页。",
+                "en": "The joint inspection is filed on both sides, one copy in each register."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1502 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1502 = yes } set_variable = { name = ywc_t11_pending value = 1502 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "邮驿由谁检查",
+            "en": "Who Inspects the Post Relay"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "inspection arrangement on both sides",
+            "MGL stage 1503 with pending, popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1503",
+          "title": {
+            "zh": "线路占用的土地",
+            "en": "The Land the Line Occupies"
+          },
+          "desc": {
+            "zh": "线路要过牧户的冬营地与田亩。给价、改线都要真金白银；若本段接的是铁路，也可征用基址但须逐段录册。若对方已不予接通，此后只在自段办理。",
+            "en": "The line must cross winter pastures and fields. Compensation and rerouting both cost real money; where the railway section is joined, the bed may be requisitioned section by section with a register. If the neighbor refused the connection, the case proceeds on the own section only."
+          },
+          "trigger": "{ ywc_t11_mgl_delivery_1503 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_mgl_delivery_1503 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "compensate",
+              "label": {
+                "zh": "付 300 按亩给价",
+                "en": "Pay 300 by the acre for the fields"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1503 = yes gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1503 = yes gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t11_land value = 1 } if = { limit = { ywc_t11_partner_current = yes NOT = { var:ywc_t11_partner_declined ?= 1 } } set_variable = { name = ywc_t11_stage value = 1504 } set_variable = { name = ywc_t11_pending value = 1504 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1504 } } } else = { set_variable = { name = ywc_t11_stage value = 1505 } set_variable = { name = ywc_t11_pending value = 1505 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 300。",
+                "en": "Khalkha pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "占地给价入册，线路推进到替代路线或商信一项。",
+                "en": "The compensation is registered; the line advances to the reroute or the court-letter question."
+              }
+            },
+            {
+              "key": "reroute",
+              "label": {
+                "zh": "付 200 改线绕开田亩",
+                "en": "Pay 200 to reroute around the fields"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1503 = yes gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1503 = yes gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t11_land value = 2 } if = { limit = { ywc_t11_partner_current = yes NOT = { var:ywc_t11_partner_declined ?= 1 } } set_variable = { name = ywc_t11_stage value = 1504 } set_variable = { name = ywc_t11_pending value = 1504 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1504 } } } else = { set_variable = { name = ywc_t11_stage value = 1505 } set_variable = { name = ywc_t11_pending value = 1505 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 200。",
+                "en": "Khalkha pays 200 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "改线避开田亩，线路推进到替代路线或商信一项。",
+                "en": "The line is rerouted around the fields; the case advances onward."
+              }
+            },
+            {
+              "key": "requisition",
+              "label": {
+                "zh": "付 500 征用铁路基址并录册",
+                "en": "Pay 500 to requisition the rail bed with a register"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1503 = yes var:ywc_t11_work_class ?= 2 gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1503 = yes var:ywc_t11_work_class ?= 2 gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t11_land value = 3 } if = { limit = { ywc_t11_partner_current = yes NOT = { var:ywc_t11_partner_declined ?= 1 } } set_variable = { name = ywc_t11_stage value = 1504 } set_variable = { name = ywc_t11_pending value = 1504 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1504 } } } else = { set_variable = { name = ywc_t11_stage value = 1505 } set_variable = { name = ywc_t11_pending value = 1505 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 500；仅在本段已接铁路时可择。",
+                "en": "Khalkha pays 500; open only when the railway section is already joined."
+              },
+              "consequence_note": {
+                "zh": "基址征用记入档册，线路推进到替代路线或商信一项。",
+                "en": "The requisition is registered; the case advances onward."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1503 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1503 = yes } set_variable = { name = ywc_t11_pending value = 1503 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "线路占用的土地",
+            "en": "The Land the Line Occupies"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "chosen work class",
+            "partner refusal record",
+            "treasury"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "land arrangement record",
+            "MGL stage 1504 or 1505 with pending, OIR pending when the line continues",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1504",
+          "title": {
+            "zh": "停运时的替代路线",
+            "en": "The Alternative Route When Service Stops"
+          },
+          "desc": {
+            "zh": "开春大雪，线路中段停运，过境商货压在两头。相关两国各有一半责任：卫拉特可以出钱修本国便道分运，也可以停运本段、改回旧驿；答复都会记入双方档册。",
+            "en": "Spring snows stop the middle section and transit goods pile up at both ends. Both countries share the duty: Oirat may fund a detour on its own section or close it and fall back to the old relay; either answer is filed in both registers."
+          },
+          "trigger": "{ ywc_t11_oir_delivery_1504 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_oir_delivery_1504 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "divert",
+              "label": {
+                "zh": "付 200 修本国便道分运",
+                "en": "Pay 200 to open a detour on the own section"
+              },
+              "trigger": "{ ywc_t11_oir_at_1504 = yes gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1504 = yes gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t11_oir_reroute value = 1 } set_variable = { name = ywc_t11_oir_reroute_notice value = 1 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1505 } set_variable = { name = ywc_t11_pending value = 1505 }  change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 200。",
+                "en": "Oirat pays 200 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "便道分运成行，喀尔喀收到答复并进入商信一项。",
+                "en": "The detour is opened; Khalkha receives the answer and moves to the court-letter question."
+              }
+            },
+            {
+              "key": "close",
+              "label": {
+                "zh": "本段停运，改回旧驿",
+                "en": "Close the section and fall back to the old relay"
+              },
+              "trigger": "{ ywc_t11_oir_at_1504 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1504 = yes } set_variable = { name = ywc_t11_oir_reroute value = 2 } set_variable = { name = ywc_t11_oir_reroute_notice value = 2 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1505 } set_variable = { name = ywc_t11_pending value = 1505 }  change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "本段停运照会对方，喀尔喀进入商信一项。",
+                "en": "The closure is notified; Khalkha moves to the court-letter question."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t11_oir_at_1504 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1504 = yes } set_variable = { name = ywc_t11_pending value = 1504 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；悬而不决逾半年，线路将作过期收束。",
+                "en": "Records this decision; if the line sits unanswered for over half a year it lapses."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "对方已另行办理，撤回此议",
+                "en": "The line has moved on; withdraw the request"
+              },
+              "trigger": "{ NOT = { ywc_t11_mgl_waits_1504 = yes } }",
+              "effect": "{ if = { limit = { NOT = { ywc_t11_mgl_waits_1504 = yes } } remove_variable = ywc_t11_pending change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回本国答复，仅清理本次挂起记录。",
+                "en": "Withdraws the answer and clears only this pending record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "停运时的替代路线",
+            "en": "The Alternative Route When Service Stops"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "MGL mirrored stage and reachability"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "OIR reroute record",
+            "MGL stage 1505 with pending, popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1505",
+          "title": {
+            "zh": "商信进入朝堂",
+            "en": "Merchant Letters Enter the Court"
+          },
+          "desc": {
+            "zh": "行商呈请把商信附在官驿上走，台章旧例只许公文。朝堂要决定开不开放：开放则按封收资、商路消息也走得更快，不开放则商信自雇脚力。若对方已不予接通或已不可联系，本案径行按有限接通定案。",
+            "en": "Merchants ask to attach their letters to the official relay; the old rule carries papers only. The court decides whether to open it, charging per cover and quickening trade news, or to keep the relay official and let merchants hire their own couriers. If the neighbor refused or is unreachable, the case closes directly as a limited connection."
+          },
+          "trigger": "{ ywc_t11_mgl_delivery_1505 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_mgl_delivery_1505 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "open",
+              "label": {
+                "zh": "许商信附驿，按封收资",
+                "en": "Let merchant letters ride the relay for a fee"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1505 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1505 = yes } set_variable = { name = ywc_t11_letters value = 1 } if = { limit = { ywc_t11_partner_current = yes NOT = { var:ywc_t11_partner_declined ?= 1 } } set_variable = { name = ywc_t11_stage value = 1506 } set_variable = { name = ywc_t11_pending value = 1506 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1506 } } } else = { set_variable = { name = ywc_t11_proposed_outcome value = 2 } set_variable = { name = ywc_t11_stage value = 1507 } set_variable = { name = ywc_t11_pending value = 1507 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出；商信按封另计。",
+                "en": "No additional treasury expense; letters are counted per cover."
+              },
+              "consequence_note": {
+                "zh": "商信入驿有据，线路推进到接通程度一项或径行定案。",
+                "en": "Merchant letters ride the relay on record; the case advances to the degree question or closes directly."
+              }
+            },
+            {
+              "key": "keep",
+              "label": {
+                "zh": "公文照旧，商信自雇",
+                "en": "Keep the relay for official papers only"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1505 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1505 = yes } set_variable = { name = ywc_t11_letters value = 2 } if = { limit = { ywc_t11_partner_current = yes NOT = { var:ywc_t11_partner_declined ?= 1 } } set_variable = { name = ywc_t11_stage value = 1506 } set_variable = { name = ywc_t11_pending value = 1506 } set_variable = { name = ywc_t11_wait_months value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_pending value = 1506 } } } else = { set_variable = { name = ywc_t11_proposed_outcome value = 2 } set_variable = { name = ywc_t11_stage value = 1507 } set_variable = { name = ywc_t11_pending value = 1507 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "商信不入驿，线路推进到接通程度一项或径行定案。",
+                "en": "Merchant letters stay off the relay; the case advances onward."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1505 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1505 = yes } set_variable = { name = ywc_t11_pending value = 1505 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "商信进入朝堂",
+            "en": "Merchant Letters Enter the Court"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "partner refusal and reachability records"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "merchant-letter rule record",
+            "MGL stage 1506 or 1507 with pending, OIR pending when the line continues",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1506",
+          "title": {
+            "zh": "接通到什么程度",
+            "en": "How Far the Connection Goes"
+          },
+          "desc": {
+            "zh": "线路两边都要给个准话：全线通行、两地互收常例，还是只到交界交接、不入腹地。程度定下后，共同线路如何岁修也要有说法。",
+            "en": "Both ends must state the degree plainly: through traffic with standing fees on both sides, or a handover at the border only. Once the degree is set, the maintenance of the shared line needs its own answer."
+          },
+          "trigger": "{ ywc_t11_oir_delivery_1506 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_oir_delivery_1506 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "through",
+              "label": {
+                "zh": "全线通行，两地互收常例",
+                "en": "Open through traffic with standing fees on both ends"
+              },
+              "trigger": "{ ywc_t11_oir_at_1506 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1506 = yes } set_variable = { name = ywc_t11_oir_degree value = 1 } change_relations = { country = c:MGL value = 5 } set_variable = { name = ywc_t11_oir_notice value = 3 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1507 } set_variable = { name = ywc_t11_pending value = 1507 } set_variable = { name = ywc_t11_proposed_outcome value = 1 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "卫拉特对喀尔喀关系增加 5；喀尔喀收到全线通行的拟定结果。",
+                "en": "Oirat gains 5 relations with Khalkha; Khalkha receives the through-traffic proposal."
+              }
+            },
+            {
+              "key": "closed",
+              "label": {
+                "zh": "只到交界交接，不入腹地",
+                "en": "Hand over at the border only; no through traffic inland"
+              },
+              "trigger": "{ ywc_t11_oir_at_1506 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1506 = yes } set_variable = { name = ywc_t11_oir_degree value = 2 } set_variable = { name = ywc_t11_oir_notice value = 4 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:MGL = { set_variable = { name = ywc_t11_stage value = 1507 } set_variable = { name = ywc_t11_pending value = 1507 } set_variable = { name = ywc_t11_proposed_outcome value = 2 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "只到交界交接；喀尔喀收到有限接通的拟定结果。",
+                "en": "The handover stays at the border; Khalkha receives the limited proposal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t11_oir_at_1506 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_oir_at_1506 = yes } set_variable = { name = ywc_t11_pending value = 1506 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；悬而不决逾半年，线路将作过期收束。",
+                "en": "Records this decision; if the line sits unanswered for over half a year it lapses."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "对方已另行办理，撤回此议",
+                "en": "The line has moved on; withdraw the request"
+              },
+              "trigger": "{ NOT = { ywc_t11_mgl_waits_1506 = yes } }",
+              "effect": "{ if = { limit = { NOT = { ywc_t11_mgl_waits_1506 = yes } } remove_variable = ywc_t11_pending change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回本国答复，仅清理本次挂起记录。",
+                "en": "Withdraws the answer and clears only this pending record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "接通到什么程度",
+            "en": "How Far the Connection Goes"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "MGL mirrored stage and reachability"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "OIR degree record and relations",
+            "MGL stage 1507 with proposed outcome and pending, popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1507",
+          "title": {
+            "zh": "共同线路的维护人",
+            "en": "Who Maintains the Shared Line"
+          },
+          "desc": {
+            "zh": "线路已成或已罢。岁修款由谁出、来例能否照此办理，都要落纸：共同出资须官署仍有人手经手；也可各修各段；若对方已不可联系，可按已付工款自行结案。两边档册各记同一份结果。",
+            "en": "The line is built or dropped. Who pays the yearly repair and whether the next case may follow the same terms must be written down: a shared fund needs a staffed administration; each side may also repair its own; if the partner is unreachable, the case closes by the paid work record. Both registers keep the same result."
+          },
+          "trigger": "{ ywc_t11_mgl_delivery_1507 = yes }",
+          "immediate": "{ if = { limit = { ywc_t11_mgl_delivery_1507 = yes } remove_variable = ywc_t11_pending if = { limit = { NOT = { has_variable = ywc_t11_popup_epoch } } set_variable = { name = ywc_t11_popup_epoch value = 0 } } change_variable = { name = ywc_t11_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t11_popup_epoch value = var:ywc_t11_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "confirm",
+              "label": {
+                "zh": "付 400 设共同岁修款",
+                "en": "Pay 400 to fund the shared yearly repair"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1507 = yes ywc_t11_partner_current = yes ywc_t11_admin_present = yes gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1507 = yes ywc_t11_partner_current = yes ywc_t11_admin_present = yes gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t11_maintenance value = 1 } set_variable = { name = ywc_t11_outcome value = var:ywc_t11_proposed_outcome } set_variable = { name = ywc_t11_next_time value = 1 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_oir_next_time value = 1 } set_variable = { name = ywc_t11_oir_maintenance value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 400；官署须仍有人手管理这笔岁修款。",
+                "en": "Khalkha pays 400; the administration must still be staffed to manage the fund."
+              },
+              "consequence_note": {
+                "zh": "共同岁修入册，来例可循，双方档册各记一份。",
+                "en": "The shared repair fund is registered as repeatable, one copy on each side."
+              }
+            },
+            {
+              "key": "own_only",
+              "label": {
+                "zh": "本侧自修，不设共款",
+                "en": "Maintain the own side only, without a shared fund"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1507 = yes ywc_t11_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1507 = yes ywc_t11_partner_current = yes } set_variable = { name = ywc_t11_maintenance value = 2 } set_variable = { name = ywc_t11_outcome value = var:ywc_t11_proposed_outcome } set_variable = { name = ywc_t11_next_time value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t11_oir_next_time value = 0 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "各修各段，不设来例，双方档册各记一份。",
+                "en": "Each side maintains its own section without a precedent, filed on both sides."
+              }
+            },
+            {
+              "key": "abandon",
+              "label": {
+                "zh": "罢议，各留旧驿",
+                "en": "Drop the plan and keep the old relays"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1507 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1507 = yes } set_variable = { name = ywc_t11_outcome value = 3 } set_variable = { name = ywc_t11_next_time value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } if = { limit = { ywc_t11_partner_current = yes } change_relations = { country = c:OIR value = -5 } c:OIR = { set_variable = { name = ywc_t11_oir_next_time value = 0 } } }  } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "罢议结案；若对方仍可联系，卫拉特对喀尔喀关系减少 5。",
+                "en": "The plan is dropped; if the partner is reachable, Oirat loses 5 relations with Khalkha."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "对方已不可联系，喀尔喀自行结案",
+                "en": "Close alone because the partner is unreachable"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1507 = yes NOT = { ywc_t11_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1507 = yes NOT = { ywc_t11_partner_current = yes } } if = { limit = { var:ywc_t11_work_paid ?= 1 } set_variable = { name = ywc_t11_outcome value = 2 } } else = { set_variable = { name = ywc_t11_outcome value = 3 } } set_variable = { name = ywc_t11_maintenance value = 2 } set_variable = { name = ywc_t11_next_time value = 0 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "已付工款记为有限接通，未动工记为保留旧驿。",
+                "en": "A paid work record closes as a limited connection; an unpaid one keeps the old relay."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t11_mgl_at_1507 = yes }",
+              "effect": "{ if = { limit = { ywc_t11_mgl_at_1507 = yes } set_variable = { name = ywc_t11_pending value = 1507 } change_variable = { name = ywc_t11_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "共同线路的维护人",
+            "en": "Who Maintains the Shared Line"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "partner reachability",
+            "paid work record",
+            "proposed outcome",
+            "real administration staffing",
+            "treasury"
+          ],
+          "writes": [
+            "final outcome, maintenance and next-time standing on both sides",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t11_shared_line_accepted",
+        "v03_t11_relay_limited",
+        "v03_t11_connection_refused",
+        "v03_t11_line_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
