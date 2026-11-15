@@ -19,14 +19,952 @@
         "KOR"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t08_grain_corridor",
+          "title": {
+            "zh": "危机越过市场边界",
+            "en": "The Crisis Crosses the Market Boundary"
+          },
+          "desc": {
+            "zh": "粮价上涨越过市场边界：蜀地核对真实压力，向南国求购余粮，检疫、运输与账册决定救济能否公平到达，并为下一次短缺立下章程。",
+            "en": "Rising grain prices cross the market boundary: Shu audits real pressure and buys surplus grain from NQG, while quarantine, transport and ledgers decide whether relief arrives fairly — then charters rules for the next shortage."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t08_started } }\npossible = { c:SHU ?= this ywc_v03_has_capacity = yes ywc_t08_partner_current = yes ywc_t08_local_need = yes NOT = { has_variable = ywc_t08_started } }\nimmediate = { set_variable = { name = ywc_t08_started value = 1 } set_variable = { name = ywc_t08_stage value = 1350 } set_variable = { name = ywc_t08_pending value = 1350 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } }\non_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t08_stage ?= 1351 var:ywc_t08_stage ?= 1354 var:ywc_t08_stage ?= 1356 } NOT = { ywc_t08_partner_current = yes } NOT = { has_variable = ywc_t08_outcome } } c:NQG ?= { remove_variable = ywc_t08_pending } set_variable = { name = ywc_t08_stage value = 1357 } set_variable = { name = ywc_t08_pending value = 1357 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } if = { limit = { ywc_t08_shu_delivery_1350 = yes } trigger_event = { id = ywc_society.1350 } } if = { limit = { ywc_t08_shu_delivery_1352 = yes } trigger_event = { id = ywc_society.1352 } } if = { limit = { ywc_t08_shu_delivery_1353 = yes } trigger_event = { id = ywc_society.1353 } } if = { limit = { ywc_t08_shu_delivery_1355 = yes } trigger_event = { id = ywc_society.1355 } } if = { limit = { ywc_t08_shu_delivery_1357 = yes } trigger_event = { id = ywc_society.1357 } } } }\non_complete = { ywc_t08_release_capacity = yes }\non_fail = { ywc_t08_release_capacity = yes }\n}",
+          "goal": "{ OR = { var:ywc_t08_outcome ?= 1 var:ywc_t08_outcome ?= 2 var:ywc_t08_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t08_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1350",
+          "title": {
+            "zh": "粮价先传来消息",
+            "en": "Grain Prices Bring the News First"
+          },
+          "desc": {
+            "zh": "蜀地市面上的粮价先于文书上涨。核对本地仓廪与市场行情之后，是否向确有余粮的邻国提出购买与运输安排，须由本地官署决定。",
+            "en": "Grain prices in Shu's markets rise before the reports do. After auditing local granaries and market prices, the offices must decide whether to approach a genuinely surplus neighbor about purchase and transport."
+          },
+          "trigger": "{ ywc_t08_shu_delivery_1350 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_shu_delivery_1350 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "seek_surplus",
+              "label": {
+                "zh": "向有余粮的邻国求购",
+                "en": "Ask the surplus neighbor for grain"
+              },
+              "trigger": "{ ywc_t08_shu_at_1350 = yes ywc_t08_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1350 = yes ywc_t08_partner_current = yes } set_variable = { name = ywc_t08_stage value = 1351 } set_variable = { name = ywc_t08_pending value = 1351 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1351 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待南国核对余粮后答复。",
+                "en": "Records this decision and waits for NQG to audit its surplus."
+              }
+            },
+            {
+              "key": "self_audit",
+              "label": {
+                "zh": "只清点本地仓廪，不求于外",
+                "en": "Audit local granaries only"
+              },
+              "trigger": "{ ywc_t08_shu_at_1350 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1350 = yes } set_variable = { name = ywc_t08_outcome value = 3 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "不向邻国求粮，本地记录拒绝外购的结局。",
+                "en": "No foreign purchase; the local record closes as a refusal."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对行情",
+                "en": "Wait and review the market again"
+              },
+              "trigger": "{ ywc_t08_shu_at_1350 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1350 = yes } set_variable = { name = ywc_t08_pending value = 1350 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "粮价先传来消息",
+            "en": "Grain Prices Bring the News First"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "SHU market grain price and granary pressure",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1351",
+          "title": {
+            "zh": "邻国的余粮",
+            "en": "A Neighbor's Surplus"
+          },
+          "desc": {
+            "zh": "南国核对自己的市场与仓廪，决定以何种条件放出余粮：按市价公开售予、限量配给，还是暂时不肯外运。条件会记入双方都能看到的簿册。",
+            "en": "NQG audits its own markets and granaries and decides on what terms to release surplus grain: open sale at market prices, a limited quota, or holding it back for now. The terms enter ledgers both sides can read."
+          },
+          "trigger": "{ ywc_t08_nqg_delivery_1351 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_nqg_delivery_1351 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "offer_open_terms",
+              "label": {
+                "zh": "按市价公开售予余粮",
+                "en": "Offer surplus grain at market prices"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1351 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1351 = yes } set_variable = { name = ywc_t08_offer value = 1 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_offer_note value = 1 } set_variable = { name = ywc_t08_stage value = 1352 } set_variable = { name = ywc_t08_pending value = 1352 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出；粮价由市场决定。",
+                "en": "No additional treasury expense; prices follow the market."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，蜀地须安排检疫或粮道。",
+                "en": "Records this decision; Shu must arrange quarantine or the grain corridor."
+              }
+            },
+            {
+              "key": "offer_limited_terms",
+              "label": {
+                "zh": "只限量放出余粮",
+                "en": "Release only a limited quota"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1351 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1351 = yes } set_variable = { name = ywc_t08_offer value = 2 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_offer_note value = 2 } set_variable = { name = ywc_t08_stage value = 1352 } set_variable = { name = ywc_t08_pending value = 1352 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，蜀地须安排检疫或粮道。",
+                "en": "Records this decision; Shu must arrange quarantine or the grain corridor."
+              }
+            },
+            {
+              "key": "hold_back_surplus",
+              "label": {
+                "zh": "暂时不肯外运",
+                "en": "Hold the surplus back"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1351 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1351 = yes } set_variable = { name = ywc_t08_offer value = 3 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_offer_note value = 3 } set_variable = { name = ywc_t08_stage value = 1352 } set_variable = { name = ywc_t08_pending value = 1352 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝售粮的记录送抵蜀地，救济只能缩小规模。",
+                "en": "The refusal is copied to Shu; relief can only shrink in scale."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1351 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1351 = yes } set_variable = { name = ywc_t08_pending value = 1351 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "邻国的余粮",
+            "en": "A Neighbor's Surplus"
+          },
+          "reads": [
+            "NQG pending delivery",
+            "NQG market grain price and staple production",
+            "SHU stage and the request record"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "SHU offer note and next phase",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1352",
+          "title": {
+            "zh": "码头上的检疫争议",
+            "en": "The Quarantine Dispute at the Docks"
+          },
+          "desc": {
+            "zh": "粮道开到码头或山口，检疫与查验由谁执掌起了争议：有海路的走码头查验，内陆的走山口押运。朝鲜若以卫生规程闻名，其章程可被引用；吐蕃的山口商路亦可借道。关闭粮道同样是一种选择。",
+            "en": "The grain route reaches docks or mountain passes and inspection authority is contested: coastal routes face dock inspection, inland routes rely on escorted passes. If Korea is known for health regulation its standard may be adopted; TIB's passes can carry the convoy. Closing the corridor is also an option."
+          },
+          "trigger": "{ ywc_t08_shu_delivery_1352 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_shu_delivery_1352 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "charter_inspection",
+              "label": {
+                "zh": "支付 300 设码头查验",
+                "en": "Pay 300 to charter dock inspection"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes ywc_t08_sea_route = yes gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes ywc_t08_sea_route = yes gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t08_inspection value = 1 } set_variable = { name = ywc_t08_stage value = 1353 } set_variable = { name = ywc_t08_pending value = 1353 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 300。",
+                "en": "Shu pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，救济发放仍须安排。",
+                "en": "Records this decision; relief distribution still needs arranging."
+              }
+            },
+            {
+              "key": "kor_standard",
+              "label": {
+                "zh": "支付 200 引用朝鲜卫生章程",
+                "en": "Pay 200 to adopt Korea's health standard"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes ywc_t08_sea_route = yes ywc_t08_kor_precedent = yes gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes ywc_t08_sea_route = yes ywc_t08_kor_precedent = yes gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t08_inspection value = 2 } set_variable = { name = ywc_t08_kor_standard value = 1 } set_variable = { name = ywc_t08_stage value = 1353 } set_variable = { name = ywc_t08_pending value = 1353 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 200。",
+                "en": "Shu pays 200 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "检疫章程记录在案；朝鲜的法律不会因此改变。",
+                "en": "The quarantine standard is recorded; Korea's own laws do not change."
+              }
+            },
+            {
+              "key": "tib_convoy",
+              "label": {
+                "zh": "支付 300 借道吐蕃山口押运",
+                "en": "Pay 300 to route the convoy through TIB's passes"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes NOT = { ywc_t08_sea_route = yes } ywc_t08_tib_corridor = yes gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes NOT = { ywc_t08_sea_route = yes } ywc_t08_tib_corridor = yes gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t08_inspection value = 1 } set_variable = { name = ywc_t08_tib_convoy value = 1 } set_variable = { name = ywc_t08_stage value = 1353 } set_variable = { name = ywc_t08_pending value = 1353 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 300。",
+                "en": "Shu pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；吐蕃的商路安排不变。",
+                "en": "Records this decision; TIB's own routes are unchanged."
+              }
+            },
+            {
+              "key": "inland_escort",
+              "label": {
+                "zh": "支付 300 自设山口押运",
+                "en": "Pay 300 for an escorted inland corridor"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes NOT = { ywc_t08_sea_route = yes } gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes NOT = { ywc_t08_sea_route = yes } gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t08_inspection value = 2 } set_variable = { name = ywc_t08_stage value = 1353 } set_variable = { name = ywc_t08_pending value = 1353 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 300。",
+                "en": "Shu pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "waive_checks",
+              "label": {
+                "zh": "免检放行，先把粮运到",
+                "en": "Waive checks and move the grain first"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes } set_variable = { name = ywc_t08_inspection value = 3 } set_variable = { name = ywc_t08_stage value = 1353 } set_variable = { name = ywc_t08_pending value = 1353 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "免检记录在案，疫病风险由本地承担。",
+                "en": "The waiver is recorded; disease risk stays local."
+              }
+            },
+            {
+              "key": "close_corridor",
+              "label": {
+                "zh": "关闭粮道，停止购粮救济",
+                "en": "Close the corridor and stop buying relief"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes } set_variable = { name = ywc_t08_outcome value = 3 } add_radicals = { value = small_radicals pop_type = laborers } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "救济中止，码头与乡里出现不满。",
+                "en": "Relief ends; discontent appears at the docks and in the countryside."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t08_shu_at_1352 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1352 = yes } set_variable = { name = ywc_t08_pending value = 1352 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "码头上的检疫争议",
+            "en": "The Quarantine Dispute at the Docks"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "SHU ports for the sea route",
+            "KOR health institution and laws as a cited precedent",
+            "TIB staple states as an inland corridor"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "inspection and precedent records",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1353",
+          "title": {
+            "zh": "救济发到哪里",
+            "en": "Where the Relief Goes"
+          },
+          "desc": {
+            "zh": "粮食到手只是开始。衙门决定按受灾州县精准发放、开仓平粜，还是只按户口配给。邻国若不肯外运，救济只能缩小规模，市面与乡里都会留下后果。",
+            "en": "Grain in hand is only the beginning. The offices choose targeted relief for the worst-hit counties, opening granaries to steady prices, or rationing only. If the neighbor held its surplus back, relief can only shrink — and both market and countryside keep the consequences."
+          },
+          "trigger": "{ ywc_t08_shu_delivery_1353 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_shu_delivery_1353 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "targeted_relief",
+              "label": {
+                "zh": "支付 500 按受灾州县精准发放",
+                "en": "Pay 500 for targeted relief"
+              },
+              "trigger": "{ ywc_t08_shu_at_1353 = yes gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1353 = yes gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t08_relief_mode value = 1 } set_variable = { name = ywc_t08_stage value = 1354 } set_variable = { name = ywc_t08_pending value = 1354 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1354 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 500。",
+                "en": "Shu pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待南国核算运力。",
+                "en": "Records this decision and waits for NQG to tally transport."
+              }
+            },
+            {
+              "key": "granary_release",
+              "label": {
+                "zh": "支付 300 开仓平粜",
+                "en": "Pay 300 to open state granaries"
+              },
+              "trigger": "{ ywc_t08_shu_at_1353 = yes gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1353 = yes gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t08_relief_mode value = 2 } set_variable = { name = ywc_t08_stage value = 1354 } set_variable = { name = ywc_t08_pending value = 1354 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1354 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 300。",
+                "en": "Shu pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待南国核算运力。",
+                "en": "Records this decision and waits for NQG to tally transport."
+              }
+            },
+            {
+              "key": "ration_only",
+              "label": {
+                "zh": "只按户口配给",
+                "en": "Ration by household registry only"
+              },
+              "trigger": "{ ywc_t08_shu_at_1353 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1353 = yes } set_variable = { name = ywc_t08_relief_mode value = 3 } if = { limit = { var:ywc_t08_offer ?= 3 } add_radicals = { value = small_radicals pop_type = peasants } } set_variable = { name = ywc_t08_stage value = 1354 } set_variable = { name = ywc_t08_pending value = 1354 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1354 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "缩减救济；若邻国拒售余粮，乡里出现不满。",
+                "en": "Relief shrinks; if the neighbor refused to sell, discontent rises in the countryside."
+              }
+            },
+            {
+              "key": "halt_relief",
+              "label": {
+                "zh": "停发救济",
+                "en": "Halt relief"
+              },
+              "trigger": "{ ywc_t08_shu_at_1353 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1353 = yes } set_variable = { name = ywc_t08_outcome value = 3 } add_radicals = { value = small_radicals pop_type = peasants } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "救济中止，乡里出现不满。",
+                "en": "Relief ends; discontent rises in the countryside."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t08_shu_at_1353 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1353 = yes } set_variable = { name = ywc_t08_pending value = 1353 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "救济发到哪里",
+            "en": "Where the Relief Goes"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "the neighbor's offer record",
+            "SHU treasury capacity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "relief mode record",
+            "NQG pending delivery",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1354",
+          "title": {
+            "zh": "援助的运输账",
+            "en": "The Transport Ledger"
+          },
+          "desc": {
+            "zh": "南国的船帮核算运力：现银结算、记账赊运，还是拒绝承运。账目记在南国的簿册上，也抄送蜀地一份；赊运的欠账不会自动消失。",
+            "en": "NQG's shipping houses tally capacity: settle in silver, carry on credit, or decline the job. The account stays in NQG's ledgers and is copied to Shu; a credit debt does not quietly disappear."
+          },
+          "trigger": "{ ywc_t08_nqg_delivery_1354 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_nqg_delivery_1354 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "settle_silver",
+              "label": {
+                "zh": "支付 600 现银结算运力",
+                "en": "Pay 600 to settle transport in silver"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1354 = yes gold_reserves >= 600 }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1354 = yes gold_reserves >= 600 } add_treasury = -600 set_variable = { name = ywc_t08_transport value = 1 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_transport_note value = 1 } set_variable = { name = ywc_t08_stage value = 1355 } set_variable = { name = ywc_t08_pending value = 1355 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "南国国库支付 600；不向蜀地转款。",
+                "en": "NQG pays 600; no transfer to Shu."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待蜀地对账。",
+                "en": "Records this decision and waits for Shu's audit."
+              }
+            },
+            {
+              "key": "carry_on_credit",
+              "label": {
+                "zh": "记账赊运",
+                "en": "Carry the grain on credit"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1354 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1354 = yes } set_variable = { name = ywc_t08_transport value = 2 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_transport_note value = 2 } set_variable = { name = ywc_t08_stage value = 1355 } set_variable = { name = ywc_t08_pending value = 1355 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出；欠账记入簿册。",
+                "en": "No additional treasury expense; the debt enters the ledgers."
+              },
+              "consequence_note": {
+                "zh": "赊运记录在案，成为日后借贷条件的凭据。",
+                "en": "The credit record stands and later shapes borrowing terms."
+              }
+            },
+            {
+              "key": "refuse_transport",
+              "label": {
+                "zh": "拒绝承运",
+                "en": "Refuse the carriage"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1354 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1354 = yes } set_variable = { name = ywc_t08_transport value = 3 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_transport_note value = 3 } set_variable = { name = ywc_t08_stage value = 1355 } set_variable = { name = ywc_t08_pending value = 1355 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝记录送抵蜀地；对账仍须进行。",
+                "en": "The refusal is copied to Shu; the audit still proceeds."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1354 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1354 = yes } set_variable = { name = ywc_t08_pending value = 1354 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "援助的运输账",
+            "en": "The Transport Ledger"
+          },
+          "reads": [
+            "NQG pending delivery",
+            "NQG treasury capacity",
+            "SHU stage and relief record"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "NQG transport record",
+            "SHU transport note and next phase",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1355",
+          "title": {
+            "zh": "受助者要求公开账册",
+            "en": "The Recipient Demands the Ledgers"
+          },
+          "desc": {
+            "zh": "蜀地要求南国公开运输与价格的账册：全部公开、部分公开，或放弃核对。账册公开到什么程度，决定下一季的合作条件；没有运到的援助也要对账。",
+            "en": "Shu demands NQG open its transport and price ledgers: in full, in part, or not at all. How much is disclosed shapes next season's terms — and aid that never arrived must still be accounted for."
+          },
+          "trigger": "{ ywc_t08_shu_delivery_1355 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_shu_delivery_1355 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "open_ledger",
+              "label": {
+                "zh": "要求全公开账册",
+                "en": "Demand the ledgers in full"
+              },
+              "trigger": "{ ywc_t08_shu_at_1355 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1355 = yes } set_variable = { name = ywc_t08_ledger value = 1 } set_variable = { name = ywc_t08_stage value = 1356 } set_variable = { name = ywc_t08_pending value = 1356 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1356 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待南国收获之后的答复。",
+                "en": "Records this decision and waits for NQG's answer after the harvest."
+              }
+            },
+            {
+              "key": "partial_ledger",
+              "label": {
+                "zh": "只核对部分账册",
+                "en": "Audit only part of the ledgers"
+              },
+              "trigger": "{ ywc_t08_shu_at_1355 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1355 = yes } set_variable = { name = ywc_t08_ledger value = 2 } set_variable = { name = ywc_t08_stage value = 1356 } set_variable = { name = ywc_t08_pending value = 1356 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1356 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待南国收获之后的答复。",
+                "en": "Records this decision and waits for NQG's answer after the harvest."
+              }
+            },
+            {
+              "key": "refuse_ledger",
+              "label": {
+                "zh": "放弃对账",
+                "en": "Give up the audit"
+              },
+              "trigger": "{ ywc_t08_shu_at_1355 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1355 = yes } set_variable = { name = ywc_t08_ledger value = 3 } set_variable = { name = ywc_t08_stage value = 1356 } set_variable = { name = ywc_t08_pending value = 1356 } c:NQG = { set_variable = { name = ywc_t08_pending value = 1356 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "放弃核对的记录在案；南国仍须答复救济是否继续。",
+                "en": "The abandoned audit is recorded; NQG must still answer whether relief continues."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t08_shu_at_1355 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1355 = yes } set_variable = { name = ywc_t08_pending value = 1355 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "受助者要求公开账册",
+            "en": "The Recipient Demands the Ledgers"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "the transport note record"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "ledger demand record",
+            "NQG pending delivery",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1356",
+          "title": {
+            "zh": "收获之后还要救济吗",
+            "en": "Relief After the Harvest?"
+          },
+          "desc": {
+            "zh": "新粮入库之后，南国重读双方簿册：若蜀地公开了账册且国库允许，可继续整季救济；也可以按季限量，或就此撤手。两个国家各留一份记录。",
+            "en": "After the new harvest is stored, NQG rereads both sides' ledgers: if Shu opened its books and NQG's treasury allows, full relief continues for the season; otherwise seasonal limits or withdrawal. Each country keeps its own record."
+          },
+          "trigger": "{ ywc_t08_nqg_delivery_1356 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_nqg_delivery_1356 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "continue_relief",
+              "label": {
+                "zh": "支付 400 继续整季救济",
+                "en": "Pay 400 to continue relief for the season"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1356 = yes c:SHU ?= { var:ywc_t08_ledger ?= 1 } gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1356 = yes c:SHU ?= { var:ywc_t08_ledger ?= 1 } gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t08_standing value = 1 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_proposed_outcome value = 1 } set_variable = { name = ywc_t08_stage value = 1357 } set_variable = { name = ywc_t08_pending value = 1357 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "南国国库支付 400；不向蜀地转款。",
+                "en": "NQG pays 400; no transfer to Shu."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待蜀地为下一次短缺立章。",
+                "en": "Records this decision and waits for Shu to charter next shortage's rules."
+              }
+            },
+            {
+              "key": "seasonal_terms",
+              "label": {
+                "zh": "按季限量继续",
+                "en": "Continue with seasonal limits"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1356 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1356 = yes } set_variable = { name = ywc_t08_standing value = 2 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_proposed_outcome value = 2 } set_variable = { name = ywc_t08_stage value = 1357 } set_variable = { name = ywc_t08_pending value = 1357 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定，等待蜀地为下一次短缺立章。",
+                "en": "Records this decision and waits for Shu to charter next shortage's rules."
+              }
+            },
+            {
+              "key": "wind_down",
+              "label": {
+                "zh": "就此撤手",
+                "en": "Withdraw from the arrangement"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1356 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1356 = yes } set_variable = { name = ywc_t08_standing value = 3 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t08_proposed_outcome value = 3 } set_variable = { name = ywc_t08_stage value = 1357 } set_variable = { name = ywc_t08_pending value = 1357 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤手记录送抵蜀地，两国各自保留制度与储备。",
+                "en": "The withdrawal is copied to Shu; each country keeps its own institutions and reserves."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t08_nqg_at_1356 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_nqg_at_1356 = yes } set_variable = { name = ywc_t08_pending value = 1356 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "收获之后还要救济吗",
+            "en": "Relief After the Harvest?"
+          },
+          "reads": [
+            "NQG pending delivery",
+            "SHU ledger demand record",
+            "NQG treasury capacity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "NQG standing record",
+            "SHU proposed outcome and next phase",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1357",
+          "title": {
+            "zh": "下一次短缺的准备",
+            "en": "Preparing for the Next Shortage"
+          },
+          "desc": {
+            "zh": "无论这一季结果如何，蜀地都要决定是否为下一次短缺立下章程：常平仓章程、对账衙署，或只留下拒绝的记录。外方账目缺失时，本地记录也可结案。",
+            "en": "Whatever this season's result, Shu must decide whether to charter standing granary rules, fund an audit office, or only record the refusal. If the partner's ledgers are missing, the local record can close the case."
+          },
+          "trigger": "{ ywc_t08_shu_delivery_1357 = yes }",
+          "immediate": "{ if = { limit = { ywc_t08_shu_delivery_1357 = yes } remove_variable = ywc_t08_pending if = { limit = { NOT = { has_variable = ywc_t08_popup_epoch } } set_variable = { name = ywc_t08_popup_epoch value = 0 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t08_popup_epoch value = var:ywc_t08_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "charter_granary_rule",
+              "label": {
+                "zh": "支付 500 立常平仓章程",
+                "en": "Pay 500 to charter granary rules"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 1 gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 1 gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t08_granary_charter value = 1 } set_variable = { name = ywc_t08_outcome value = 1 } change_relations = { country = c:NQG value = 5 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:NQG = { set_variable = { name = ywc_t08_partner_standing value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 500。",
+                "en": "Shu pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "接受结局在案；南国对蜀关系增加 5。",
+                "en": "The acceptance stands; NQG gains 5 relations with Shu."
+              }
+            },
+            {
+              "key": "confirm_acceptance",
+              "label": {
+                "zh": "只记录接受，不动国库",
+                "en": "Record the acceptance without spending"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 1 NOT = { gold_reserves >= 500 } }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 1 NOT = { gold_reserves >= 500 } } set_variable = { name = ywc_t08_outcome value = 1 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:NQG = { set_variable = { name = ywc_t08_partner_standing value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "接受结局在案，但无常平仓章程。",
+                "en": "The acceptance stands, but without granary rules."
+              }
+            },
+            {
+              "key": "fund_audit_office",
+              "label": {
+                "zh": "支付 300 设对账衙署",
+                "en": "Pay 300 to fund an audit office"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 2 gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 2 gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t08_audit_office value = 1 } set_variable = { name = ywc_t08_outcome value = 2 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:NQG = { set_variable = { name = ywc_t08_partner_standing value = 2 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "蜀国国库支付 300。",
+                "en": "Shu pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "有限结局在案，对账衙署记录在册。",
+                "en": "The limited outcome stands with the audit office on record."
+              }
+            },
+            {
+              "key": "confirm_limited",
+              "label": {
+                "zh": "只记录有限安排",
+                "en": "Record the limited arrangement only"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 2 NOT = { gold_reserves >= 300 } }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 2 NOT = { gold_reserves >= 300 } } set_variable = { name = ywc_t08_outcome value = 2 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:NQG = { set_variable = { name = ywc_t08_partner_standing value = 2 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "有限结局在案，但不设对账衙署。",
+                "en": "The limited outcome stands without an audit office."
+              }
+            },
+            {
+              "key": "record_refusal",
+              "label": {
+                "zh": "记录拒绝的结局",
+                "en": "Record the refusal"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 3 }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes var:ywc_t08_proposed_outcome ?= 3 } set_variable = { name = ywc_t08_outcome value = 3 } change_relations = { country = c:NQG value = -5 } change_variable = { name = ywc_t08_popup_epoch add = 1 } c:NQG = { set_variable = { name = ywc_t08_partner_standing value = 3 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝结局在案；南国对蜀关系减少 5。",
+                "en": "The refusal stands; NQG loses 5 relations with Shu."
+              }
+            },
+            {
+              "key": "close_local",
+              "label": {
+                "zh": "外方账目缺失，按本地记录结案",
+                "en": "Close by local record when the partner's ledgers are missing"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes NOT = { has_variable = ywc_t08_proposed_outcome } }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes NOT = { has_variable = ywc_t08_proposed_outcome } } if = { limit = { OR = { var:ywc_t08_relief_mode ?= 1 var:ywc_t08_relief_mode ?= 2 } } set_variable = { name = ywc_t08_outcome value = 2 } } else = { set_variable = { name = ywc_t08_outcome value = 4 } } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "已发过救济则按有限结局收束，否则按过期收束。",
+                "en": "Delivered relief closes as limited; otherwise the arc lapses."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t08_shu_at_1357 = yes }",
+              "effect": "{ if = { limit = { ywc_t08_shu_at_1357 = yes } set_variable = { name = ywc_t08_pending value = 1357 } change_variable = { name = ywc_t08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "下一次短缺的准备",
+            "en": "Preparing for the Next Shortage"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "the proposed outcome record from NQG",
+            "SHU treasury and relief history"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "final outcome",
+            "NQG partner standing",
+            "relations with NQG",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t08_relief_accepted",
+        "v03_t08_relief_limited",
+        "v03_t08_relief_refused",
+        "v03_t08_relief_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
