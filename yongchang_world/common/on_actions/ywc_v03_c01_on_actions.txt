@@ -1,0 +1,82 @@
+﻿# Crisis C01 天下名分与宗藩再议: entry hooks. Initialization follows the shared
+# startup pattern with per-country exists guards; the monthly hook adds the
+# crisis journals only after real eligibility, one instance per holder country.
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c01_after_lobby } }
+
+ywc_v03_c01_after_lobby = {
+	effect = {
+		every_country = {
+			limit = {
+				# Exists-check comparisons: a tag absent from the current world must
+				# not raise "Event target link c returned an unset scope".
+				OR = {
+					c:SHU ?= this
+					c:JHG ?= this
+					c:KOR ?= this
+					c:DMG ?= this
+				}
+			}
+			ywc_v03_initialize_country = yes
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c01_monthly } }
+
+ywc_v03_c01_monthly = {
+	effect = {
+		# Journal 1: investigation and roster. SHU opens when its settled reform
+		# claim clashes with JHG's settled tribute result; JHG may organize the
+		# civil variant only when SHU is gone; KOR/DMG enter when invited.
+		if = {
+			limit = {
+				ywc_c01_case_ready_shu = yes
+				NOT = { has_journal_entry = ywc_je_v03_c01_envoy_roster_and_treaties }
+			}
+			add_journal_entry = { type = ywc_je_v03_c01_envoy_roster_and_treaties }
+		}
+		if = {
+			limit = {
+				ywc_c01_case_ready_jhg = yes
+				NOT = { has_journal_entry = ywc_je_v03_c01_envoy_roster_and_treaties }
+			}
+			add_journal_entry = { type = ywc_je_v03_c01_envoy_roster_and_treaties }
+		}
+		if = {
+			limit = {
+				OR = {
+					c:KOR ?= this
+					c:DMG ?= this
+				}
+				var:ywc_c01_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c01_started }
+				NOT = { has_journal_entry = ywc_je_v03_c01_envoy_roster_and_treaties }
+			}
+			add_journal_entry = { type = ywc_je_v03_c01_envoy_roster_and_treaties }
+		}
+		# Journal 2: budget and authorization, only for countries that entered
+		# the signatory funding phase.
+		if = {
+			limit = {
+				has_variable = ywc_c01_started
+				var:ywc_c01_budget_open ?= 1
+				NOT = { has_variable = ywc_c01_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c01_who_pays_the_world }
+			}
+			add_journal_entry = { type = ywc_je_v03_c01_who_pays_the_world }
+		}
+		# Journal 3: execution, conflicts, renegotiation and settlement review.
+		if = {
+			limit = {
+				has_variable = ywc_c01_started
+				var:ywc_c01_review_open ?= 1
+				NOT = { has_variable = ywc_c01_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c01_rites_into_daily }
+			}
+			add_journal_entry = { type = ywc_je_v03_c01_rites_into_daily }
+		}
+	}
+}

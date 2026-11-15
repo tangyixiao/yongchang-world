@@ -1,0 +1,206 @@
+﻿# Crisis C01 天下名分与宗藩再议: scripted effects. Every cross-country state
+# transition writes BOTH sides inside one effect, each cross-scope write is
+# guarded by an if-limit that re-checks the target's live state, and no effect
+# removes ywc_c01_pending right before a gated trigger_event.
+
+# Shared receipt: consume the pending marker, advance the popup epoch, save the
+# epoch scope for the option at_ triggers, and start the 90-day major-event
+# cooldown. Called only from event immediates whose limit already verified the
+# delivery trigger, so the removal never precedes a gated trigger_event.
+ywc_c01_receive_major = { remove_variable = ywc_c01_pending if = { limit = { NOT = { has_variable = ywc_c01_popup_epoch } } set_variable = { name = ywc_c01_popup_epoch value = 0 } } change_variable = { name = ywc_c01_popup_epoch add = 1 } save_scope_value_as = { name = ywc_c01_popup_epoch value = var:ywc_c01_popup_epoch } ywc_v03_mark_major_delivered = yes }
+
+# Release this country's single crisis arc slot; only effective once.
+ywc_c01_release_capacity = { if = { limit = { var:ywc_c01_started ?= 1 NOT = { has_variable = ywc_c01_released } } set_variable = { name = ywc_c01_released value = 1 } change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 } clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } } }
+
+# Terminal closers. Pending is cleared only here, where no further delivery
+# depends on it, together with the final outcome and the slot release.
+ywc_c01_close_status_quo = { set_variable = { name = ywc_c01_outcome value = 3 } set_variable = { name = ywc_c01_roster_done value = 1 } set_variable = { name = ywc_c01_wait_age value = 0 } if = { limit = { has_variable = ywc_c01_pending } remove_variable = ywc_c01_pending } ywc_c01_release_capacity = yes }
+ywc_c01_close_withdrawn = { set_variable = { name = ywc_c01_outcome value = 4 } set_variable = { name = ywc_c01_roster_done value = 1 } set_variable = { name = ywc_c01_wait_age value = 0 } if = { limit = { has_variable = ywc_c01_pending } remove_variable = ywc_c01_pending } ywc_c01_release_capacity = yes }
+ywc_c01_close_no_talks = { set_variable = { name = ywc_c01_outcome value = 6 } set_variable = { name = ywc_c01_roster_done value = 1 } set_variable = { name = ywc_c01_wait_age value = 0 } if = { limit = { has_variable = ywc_c01_pending } remove_variable = ywc_c01_pending } ywc_c01_release_capacity = yes }
+
+# Initiator: open the response round after the investigation settles. The
+# initiator mounts its own waiting stage and, in the same effect, mounts the
+# response stage on every invited, still-living, not-yet-settled responder.
+ywc_c01_open_responses = {
+	set_variable = { name = ywc_c01_stage value = 1013 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	change_variable = { name = ywc_c01_popup_epoch add = 1 }
+	if = {
+		limit = { var:ywc_c01_role ?= 1 c:JHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c01_outcome } } }
+		set_variable = { name = ywc_c01_invited_jhg value = 1 }
+		c:JHG = { set_variable = { name = ywc_c01_stage value = 1002 } set_variable = { name = ywc_c01_pending value = 1002 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_role ?= 1 ywc_c01_kor_available_shu = yes c:KOR ?= { NOT = { has_variable = ywc_c01_outcome } } }
+		set_variable = { name = ywc_c01_invited_kor value = 1 }
+		c:KOR = { set_variable = { name = ywc_c01_case_open value = 1 } set_variable = { name = ywc_c01_role value = 3 } set_variable = { name = ywc_c01_stage value = 1003 } set_variable = { name = ywc_c01_pending value = 1003 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_role ?= 1 ywc_c01_dmg_available_shu = yes c:DMG ?= { NOT = { has_variable = ywc_c01_outcome } } }
+		set_variable = { name = ywc_c01_invited_dmg value = 1 }
+		c:DMG = { set_variable = { name = ywc_c01_case_open value = 1 } set_variable = { name = ywc_c01_role value = 3 } set_variable = { name = ywc_c01_stage value = 1003 } set_variable = { name = ywc_c01_pending value = 1003 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_role ?= 4 ywc_c01_kor_available_jhg = yes c:KOR ?= { NOT = { has_variable = ywc_c01_outcome } } }
+		set_variable = { name = ywc_c01_invited_kor value = 1 }
+		c:KOR = { set_variable = { name = ywc_c01_case_open value = 1 } set_variable = { name = ywc_c01_role value = 3 } set_variable = { name = ywc_c01_stage value = 1003 } set_variable = { name = ywc_c01_pending value = 1003 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_role ?= 4 ywc_c01_dmg_available_jhg = yes c:DMG ?= { NOT = { has_variable = ywc_c01_outcome } } }
+		set_variable = { name = ywc_c01_invited_dmg value = 1 }
+		c:DMG = { set_variable = { name = ywc_c01_case_open value = 1 } set_variable = { name = ywc_c01_role value = 3 } set_variable = { name = ywc_c01_stage value = 1003 } set_variable = { name = ywc_c01_pending value = 1003 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+}
+
+# Initiator: all invited responders have answered (or the record elapsed).
+# The initiator signs its own roster, enters the funding stage, and in the same
+# effect routes every invited living responder: acceptors keep their own
+# advance and only gain the budget marker; unanswered or declining responders
+# are remounted onto the non-signatory track (stage 1009), overwriting any
+# stale pending instead of deleting it.
+ywc_c01_init_after_responses = {
+	set_variable = { name = ywc_c01_roster_done value = 1 }
+	set_variable = { name = ywc_c01_signatory value = 1 }
+	set_variable = { name = ywc_c01_budget_open value = 1 }
+	set_variable = { name = ywc_c01_stage value = 1004 }
+	set_variable = { name = ywc_c01_pending value = 1004 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	change_variable = { name = ywc_c01_popup_epoch add = 1 }
+	if = {
+		limit = { var:ywc_c01_invited_jhg ?= 1 c:JHG ?= { is_country_alive = yes OR = { NOT = { has_variable = ywc_c01_jhg_response } var:ywc_c01_jhg_response ?= 3 } NOT = { has_variable = ywc_c01_outcome } } }
+		c:JHG = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1009 } set_variable = { name = ywc_c01_pending value = 1009 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_invited_jhg ?= 1 c:JHG ?= { is_country_alive = yes OR = { var:ywc_c01_jhg_response ?= 1 var:ywc_c01_jhg_response ?= 2 } } }
+		c:JHG = { set_variable = { name = ywc_c01_budget_open value = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_invited_kor ?= 1 c:KOR ?= { is_country_alive = yes OR = { NOT = { has_variable = ywc_c01_kor_response } var:ywc_c01_kor_response ?= 3 } NOT = { has_variable = ywc_c01_outcome } } }
+		c:KOR = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1009 } set_variable = { name = ywc_c01_pending value = 1009 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_invited_kor ?= 1 c:KOR ?= { is_country_alive = yes OR = { var:ywc_c01_kor_response ?= 1 var:ywc_c01_kor_response ?= 2 } } }
+		c:KOR = { set_variable = { name = ywc_c01_budget_open value = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_invited_dmg ?= 1 c:DMG ?= { is_country_alive = yes OR = { NOT = { has_variable = ywc_c01_dmg_response } var:ywc_c01_dmg_response ?= 3 } NOT = { has_variable = ywc_c01_outcome } } }
+		c:DMG = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1009 } set_variable = { name = ywc_c01_pending value = 1009 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c01_invited_dmg ?= 1 c:DMG ?= { is_country_alive = yes OR = { var:ywc_c01_dmg_response ?= 1 var:ywc_c01_dmg_response ?= 2 } } }
+		c:DMG = { set_variable = { name = ywc_c01_budget_open value = 1 } }
+	}
+}
+
+# Initiator (SHU only): issue the extra levy demand. The initiator remounts its
+# own waiting stage and, in the same effect, mounts the answer stage (1012) on
+# the demanded signatory.
+ywc_c01_levy_demand_jhg = {
+	set_variable = { name = ywc_c01_levy_target value = 1 }
+	set_variable = { name = ywc_c01_stage value = 1017 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	change_variable = { name = ywc_c01_popup_epoch add = 1 }
+	if = {
+		limit = { c:JHG ?= { is_country_alive = yes var:ywc_c01_signatory ?= 1 NOT = { has_variable = ywc_c01_outcome } } }
+		c:JHG = { set_variable = { name = ywc_c01_stage value = 1012 } set_variable = { name = ywc_c01_pending value = 1012 } set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+}
+ywc_c01_levy_demand_kor = {
+	set_variable = { name = ywc_c01_levy_target value = 2 }
+	set_variable = { name = ywc_c01_stage value = 1017 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	change_variable = { name = ywc_c01_popup_epoch add = 1 }
+	if = {
+		limit = { c:KOR ?= { is_country_alive = yes var:ywc_c01_signatory ?= 1 NOT = { has_variable = ywc_c01_outcome } } }
+		c:KOR = { set_variable = { name = ywc_c01_stage value = 1012 } set_variable = { name = ywc_c01_pending value = 1012 } set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+}
+ywc_c01_levy_demand_dmg = {
+	set_variable = { name = ywc_c01_levy_target value = 3 }
+	set_variable = { name = ywc_c01_stage value = 1017 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	change_variable = { name = ywc_c01_popup_epoch add = 1 }
+	if = {
+		limit = { c:DMG ?= { is_country_alive = yes var:ywc_c01_signatory ?= 1 NOT = { has_variable = ywc_c01_outcome } } }
+		c:DMG = { set_variable = { name = ywc_c01_stage value = 1012 } set_variable = { name = ywc_c01_pending value = 1012 } set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+}
+
+# Demanded party: settle the levy answer and, in the same effect, release the
+# initiator from its waiting stage (only while the initiator still waits).
+ywc_c01_levy_settle_initiator = {
+	if = {
+		limit = { c:SHU ?= { is_country_alive = yes var:ywc_c01_role ?= 1 var:ywc_c01_stage ?= 1017 } }
+		c:SHU = { set_variable = { name = ywc_c01_stage value = 1008 } set_variable = { name = ywc_c01_pending value = 1008 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+}
+
+# Initiator: open the settlement round after renegotiation. Signatories are
+# mounted onto stage 1010, non-signatory participants onto stage 1009, all in
+# this one effect; already-settled countries are skipped.
+ywc_c01_open_settlement = {
+	set_variable = { name = ywc_c01_review_open value = 1 }
+	set_variable = { name = ywc_c01_stage value = 1010 }
+	set_variable = { name = ywc_c01_pending value = 1010 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	change_variable = { name = ywc_c01_popup_epoch add = 1 }
+	if = {
+		limit = { c:JHG ?= { is_country_alive = yes var:ywc_c01_signatory ?= 1 NOT = { has_variable = ywc_c01_outcome } } }
+		c:JHG = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1010 } set_variable = { name = ywc_c01_pending value = 1010 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:JHG ?= { is_country_alive = yes has_variable = ywc_c01_case_open NOT = { has_variable = ywc_c01_signatory } NOT = { has_variable = ywc_c01_outcome } } }
+		c:JHG = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1009 } set_variable = { name = ywc_c01_pending value = 1009 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:KOR ?= { is_country_alive = yes var:ywc_c01_signatory ?= 1 NOT = { has_variable = ywc_c01_outcome } } }
+		c:KOR = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1010 } set_variable = { name = ywc_c01_pending value = 1010 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:KOR ?= { is_country_alive = yes has_variable = ywc_c01_case_open NOT = { has_variable = ywc_c01_signatory } NOT = { has_variable = ywc_c01_outcome } } }
+		c:KOR = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1009 } set_variable = { name = ywc_c01_pending value = 1009 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:DMG ?= { is_country_alive = yes var:ywc_c01_signatory ?= 1 NOT = { has_variable = ywc_c01_outcome } } }
+		c:DMG = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1010 } set_variable = { name = ywc_c01_pending value = 1010 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:DMG ?= { is_country_alive = yes has_variable = ywc_c01_case_open NOT = { has_variable = ywc_c01_signatory } NOT = { has_variable = ywc_c01_outcome } } }
+		c:DMG = { set_variable = { name = ywc_c01_review_open value = 1 } set_variable = { name = ywc_c01_stage value = 1009 } set_variable = { name = ywc_c01_pending value = 1009 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+	}
+}
+
+# Stranded signatory: the initiator is gone or silent too long, so the country
+# settles on its own instead of waiting forever.
+ywc_c01_self_settle = { set_variable = { name = ywc_c01_stage value = 1010 } set_variable = { name = ywc_c01_pending value = 1010 } set_variable = { name = ywc_c01_wait_age value = 0 } change_variable = { name = ywc_c01_popup_epoch add = 1 } }
+
+# Port-tariff exit routing: the initiator (SHU claimant or JHG organizer) moves
+# on to the levy proposal or the renegotiation; responders fall back to the
+# settlement waiting stage. Called from the port dispute options only.
+ywc_c01_after_1006_route = { if = { limit = { OR = { var:ywc_c01_role ?= 1 var:ywc_c01_role ?= 4 } } if = { limit = { var:ywc_c01_role ?= 1 ywc_c01_signatory_exists = yes } set_variable = { name = ywc_c01_stage value = 1007 } set_variable = { name = ywc_c01_pending value = 1007 } } else = { set_variable = { name = ywc_c01_stage value = 1008 } set_variable = { name = ywc_c01_pending value = 1008 } } } else = { set_variable = { name = ywc_c01_stage value = 1015 } } }
+
+# Deadline review write-back: record kept/broken on every participating
+# country so the SHU/JHG/KOR/DMG follow-up lines can read one shared verdict.
+ywc_c01_aftermath_kept = {
+	set_variable = { name = ywc_c01_aftermath value = 1 }
+	set_variable = { name = ywc_c01_stage value = 1016 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c01_pending } remove_variable = ywc_c01_pending }
+	ywc_c01_release_capacity = yes
+	if = { limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:SHU = { set_variable = { name = ywc_c01_aftermath value = 1 } } }
+	if = { limit = { c:JHG ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:JHG = { set_variable = { name = ywc_c01_aftermath value = 1 } } }
+	if = { limit = { c:KOR ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:KOR = { set_variable = { name = ywc_c01_aftermath value = 1 } } }
+	if = { limit = { c:DMG ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:DMG = { set_variable = { name = ywc_c01_aftermath value = 1 } } }
+}
+ywc_c01_aftermath_broken = {
+	set_variable = { name = ywc_c01_aftermath value = 2 }
+	set_variable = { name = ywc_c01_outcome value = 5 }
+	set_variable = { name = ywc_c01_stage value = 1016 }
+	set_variable = { name = ywc_c01_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c01_pending } remove_variable = ywc_c01_pending }
+	ywc_c01_release_capacity = yes
+	if = { limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:SHU = { set_variable = { name = ywc_c01_aftermath value = 2 } } }
+	if = { limit = { c:JHG ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:JHG = { set_variable = { name = ywc_c01_aftermath value = 2 } } }
+	if = { limit = { c:KOR ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:KOR = { set_variable = { name = ywc_c01_aftermath value = 2 } } }
+	if = { limit = { c:DMG ?= { is_country_alive = yes has_variable = ywc_c01_case_open } } c:DMG = { set_variable = { name = ywc_c01_aftermath value = 2 } } }
+}
