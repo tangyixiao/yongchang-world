@@ -19,14 +19,879 @@
         "SHU"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t09_capital_terms",
+          "title": {
+            "zh": "资本到达之前的条件",
+            "en": "Conditions Before Capital Arrives"
+          },
+          "desc": {
+            "zh": "朝鲜要为产业与道路筹资，东明的放款人可以接洽。但在资本到达之前，账目、担保与偿付次序必须先谈定；谈不成，本国仍可自筹小规模方案。",
+            "en": "Korea seeks funds for industry and roads, and Dongming's lenders may be approached. Before capital arrives, the accounts, the collateral and the repayment order must be settled; if they are not, a small self-funded plan remains."
+          },
+          "script": "{ is_shown_when_inactive = { c:KOR ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t09_started } } possible = { c:KOR ?= this ywc_v03_has_capacity = yes ywc_t09_partner_current = yes ywc_t09_local_need = yes NOT = { has_variable = ywc_t09_started } } immediate = { set_variable = { name = ywc_t09_started value = 1 } set_variable = { name = ywc_t09_stage value = 1400 } set_variable = { name = ywc_t09_pending value = 1400 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } } on_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t09_stage ?= 1401 var:ywc_t09_stage ?= 1403 var:ywc_t09_stage ?= 1405 } NOT = { ywc_t09_partner_current = yes } NOT = { has_variable = ywc_t09_outcome } } c:DMG ?= { remove_variable = ywc_t09_pending } set_variable = { name = ywc_t09_stage value = 1407 } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } if = { limit = { ywc_t09_kor_delivery_1400 = yes } trigger_event = { id = ywc_society.1400 } } if = { limit = { ywc_t09_kor_delivery_1402 = yes } trigger_event = { id = ywc_society.1402 } } if = { limit = { ywc_t09_kor_delivery_1404 = yes } trigger_event = { id = ywc_society.1404 } } if = { limit = { ywc_t09_kor_delivery_1406 = yes } trigger_event = { id = ywc_society.1406 } } if = { limit = { ywc_t09_kor_delivery_1407 = yes } trigger_event = { id = ywc_society.1407 } } } } on_complete = { ywc_t09_release_capacity = yes } on_fail = { ywc_t09_release_capacity = yes } }",
+          "goal": "{ OR = { var:ywc_t09_outcome ?= 1 var:ywc_t09_outcome ?= 2 var:ywc_t09_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t09_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1400",
+          "title": {
+            "zh": "可投资的账目",
+            "en": "An Investable Ledger"
+          },
+          "desc": {
+            "zh": "东明的放款人要求先看账。朝鲜可以提交已经结算的旧账作为信用，也可以只交本年度账目；无论提交哪一种，账目都必须经得起核对。",
+            "en": "The Dongming lender asks for books first. Korea may present settled prior accounts as credit or hand over only the current year's ledger; either way the books must survive an audit."
+          },
+          "trigger": "{ ywc_t09_kor_delivery_1400 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_kor_delivery_1400 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "present_settled",
+              "label": {
+                "zh": "提交已结算的旧账",
+                "en": "Present the settled prior accounts"
+              },
+              "trigger": "{ ywc_t09_kor_at_1400 = yes ywc_t09_partner_current = yes OR = { var:ywc_v03_kor_v03_kor_military_accounts_settled ?= 1 var:ywc_v03_kor_v03_kor_school_factions_settled ?= 1 } }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1400 = yes ywc_t09_partner_current = yes OR = { var:ywc_v03_kor_v03_kor_military_accounts_settled ?= 1 var:ywc_v03_kor_v03_kor_school_factions_settled ?= 1 } } set_variable = { name = ywc_t09_mode value = 1 } set_variable = { name = ywc_t09_stage value = 1401 } set_variable = { name = ywc_t09_pending value = 1401 } c:DMG = { set_variable = { name = ywc_t09_pending value = 1401 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "已结算的军账与学账记录呈交东明，等待放款人审查。",
+                "en": "The settled military and school account records go to Dongming; the lender's review follows."
+              }
+            },
+            {
+              "key": "present_current",
+              "label": {
+                "zh": "提交本年度账目",
+                "en": "Present the current year's ledger"
+              },
+              "trigger": "{ ywc_t09_kor_at_1400 = yes ywc_t09_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1400 = yes ywc_t09_partner_current = yes } set_variable = { name = ywc_t09_mode value = 2 } set_variable = { name = ywc_t09_stage value = 1401 } set_variable = { name = ywc_t09_pending value = 1401 } c:DMG = { set_variable = { name = ywc_t09_pending value = 1401 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "本年度账目呈交东明，没有旧账为凭，审查将更严格。",
+                "en": "The current ledger goes to Dongming; without settled prior accounts, scrutiny will be stricter."
+              }
+            },
+            {
+              "key": "self_fund",
+              "label": {
+                "zh": "不借贷，自筹小规模方案",
+                "en": "Fund a small plan at home instead"
+              },
+              "trigger": "{ ywc_t09_kor_at_1400 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1400 = yes } set_variable = { name = ywc_t09_mode value = 3 } set_variable = { name = ywc_t09_proposed_outcome value = 2 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出；规模以现有经费为限。",
+                "en": "No additional treasury expense; the scale is capped by existing funds."
+              },
+              "consequence_note": {
+                "zh": "不向东明借贷，改以现有经费自筹小规模方案，直接进入项目定夺。",
+                "en": "No loan from Dongming; a small self-funded plan goes straight to the project decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t09_kor_at_1400 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1400 = yes } set_variable = { name = ywc_t09_pending value = 1400 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "需资国核对自身账目与预算压力，决定以何种信用面见资金方，或改行自筹。",
+            "en": "The capital-seeking country audits its own accounts and budget pressure, then chooses the credit it presents to the funder or turns to self-funding."
+          },
+          "reads": [
+            "KOR pending delivery",
+            "current phase and participant identity",
+            "KOR settled fiscal records ywc_v03_kor_v03_kor_military_accounts_settled / ywc_v03_kor_v03_kor_school_factions_settled",
+            "DMG liveness and diplomatic relevance"
+          ],
+          "writes": [
+            "ledger presentation mode",
+            "KOR stage 1401 and pending 1401 with DMG pending 1401, or self-funded stage 1406",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1401",
+          "title": {
+            "zh": "放款人的审查",
+            "en": "The Lender's Review"
+          },
+          "desc": {
+            "zh": "东明的账房核对朝鲜送来的簿册。自家预算在册、对方账目又有旧账为凭，可以不取担保直接放款；否则须以税权作保，也可以拒绝。",
+            "en": "Dongming's clerks audit the books Korea sent. With its own budget on record and the borrower's settled prior accounts, it may lend without collateral; otherwise it demands tax rights or declines."
+          },
+          "trigger": "{ ywc_t09_dmg_delivery_1401 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_dmg_delivery_1401 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "approve_terms",
+              "label": {
+                "zh": "认账放款，须以税权作保",
+                "en": "Approve the loan against tax rights"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1401 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1401 = yes } set_variable = { name = ywc_t09_lender_terms value = 1 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_terms value = 1 } set_variable = { name = ywc_t09_stage value = 1402 } set_variable = { name = ywc_t09_pending value = 1402 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "审查通过但要求以税权作保，条款送交朝鲜定夺。",
+                "en": "The review passes with tax rights as collateral; the terms go to Korea."
+              }
+            },
+            {
+              "key": "approve_plain",
+              "label": {
+                "zh": "认账放款，不取担保",
+                "en": "Approve the loan without collateral"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1401 = yes ywc_t09_funder_books = yes c:KOR ?= { var:ywc_t09_mode ?= 1 } }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1401 = yes ywc_t09_funder_books = yes c:KOR ?= { var:ywc_t09_mode ?= 1 } } set_variable = { name = ywc_t09_lender_terms value = 2 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_terms value = 2 } set_variable = { name = ywc_t09_stage value = 1402 } set_variable = { name = ywc_t09_pending value = 1402 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "自家预算在册且对方旧账可信，按无担保条款放款。",
+                "en": "With its own budget records and the borrower's settled books, the loan proceeds unsecured."
+              }
+            },
+            {
+              "key": "refuse_review",
+              "label": {
+                "zh": "审查不通过，婉拒放款",
+                "en": "Fail the review and decline the loan"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1401 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1401 = yes } set_variable = { name = ywc_t09_lender_terms value = 4 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_terms value = 4 } set_variable = { name = ywc_t09_proposed_outcome value = 3 } set_variable = { name = ywc_t09_stage value = 1407 } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "账目不足以支持放款，东明婉拒；朝鲜按账自行结算。",
+                "en": "The books do not support a loan; Dongming declines and Korea settles on its own ledger."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1401 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1401 = yes } set_variable = { name = ywc_t09_pending value = 1401 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "资金方以自家预算册与对方信用决定放款条件，或拒绝。",
+            "en": "The funder sets the lending terms against its own budget records and the borrower's credit, or declines."
+          },
+          "reads": [
+            "DMG pending delivery",
+            "KOR stage and presented ledger mode",
+            "DMG own budget records ywc_dmg_crown_budget / ywc_dmg_market_budget / ywc_dmg_school_budget"
+          ],
+          "writes": [
+            "lender terms record with KOR mirror",
+            "KOR stage 1402 and pending 1402, or KOR stage 1407 with proposed refusal",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1402",
+          "title": {
+            "zh": "税权作为担保",
+            "en": "Tax Rights as Collateral"
+          },
+          "desc": {
+            "zh": "东明的条款送到了：以税权作保，或只以港口关税为限，或按无担保条款接受。押上多少，将来不能偿付时失去的就有多少；不押则回到自筹。",
+            "en": "Dongming's terms have arrived: tax rights as collateral, port customs alone, or unsecured acceptance. What is pledged is what is forfeited on default; refusing means returning to self-funding."
+          },
+          "trigger": "{ ywc_t09_kor_delivery_1402 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_kor_delivery_1402 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "pledge_tax",
+              "label": {
+                "zh": "押上税权作保",
+                "en": "Pledge tax rights as collateral"
+              },
+              "trigger": "{ ywc_t09_kor_at_1402 = yes ywc_t09_partner_current = yes var:ywc_t09_partner_terms ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1402 = yes ywc_t09_partner_current = yes var:ywc_t09_partner_terms ?= 1 } set_variable = { name = ywc_t09_collateral value = 1 } set_variable = { name = ywc_t09_stage value = 1403 } set_variable = { name = ywc_t09_pending value = 1403 } c:DMG = { set_variable = { name = ywc_t09_pending value = 1403 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "税权押作担保，等待第一期拨款；违约时按押失去税权。",
+                "en": "Tax rights stand as collateral pending the first disbursement; default forfeits them."
+              }
+            },
+            {
+              "key": "pledge_limited",
+              "label": {
+                "zh": "只押港口关税",
+                "en": "Pledge port customs only"
+              },
+              "trigger": "{ ywc_t09_kor_at_1402 = yes ywc_t09_partner_current = yes var:ywc_t09_partner_terms ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1402 = yes ywc_t09_partner_current = yes var:ywc_t09_partner_terms ?= 1 } set_variable = { name = ywc_t09_collateral value = 2 } set_variable = { name = ywc_t09_stage value = 1403 } set_variable = { name = ywc_t09_pending value = 1403 } c:DMG = { set_variable = { name = ywc_t09_pending value = 1403 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "只以港口关税为限作保，担保成色较低，拨款或被减半。",
+                "en": "Port customs alone stand as collateral; the weaker pledge may halve the disbursement."
+              }
+            },
+            {
+              "key": "accept_unsecured",
+              "label": {
+                "zh": "按无担保条款接受",
+                "en": "Accept the unsecured terms"
+              },
+              "trigger": "{ ywc_t09_kor_at_1402 = yes ywc_t09_partner_current = yes var:ywc_t09_partner_terms ?= 2 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1402 = yes ywc_t09_partner_current = yes var:ywc_t09_partner_terms ?= 2 } set_variable = { name = ywc_t09_collateral value = 3 } set_variable = { name = ywc_t09_stage value = 1403 } set_variable = { name = ywc_t09_pending value = 1403 } c:DMG = { set_variable = { name = ywc_t09_pending value = 1403 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按无担保条款接受，凭旧账信用等待拨款。",
+                "en": "The unsecured terms stand on the settled-books credit pending disbursement."
+              }
+            },
+            {
+              "key": "refuse_terms",
+              "label": {
+                "zh": "不接受条款，改自筹",
+                "en": "Refuse the terms and self-fund"
+              },
+              "trigger": "{ ywc_t09_kor_at_1402 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1402 = yes } set_variable = { name = ywc_t09_proposed_outcome value = 2 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝外部担保条款，保留税权，改以现有经费自筹小规模方案。",
+                "en": "The outside collateral terms are refused and tax rights are kept; a small self-funded plan proceeds instead."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t09_kor_at_1402 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1402 = yes } set_variable = { name = ywc_t09_pending value = 1402 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "需资国决定以何种担保接受条款，或拒绝条款回到自筹。",
+            "en": "The capital-seeking country decides which collateral secures the terms, or refuses them and returns to self-funding."
+          },
+          "reads": [
+            "KOR pending delivery",
+            "lender terms mirror on KOR",
+            "DMG liveness and diplomatic relevance"
+          ],
+          "writes": [
+            "collateral pledge record",
+            "KOR stage 1403 and pending 1403 with DMG pending 1403, or self-funded stage 1406",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1403",
+          "title": {
+            "zh": "第一期拨款",
+            "en": "The First Disbursement"
+          },
+          "desc": {
+            "zh": "东明的账房按担保成色拨付第一期：押了税权可足额，未押或只押关税则减半。库中无钱或另有顾虑，也可以暂不拨款。",
+            "en": "Dongming's clerks size the first disbursement to the collateral: full with tax rights pledged, half otherwise. Short of funds or for other reasons, it may also withhold."
+          },
+          "trigger": "{ ywc_t09_dmg_delivery_1403 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_dmg_delivery_1403 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "disburse_full",
+              "label": {
+                "zh": "足额拨付第一期",
+                "en": "Disburse the first installment in full"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1403 = yes gold_reserves >= 800 c:KOR ?= { var:ywc_t09_collateral ?= 1 } }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1403 = yes gold_reserves >= 800 c:KOR ?= { var:ywc_t09_collateral ?= 1 } } add_treasury = -800 set_variable = { name = ywc_t09_lender_disburse value = 1 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { add_treasury = 800 set_variable = { name = ywc_t09_partner_disburse value = 1 } set_variable = { name = ywc_t09_stage value = 1404 } set_variable = { name = ywc_t09_pending value = 1404 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 800；朝鲜国库入账 800。",
+                "en": "Dongming pays 800 from its treasury; Korea receives 800."
+              },
+              "consequence_note": {
+                "zh": "第一期资本到达朝鲜，账目两边各记一份，等待偿付之期。",
+                "en": "The first installment reaches Korea and both ledgers record it; the repayment date follows."
+              }
+            },
+            {
+              "key": "disburse_partial",
+              "label": {
+                "zh": "减半拨付第一期",
+                "en": "Disburse half the first installment"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1403 = yes gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1403 = yes gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t09_lender_disburse value = 2 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { add_treasury = 400 set_variable = { name = ywc_t09_partner_disburse value = 2 } set_variable = { name = ywc_t09_stage value = 1404 } set_variable = { name = ywc_t09_pending value = 1404 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 400；朝鲜国库入账 400。",
+                "en": "Dongming pays 400 from its treasury; Korea receives 400."
+              },
+              "consequence_note": {
+                "zh": "减半拨款到达朝鲜，项目规模须相应缩减。",
+                "en": "The halved installment reaches Korea; the project scale must shrink accordingly."
+              }
+            },
+            {
+              "key": "withhold_disburse",
+              "label": {
+                "zh": "暂不拨款，维持条款",
+                "en": "Withhold the disbursement and hold the terms"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1403 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1403 = yes } set_variable = { name = ywc_t09_lender_disburse value = 4 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_disburse value = 4 } set_variable = { name = ywc_t09_proposed_outcome value = 3 } set_variable = { name = ywc_t09_stage value = 1407 } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "担保成色不足，东明暂不拨款，朝鲜按账自行结算。",
+                "en": "The collateral does not justify disbursement; Dongming withholds and Korea settles on its own ledger."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1403 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1403 = yes } set_variable = { name = ywc_t09_pending value = 1403 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "资金方按担保成色与自身库款拨付第一期资本，或暂不拨款。",
+            "en": "The funder sizes and pays the first installment against the collateral and its own treasury, or withholds it."
+          },
+          "reads": [
+            "DMG pending delivery",
+            "KOR collateral pledge record",
+            "DMG gold reserves"
+          ],
+          "writes": [
+            "lender disbursement record with KOR mirror",
+            "treasury transfer 800 or 400 from DMG to KOR",
+            "KOR stage 1404 and pending 1404, or KOR stage 1407 with proposed refusal",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1404",
+          "title": {
+            "zh": "账期与歉收相遇",
+            "en": "The Due Date Meets a Lean Harvest"
+          },
+          "desc": {
+            "zh": "还款之期恰逢歉收，市面紧缩。可以求东明展期，可以咬牙按期付本息，也可以据实记入欠账、准备缩减项目。",
+            "en": "Repayment falls in a lean harvest and the market tightens. Korea may ask Dongming for an extension, pay the installment anyway, or record the arrears and prepare to shrink the project."
+          },
+          "trigger": "{ ywc_t09_kor_delivery_1404 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_kor_delivery_1404 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "request_extension",
+              "label": {
+                "zh": "请求东明展期",
+                "en": "Ask Dongming for an extension"
+              },
+              "trigger": "{ ywc_t09_kor_at_1404 = yes ywc_t09_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1404 = yes ywc_t09_partner_current = yes } set_variable = { name = ywc_t09_repay value = 1 } set_variable = { name = ywc_t09_stage value = 1405 } set_variable = { name = ywc_t09_pending value = 1405 } c:DMG = { set_variable = { name = ywc_t09_pending value = 1405 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "展期之请连同欠账记录送交东明，等待债权人预算定夺。",
+                "en": "The extension request and the arrears record go to Dongming; the creditor's budget decides."
+              }
+            },
+            {
+              "key": "pay_anyway",
+              "label": {
+                "zh": "咬牙按期支付本息",
+                "en": "Pay the installment on time anyway"
+              },
+              "trigger": "{ ywc_t09_kor_at_1404 = yes ywc_t09_partner_current = yes gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1404 = yes ywc_t09_partner_current = yes gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t09_repay value = 2 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } c:DMG = { add_treasury = 500 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "朝鲜国库支付 500；东明国库入账 500。",
+                "en": "Korea pays 500 from its treasury; Dongming receives 500."
+              },
+              "consequence_note": {
+                "zh": "本息按期付清，账目两边各记一份，进入项目定夺。",
+                "en": "The installment is paid on time and both ledgers record it; the project decision follows."
+              }
+            },
+            {
+              "key": "record_arrears",
+              "label": {
+                "zh": "据实记入欠账",
+                "en": "Record the arrears honestly"
+              },
+              "trigger": "{ ywc_t09_kor_at_1404 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1404 = yes } set_variable = { name = ywc_t09_repay value = 3 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "欠账据实入册，项目准备缩减，不再向东明转款。",
+                "en": "The arrears enter the ledger, the project is prepared for shrinking, and no funds move to Dongming."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t09_kor_at_1404 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1404 = yes } set_variable = { name = ywc_t09_pending value = 1404 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "需资国在偿付之期决定展期、付清或如实记欠。",
+            "en": "The capital-seeking country decides at the due date to request an extension, pay up, or record honest arrears."
+          },
+          "reads": [
+            "KOR pending delivery",
+            "lender disbursement mirror on KOR",
+            "KOR gold reserves",
+            "DMG liveness and diplomatic relevance"
+          ],
+          "writes": [
+            "repayment decision",
+            "treasury service payment 500 from KOR to DMG",
+            "KOR stage 1405 and pending 1405 with DMG pending 1405, or self stage 1406",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1405",
+          "title": {
+            "zh": "债权人也有预算",
+            "en": "The Creditor Also Has a Budget"
+          },
+          "desc": {
+            "zh": "东明自己的预算也有盈缺。库中有余可以自担展期成本；无余则记账收取展期息费；再不济按原条款索偿。",
+            "en": "Dongming's own budget has its own shortfalls. With surplus it can absorb the extension's cost; without, it books a service fee; otherwise it holds to the original terms."
+          },
+          "trigger": "{ ywc_t09_dmg_delivery_1405 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_dmg_delivery_1405 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "extend_absorb",
+              "label": {
+                "zh": "自担成本准予展期",
+                "en": "Grant the extension and absorb the cost"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1405 = yes gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1405 = yes gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t09_lender_coop value = 1 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_coop value = 1 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 200；不向朝鲜转款。",
+                "en": "Dongming pays 200; no transfer to Korea."
+              },
+              "consequence_note": {
+                "zh": "展期获准，成本由债权人预算自担，账目两边各记一份。",
+                "en": "The extension is granted at the creditor's own expense and both ledgers record it."
+              }
+            },
+            {
+              "key": "extend_fee",
+              "label": {
+                "zh": "展期但记账收取息费",
+                "en": "Extend with a booked service fee"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1405 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1405 = yes } set_variable = { name = ywc_t09_lender_coop value = 2 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_coop value = 2 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "展期获准但息费记账在册，随账目一并结算。",
+                "en": "The extension is granted with the fee booked and settled with the accounts."
+              }
+            },
+            {
+              "key": "refuse_extension",
+              "label": {
+                "zh": "拒绝展期，按原条款索偿",
+                "en": "Refuse the extension and hold the original terms"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1405 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1405 = yes } set_variable = { name = ywc_t09_lender_coop value = 3 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t09_partner_coop value = 3 } set_variable = { name = ywc_t09_stage value = 1406 } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "展期被拒，原条款仍然有效，朝鲜须自行定夺项目。",
+                "en": "The extension is refused; the original terms stand and Korea decides on the project itself."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t09_dmg_at_1405 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_dmg_at_1405 = yes } set_variable = { name = ywc_t09_pending value = 1405 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "资金方按自身预算决定展期的成本承担方式，或拒绝展期。",
+            "en": "The funder decides how its own budget bears the extension's cost, or refuses the extension."
+          },
+          "reads": [
+            "DMG pending delivery",
+            "KOR extension request and arrears record",
+            "DMG gold reserves"
+          ],
+          "writes": [
+            "creditor cooperation record with KOR mirror",
+            "KOR stage 1406 and pending 1406",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1406",
+          "title": {
+            "zh": "展期或缩减项目",
+            "en": "Extend or Shrink the Project"
+          },
+          "desc": {
+            "zh": "朝鲜按自己的账目定夺：东明准了展期即可续办；无论对方如何答复，都可以把项目缩到现有经费能承担的规模，或者就此终止合作。两边账册各自独立记下这次决定。",
+            "en": "Korea decides on its own books: a granted extension lets the project continue; whatever the creditor answered, the project may shrink to what existing funds carry, or the arrangement may end. Each ledger records the decision independently."
+          },
+          "trigger": "{ ywc_t09_kor_delivery_1406 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_kor_delivery_1406 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "extend_project",
+              "label": {
+                "zh": "依展期条款续办项目",
+                "en": "Continue the project on extended terms"
+              },
+              "trigger": "{ ywc_t09_kor_at_1406 = yes var:ywc_t09_repay ?= 1 OR = { var:ywc_t09_partner_coop ?= 1 var:ywc_t09_partner_coop ?= 2 } }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1406 = yes var:ywc_t09_repay ?= 1 OR = { var:ywc_t09_partner_coop ?= 1 var:ywc_t09_partner_coop ?= 2 } } set_variable = { name = ywc_t09_proposed_outcome value = 1 } set_variable = { name = ywc_t09_stage value = 1407 } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "依获准的展期条款续办项目，等待结案。",
+                "en": "The project continues on the granted extension pending the close."
+              }
+            },
+            {
+              "key": "shrink_project",
+              "label": {
+                "zh": "项目缩减至自筹规模",
+                "en": "Shrink the project to a self-funded scale"
+              },
+              "trigger": "{ ywc_t09_kor_at_1406 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1406 = yes } set_variable = { name = ywc_t09_proposed_outcome value = 2 } set_variable = { name = ywc_t09_stage value = 1407 } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "项目缩到现有经费能承担的规模，欠账记录保留在册。",
+                "en": "The project shrinks to what existing funds carry and the arrears record stands."
+              }
+            },
+            {
+              "key": "terminate_terms",
+              "label": {
+                "zh": "终止合作，按账结算",
+                "en": "End the arrangement and settle the accounts"
+              },
+              "trigger": "{ ywc_t09_kor_at_1406 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1406 = yes } set_variable = { name = ywc_t09_proposed_outcome value = 3 } set_variable = { name = ywc_t09_stage value = 1407 } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "终止与东明的借贷合作，已付费用不退。",
+                "en": "The lending arrangement with Dongming ends; expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t09_kor_at_1406 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1406 = yes } set_variable = { name = ywc_t09_pending value = 1406 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "需资国独立定夺项目续办、缩减或终止；两边账册各自记录。",
+            "en": "The capital-seeking country independently continues, shrinks or ends the project; both ledgers keep their own record."
+          },
+          "reads": [
+            "KOR pending delivery",
+            "extension request and creditor answer records on KOR"
+          ],
+          "writes": [
+            "proposed outcome (continue / shrink / terminate)",
+            "KOR stage 1407 and pending 1407",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1407",
+          "title": {
+            "zh": "偿付之外的制度",
+            "en": "Institutions Beyond Repayment"
+          },
+          "desc": {
+            "zh": "账目终须结清。按双方记录结案：足额履行、有限收束或记为拒贷；东明已不可联系时，朝鲜按已有账目自行收束。偿付之外的制度——担保的边界与对账的规矩——由这次记录留存。",
+            "en": "The books must close. Settle on the joint record: full performance, a limited close, or refused credit. If Dongming is unavailable, Korea closes on the accounts it holds. Beyond repayment, the institutions—the bounds of collateral and the rules of reconciliation—remain on record."
+          },
+          "trigger": "{ ywc_t09_kor_delivery_1407 = yes }",
+          "immediate": "{ if = { limit = { ywc_t09_kor_delivery_1407 = yes } remove_variable = ywc_t09_pending if = { limit = { NOT = { has_variable = ywc_t09_popup_epoch } } set_variable = { name = ywc_t09_popup_epoch value = 0 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t09_popup_epoch value = var:ywc_t09_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "close_accepted",
+              "label": {
+                "zh": "记为足额履行结案",
+                "en": "Close the ledger as full performance"
+              },
+              "trigger": "{ ywc_t09_kor_at_1407 = yes var:ywc_t09_proposed_outcome ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1407 = yes var:ywc_t09_proposed_outcome ?= 1 } set_variable = { name = ywc_t09_outcome value = 1 } change_relations = { country = c:DMG value = 5 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t09_standing value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "足额履行入册结案，东明对朝鲜关系增加 5。",
+                "en": "Full performance closes the ledger; Dongming gains 5 relations with Korea."
+              }
+            },
+            {
+              "key": "close_limited",
+              "label": {
+                "zh": "记为有限收束结案",
+                "en": "Close the ledger as a limited close"
+              },
+              "trigger": "{ ywc_t09_kor_at_1407 = yes var:ywc_t09_proposed_outcome ?= 2 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1407 = yes var:ywc_t09_proposed_outcome ?= 2 } set_variable = { name = ywc_t09_outcome value = 2 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t09_standing value = 2 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "有限收束入册结案：自筹方案或未竟的贷款按实结算。",
+                "en": "A limited close settles the ledger on the self-funded plan or the unfinished loan."
+              }
+            },
+            {
+              "key": "close_refused",
+              "label": {
+                "zh": "记为拒贷结案",
+                "en": "Close the ledger as refused credit"
+              },
+              "trigger": "{ ywc_t09_kor_at_1407 = yes var:ywc_t09_proposed_outcome ?= 3 }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1407 = yes var:ywc_t09_proposed_outcome ?= 3 } set_variable = { name = ywc_t09_outcome value = 3 } change_relations = { country = c:DMG value = -5 } change_variable = { name = ywc_t09_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t09_standing value = 3 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒贷入册结案，东明对朝鲜关系减少 5。",
+                "en": "Refused credit closes the ledger; Dongming loses 5 relations with Korea."
+              }
+            },
+            {
+              "key": "close_alone",
+              "label": {
+                "zh": "东明已不可联系，按账自行收束",
+                "en": "Close locally because the creditor is unavailable"
+              },
+              "trigger": "{ ywc_t09_kor_at_1407 = yes NOT = { ywc_t09_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1407 = yes NOT = { ywc_t09_partner_current = yes } } if = { limit = { NOT = { has_variable = ywc_t09_partner_terms } } set_variable = { name = ywc_t09_outcome value = 4 } } else_if = { limit = { var:ywc_t09_partner_terms ?= 4 } set_variable = { name = ywc_t09_outcome value = 3 } } else = { set_variable = { name = ywc_t09_outcome value = 2 } } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "对方已不可联系，朝鲜按已有账目自行收束；已支付的费用不退。",
+                "en": "The creditor is unavailable; Korea closes on the accounts it holds. Expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓结案",
+                "en": "Wait before closing"
+              },
+              "trigger": "{ ywc_t09_kor_at_1407 = yes }",
+              "effect": "{ if = { limit = { ywc_t09_kor_at_1407 = yes } set_variable = { name = ywc_t09_pending value = 1407 } change_variable = { name = ywc_t09_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "需资国按双方记录结案，并把担保与对账的制度留在册上。",
+            "en": "The capital-seeking country closes the arc on the joint record and leaves the collateral and reconciliation institutions on the books."
+          },
+          "reads": [
+            "KOR pending delivery",
+            "proposed outcome and lender records on KOR",
+            "DMG liveness and diplomatic relevance"
+          ],
+          "writes": [
+            "arc outcome",
+            "DMG standing record",
+            "relations with DMG",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t09_capital_accepted",
+        "v03_t09_capital_limited",
+        "v03_t09_capital_refused",
+        "v03_t09_capital_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
