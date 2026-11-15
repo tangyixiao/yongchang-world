@@ -1,0 +1,114 @@
+﻿# Crisis C05 太平洋自治争议: entry hooks. Initialization follows the shared
+# startup pattern with per-country exists guards; the monthly hook adds the
+# crisis journals only after real eligibility, one instance per holder country.
+# MEX and USA are initialized too: MEX holds the required counterparty answer
+# (event 1402) once invited, USA the third-country answer (event 1403).
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c05_after_lobby } }
+
+ywc_v03_c05_after_lobby = {
+	effect = {
+		if = {
+			limit = { exists = c:NMG }
+			c:NMG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:MEX }
+			c:MEX = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:USA }
+			c:USA = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:SHU }
+			c:SHU = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:JHG }
+			c:JHG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:NQG }
+			c:NQG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c05_monthly } }
+
+ywc_v03_c05_monthly = {
+	effect = {
+		# Journal 1: investigation and answers. NMG opens the case only when a
+		# real dispute exists (a settled autonomy-revenue result or the old
+		# campaign crisis record) and Mexico is alive; MEX and qualifying
+		# thirds join through the mounted case_open flag.
+		if = {
+			limit = {
+				ywc_c05_case_ready_nmg = yes
+				NOT = { has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill }
+			}
+			add_journal_entry = { type = ywc_je_v03_c05_autonomy_tax_bill }
+		}
+		if = {
+			limit = {
+				OR = {
+					c:MEX ?= this
+					OR = {
+						c:USA ?= this
+						c:SHU ?= this
+						c:JHG ?= this
+						c:NQG ?= this
+					}
+				}
+				var:ywc_c05_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c05_started }
+				NOT = { has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill }
+			}
+			add_journal_entry = { type = ywc_je_v03_c05_autonomy_tax_bill }
+		}
+		# Journal 2: payroll and appointment, only for countries that entered
+		# the execution phase.
+		if = {
+			limit = {
+				OR = {
+					c:NMG ?= this
+					c:MEX ?= this
+				}
+				has_variable = ywc_c05_started
+				var:ywc_c05_budget_open ?= 1
+				NOT = { has_variable = ywc_c05_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c05_coastal_defense_mandate }
+			}
+			add_journal_entry = { type = ywc_je_v03_c05_coastal_defense_mandate }
+		}
+		# Journal 3: fulfillment, renegotiation, confirmation and aftermath.
+		if = {
+			limit = {
+				OR = {
+					c:NMG ?= this
+					c:MEX ?= this
+				}
+				has_variable = ywc_c05_started
+				var:ywc_c05_review_open ?= 1
+				NOT = { has_variable = ywc_c05_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c05_federal_promise_review }
+			}
+			add_journal_entry = { type = ywc_je_v03_c05_federal_promise_review }
+		}
+	}
+}

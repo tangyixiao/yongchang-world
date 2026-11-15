@@ -1,0 +1,84 @@
+﻿# Crisis C05 太平洋自治争议: scripted triggers. All state variables are
+# per-country with the ywc_c05_ prefix; every cross-country read stays inside
+# an explicit c:XXX ?= { } block so no variable is read outside its writer's
+# scope. Stage values: 1400/1401 NMG investigation, 1402 MEX answer,
+# 1403 third-country answer, 1404 NMG payroll, 1405 MEX appointment,
+# 1406 NMG wharf deeds, 1407 NMG remittance explanation, 1408 NMG draft,
+# 1409 MEX veto, 1412 NMG aftermath (event ywc_crisis.1411), 1414 MEX
+# remittance verdict (event ywc_crisis.1407), 1415 NMG confirm and 1416 MEX
+# confirm (event ywc_crisis.1410); internal waiting stages: 1413 (NMG awaits
+# answers), 1417 (NMG awaits the remittance verdict), 1418 (MEX awaits the
+# renegotiation round), 1419 (terminal aftermath marker), 1420 (NMG awaits the
+# federal veto).
+
+# --- Entry readiness ---------------------------------------------------------
+
+# A real dispute exists only when a settled autonomy-revenue result (the local
+# remittance quota was actually negotiated) or the old campaign crisis left a
+# recorded outcome. An independent NMG with neither marker gets ordinary
+# country content instead of a fabricated return to the federal bargain.
+ywc_c05_fiscal_dispute = { OR = { AND = { var:ywc_v03_nmg_v03_nmg_autonomy_revenue_settled ?= 1 OR = { var:ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome ?= 1 var:ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome ?= 2 var:ywc_v03_nmg_v03_nmg_autonomy_revenue_outcome ?= 3 } } has_variable = ywc_campaign_crisis5_outcome } }
+
+ywc_c05_case_ready_nmg = { c:NMG ?= this is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes ywc_c05_fiscal_dispute = yes c:MEX ?= { is_country_alive = yes } NOT = { has_variable = ywc_c05_started } NOT = { has_variable = ywc_c05_outcome } }
+
+# --- Actual contact links (adjacency, diplomatic contact, market, port) ------
+# Evaluated at the third country's own scope, so they enter from any reader
+# through c:XXX ?= { } instead of comparing tags against this.
+
+ywc_c05_market_nmg = { c:NMG ?= { is_country_alive = yes } is_in_same_market_area = c:NMG.capital }
+ywc_c05_contact_nmg = { OR = { any_scope_state = { any_neighbouring_state = { c:NMG ?= owner } } has_diplomatic_relevance = c:NMG ywc_c05_market_nmg = yes AND = { has_port_country = yes ywc_c05_market_nmg = yes } } }
+
+ywc_c05_usa_available_nmg = { c:USA ?= { is_country_alive = yes ywc_c05_contact_nmg = yes } }
+ywc_c05_shu_available_nmg = { c:SHU ?= { is_country_alive = yes ywc_c05_contact_nmg = yes } }
+ywc_c05_jhg_available_nmg = { c:JHG ?= { is_country_alive = yes ywc_c05_contact_nmg = yes } }
+ywc_c05_nqg_available_nmg = { c:NQG ?= { is_country_alive = yes ywc_c05_contact_nmg = yes } }
+
+# --- Cross-country state helpers ---------------------------------------------
+
+ywc_c05_initiator_alive_for_me = { c:NMG ?= { is_country_alive = yes var:ywc_c05_role ?= 1 } }
+ywc_c05_initiator_gone = { NOT = { ywc_c05_initiator_alive_for_me = yes } }
+ywc_c05_responses_resolved = { NOT = { AND = { var:ywc_c05_invited_mex ?= 1 c:MEX ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_mex_response } } } } NOT = { AND = { var:ywc_c05_invited_usa ?= 1 c:USA ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_third_response } } } } NOT = { AND = { var:ywc_c05_invited_shu ?= 1 c:SHU ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_third_response } } } } NOT = { AND = { var:ywc_c05_invited_jhg ?= 1 c:JHG ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_third_response } } } } NOT = { AND = { var:ywc_c05_invited_nqg ?= 1 c:NQG ?= { is_country_alive = yes NOT = { has_variable = ywc_c05_third_response } } } } }
+ywc_c05_mex_remit_recorded = { c:MEX ?= { is_country_alive = yes has_variable = ywc_c05_remit } }
+ywc_c05_mex_draft_recorded = { c:MEX ?= { is_country_alive = yes has_variable = ywc_c05_mex_draft } }
+ywc_c05_mex_demands_defense = { c:MEX ?= { is_country_alive = yes var:ywc_c05_mex_response ?= 2 } }
+ywc_c05_can_ratify_full = { c:MEX ?= { is_country_alive = yes var:ywc_c05_mex_confirm ?= 1 } var:ywc_c05_guard_funded ?= 1 NOT = { has_variable = ywc_c05_outcome } }
+ywc_c05_mex_cannot_ratify = { OR = { NOT = { c:MEX ?= { is_country_alive = yes } } c:MEX ?= { is_country_alive = yes OR = { var:ywc_c05_mex_confirm ?= 2 var:ywc_c05_outcome ?= 4 } } } }
+
+# --- Delivery and popup-snapshot triggers ------------------------------------
+# Every delivery trigger carries the shared ywc_v03_can_deliver_major gate;
+# the at_ triggers pin options to the popup instance via the saved epoch scope.
+
+ywc_c05_nmg_delivery_1400 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1400 var:ywc_c05_pending ?= 1400 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1400 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1400 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1401 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1401 var:ywc_c05_pending ?= 1401 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1401 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1401 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_mex_delivery_1402 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1402 var:ywc_c05_pending ?= 1402 ywc_v03_can_deliver_major = yes }
+ywc_c05_mex_at_1402 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1402 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_usa_delivery_1403 = { c:USA ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 var:ywc_c05_pending ?= 1403 ywc_v03_can_deliver_major = yes }
+ywc_c05_usa_at_1403 = { c:USA ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_shu_delivery_1403 = { c:SHU ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 var:ywc_c05_pending ?= 1403 ywc_v03_can_deliver_major = yes }
+ywc_c05_shu_at_1403 = { c:SHU ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_jhg_delivery_1403 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 var:ywc_c05_pending ?= 1403 ywc_v03_can_deliver_major = yes }
+ywc_c05_jhg_at_1403 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nqg_delivery_1403 = { c:NQG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 var:ywc_c05_pending ?= 1403 ywc_v03_can_deliver_major = yes }
+ywc_c05_nqg_at_1403 = { c:NQG ?= this has_journal_entry = ywc_je_v03_c05_autonomy_tax_bill var:ywc_c05_stage ?= 1403 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1404 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_coastal_defense_mandate var:ywc_c05_stage ?= 1404 var:ywc_c05_pending ?= 1404 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1404 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_coastal_defense_mandate var:ywc_c05_stage ?= 1404 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_mex_delivery_1405 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_coastal_defense_mandate var:ywc_c05_stage ?= 1405 var:ywc_c05_pending ?= 1405 ywc_v03_can_deliver_major = yes }
+ywc_c05_mex_at_1405 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_coastal_defense_mandate var:ywc_c05_stage ?= 1405 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1406 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1406 var:ywc_c05_pending ?= 1406 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1406 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1406 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1407 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1407 var:ywc_c05_pending ?= 1407 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1407 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1407 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_mex_delivery_1414 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1414 var:ywc_c05_pending ?= 1414 ywc_v03_can_deliver_major = yes }
+ywc_c05_mex_at_1414 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1414 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1408 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1408 var:ywc_c05_pending ?= 1408 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1408 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1408 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_mex_delivery_1409 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1409 var:ywc_c05_pending ?= 1409 ywc_v03_can_deliver_major = yes }
+ywc_c05_mex_at_1409 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1409 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1415 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1415 var:ywc_c05_pending ?= 1415 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1415 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1415 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_mex_delivery_1416 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1416 var:ywc_c05_pending ?= 1416 ywc_v03_can_deliver_major = yes }
+ywc_c05_mex_at_1416 = { c:MEX ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1416 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
+ywc_c05_nmg_delivery_1412 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1412 var:ywc_c05_pending ?= 1412 ywc_v03_can_deliver_major = yes }
+ywc_c05_nmg_at_1412 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c05_federal_promise_review var:ywc_c05_stage ?= 1412 scope:ywc_c05_popup_epoch ?= var:ywc_c05_popup_epoch }
