@@ -21,14 +21,822 @@
         "WBK"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t03_migration_diaspora",
+          "title": {
+            "zh": "隔海家书与本地生活",
+            "en": "Letters Across the Sea and Local Life"
+          },
+          "desc": {
+            "zh": "东明的人手渡海南下，兰芳的会馆代收家书与回款。东明核对真实外迁的人手、他们在两地册籍上的生计与待遇，决定这条跨海通道如何立册、如何收束。",
+            "en": "Dongming's workers cross the sea, and Lanfang's hall receives their letters and remittances. Dongming audits who actually left, how they live in both registers, and how this sea channel should be recorded and closed."
+          },
+          "script": "{\nis_shown_when_inactive = { c:DMG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t03_started } }\npossible = { c:DMG ?= this ywc_v03_has_capacity = yes ywc_t03_partner_current = yes ywc_t03_local_need = yes NOT = { has_variable = ywc_t03_started } }\nimmediate = { set_variable = { name = ywc_t03_started value = 1 } set_variable = { name = ywc_t03_stage value = 1100 } set_variable = { name = ywc_t03_pending value = 1100 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } }\non_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t03_stage ?= 1102 var:ywc_t03_stage ?= 1104 var:ywc_t03_stage ?= 1107 } NOT = { ywc_t03_partner_current = yes } } c:LAN ?= { remove_variable = ywc_t03_pending } set_variable = { name = ywc_t03_stage value = 1106 } set_variable = { name = ywc_t03_pending value = 1106 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } if = { limit = { ywc_t03_dmg_delivery_1100 = yes } trigger_event = { id = ywc_society.1100 } } if = { limit = { ywc_t03_dmg_delivery_1101 = yes } trigger_event = { id = ywc_society.1101 } } if = { limit = { ywc_t03_dmg_delivery_1103 = yes } trigger_event = { id = ywc_society.1103 } } if = { limit = { ywc_t03_dmg_delivery_1105 = yes } trigger_event = { id = ywc_society.1105 } } if = { limit = { ywc_t03_dmg_delivery_1106 = yes } trigger_event = { id = ywc_society.1106 } } } }\non_complete = { ywc_t03_release_capacity = yes }\non_fail = { ywc_t03_release_capacity = yes }\n}",
+          "goal": "{ OR = { var:ywc_t03_outcome ?= 1 var:ywc_t03_outcome ?= 2 } }",
+          "exit_conditions": "{ OR = { var:ywc_t03_outcome ?= 3 var:ywc_t03_outcome ?= 4 } }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1100",
+          "title": {
+            "zh": "一封招工家书",
+            "en": "A Letter Recruiting Workers"
+          },
+          "desc": {
+            "zh": "一封招工家书经靖海的商栈转进东明官署：落款是新明的同乡和兰芳矿上的管工，字里行间是工钱、船期，和村中谁家又空了一张凳。东明须核对写与收的两端——实际要人的一方是否立得住册，离乡的人是否仍有原籍的册籍可依。",
+            "en": "A recruiting letter reaches Dongming's offices through a Jinghai trading house: signed by kin in Xinming and a foreman in a Lanfang mine, full of wages, sailing dates, and one more empty stool at the village table. Dongming must verify both ends — whether the side that truly needs hands stands on its own register, and whether those who left still have a homeland register to fall back on."
+          },
+          "trigger": "{ ywc_t03_dmg_delivery_1100 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_dmg_delivery_1100 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "examine",
+              "label": {
+                "zh": "核对两地人手与册籍",
+                "en": "Verify hands and registers on both shores"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1100 = yes ywc_t03_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1100 = yes ywc_t03_partner_current = yes } set_variable = { name = ywc_t03_stage value = 1101 } set_variable = { name = ywc_t03_pending value = 1101 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "refuse_recruit",
+              "label": {
+                "zh": "封存家书，拒绝招募",
+                "en": "Seal the letter and refuse recruitment"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1100 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1100 = yes } set_variable = { name = ywc_t03_stage value = 1106 } set_variable = { name = ywc_t03_pending value = 1106 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1100 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1100 = yes } set_variable = { name = ywc_t03_pending value = 1100 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "一封招工家书",
+            "en": "A Letter Recruiting Workers"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "employed migrant labourers recorded by ywc_t03_local_need",
+            "current phase and partner identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1101",
+          "title": {
+            "zh": "离乡者的地契",
+            "en": "The Land Deeds of Those Who Left"
+          },
+          "desc": {
+            "zh": "渡海的人留下田契、屋基与未了的赋役。东明的土地册与地方土地线牵在同一本账上：是替他们收执地契、按年记册，还是任由田土归于亲邻。已收执的契券不会在复议时再收一次钱。",
+            "en": "Those who crossed the sea left field deeds, house plots and unpaid levies. Dongming's land registry shares one ledger with the local land-titles line: hold the deeds in trust and record them yearly, or let the fields pass to kin and neighbours. A deed already held in trust is not paid for twice on reconsideration."
+          },
+          "trigger": "{ ywc_t03_dmg_delivery_1101 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_dmg_delivery_1101 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "register",
+              "label": {
+                "zh": "支付 500 收执地契并立移民册",
+                "en": "Pay 500 to hold the deeds and open a migrant register"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1101 = yes ywc_t03_partner_current = yes NOT = { has_variable = ywc_t03_deeds_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1101 = yes ywc_t03_partner_current = yes NOT = { has_variable = ywc_t03_deeds_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t03_deeds_paid value = 1 } set_variable = { name = ywc_t03_stage value = 1102 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1102 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 500。",
+                "en": "Dongming pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "地契收执入册，登记册移交兰芳会馆答复。",
+                "en": "The deeds are held in trust; the register goes to Lanfang's hall for its answer."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已收执的地契记录",
+                "en": "Use the deeds already held in trust"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1101 = yes ywc_t03_partner_current = yes var:ywc_t03_deeds_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1101 = yes ywc_t03_partner_current = yes var:ywc_t03_deeds_paid ?= 1 } set_variable = { name = ywc_t03_stage value = 1102 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1102 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "不收执，田土任其自便",
+                "en": "Hold nothing; let the land be settled locally"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1101 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1101 = yes } set_variable = { name = ywc_t03_stage value = 1106 } set_variable = { name = ywc_t03_pending value = 1106 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1101 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1101 = yes } set_variable = { name = ywc_t03_pending value = 1101 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "离乡者的地契",
+            "en": "The Land Deeds of Those Who Left"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "Dongming land-titles line and migrant register state",
+            "current phase and partner identity"
+          ],
+          "writes": [
+            "deed trust payment snapshot",
+            "transfer into the Lanfang partner phase",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1102",
+          "title": {
+            "zh": "会馆和村社的请求",
+            "en": "The Request of the Hall and the Village"
+          },
+          "desc": {
+            "zh": "兰芳的会馆与本地村社联名呈请：侨工自设的会馆求一个立案的名分，村社求的是两造共议的规矩——不是谁并入谁，而是各守各的册、各交各的税。兰芳可以支付 800 承认立案，也可以不立案而只默许集会与共议。",
+            "en": "Lanfang's hall and the local village community file a joint request: the migrants' hall asks to be registered on its own footing, and the village asks for rules decided together — neither absorbing the other, each keeping its own ledger and its own dues. Lanfang may pay 800 to grant the registration, or withhold it and merely tolerate the gatherings and joint councils."
+          },
+          "trigger": "{ ywc_t03_lan_delivery_1102 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_lan_delivery_1102 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "charter",
+              "label": {
+                "zh": "支付 800 承认会馆立案",
+                "en": "Pay 800 to grant the hall its registration"
+              },
+              "trigger": "{ ywc_t03_lan_at_1102 = yes NOT = { has_variable = ywc_t03_charter_paid } gold_reserves >= 800 }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1102 = yes NOT = { has_variable = ywc_t03_charter_paid } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t03_charter_paid value = 1 } set_variable = { name = ywc_t03_diaspora_charter value = 1 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_hall_response value = 1 } set_variable = { name = ywc_t03_stage value = 1103 } set_variable = { name = ywc_t03_pending value = 1103 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "兰芳国库支付 800。",
+                "en": "Lanfang pays 800 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "会馆立案并回复东明，两端各留记录。",
+                "en": "The hall is registered and answers Dongming; both ends keep a record."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已立案的会馆",
+                "en": "Use the registration already granted"
+              },
+              "trigger": "{ ywc_t03_lan_at_1102 = yes var:ywc_t03_charter_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1102 = yes var:ywc_t03_charter_paid ?= 1 } set_variable = { name = ywc_t03_diaspora_charter value = 1 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_hall_response value = 1 } set_variable = { name = ywc_t03_stage value = 1103 } set_variable = { name = ywc_t03_pending value = 1103 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "tolerate",
+              "label": {
+                "zh": "不立案，仅默许集会与共议",
+                "en": "Grant no registration; tolerate gatherings and councils"
+              },
+              "trigger": "{ ywc_t03_lan_at_1102 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1102 = yes } set_variable = { name = ywc_t03_diaspora_charter value = 2 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_hall_response value = 2 } set_variable = { name = ywc_t03_stage value = 1103 } set_variable = { name = ywc_t03_pending value = 1103 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "不立案而默许共议，回复东明。",
+                "en": "No registration, tolerated councils; Dongming receives the answer."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t03_lan_at_1102 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1102 = yes } set_variable = { name = ywc_t03_pending value = 1102 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "会馆和村社的请求",
+            "en": "The Request of the Hall and the Village"
+          },
+          "reads": [
+            "LAN pending delivery",
+            "Dongming phase and partner identity verified from the receiving side"
+          ],
+          "writes": [
+            "hall charter record on both ends",
+            "transfer back into the Dongming phase",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1103",
+          "title": {
+            "zh": "回款要经过哪座港",
+            "en": "Which Port Carries the Remittances"
+          },
+          "desc": {
+            "zh": "回款下南洋易，回乡难：走靖海的商栈要贴水与保费，直汇的侨批快却遇风浪即断。东明与兰芳各记各的账，实际过手的是靖海的船行——已付的保费与贴水不会重复计收。",
+            "en": "Money flows south easily and returns home with difficulty: routing through Jinghai's trading houses costs exchange and premiums, while direct remittance bills are faster but break with every storm. Dongming and Lanfang keep separate ledgers, and Jinghai's shipping houses actually handle the passage. Premiums already paid are not collected twice."
+          },
+          "trigger": "{ ywc_t03_dmg_delivery_1103 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_dmg_delivery_1103 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "port_jhg",
+              "label": {
+                "zh": "支付 400，走靖海商栈转汇",
+                "en": "Pay 400 to route through Jinghai's houses"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1103 = yes ywc_t03_partner_current = yes ywc_t03_jhg_port_available = yes NOT = { has_variable = ywc_t03_port_toll_paid } gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1103 = yes ywc_t03_partner_current = yes ywc_t03_jhg_port_available = yes NOT = { has_variable = ywc_t03_port_toll_paid } gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t03_port_toll_paid value = 1 } set_variable = { name = ywc_t03_route value = 1 } set_variable = { name = ywc_t03_stage value = 1104 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1104 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 400。",
+                "en": "Dongming pays 400 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "回款经靖海转汇，记录移交兰芳。",
+                "en": "Remittances route through Jinghai; the record passes to Lanfang."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已付的转汇保费",
+                "en": "Use the routing already paid for"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1103 = yes ywc_t03_partner_current = yes var:ywc_t03_port_toll_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1103 = yes ywc_t03_partner_current = yes var:ywc_t03_port_toll_paid ?= 1 } set_variable = { name = ywc_t03_route value = 1 } set_variable = { name = ywc_t03_stage value = 1104 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1104 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "direct",
+              "label": {
+                "zh": "侨批直汇，不经中转",
+                "en": "Send remittance bills direct, without a middleman"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1103 = yes ywc_t03_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1103 = yes ywc_t03_partner_current = yes } set_variable = { name = ywc_t03_route value = 2 } set_variable = { name = ywc_t03_stage value = 1104 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1104 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按现有条件直汇，记录移交兰芳。",
+                "en": "Bills go direct on existing terms; the record passes to Lanfang."
+              }
+            },
+            {
+              "key": "stop",
+              "label": {
+                "zh": "止付回款，只通家书",
+                "en": "Stop the remittances; keep only the letters"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1103 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1103 = yes } set_variable = { name = ywc_t03_stage value = 1106 } set_variable = { name = ywc_t03_pending value = 1106 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1103 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1103 = yes } set_variable = { name = ywc_t03_pending value = 1103 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "回款要经过哪座港",
+            "en": "Which Port Carries the Remittances"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "Jinghai shipping houses as the actual trade party",
+            "current phase and partner identity"
+          ],
+          "writes": [
+            "routing toll payment snapshot",
+            "transfer into the Lanfang partner phase",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1104",
+          "title": {
+            "zh": "第二代的姓名",
+            "en": "The Second Generation's Names"
+          },
+          "desc": {
+            "zh": "生在矿上的孩子到了记名的年纪。兰芳的民册、村社的名册与东明的原籍册各有一套写法：入本地民册要完一份公民的钱粮，另立附册则保住原音原名。第二代的身份由此定调，两边都要留档。",
+            "en": "Children born by the mines have reached the age of registers. Lanfang's civil roll, the village roster and Dongming's homeland register each write names their own way: the local roll asks a citizen's fee, a separate supplement keeps the old sounds and the old names. The second generation's standing is fixed here, and both sides file it."
+          },
+          "trigger": "{ ywc_t03_lan_delivery_1104 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_lan_delivery_1104 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "register_local",
+              "label": {
+                "zh": "支付 600，第二代记入本地民册",
+                "en": "Pay 600 to enter the second generation in the local roll"
+              },
+              "trigger": "{ ywc_t03_lan_at_1104 = yes NOT = { has_variable = ywc_t03_register_paid } gold_reserves >= 600 }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1104 = yes NOT = { has_variable = ywc_t03_register_paid } gold_reserves >= 600 } add_treasury = -600 set_variable = { name = ywc_t03_register_paid value = 1 } set_variable = { name = ywc_t03_diaspora_names value = 1 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_names_record value = 1 } set_variable = { name = ywc_t03_stage value = 1105 } set_variable = { name = ywc_t03_pending value = 1105 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "兰芳国库支付 600。",
+                "en": "Lanfang pays 600 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "第二代入本地民册，两端留档。",
+                "en": "The second generation enters the local roll; both sides file it."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已记入的民册",
+                "en": "Use the roll entries already made"
+              },
+              "trigger": "{ ywc_t03_lan_at_1104 = yes var:ywc_t03_register_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1104 = yes var:ywc_t03_register_paid ?= 1 } set_variable = { name = ywc_t03_diaspora_names value = 1 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_names_record value = 1 } set_variable = { name = ywc_t03_stage value = 1105 } set_variable = { name = ywc_t03_pending value = 1105 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "keep_names",
+              "label": {
+                "zh": "保留原籍姓名，另立附册",
+                "en": "Keep the homeland names; file a separate supplement"
+              },
+              "trigger": "{ ywc_t03_lan_at_1104 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1104 = yes } set_variable = { name = ywc_t03_diaspora_names value = 2 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_names_record value = 2 } set_variable = { name = ywc_t03_stage value = 1105 } set_variable = { name = ywc_t03_pending value = 1105 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "原音原名入附册，两端留档。",
+                "en": "The old names go into a supplement; both sides file it."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t03_lan_at_1104 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1104 = yes } set_variable = { name = ywc_t03_pending value = 1104 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "第二代的姓名",
+            "en": "The Second Generation's Names"
+          },
+          "reads": [
+            "LAN pending delivery",
+            "Dongming phase and partner identity verified from the receiving side"
+          ],
+          "writes": [
+            "second-generation name record on both ends",
+            "transfer back into the Dongming phase",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1105",
+          "title": {
+            "zh": "故乡遇到难年",
+            "en": "A Hard Year in the Old Country"
+          },
+          "desc": {
+            "zh": "故里报来灾荒：田亩失收，义仓见底。东明可以支付 500 设灾册、雇船传信，请兰芳的会馆代募义捐；也可以只许私人家书求助，官府不具印。灾情是真的，求援的路径必须是通的。",
+            "en": "Famine is reported from the old country: fields failed and the granaries are empty. Dongming may pay 500 to open a relief register and hire ships to carry the plea, asking Lanfang's hall to raise subscriptions; or it may allow only private letters and keep the court's seal off the paper. The famine is real, and the plea must have a working route."
+          },
+          "trigger": "{ ywc_t03_dmg_delivery_1105 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_dmg_delivery_1105 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "appeal",
+              "label": {
+                "zh": "支付 500，设灾册并正式求援",
+                "en": "Pay 500, open the relief register and appeal formally"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1105 = yes ywc_t03_partner_current = yes NOT = { has_variable = ywc_t03_appeal_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1105 = yes ywc_t03_partner_current = yes NOT = { has_variable = ywc_t03_appeal_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t03_appeal_paid value = 1 } set_variable = { name = ywc_t03_proposed_outcome value = 1 } set_variable = { name = ywc_t03_stage value = 1107 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1107 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 500。",
+                "en": "Dongming pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "灾册立档，正式求援移交兰芳会馆。",
+                "en": "The relief register is filed; the formal appeal passes to Lanfang's hall."
+              }
+            },
+            {
+              "key": "limited_letter",
+              "label": {
+                "zh": "只许私信求助，官府不具印",
+                "en": "Allow private pleas only; the court sets no seal"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1105 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1105 = yes } set_variable = { name = ywc_t03_stage value = 1106 } set_variable = { name = ywc_t03_pending value = 1106 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1105 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1105 = yes } set_variable = { name = ywc_t03_pending value = 1105 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "故乡遇到难年",
+            "en": "A Hard Year in the Old Country"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "relief register route and partner identity"
+          ],
+          "writes": [
+            "formal appeal payment snapshot",
+            "transfer into the Lanfang final phase",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1106",
+          "title": {
+            "zh": "留下或归去的选择",
+            "en": "To Stay or to Return"
+          },
+          "desc": {
+            "zh": "去留的选择摆在两代人与两地官册之间。东明可以请兰芳会馆合议去留与输粟的名额；可以让人手留驻、回款与家书照通；也可以拒绝后续招募，只作家书往来。若兰芳已不可联系，东明自行结案；已付的求援费用不退。",
+            "en": "The choice of staying or returning sits between two generations and two registers. Dongming may ask Lanfang's hall to confer on shares of return and grain; may let the workers stay with remittances and letters continuing; or may refuse further recruitment and keep only the correspondence. If Lanfang cannot be reached, Dongming closes on its own; appeal costs already paid are not refunded."
+          },
+          "trigger": "{ ywc_t03_dmg_delivery_1106 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_dmg_delivery_1106 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "consult",
+              "label": {
+                "zh": "请兰芳会馆合议去留",
+                "en": "Ask Lanfang's hall to confer on staying or returning"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1106 = yes ywc_t03_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1106 = yes ywc_t03_partner_current = yes } set_variable = { name = ywc_t03_proposed_outcome value = 2 } set_variable = { name = ywc_t03_stage value = 1107 } c:LAN = { set_variable = { name = ywc_t03_pending value = 1107 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "合议之名移交兰芳，两端记录去留条款。",
+                "en": "The question of staying or returning passes to Lanfang; both ends record its terms."
+              }
+            },
+            {
+              "key": "stay_local",
+              "label": {
+                "zh": "让侨工留驻，回款家书照通",
+                "en": "Let the workers stay; keep remittances and letters flowing"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1106 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1106 = yes } set_variable = { name = ywc_t03_outcome value = 2 } c:LAN ?= { set_variable = { name = ywc_t03_return_record value = 2 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "有限接受：人手留驻而通道照通，两端留档。",
+                "en": "Limited acceptance: the workers stay and the channel stays open; both ends file it."
+              }
+            },
+            {
+              "key": "refuse_channel",
+              "label": {
+                "zh": "拒绝后续招募，仅保家书",
+                "en": "Refuse further recruitment; keep only the letters"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1106 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1106 = yes } set_variable = { name = ywc_t03_outcome value = 3 } c:LAN ?= { set_variable = { name = ywc_t03_return_record value = 3 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拒绝后续招募，仅存音信之谊。",
+                "en": "Further recruitment is refused; only correspondence remains."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "对方已不可联系，东明自行结案",
+                "en": "Close on our own; the partner is unreachable"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1106 = yes NOT = { ywc_t03_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1106 = yes NOT = { ywc_t03_partner_current = yes } } if = { limit = { var:ywc_t03_appeal_paid ?= 1 } set_variable = { name = ywc_t03_outcome value = 2 } } else = { set_variable = { name = ywc_t03_outcome value = 4 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "已立求援通道则按有限接济结案，否则记录为中断。",
+                "en": "A paid appeal channel closes as limited relief; otherwise the record lapses."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t03_dmg_at_1106 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_dmg_at_1106 = yes } set_variable = { name = ywc_t03_pending value = 1106 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "留下或归去的选择",
+            "en": "To Stay or to Return"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "paid appeal snapshot and partner reachability"
+          ],
+          "writes": [
+            "stay-or-return outcome on both ends",
+            "joint conference transfer into the Lanfang final phase",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1107",
+          "title": {
+            "zh": "会馆账本移交之后",
+            "en": "After the Ledger Changes Hands"
+          },
+          "desc": {
+            "zh": "会馆的账本摊在两造面前：义捐的船期、按名造册的赈米、与村社共议的税额。兰芳可以把账本移交、支付 1000 义捐并承认侨社自立；也可以保留账本，只记条款不输分文。两条路都要写进东明的结局册。",
+            "en": "The hall's ledger lies open before both parties: subscription sailings, relief rice entered by name, and dues agreed with the village council. Lanfang may hand the ledger over, pay 1,000 in subscriptions and recognise the migrant community's standing; or keep the ledger and record terms without paying a coin. Either way the outcome is written into Dongming's register."
+          },
+          "trigger": "{ ywc_t03_lan_delivery_1107 = yes }",
+          "immediate": "{ if = { limit = { ywc_t03_lan_delivery_1107 = yes } remove_variable = ywc_t03_pending if = { limit = { NOT = { has_variable = ywc_t03_popup_epoch } } set_variable = { name = ywc_t03_popup_epoch value = 0 } } change_variable = { name = ywc_t03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t03_popup_epoch value = var:ywc_t03_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "hand_over",
+              "label": {
+                "zh": "移交账本，支付 1000 义捐",
+                "en": "Hand over the ledger and pay 1,000 in subscriptions"
+              },
+              "trigger": "{ ywc_t03_lan_at_1107 = yes gold_reserves >= 1000 }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1107 = yes gold_reserves >= 1000 } add_treasury = -1000 set_variable = { name = ywc_t03_aftermath value = 1 } change_relations = { country = c:DMG value = 5 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_outcome value = var:ywc_t03_proposed_outcome } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "兰芳国库支付 1000；不向东明转款。",
+                "en": "Lanfang pays 1,000; no transfer to Dongming."
+              },
+              "consequence_note": {
+                "zh": "兰芳对东明关系增加 5，侨社自立入册。",
+                "en": "Lanfang gains 5 relations with Dongming; the community's standing is registered."
+              }
+            },
+            {
+              "key": "reserve",
+              "label": {
+                "zh": "保留账本，记录条款不输捐",
+                "en": "Keep the ledger; record terms without subscriptions"
+              },
+              "trigger": "{ ywc_t03_lan_at_1107 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1107 = yes } set_variable = { name = ywc_t03_aftermath value = 2 } change_relations = { country = c:DMG value = -5 } change_variable = { name = ywc_t03_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t03_outcome value = var:ywc_t03_proposed_outcome } change_variable = { name = ywc_t03_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "兰芳对东明关系减少 5，条款照录。",
+                "en": "Lanfang loses 5 relations with Dongming; the terms are recorded all the same."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t03_lan_at_1107 = yes }",
+              "effect": "{ if = { limit = { ywc_t03_lan_at_1107 = yes } set_variable = { name = ywc_t03_pending value = 1107 } change_variable = { name = ywc_t03_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "会馆账本移交之后",
+            "en": "After the Ledger Changes Hands"
+          },
+          "reads": [
+            "LAN pending delivery",
+            "Dongming proposed outcome carried across the channel"
+          ],
+          "writes": [
+            "ledger aftermath record and relations",
+            "final outcome written into the Dongming register",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t03_joint_settlement_accepted",
+        "v03_t03_limited_channel_accepted",
+        "v03_t03_recruitment_refused",
+        "v03_t03_partner_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
