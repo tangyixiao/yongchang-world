@@ -1,0 +1,27 @@
+﻿# Regional CHI (F01) startup hook. Additive to the shared lobby hook; guarded
+# so a world without CHI never dereferences a missing tag. CHI is not on the
+# shared startup tag list, so the hook initializes the shared v0.3 counters
+# here before consulting capacity.
+on_game_started_after_lobby = { on_actions = { ywc_v03_regional_chi_after_lobby } }
+
+ywc_v03_regional_chi_after_lobby = {
+	effect = {
+		if = {
+			limit = { exists = c:CHI }
+			c:CHI = {
+				if = {
+					limit = { is_country_alive = yes }
+					ywc_v03_initialize_country = yes
+					if = {
+						limit = {
+							NOT = { has_variable = ywc_chi_a_started }
+							NOT = { has_journal_entry = ywc_je_v03_chi_a }
+							ywc_v03_has_capacity = yes
+						}
+						add_journal_entry = { type = ywc_je_v03_chi_a }
+					}
+				}
+			}
+		}
+	}
+}

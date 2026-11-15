@@ -21,13 +21,616 @@
         "AMR"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_chi_a",
+          "title": {
+            "zh": "残廷的粮册",
+            "en": "The Rump Court's Grain Registers"
+          },
+          "desc": {
+            "zh": "外贝加尔的小朝廷还捧着两本册子：一本记旗丁的月粮，一本记垦户的税粮。册子越旧，欠得越多；先把粮册理清，才谈得上别的。",
+            "en": "The small court at Transbaikal still holds two registers: one for the bannermen's monthly grain, one for the settlers' tax grain. The older the books, the larger the arrears; only by putting the grain registers in order does anything else become possible."
+          },
+          "script": "{\nis_shown_when_inactive = { c:CHI ?= this NOT = { has_variable = ywc_chi_a_started } }\npossible = { c:CHI ?= this is_country_alive = yes ywc_v03_has_capacity = yes NOT = { has_variable = ywc_chi_a_started } }\nimmediate = { ywc_chi_claim_arc_a = yes }\non_monthly_pulse = { effect = {\nywc_chi_claim_arc_a = yes\nif = { limit = { ywc_chi_delivery_1000 = yes } trigger_event = { id = ywc_regional.1000 } }\nif = { limit = { ywc_chi_delivery_1001 = yes } trigger_event = { id = ywc_regional.1001 } }\nif = { limit = { ywc_chi_delivery_1002 = yes } trigger_event = { id = ywc_regional.1002 } }\n} }\non_complete = { ywc_chi_release_arc_a = yes }\non_fail = { ywc_chi_release_arc_a = yes }\n}",
+          "goal": "{ OR = { var:ywc_chi_a_outcome ?= 1 var:ywc_chi_a_outcome ?= 2 } }",
+          "exit_conditions": "{ var:ywc_chi_a_outcome ?= 4 }"
+        },
+        {
+          "id": "ywc_je_v03_chi_b",
+          "title": {
+            "zh": "名号之外的国民",
+            "en": "Subjects Beyond the Style"
+          },
+          "desc": {
+            "zh": "朝廷的名号之下，还住着布里亚特牧户、哥萨克垦户与海岛上的通信人。谁能算朝廷的属民、谁只算客籍，以及往来书信该用谁的名号，将决定留下的究竟是朝廷还是别的什么。",
+            "en": "Beneath the dynastic style live Buryat herders, Cossack settlers and correspondents across the sea. Who counts as the court's own, who stays a registered guest, and whose name the letters carry, will decide whether what remains is a court or something else."
+          },
+          "script": "{\nis_shown_when_inactive = { c:CHI ?= this NOT = { has_variable = ywc_chi_b_started } }\npossible = { c:CHI ?= this is_country_alive = yes has_variable = ywc_chi_b_due NOT = { has_variable = ywc_chi_b_started } NOT = { has_variable = ywc_chi_b_settled } ywc_v03_has_capacity = yes }\nimmediate = { ywc_chi_claim_arc_b = yes }\non_monthly_pulse = { effect = {\nywc_chi_claim_arc_b = yes\nif = { limit = { ywc_chi_delivery_1003 = yes } trigger_event = { id = ywc_regional.1003 } }\nif = { limit = { ywc_chi_delivery_1004 = yes } trigger_event = { id = ywc_regional.1004 } }\nif = { limit = { ywc_chi_delivery_1005 = yes } trigger_event = { id = ywc_regional.1005 } }\n} }\non_complete = { ywc_chi_release_arc_b = yes }\non_fail = { ywc_chi_release_arc_b = yes }\n}",
+          "goal": "{ OR = { var:ywc_chi_b_outcome ?= 1 var:ywc_chi_b_outcome ?= 2 } }",
+          "exit_conditions": "{ var:ywc_chi_b_outcome ?= 4 }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_regional.1000",
+          "title": {
+            "zh": "八旗仍要吃粮",
+            "en": "The Eight Banners Still Must Eat Grain"
+          },
+          "desc": {
+            "zh": "户部的旧册还按月记着旗丁的米粮，可陆上的地租连俸库都填不满。管票的章京把两本册子摊在案上：旗饷一日不改，垦户的税就一日收不齐。",
+            "en": "The old board register still records the bannermen's monthly grain, yet the land rents on the steppe can no longer fill the stipend stores. The secretary in charge of ration tickets spreads both books on the desk: while the stipend goes unchanged, the settlers' tax can never be collected in full."
+          },
+          "trigger": "{ ywc_chi_delivery_1000 = yes }",
+          "immediate": "{ if = { limit = { ywc_chi_delivery_1000 = yes } remove_variable = ywc_chi_a_pending if = { limit = { NOT = { has_variable = ywc_chi_popup_epoch } } set_variable = { name = ywc_chi_popup_epoch value = 0 } } change_variable = { name = ywc_chi_popup_epoch add = 1 } save_scope_value_as = { name = ywc_chi_popup_epoch value = var:ywc_chi_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "full_stipend",
+              "label": {
+                "zh": "旗饷照旧：清偿积欠，国库按月全支",
+                "en": "Keep the stipend: clear the arrears, the treasury pays in full"
+              },
+              "trigger": "{ ywc_chi_at_1000 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1000 = yes gold_reserves >= var:ywc_chi_a_double_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_chi_a_double_fee multiply = -1 } set_variable = { name = ywc_chi_banner_mode value = 1 } set_variable = { name = ywc_chi_banner_privilege_kept value = 1 } set_variable = { name = ywc_chi_a_stage value = 1001 } set_variable = { name = ywc_chi_a_pending value = 1001 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } else = { set_variable = { name = ywc_chi_a_pending value = 1000 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "清偿积欠旗饷：开启时两周财政收入（存钱不足则此案暂缓）。",
+                "en": "Arrears settlement: two weeks of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "旗籍旧支持得以稳固，但旗饷照旧占用税源；两本册子的账仍要另议。",
+                "en": "The banner households' old loyalty is secured, but the unchanged stipend keeps occupying the tax base; the two registers still await their own settlement."
+              }
+            },
+            {
+              "key": "halve_stipend",
+              "label": {
+                "zh": "旗饷减半：余丁编入垦册",
+                "en": "Halve the stipend: settle the surplus bannermen on the land rolls"
+              },
+              "trigger": "{ ywc_chi_at_1000 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1000 = yes gold_reserves >= var:ywc_chi_a_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_chi_a_fee multiply = -1 } set_variable = { name = ywc_chi_banner_mode value = 2 } set_variable = { name = ywc_chi_banner_land_grant value = 1 } set_variable = { name = ywc_chi_a_stage value = 1001 } set_variable = { name = ywc_chi_a_pending value = 1001 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } else = { set_variable = { name = ywc_chi_a_pending value = 1000 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "编丁授田的开局工本：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Land-grant outlay for the settled men: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "省下的月粮转作垦务本钱；让出旗饷是政治让步，旧旗营的怨言会记入复核。",
+                "en": "The saved grain becomes working capital for land clearing; yielding the stipend is a political concession, and the old banner camps' resentment is carried into the review."
+              }
+            },
+            {
+              "key": "defer_stipend",
+              "label": {
+                "zh": "暂缓裁议：先挂账再算",
+                "en": "Defer the ruling: keep the accounts hanging for now"
+              },
+              "trigger": "{ ywc_chi_at_1000 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1000 = yes } set_variable = { name = ywc_chi_a_pending value = 1000 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "决定押后，积欠与争执继续滚大。",
+                "en": "The decision is postponed; arrears and dispute keep compounding."
+              }
+            },
+            {
+              "key": "withdraw_at_1000",
+              "label": {
+                "zh": "此线不办：旗饷照旧例自筹",
+                "en": "Drop this line: the banners fend for themselves by custom"
+              },
+              "trigger": "{ ywc_chi_at_1000 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1000 = yes } set_variable = { name = ywc_chi_a_outcome value = 4 } remove_variable = ywc_chi_a_pending remove_variable = ywc_chi_a_stage change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 10 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "粮册线就此收回，名号线不再提起；旧例自负盈亏。",
+                "en": "The grain-register line is withdrawn and the standing line will not be raised; custom carries its own profit and loss."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "开线：裁定旗饷负担方式并记录旗籍取舍",
+            "en": "Opening: decide who carries the banner stipend and record the banner-registry choice"
+          },
+          "reads": [
+            "treasury and default status",
+            "delivery stage and popup epoch",
+            "banner establishment recorded in the old board register"
+          ],
+          "writes": [
+            "ywc_chi_banner_mode decision",
+            "banner privilege or land-grant record",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1001",
+          "title": {
+            "zh": "外贝加尔的两份账",
+            "en": "Two Ledgers of Transbaikal"
+          },
+          "desc": {
+            "zh": "旗册记人，垦册记地，两本账在外贝加尔对不上：同一条河谷，旗册说是牧场，垦册说是新田。理账的书办提议并册，旗营的长官只肯附册。",
+            "en": "The banner register counts men, the settler register counts land, and in Transbaikal the two disagree: the same river valley is pasture in one book and new fields in the other. The clerks propose merging the rolls; the banner commanders will accept only an appendix."
+          },
+          "trigger": "{ ywc_chi_delivery_1001 = yes }",
+          "immediate": "{ if = { limit = { ywc_chi_delivery_1001 = yes } remove_variable = ywc_chi_a_pending if = { limit = { NOT = { has_variable = ywc_chi_popup_epoch } } set_variable = { name = ywc_chi_popup_epoch value = 0 } } change_variable = { name = ywc_chi_popup_epoch add = 1 } save_scope_value_as = { name = ywc_chi_popup_epoch value = var:ywc_chi_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "dual_ledger",
+              "label": {
+                "zh": "两册并录：旗册垦册同缴一处",
+                "en": "Merge the ledgers: banner and settler rolls filed together"
+              },
+              "trigger": "{ ywc_chi_at_1001 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1001 = yes gold_reserves >= var:ywc_chi_a_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_chi_a_fee multiply = -1 } set_variable = { name = ywc_chi_ledger_mode value = 1 } set_variable = { name = ywc_chi_review_due value = 1 } set_variable = { name = ywc_chi_review_clock value = 1 days = 365 } set_variable = { name = ywc_chi_a_stage value = 1002 } set_variable = { name = ywc_chi_a_pending value = 1002 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } else = { set_variable = { name = ywc_chi_a_pending value = 1001 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "并册誊录工本：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Transcription cost for the merged roll: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "同册并录自此生效；一年后旧官署按执行结果呈复核。",
+                "en": "The merged roll takes effect at once; a year later the old offices report on how it actually held."
+              }
+            },
+            {
+              "key": "banner_ledger_first",
+              "label": {
+                "zh": "旗册优先：垦户附册候记",
+                "en": "Banner roll first: settlers wait in an appendix"
+              },
+              "trigger": "{ ywc_chi_at_1001 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1001 = yes } set_variable = { name = ywc_chi_ledger_mode value = 2 } set_variable = { name = ywc_chi_settler_register_delayed value = 1 } set_variable = { name = ywc_chi_review_due value = 1 } set_variable = { name = ywc_chi_review_clock value = 1 days = 365 } set_variable = { name = ywc_chi_a_stage value = 1002 } set_variable = { name = ywc_chi_a_pending value = 1002 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "旗营满意，垦户的名字只入附册；复核时旧官署会照实呈报这笔欠账。",
+                "en": "The banner camps are satisfied while settlers' names wait in an appendix; at the review the old offices report this shortfall as it stands."
+              }
+            },
+            {
+              "key": "defer_ledger",
+              "label": {
+                "zh": "两册先各管各，暂不合并",
+                "en": "Let each ledger keep its own books for now"
+              },
+              "trigger": "{ ywc_chi_at_1001 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1001 = yes } set_variable = { name = ywc_chi_a_pending value = 1001 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "决定押后，同地异名的争议继续存在。",
+                "en": "The decision is postponed; the same land keeps two names on two books."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "选定地册合并方式并开启一年执行复核",
+            "en": "Choose how the land rolls merge and start the year-long execution review"
+          },
+          "reads": [
+            "banner decision from the previous choice",
+            "treasury and default status",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_chi_ledger_mode decision",
+            "settler register delay record",
+            "one-year review clock and due marker",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1002",
+          "title": {
+            "zh": "旧官署的新税源",
+            "en": "The Old Offices' New Tax Sources"
+          },
+          "desc": {
+            "zh": "一年期满，旧官署把复核的册子抬上来：并册的地方税粮能齐，附册的地方仍是两本账。税源找着了新着落，可这笔账怎么认，还要朝廷一句话。",
+            "en": "The year is up and the old offices carry the review upward: where the rolls merged, the grain tax comes in full; where settlers waited in an appendix, two books still disagree. New tax sources have been found, but how the court owns this account is still its word to give."
+          },
+          "trigger": "{ ywc_chi_delivery_1002 = yes }",
+          "immediate": "{ if = { limit = { ywc_chi_delivery_1002 = yes } remove_variable = ywc_chi_a_pending if = { limit = { NOT = { has_variable = ywc_chi_popup_epoch } } set_variable = { name = ywc_chi_popup_epoch value = 0 } } change_variable = { name = ywc_chi_popup_epoch add = 1 } save_scope_value_as = { name = ywc_chi_popup_epoch value = var:ywc_chi_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "ratify_registers",
+              "label": {
+                "zh": "照册施行：垦册入正税",
+                "en": "Ratify the registers: settler rolls enter the regular tax"
+              },
+              "trigger": "{ ywc_chi_at_1002 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1002 = yes } if = { limit = { var:ywc_chi_banner_mode ?= 2 var:ywc_chi_ledger_mode ?= 1 } set_variable = { name = ywc_chi_a_outcome value = 1 } } else = { set_variable = { name = ywc_chi_a_outcome value = 2 } } remove_variable = ywc_chi_a_pending remove_variable = ywc_chi_a_stage ywc_chi_open_b_je = yes change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无一次性支出；新税源自此入正项预算。",
+                "en": "No one-off expense; the new tax sources enter the standing budget."
+              },
+              "consequence_note": {
+                "zh": "旗饷让步与并册俱全则为整理达标，否则按有限结果结算；名号线随后提起。",
+                "en": "With both the stipend concession and the merged roll the registers count as consolidated, otherwise the line settles as limited; the standing line follows."
+              }
+            },
+            {
+              "key": "earmark_subsidy",
+              "label": {
+                "zh": "另立专款：旗垦各半分担",
+                "en": "Earmark a fund: banners and settlers share it half and half"
+              },
+              "trigger": "{ ywc_chi_at_1002 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1002 = yes gold_reserves >= var:ywc_chi_a_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_chi_a_fee multiply = -1 } set_variable = { name = ywc_chi_a_outcome value = 2 } set_variable = { name = ywc_chi_subsidy_shared value = 1 } remove_variable = ywc_chi_a_pending remove_variable = ywc_chi_a_stage ywc_chi_open_b_je = yes change_variable = { name = ywc_chi_popup_epoch add = 1 } } else = { set_variable = { name = ywc_chi_a_pending value = 1002 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "专款开办银：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Fund start-up silver: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "财政靠专款维持，账目按有限结果结算；分担之例写入往后的预算争议。",
+                "en": "Finances hold on the earmarked fund while the account settles as limited; the sharing precedent is written into later budget disputes."
+              }
+            },
+            {
+              "key": "defer_review",
+              "label": {
+                "zh": "复核再挂一年：等下一轮呈报",
+                "en": "Hang the review another year: wait for the next round of reports"
+              },
+              "trigger": "{ ywc_chi_at_1002 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1002 = yes } set_variable = { name = ywc_chi_a_pending value = 1002 } set_variable = { name = ywc_chi_review_clock value = 1 days = 365 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "结算押后一年，预算缺口照旧挂着。",
+                "en": "Settlement is postponed a year; the budget gap stays on the books."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "执行复核结算：确定粮册整理结果并提起名号线",
+            "en": "Execution-review settlement: fix the grain-register result and raise the standing line"
+          },
+          "reads": [
+            "banner and ledger decisions recorded earlier",
+            "one-year review clock expiry",
+            "treasury and default status for the earmark"
+          ],
+          "writes": [
+            "ywc_chi_a_outcome settlement",
+            "shared-subsidy record",
+            "due marker that lets the standing line open"
+          ]
+        },
+        {
+          "id": "ywc_regional.1003",
+          "title": {
+            "zh": "库页来信的称谓",
+            "en": "Forms of Address in the Sakhalin Letter"
+          },
+          "desc": {
+            "zh": "海岛与北边的来信都到了驿房：具衔写的是大清朝廷，落款却是外贝加尔官署。回信该用谁的名号，与北边各国的往来要不要分开记账，驿房等一个章程。",
+            "en": "Letters from the island and the north have reached the post house: the salutation reads the Great Qing court, the signature reads the Transbaikal offices. Whose name the replies carry, and whether accounts with the northern states stay separate, waits on a ruling."
+          },
+          "trigger": "{ ywc_chi_delivery_1003 = yes }",
+          "immediate": "{ if = { limit = { ywc_chi_delivery_1003 = yes } remove_variable = ywc_chi_b_pending if = { limit = { NOT = { has_variable = ywc_chi_popup_epoch } } set_variable = { name = ywc_chi_popup_epoch value = 0 } } change_variable = { name = ywc_chi_popup_epoch add = 1 } save_scope_value_as = { name = ywc_chi_popup_epoch value = var:ywc_chi_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "dynastic_style",
+              "label": {
+                "zh": "仍用大清名号：来信以朝廷名义具衔",
+                "en": "Keep the dynastic style: letters go out under the court's name"
+              },
+              "trigger": "{ ywc_chi_at_1003 = yes c:NQG ?= { is_country_alive = yes } }",
+              "effect": "{ if = { limit = { ywc_chi_at_1003 = yes } set_variable = { name = ywc_chi_style_mode value = 1 } set_variable = { name = ywc_chi_dynastic_style_kept value = 1 } set_variable = { name = ywc_chi_b_stage value = 1004 } set_variable = { name = ywc_chi_b_pending value = 1004 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "对北边的行文照旧以朝廷名义往来；各国仍是各自的国家，贸易与书信不并。",
+                "en": "Correspondence with the north continues under the court's name; each state remains its own, letters and trade alike."
+              }
+            },
+            {
+              "key": "dual_style",
+              "label": {
+                "zh": "两套名号：对外用朝廷，对内用官署",
+                "en": "Two styles: the court abroad, the offices at home"
+              },
+              "trigger": "{ ywc_chi_at_1003 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1003 = yes } set_variable = { name = ywc_chi_style_mode value = 2 } set_variable = { name = ywc_chi_dual_style_record value = 1 } set_variable = { name = ywc_chi_b_stage value = 1004 } set_variable = { name = ywc_chi_b_pending value = 1004 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "名号分开记账，来文按来处分拣；两国的边界与账目都各自照旧。",
+                "en": "The styles are kept in separate books and letters sorted by origin; borders and accounts with other states stay as they are."
+              }
+            },
+            {
+              "key": "office_style",
+              "label": {
+                "zh": "改用官署名义：只署外贝加尔官廷",
+                "en": "Use the office style: sign as the Transbaikal offices alone"
+              },
+              "trigger": "{ ywc_chi_at_1003 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1003 = yes gold_reserves >= var:ywc_chi_b_half_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_chi_b_half_fee multiply = -1 } set_variable = { name = ywc_chi_style_mode value = 3 } set_variable = { name = ywc_chi_office_style_record value = 1 } set_variable = { name = ywc_chi_b_stage value = 1004 } set_variable = { name = ywc_chi_b_pending value = 1004 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } else = { set_variable = { name = ywc_chi_b_pending value = 1003 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "换衔改印工本：开启时半月财政收入（存钱不足则此案暂缓）。",
+                "en": "Re-sealing cost for the new style: half a week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "对外名号改为官署，北边的朝廷名分让与别家；往来仍按两国各办。",
+                "en": "The external style passes to the offices and the northern court's style is left to others; dealings continue state to state."
+              }
+            },
+            {
+              "key": "defer_style",
+              "label": {
+                "zh": "来信暂不复：驿房先存档",
+                "en": "Hold the replies: the post house files them for now"
+              },
+              "trigger": "{ ywc_chi_at_1003 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1003 = yes } set_variable = { name = ywc_chi_b_pending value = 1003 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "称谓押后不决，往来的回文继续积压。",
+                "en": "The ruling is postponed; unanswered correspondence keeps piling up."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "裁定对外名号与来信往来的名义",
+            "en": "Decide the external style and the name under which letters are answered"
+          },
+          "reads": [
+            "grain-register outcome from the previous line",
+            "whether the northern court still stands",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_chi_style_mode decision",
+            "dynastic, dual or office style record",
+            "next stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1004",
+          "title": {
+            "zh": "祖制不认得的新居民",
+            "en": "Ancestral Custom Does Not Know the New Residents"
+          },
+          "desc": {
+            "zh": "布里亚特的牧户、流放的工匠和越冬的商人一年比一年多，祖制里没有他们的名目。理藩院的旧例对不上新户口，管册的书办问：这些人算朝廷的属民，还是只算客籍？",
+            "en": "Buryat herders, exiled craftsmen and wintering merchants grow more numerous each year, and ancestral custom has no entry for them. The old board's precedents do not match the new households, and the clerks ask: are these people the court's own subjects, or registered guests only?"
+          },
+          "trigger": "{ ywc_chi_delivery_1004 = yes }",
+          "immediate": "{ if = { limit = { ywc_chi_delivery_1004 = yes } remove_variable = ywc_chi_b_pending if = { limit = { NOT = { has_variable = ywc_chi_popup_epoch } } set_variable = { name = ywc_chi_popup_epoch value = 0 } } change_variable = { name = ywc_chi_popup_epoch add = 1 } save_scope_value_as = { name = ywc_chi_popup_epoch value = var:ywc_chi_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "banner_register_only",
+              "label": {
+                "zh": "新居民不入祖册：另立客册",
+                "en": "New residents stay off the ancestral roll: open a guest roll"
+              },
+              "trigger": "{ ywc_chi_at_1004 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1004 = yes } set_variable = { name = ywc_chi_resident_mode value = 2 } set_variable = { name = ywc_chi_guest_roll_opened value = 1 } set_variable = { name = ywc_chi_b_stage value = 1005 } set_variable = { name = ywc_chi_b_pending value = 1005 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "祖册照旧，客册另记；两本名籍的分立会写进最后一站的议事。",
+                "en": "The ancestral roll stands and a guest roll is kept apart; the split enters the final stage's record."
+              }
+            },
+            {
+              "key": "shared_obligation",
+              "label": {
+                "zh": "新居民与旗丁同担差徭",
+                "en": "New residents share corvee with the bannermen"
+              },
+              "trigger": "{ ywc_chi_at_1004 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1004 = yes gold_reserves >= var:ywc_chi_b_fee in_default = no NOT = { has_modifier = declared_bankruptcy } } add_treasury = { value = var:ywc_chi_b_fee multiply = -1 } set_variable = { name = ywc_chi_resident_mode value = 1 } set_variable = { name = ywc_chi_shared_corvee value = 1 } set_variable = { name = ywc_chi_b_stage value = 1005 } set_variable = { name = ywc_chi_b_pending value = 1005 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } else = { set_variable = { name = ywc_chi_b_pending value = 1004 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "编入差徭的工本：开启时一周财政收入（存钱不足则此案暂缓）。",
+                "en": "Enrollment outlay for the shared corvee: one week of opening income (deferred if the treasury cannot cover it)."
+              },
+              "consequence_note": {
+                "zh": "差徭同担、名籍同册；旧旗营与客户之间为谁多担一段，争议会留到最后。",
+                "en": "Corvee and the roll are shared; over who carries the heavier share, the banner camps and the newcomers carry their dispute to the last stage."
+              }
+            },
+            {
+              "key": "custom_exam",
+              "label": {
+                "zh": "以祖制考取：通清语者入册",
+                "en": "Examine by custom: those with the court's tongue enter the roll"
+              },
+              "trigger": "{ ywc_chi_at_1004 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1004 = yes } set_variable = { name = ywc_chi_resident_mode value = 3 } set_variable = { name = ywc_chi_custom_exam_record value = 1 } set_variable = { name = ywc_chi_b_stage value = 1005 } set_variable = { name = ywc_chi_b_pending value = 1005 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "入册以通语为凭；未通语的住户名籍仍悬着，留待章程一站。",
+                "en": "The roll opens by tongue; households without it stay in suspense until the charter stage."
+              }
+            },
+            {
+              "key": "defer_residents",
+              "label": {
+                "zh": "新居民名籍暂缓：祖例再议",
+                "en": "Defer the new residents' standing: the precedents are to be argued again"
+              },
+              "trigger": "{ ywc_chi_at_1004 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1004 = yes } set_variable = { name = ywc_chi_b_pending value = 1004 } change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "名籍押后，客民的不安与旧例的争议原样带入末站。",
+                "en": "The standing is deferred; the newcomers' unease and the precedents' dispute pass intact to the final stage."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "裁定新居民的名籍与义务",
+            "en": "Decide the new residents' standing on the roll and their obligations"
+          },
+          "reads": [
+            "style decision recorded earlier",
+            "resident households outside the ancestral categories",
+            "treasury and default status"
+          ],
+          "writes": [
+            "ywc_chi_resident_mode decision",
+            "guest roll, shared corvee or custom exam record",
+            "final stage and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_regional.1005",
+          "title": {
+            "zh": "留下的是朝廷还是国家",
+            "en": "What Remains: Court or State"
+          },
+          "desc": {
+            "zh": "粮册、名号、名籍的账都摊开了：留下的这份家业，按旗册算是一朝的残局，按垦册算是一方的国度。要把它写成什么，是这一代人要落笔的最后一行。",
+            "en": "The grain registers, the styles and the rolls all lie open: what remains is a dynasty's remnant by the banner roll, and a country of its own by the settler roll. What to write it down as is this generation's last line to set."
+          },
+          "trigger": "{ ywc_chi_delivery_1005 = yes }",
+          "immediate": "{ if = { limit = { ywc_chi_delivery_1005 = yes } remove_variable = ywc_chi_b_pending if = { limit = { NOT = { has_variable = ywc_chi_popup_epoch } } set_variable = { name = ywc_chi_popup_epoch value = 0 } } change_variable = { name = ywc_chi_popup_epoch add = 1 } save_scope_value_as = { name = ywc_chi_popup_epoch value = var:ywc_chi_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "charter_common_standing",
+              "label": {
+                "zh": "章程写明：国民不分会旗客籍",
+                "en": "Charter it plainly: subjects are neither banner nor guest"
+              },
+              "trigger": "{ ywc_chi_at_1005 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1005 = yes } set_variable = { name = ywc_chi_b_outcome value = 1 } set_variable = { name = ywc_chi_charter_common value = 1 } remove_variable = ywc_chi_b_pending remove_variable = ywc_chi_b_stage change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无一次性支出；共同名籍自此入章程。",
+                "en": "No one-off expense; the common standing enters the charter."
+              },
+              "consequence_note": {
+                "zh": "制度巩固的结局；粮册与名籍的记录留给危机与主题线读取。",
+                "en": "An institution-consolidated ending; the grain and standing records stay readable by the crisis and theme lines."
+              }
+            },
+            {
+              "key": "quota_compromise",
+              "label": {
+                "zh": "限额妥协：客籍名额入册有定",
+                "en": "Compromise by quota: the guest roll takes a fixed share"
+              },
+              "trigger": "{ ywc_chi_at_1005 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1005 = yes } set_variable = { name = ywc_chi_b_outcome value = 2 } set_variable = { name = ywc_chi_quota_compromise value = 1 } remove_variable = ywc_chi_b_pending remove_variable = ywc_chi_b_stage change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无一次性支出。",
+                "en": "No one-off expense."
+              },
+              "consequence_note": {
+                "zh": "限额妥协的结局；名额之争成为往后预算议事的常例。",
+                "en": "A quota-compromise ending; the quota quarrel becomes a standing item in later budget debates."
+              }
+            },
+            {
+              "key": "old_covenant_kept",
+              "label": {
+                "zh": "保留旧约：名籍仍按祖制",
+                "en": "Keep the old covenant: standing still follows ancestral custom"
+              },
+              "trigger": "{ ywc_chi_at_1005 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1005 = yes } set_variable = { name = ywc_chi_b_outcome value = 2 } set_variable = { name = ywc_chi_old_covenant_kept value = 1 } remove_variable = ywc_chi_b_pending remove_variable = ywc_chi_b_stage change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无一次性支出。",
+                "en": "No one-off expense."
+              },
+              "consequence_note": {
+                "zh": "旧约延续的结局；客籍与旗籍的分立照单全收，留待下一代重新提起。",
+                "en": "An old-covenant ending; the split between guests and banner households stands as recorded, left for the next generation to raise again."
+              }
+            },
+            {
+              "key": "withdraw_at_1005",
+              "label": {
+                "zh": "此线收回：名籍各从其旧",
+                "en": "Withdraw the line: each roll keeps to its own old ways"
+              },
+              "trigger": "{ ywc_chi_at_1005 = yes }",
+              "effect": "{ if = { limit = { ywc_chi_at_1005 = yes } set_variable = { name = ywc_chi_b_outcome value = 4 } remove_variable = ywc_chi_b_pending remove_variable = ywc_chi_b_stage change_variable = { name = ywc_chi_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 5 }",
+              "cost_note": {
+                "zh": "无直接支出。",
+                "en": "No direct expense."
+              },
+              "consequence_note": {
+                "zh": "撤回的结局；已付的工本不退，共同名籍的议题由后续线自行提起。",
+                "en": "A withdrawn ending; paid costs are not refunded, and the common-standing question may be raised anew by later lines."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "收束：确定名号之外的国民身份并登记余波",
+            "en": "Settlement: fix standing beyond the style and record the aftermath"
+          },
+          "reads": [
+            "all prior decisions: banner, ledger, style and residents",
+            "delivery stage and popup epoch"
+          ],
+          "writes": [
+            "ywc_chi_b_outcome settlement with charter, quota or old-covenant records",
+            "cross-line record readable by crisis C02 and themes T01/T06/T12"
+          ]
+        }
+      ],
       "outcomes": [
-        "pending"
+        "v03_chi_grain_ledger_accepted",
+        "v03_chi_grain_ledger_limited",
+        "v03_chi_standing_charter",
+        "v03_chi_standing_compromise",
+        "v03_chi_withdrawn"
       ],
       "legacy_links": [
-        "pending"
+        "ywc_je_frontier_chi"
       ]
     },
     {
