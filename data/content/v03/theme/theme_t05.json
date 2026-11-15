@@ -21,14 +21,834 @@
         "NMG"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t05_land_development",
+          "title": {
+            "zh": "界绳之外的旧权利",
+            "en": "Rights Beyond the Survey Rope"
+          },
+          "desc": {
+            "zh": "卫拉特境内已有真实的矿山与农垦开发，旧用地上的牧户仍是具体的权利人，喀尔喀商人也提出了参与的价钱。勘测、补偿、水道与证人记录须逐项落纸，最后按记录定案。",
+            "en": "Oirat territory holds real mining and agricultural development, herders on the old-used land remain its concrete right-holders, and Khalkha merchants have named their price. Survey, compensation, water and witness records must be written down item by item before the case is settled."
+          },
+          "script": "{\nis_shown_when_inactive = { c:OIR ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t05_started } }\npossible = { c:OIR ?= this ywc_v03_has_capacity = yes ywc_t05_site_ready = yes ywc_t05_partner_current = yes NOT = { has_variable = ywc_t05_started } }\nimmediate = { set_variable = { name = ywc_t05_started value = 1 } set_variable = { name = ywc_t05_stage value = 1200 } set_variable = { name = ywc_t05_pending value = 1200 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } }\non_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t05_stage ?= 1202 var:ywc_t05_stage ?= 1206 } NOT = { ywc_t05_partner_current = yes } } c:MGL ?= { remove_variable = ywc_t05_pending } set_variable = { name = ywc_t05_partner_response value = 3 } set_variable = { name = ywc_t05_stage value = 1207 } set_variable = { name = ywc_t05_pending value = 1207 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } if = { limit = { ywc_t05_oir_delivery_1200 = yes } trigger_event = { id = ywc_society.1200 } } if = { limit = { ywc_t05_oir_delivery_1201 = yes } trigger_event = { id = ywc_society.1201 } } if = { limit = { ywc_t05_oir_delivery_1203 = yes } trigger_event = { id = ywc_society.1203 } } if = { limit = { ywc_t05_oir_delivery_1204 = yes } trigger_event = { id = ywc_society.1204 } } if = { limit = { ywc_t05_oir_delivery_1205 = yes } trigger_event = { id = ywc_society.1205 } } if = { limit = { ywc_t05_oir_delivery_1207 = yes } trigger_event = { id = ywc_society.1207 } } } }\non_complete = { ywc_t05_release_capacity = yes }\non_fail = { ywc_t05_release_capacity = yes }\n}",
+          "goal": "{ OR = { var:ywc_t05_outcome ?= 1 var:ywc_t05_outcome ?= 2 var:ywc_t05_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t05_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1200",
+          "title": {
+            "zh": "勘测队的界绳",
+            "en": "A Survey Team's Boundary Rope"
+          },
+          "desc": {
+            "zh": "开发工地已经铺开，勘测队拉起了界绳。是否支付实地勘测费，把界绳拉在登记过旧用途的地册之上，还是只按官署图纸就地划线，现在就要决定。",
+            "en": "The worksite is laid out and the survey team has driven its boundary rope. Pay for a field survey that ties the rope to a register of existing uses, or line it straight from the office map."
+          },
+          "trigger": "{ ywc_t05_oir_delivery_1200 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_oir_delivery_1200 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "survey_pay",
+              "label": {
+                "zh": "支付 800 实地勘测并登记旧用途",
+                "en": "Pay 800 for a field survey registering existing uses"
+              },
+              "trigger": "{ ywc_t05_oir_at_1200 = yes NOT = { has_variable = ywc_t05_survey_paid } gold_reserves >= 800 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1200 = yes NOT = { has_variable = ywc_t05_survey_paid } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t05_survey_paid value = 1 } set_variable = { name = ywc_t05_stage value = 1201 } set_variable = { name = ywc_t05_pending value = 1201 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 800。",
+                "en": "Oirat pays 800 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "reuse_survey",
+              "label": {
+                "zh": "沿用已付的勘测地册",
+                "en": "Use the paid survey register"
+              },
+              "trigger": "{ ywc_t05_oir_at_1200 = yes var:ywc_t05_survey_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1200 = yes var:ywc_t05_survey_paid ?= 1 } set_variable = { name = ywc_t05_stage value = 1201 } set_variable = { name = ywc_t05_pending value = 1201 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "rough_map",
+              "label": {
+                "zh": "只按官署图纸划线",
+                "en": "Line the rope from the office map only"
+              },
+              "trigger": "{ ywc_t05_oir_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1200 = yes } set_variable = { name = ywc_t05_stage value = 1201 } set_variable = { name = ywc_t05_pending value = 1201 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "收回界绳，暂停开发",
+                "en": "Pull the rope back and suspend the development"
+              },
+              "trigger": "{ ywc_t05_oir_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1200 = yes } set_variable = { name = ywc_t05_stage value = 1205 } set_variable = { name = ywc_t05_pending value = 1205 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t05_oir_at_1200 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1200 = yes } set_variable = { name = ywc_t05_pending value = 1200 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "勘测队的界绳",
+            "en": "A Survey Team's Boundary Rope"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "survey register flag"
+          ]
+        },
+        {
+          "id": "ywc_society.1201",
+          "title": {
+            "zh": "早已有人使用的地",
+            "en": "Land Already in Use"
+          },
+          "desc": {
+            "zh": "界绳之内不是空地：牧道、冬窝子和取水点都由具体的人认领。是否支付补偿资金承认这些用途，还是只把异议记入档案继续推进，须先于商人进场决定。",
+            "en": "Inside the rope there is no empty land: herding tracks, winter camps and water points are claimed by named households. Decide before the merchants enter whether to fund compensation for these uses or only file the objections."
+          },
+          "trigger": "{ ywc_t05_oir_delivery_1201 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_oir_delivery_1201 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "recognize",
+              "label": {
+                "zh": "支付 500 设立补偿资金承认旧用途",
+                "en": "Pay 500 for a compensation fund recognizing old uses"
+              },
+              "trigger": "{ ywc_t05_oir_at_1201 = yes ywc_t05_partner_current = yes NOT = { has_variable = ywc_t05_compensation_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1201 = yes ywc_t05_partner_current = yes NOT = { has_variable = ywc_t05_compensation_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t05_compensation_paid value = 1 } set_variable = { name = ywc_t05_stage value = 1202 } c:MGL = { set_variable = { name = ywc_t05_pending value = 1202 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 500。",
+                "en": "Oirat pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "reuse_compensation",
+              "label": {
+                "zh": "沿用已设的补偿资金",
+                "en": "Use the standing compensation fund"
+              },
+              "trigger": "{ ywc_t05_oir_at_1201 = yes ywc_t05_partner_current = yes var:ywc_t05_compensation_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1201 = yes ywc_t05_partner_current = yes var:ywc_t05_compensation_paid ?= 1 } set_variable = { name = ywc_t05_stage value = 1202 } c:MGL = { set_variable = { name = ywc_t05_pending value = 1202 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "proceed",
+              "label": {
+                "zh": "只记录异议，不设补偿",
+                "en": "File objections only, no compensation"
+              },
+              "trigger": "{ ywc_t05_oir_at_1201 = yes ywc_t05_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1201 = yes ywc_t05_partner_current = yes } set_variable = { name = ywc_t05_stage value = 1202 } c:MGL = { set_variable = { name = ywc_t05_pending value = 1202 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "halt",
+              "label": {
+                "zh": "暂停开发，就地保留原生计",
+                "en": "Suspend the development and keep the native arrangement"
+              },
+              "trigger": "{ ywc_t05_oir_at_1201 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1201 = yes } set_variable = { name = ywc_t05_stage value = 1205 } set_variable = { name = ywc_t05_pending value = 1205 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t05_oir_at_1201 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1201 = yes } set_variable = { name = ywc_t05_pending value = 1201 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "早已有人使用的地",
+            "en": "Land Already in Use"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "compensation fund flag",
+            "MGL pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_society.1202",
+          "title": {
+            "zh": "邻国商人提出的价",
+            "en": "The Price the Neighboring Merchants Name"
+          },
+          "desc": {
+            "zh": "卫拉特的开发边界已经划出，喀尔喀的商队想按自己的价钱进场。商号可以按整块工地出价，也可以只对登记过的地块出价，或者干脆撤出这场开发。",
+            "en": "The Oirat development boundary is drawn, and Khalkha caravans want in at their own price. The merchant house may bid for the whole site, bid only for the registered parcels, or withdraw from the development."
+          },
+          "trigger": "{ ywc_t05_mgl_delivery_1202 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_mgl_delivery_1202 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "full_price",
+              "label": {
+                "zh": "支付 600 按整块工地出价",
+                "en": "Pay 600 to bid for the whole site"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1202 = yes gold_reserves >= 600 }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1202 = yes gold_reserves >= 600 } add_treasury = -600 set_variable = { name = ywc_t05_offer_paid value = 1 } change_variable = { name = ywc_t05_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t05_offer value = 1 } set_variable = { name = ywc_t05_stage value = 1203 } set_variable = { name = ywc_t05_pending value = 1203 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 600；不向卫拉特转款。",
+                "en": "Khalkha pays 600; no transfer to Oirat."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "limited_price",
+              "label": {
+                "zh": "支付 300 只对登记地块出价",
+                "en": "Pay 300 to bid for the registered parcels only"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1202 = yes gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1202 = yes gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t05_offer_paid value = 1 } change_variable = { name = ywc_t05_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t05_offer value = 2 } set_variable = { name = ywc_t05_stage value = 1203 } set_variable = { name = ywc_t05_pending value = 1203 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "喀尔喀国库支付 300；不向卫拉特转款。",
+                "en": "Khalkha pays 300; no transfer to Oirat."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "撤回报价，不参与开发",
+                "en": "Withdraw the bid and stay out"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1202 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1202 = yes } change_variable = { name = ywc_t05_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t05_offer value = 3 } set_variable = { name = ywc_t05_stage value = 1203 } set_variable = { name = ywc_t05_pending value = 1203 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1202 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1202 = yes } set_variable = { name = ywc_t05_pending value = 1202 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "邻国商人提出的价",
+            "en": "The Price the Neighboring Merchants Name"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "OIR current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "merchant bid record",
+            "OIR pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_society.1203",
+          "title": {
+            "zh": "水流到了新工地",
+            "en": "Water Reaches the New Worksite"
+          },
+          "desc": {
+            "zh": "新工地要用水，旧牧道下游的冬窝子也要用水。是否支付 800 修一条两边共用的水道，还是只铺工地自用的管线，由所在地现在执行。",
+            "en": "The new worksite needs water, and so do the winter camps downstream of the old herding tracks. The site now executes: pay 800 for a channel serving both, or lay a pipe for the worksite alone."
+          },
+          "trigger": "{ ywc_t05_oir_delivery_1203 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_oir_delivery_1203 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "shared_channel",
+              "label": {
+                "zh": "支付 800 修共用水道",
+                "en": "Pay 800 for a shared channel"
+              },
+              "trigger": "{ ywc_t05_oir_at_1203 = yes NOT = { has_variable = ywc_t05_water } gold_reserves >= 800 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1203 = yes NOT = { has_variable = ywc_t05_water } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t05_water value = 1 } set_variable = { name = ywc_t05_stage value = 1204 } set_variable = { name = ywc_t05_pending value = 1204 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 800。",
+                "en": "Oirat pays 800 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "reuse_channel",
+              "label": {
+                "zh": "沿用已修的共用水道",
+                "en": "Use the completed shared channel"
+              },
+              "trigger": "{ ywc_t05_oir_at_1203 = yes var:ywc_t05_water ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1203 = yes var:ywc_t05_water ?= 1 } set_variable = { name = ywc_t05_stage value = 1204 } set_variable = { name = ywc_t05_pending value = 1204 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "exclusive_pipe",
+              "label": {
+                "zh": "支付 200 只铺工地管线",
+                "en": "Pay 200 for a worksite-only pipe"
+              },
+              "trigger": "{ ywc_t05_oir_at_1203 = yes NOT = { has_variable = ywc_t05_water } gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1203 = yes NOT = { has_variable = ywc_t05_water } gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t05_water value = 2 } set_variable = { name = ywc_t05_stage value = 1204 } set_variable = { name = ywc_t05_pending value = 1204 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 200。",
+                "en": "Oirat pays 200 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t05_oir_at_1203 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1203 = yes } set_variable = { name = ywc_t05_pending value = 1203 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "水流到了新工地",
+            "en": "Water Reaches the New Worksite"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "water arrangement record"
+          ]
+        },
+        {
+          "id": "ywc_society.1204",
+          "title": {
+            "zh": "旧用地的证人",
+            "en": "Witnesses of the Old-Used Land"
+          },
+          "desc": {
+            "zh": "旧用地上的证人递了名册：哪条牧道、哪眼井、哪片冬窝子在界绳之内。是否支付 400 传证人到案并把地块写进地册，还是驳回申诉按已划边界推进。",
+            "en": "Witnesses from the old-used land have submitted a roll: which herding track, which well, which winter camp lies inside the rope. Pay 400 to hear them and enter the plots into the register, or dismiss the petition and proceed on the drawn boundary."
+          },
+          "trigger": "{ ywc_t05_oir_delivery_1204 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_oir_delivery_1204 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "hear_witness",
+              "label": {
+                "zh": "支付 400 传证人并登记地块",
+                "en": "Pay 400 to hear witnesses and register plots"
+              },
+              "trigger": "{ ywc_t05_oir_at_1204 = yes NOT = { has_variable = ywc_t05_witness_record } gold_reserves >= 400 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1204 = yes NOT = { has_variable = ywc_t05_witness_record } gold_reserves >= 400 } add_treasury = -400 set_variable = { name = ywc_t05_witness_record value = 1 } set_variable = { name = ywc_t05_stage value = 1205 } set_variable = { name = ywc_t05_pending value = 1205 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 400。",
+                "en": "Oirat pays 400 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "reuse_witness",
+              "label": {
+                "zh": "沿用已录的证人名册",
+                "en": "Use the completed witness roll"
+              },
+              "trigger": "{ ywc_t05_oir_at_1204 = yes var:ywc_t05_witness_record ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1204 = yes var:ywc_t05_witness_record ?= 1 } set_variable = { name = ywc_t05_stage value = 1205 } set_variable = { name = ywc_t05_pending value = 1205 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "dismiss",
+              "label": {
+                "zh": "驳回申诉，按已划边界推进",
+                "en": "Dismiss the petition and proceed on the drawn boundary"
+              },
+              "trigger": "{ ywc_t05_oir_at_1204 = yes NOT = { has_variable = ywc_t05_witness_record } }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1204 = yes NOT = { has_variable = ywc_t05_witness_record } } set_variable = { name = ywc_t05_witness_record value = 2 } set_variable = { name = ywc_t05_stage value = 1205 } set_variable = { name = ywc_t05_pending value = 1205 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t05_oir_at_1204 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1204 = yes } set_variable = { name = ywc_t05_pending value = 1204 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "旧用地的证人",
+            "en": "Witnesses of the Old-Used Land"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "witness roll record"
+          ]
+        },
+        {
+          "id": "ywc_society.1205",
+          "title": {
+            "zh": "缩小许可范围",
+            "en": "Narrowing the Permit"
+          },
+          "desc": {
+            "zh": "地册、水道与证人名册都在案上。可以按登记共存出全案，也可以只改发限采许可；若商人已撤或再无联系，就地按记录结案。",
+            "en": "The register, the channel and the witness roll are all on the table. Propose full registered coexistence, reissue only a limited extraction permit, or, if the merchants have withdrawn or can no longer be reached, close on the record alone."
+          },
+          "trigger": "{ ywc_t05_oir_delivery_1205 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_oir_delivery_1205 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "register_use",
+              "label": {
+                "zh": "支付 700 提出登记共存全案",
+                "en": "Pay 700 to propose registered coexistence"
+              },
+              "trigger": "{ ywc_t05_oir_at_1205 = yes ywc_t05_investor_engaged = yes var:ywc_t05_survey_paid ?= 1 var:ywc_t05_compensation_paid ?= 1 var:ywc_t05_witness_record ?= 1 var:ywc_t05_water ?= 1 gold_reserves >= 700 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1205 = yes ywc_t05_investor_engaged = yes var:ywc_t05_survey_paid ?= 1 var:ywc_t05_compensation_paid ?= 1 var:ywc_t05_witness_record ?= 1 var:ywc_t05_water ?= 1 gold_reserves >= 700 } add_treasury = -700 set_variable = { name = ywc_t05_proposed_outcome value = 1 } set_variable = { name = ywc_t05_stage value = 1206 } c:MGL = { set_variable = { name = ywc_t05_pending value = 1206 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 700。",
+                "en": "Oirat pays 700 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "limit_permit",
+              "label": {
+                "zh": "支付 300 改发限采许可",
+                "en": "Pay 300 to issue a limited extraction permit"
+              },
+              "trigger": "{ ywc_t05_oir_at_1205 = yes ywc_t05_investor_engaged = yes gold_reserves >= 300 }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1205 = yes ywc_t05_investor_engaged = yes gold_reserves >= 300 } add_treasury = -300 set_variable = { name = ywc_t05_proposed_outcome value = 2 } set_variable = { name = ywc_t05_stage value = 1206 } c:MGL = { set_variable = { name = ywc_t05_pending value = 1206 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "卫拉特国库支付 300。",
+                "en": "Oirat pays 300 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "keep_native",
+              "label": {
+                "zh": "保留原生计，不扩许可",
+                "en": "Keep the native arrangement, no expanded permit"
+              },
+              "trigger": "{ ywc_t05_oir_at_1205 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1205 = yes } set_variable = { name = ywc_t05_proposed_outcome value = 3 } if = { limit = { ywc_t05_investor_engaged = yes } set_variable = { name = ywc_t05_stage value = 1206 } c:MGL = { set_variable = { name = ywc_t05_pending value = 1206 } } } else = { set_variable = { name = ywc_t05_outcome value = 3 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "close_alone",
+              "label": {
+                "zh": "对方已不可联系，就地结案",
+                "en": "The other side is unreachable; close on the record"
+              },
+              "trigger": "{ ywc_t05_oir_at_1205 = yes NOT = { ywc_t05_investor_engaged = yes } }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1205 = yes NOT = { ywc_t05_investor_engaged = yes } } if = { limit = { var:ywc_t05_survey_paid ?= 1 } set_variable = { name = ywc_t05_outcome value = 2 } } else = { set_variable = { name = ywc_t05_outcome value = 3 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t05_oir_at_1205 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1205 = yes } set_variable = { name = ywc_t05_pending value = 1205 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "缩小许可范围",
+            "en": "Narrowing the Permit"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "survey, compensation, water and witness records",
+            "merchant bid and contact state"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "proposed outcome",
+            "final outcome or MGL pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_society.1206",
+          "title": {
+            "zh": "投资者接受新的边界",
+            "en": "The Investor Accepts the New Boundary"
+          },
+          "desc": {
+            "zh": "卫拉特送来了改案后的边界：登记共存、限采许可，或是保留原生计。喀尔喀的商号可以接受新边界，也可以记录自己的保留意见。",
+            "en": "Oirat has sent the amended boundary: registered coexistence, a limited permit, or the native arrangement kept. The Khalkha merchant house may accept the new boundary or record its reservations."
+          },
+          "trigger": "{ ywc_t05_mgl_delivery_1206 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_mgl_delivery_1206 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "accept",
+              "label": {
+                "zh": "接受新边界",
+                "en": "Accept the new boundary"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1206 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1206 = yes } change_relations = { country = c:OIR value = 5 } change_variable = { name = ywc_t05_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t05_partner_response value = 1 } set_variable = { name = ywc_t05_stage value = 1207 } set_variable = { name = ywc_t05_pending value = 1207 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "喀尔喀对卫拉特关系增加 5。",
+                "en": "Khalkha gains 5 relations with Oirat."
+              }
+            },
+            {
+              "key": "reserve",
+              "label": {
+                "zh": "记录保留意见",
+                "en": "Record reservations"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1206 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1206 = yes } change_relations = { country = c:OIR value = -5 } change_variable = { name = ywc_t05_popup_epoch add = 1 } c:OIR = { set_variable = { name = ywc_t05_partner_response value = 2 } set_variable = { name = ywc_t05_stage value = 1207 } set_variable = { name = ywc_t05_pending value = 1207 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "喀尔喀对卫拉特关系减少 5。",
+                "en": "Khalkha loses 5 relations with Oirat."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t05_mgl_at_1206 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_mgl_at_1206 = yes } set_variable = { name = ywc_t05_pending value = 1206 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "投资者接受新的边界",
+            "en": "The Investor Accepts the New Boundary"
+          },
+          "reads": [
+            "MGL pending delivery",
+            "OIR current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "OIR partner response and pending delivery"
+          ]
+        },
+        {
+          "id": "ywc_society.1207",
+          "title": {
+            "zh": "开发地的新议事人",
+            "en": "New Voices at the Development Site"
+          },
+          "desc": {
+            "zh": "商号的答复已经回来，地册、补偿与证人记录仍在案上。现在按记录定案：谁进场、谁保留、谁退出，开发地的新议事人按这份名单落座。",
+            "en": "The merchant house has answered, and the register, compensation fund and witness roll remain on file. Settle on the record now: who enters, who keeps, who exits. The development site's new council takes its seats by that list."
+          },
+          "trigger": "{ ywc_t05_oir_delivery_1207 = yes }",
+          "immediate": "{ if = { limit = { ywc_t05_oir_delivery_1207 = yes } remove_variable = ywc_t05_pending if = { limit = { NOT = { has_variable = ywc_t05_popup_epoch } } set_variable = { name = ywc_t05_popup_epoch value = 0 } } change_variable = { name = ywc_t05_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t05_popup_epoch value = var:ywc_t05_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "formalize",
+              "label": {
+                "zh": "按记录定案并公布",
+                "en": "Settle on the record and publish"
+              },
+              "trigger": "{ ywc_t05_oir_at_1207 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1207 = yes } if = { limit = { var:ywc_t05_partner_response ?= 1 } set_variable = { name = ywc_t05_outcome value = var:ywc_t05_proposed_outcome } } else_if = { limit = { var:ywc_t05_partner_response ?= 2 } if = { limit = { var:ywc_t05_proposed_outcome ?= 1 } set_variable = { name = ywc_t05_outcome value = 2 } } else = { set_variable = { name = ywc_t05_outcome value = var:ywc_t05_proposed_outcome } } } else = { if = { limit = { var:ywc_t05_proposed_outcome ?= 3 } set_variable = { name = ywc_t05_outcome value = 3 } } else_if = { limit = { var:ywc_t05_survey_paid ?= 1 } set_variable = { name = ywc_t05_outcome value = 2 } } else = { set_variable = { name = ywc_t05_outcome value = 3 } } } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓公布",
+                "en": "Hold the publication"
+              },
+              "trigger": "{ ywc_t05_oir_at_1207 = yes }",
+              "effect": "{ if = { limit = { ywc_t05_oir_at_1207 = yes } set_variable = { name = ywc_t05_pending value = 1207 } change_variable = { name = ywc_t05_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "开发地的新议事人",
+            "en": "New Voices at the Development Site"
+          },
+          "reads": [
+            "OIR pending delivery",
+            "merchant response and survey register"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "final outcome"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t05_boundary_registered",
+        "v03_t05_permit_limited",
+        "v03_t05_native_kept"
+      ],
+      "legacy_links": []
     }
   ]
 }
