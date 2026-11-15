@@ -47,8 +47,10 @@ def _native_business_projection(catalog, *, include_mobile=False):
         if len(mobile) != 1 or mobile[0].get("era") != "middle":
             raise AssertionError(("expected_one_mobile_middle_arc", len(mobile)))
         mobile_catalog = {**catalog, "arcs": mobile}
+        # PR #115 appended the review JE beside the register JE; the mobile
+        # projection therefore renders exactly those two journals.
         mobile_journals = definitions(build_v03_content._render_journal_file(mobile_catalog, None),
-                                      1, "mobile journals")
+                                      2, "mobile journals")
         mobile_events = definitions(build_v03_content._render_event_file(mobile_catalog, ROOT, None),
                                     6, "mobile events")
         if set(journals) & set(mobile_journals) or set(events) & set(mobile_events):

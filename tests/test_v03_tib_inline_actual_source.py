@@ -795,6 +795,10 @@ class TibInlineActualSourceControls(unittest.TestCase):
         native=next(node for node in _field(w.effects['ywc_tib_choose_grain_3'],'if') if node[0]=='every_scope_state')
         self.assertEqual(_field(native[2],'limit'),[('owner','=','ROOT')])
         expected=dict((k,v) for k,_,v in _field(native[2],'add_modifier'))
+        # The shared harness records an internal modifier mirror key next to name
+        # (clausewitz_harness add_modifier, b8588f9); remove_modifier looks
+        # records up by it, so the established recorded shape includes it.
+        expected['modifier']=expected['name']
         w.countries[TAG]['states'].append({'owned':False,'pops':[],'buildings':[]})
         before=len(w.modifiers); initial=w._scope_checkpoint()
         w.execute([native],TAG)

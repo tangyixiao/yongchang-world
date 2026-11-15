@@ -29,7 +29,15 @@ ROOT = Path(__file__).resolve().parents[1]
 # Public deliberation appends sixteen state-owner reads; the old44 remain intact.
 # School appends seven original-pilot owner reads; the old six remain intact.
 # Court public adds the same two shapes with its own saved StateRef variable.
-COUNTS = dict(dmg=31, jhg=4, kor=10, shu=60, oir=9, nmg=13, tib=8, nqg=1, lan=9)
+# 2026-11-15 test-debt re-inventory of the merged arc reality: JHG dockyard
+# ownership (+2 d0a4033, +1 ten-country ship), KOR workshop coordination
+# (+6 56ad436, +2 ship), SHU rural workshop (+10 2636ba0, +2 ship), TIB public
+# revenue (+4 a907ce5, +5 ship), LAN beyond gold (+2 297920f, +4 ship), NMG bay
+# ports (+4 ship), NQG procurement/premium routes (+6 ship) and DMG middle
+# cards (+2 ship). Every added predicate was re-verified in state scope by
+# assert_source_owners' walk() — the new captured-state variables it walks
+# through gained explicit exceptions below; OIR is unchanged at nine.
+COUNTS = dict(dmg=33, jhg=7, kor=18, shu=72, oir=9, nmg=17, tib=17, nqg=7, lan=15)
 
 
 def source(path):
@@ -45,7 +53,10 @@ def walk(nodes, scope="country"):
         yield key, op, value, scope
         if isinstance(value, list):
             next_scope = scope
-            if key in ("any_scope_state", "every_scope_state"):
+            if key in ("any_scope_state", "every_scope_state", "random_scope_state"):
+                # random_scope_state (effects only) also selects one real owned
+                # state; the TIB middle-card pay helpers read owner = ROOT in
+                # its limit, exactly like the any/every scope family.
                 next_scope = "state"
             elif key in ("any_scope_building", "every_scope_building"):
                 next_scope = "building"
@@ -58,6 +69,27 @@ def walk(nodes, scope="country"):
             elif key == "var:ywc_nmg_school_pilot":
                 # The school claim stores a native StateRef once; literal
                 # runtime tests prove its identity and current ownership.
+                next_scope = "state"
+            elif key == "var:ywc_kor_workshops_pilot":
+                # KOR workshop coordination arc (56ad436) captures one candidate
+                # state from every_scope_state into this typed variable; the
+                # workshop readiness helpers read it in state scope and
+                # tests/test_v03_kor_workshops_* run the real capture helper.
+                next_scope = "state"
+            elif key == "var:ywc_tib_revenue_pilot":
+                # TIB public revenue arc (a907ce5) saves its pilot state once;
+                # test_v03_tib_revenue_state_source.py asserts the StateRef type.
+                next_scope = "state"
+            elif key == "var:ywc_lan_gold_pilot_state":
+                # LAN beyond-gold arc (297920f) captures the West Borneo pilot
+                # StateRef once; test_v03_lan_beyond_gold.py asserts its identity
+                # and that a decoy state can never substitute.
+                next_scope = "state"
+            elif key in ("ROOT.var:ywc_jhg_dock_pilot", "ROOT.var:ywc_shu_workshop_pilot"):
+                # JHG dockyard (d0a4033) and SHU rural workshop (2636ba0) read a
+                # once-captured state object through the ROOT.<StateRef> dotted
+                # form; test_v03_jhg_dockyard_state.py and
+                # test_v03_shu_rural_state_runtime.py prove the captured object.
                 next_scope = "state"
             elif key in ("ROOT", "PREV", "this") or key.startswith(("c:", "scope:", "var:")):
                 next_scope = "country"
@@ -90,9 +122,14 @@ class StateOwnerVocabularyTests(unittest.TestCase):
         for country, count in COUNTS.items():
             with self.subTest(country=country):
                 self.assert_source_owners(trigger_source(country), count)
-        self.assert_source_owners(source("yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt"), 1)
+        # TIB public revenue arc (a907ce5) added one every_scope_state owner read
+        # and the ten-country ship (00490cd) added five middle-card pay helpers
+        # whose two fee legs each read owner = ROOT inside random_scope_state;
+        # walk() now follows that state transition, so all twelve are state-scoped.
+        self.assert_source_owners(source("yongchang_world/common/scripted_effects/ywc_v03_tib_effects.txt"), 12)
         # Foundation keeps 12 source-owner predicates. The middle arc's four
-        # pilot choices each check ownership in both display and execution.
+        # pilot choices each check ownership in both display and execution;
+        # the count is unchanged by the merged arc work and re-verified here.
         self.assert_source_owners(source("yongchang_world/events/ywc_v03_country_shu_events.txt"), 20)
         catalog = json.loads(source("data/content/v03/countries/shu.json"))
         def strings(value):
@@ -101,7 +138,10 @@ class StateOwnerVocabularyTests(unittest.TestCase):
                 for child in value: yield from strings(child)
             elif isinstance(value, dict):
                 for child in value.values(): yield from strings(child)
-        for era, count in (("foundation", 12), ("middle", 8)):
+        # Foundation stays at 12; the middle era gains one owner read from the
+        # v03_shu_rural_workshop arc (2636ba0, rendered into the catalog by the
+        # ten-country ship), keeping the provincial contract's original eight.
+        for era, count in (("foundation", 12), ("middle", 9)):
             era_scripts = [text for arc in catalog["arcs"] if arc["era"] == era
                            for text in strings(arc)]
             self.assertEqual(sum(text.count("owner = ROOT") for text in era_scripts), count)
@@ -151,6 +191,11 @@ class StateOwnerVocabularyTests(unittest.TestCase):
             checkpoint = w._scope_checkpoint()
             w.execute([native], tag)
             expected = dict((k, v) for k, _, v in field(native[2], "add_modifier"))
+            # The shared harness records an internal modifier mirror key next to
+            # name (clausewitz_harness add_modifier, b8588f9 "Fix native Shu
+            # add_modifier parameters"); remove_modifier looks records up by it,
+            # so the established recorded shape includes the mirror too.
+            expected["modifier"] = expected["name"]
             self.assertEqual(w.modifiers[before:], [(tag, expected)] * 2)
             self.assertEqual(w._scope_checkpoint(), checkpoint)
             for state in states[2:]:
