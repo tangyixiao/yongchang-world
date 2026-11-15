@@ -19,13 +19,786 @@
         "MGL"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
+      "journals": [
+        {
+          "id": "ywc_je_v03_t02_talent_crossing",
+          "title": {
+            "zh": "人才来到边界",
+            "en": "Talent Comes to the Border"
+          },
+          "desc": {
+            "zh": "大韩学署已有愿意出行的人才，靖海须先核对本地官署、学塾与营伍的真实空缺，再决定是否发出邀请与译写聘书。",
+            "en": "Korea's school has talent willing to travel; Jinghai must audit its own offices, schools and garrisons before deciding whether to send an invitation and a translated appointment."
+          },
+          "script": "{ is_shown_when_inactive = { c:JHG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t02_started } } possible = { c:JHG ?= this ywc_v03_has_capacity = yes ywc_t02_partner_current = yes ywc_t02_local_need = yes NOT = { has_variable = ywc_t02_started } } immediate = { set_variable = { name = ywc_t02_started value = 1 } set_variable = { name = ywc_t02_stage value = 1050 } set_variable = { name = ywc_t02_pending value = 1050 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } c:KOR = { set_variable = { name = ywc_t02_pending value = 1050 } } } on_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t02_stage ?= 1050 var:ywc_t02_stage ?= 1053 var:ywc_t02_stage ?= 1054 var:ywc_t02_stage ?= 1057 } NOT = { ywc_t02_partner_current = yes } NOT = { has_variable = ywc_t02_outcome } } c:KOR ?= { remove_variable = ywc_t02_pending } set_variable = { name = ywc_t02_stage value = 1056 } set_variable = { name = ywc_t02_pending value = 1056 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } if = { limit = { ywc_t02_jhg_delivery_1051 = yes } trigger_event = { id = ywc_society.1051 } } if = { limit = { ywc_t02_jhg_delivery_1052 = yes } trigger_event = { id = ywc_society.1052 } } if = { limit = { ywc_t02_jhg_delivery_1055 = yes } trigger_event = { id = ywc_society.1055 } } if = { limit = { ywc_t02_jhg_delivery_1056 = yes } trigger_event = { id = ywc_society.1056 } } } } on_complete = { ywc_t02_release_capacity = yes } on_fail = { ywc_t02_release_capacity = yes } }",
+          "goal": "{ OR = { var:ywc_t02_outcome ?= 1 var:ywc_t02_outcome ?= 2 var:ywc_t02_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t02_outcome ?= 4 }"
+        }
+      ],
+      "events": [
+        {
+          "id": "ywc_society.1050",
+          "title": {
+            "zh": "愿意出走的教师",
+            "en": "The Teacher Willing to Leave"
+          },
+          "desc": {
+            "zh": "大韩学署里有一位授医术、账法与译学的教习愿意前往靖海。放行要立行程与译名记录；挽留则把这次出走的念头留档在派系争执里。",
+            "en": "A teacher of medicine, bookkeeping and translation at Korea's school is willing to go to Jinghai. Release requires a travel and translation record; withholding files the idea among faction disputes."
+          },
+          "trigger": "{ ywc_t02_kor_delivery_1050 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_kor_delivery_1050 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "release",
+              "label": {
+                "zh": "放行教习，立行程与译名记录",
+                "en": "Release the teacher with a travel and translation record"
+              },
+              "trigger": "{ ywc_t02_kor_at_1050 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1050 = yes } set_variable = { name = ywc_t02_departure_record value = 1 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_stage value = 1051 } set_variable = { name = ywc_t02_pending value = 1051 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "大韩留下放行记录；靖海将自行核对空缺。",
+                "en": "Korea keeps a release record; Jinghai audits the vacancy itself."
+              }
+            },
+            {
+              "key": "withhold",
+              "label": {
+                "zh": "挽留教习，不发出行准许",
+                "en": "Withhold the teacher and refuse the departure"
+              },
+              "trigger": "{ ywc_t02_kor_at_1050 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1050 = yes } set_variable = { name = ywc_t02_departure_record value = 2 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_outcome value = 3 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "交换记录以拒绝收束；靖海的空缺仍须自行填补。",
+                "en": "The exchange closes as refused; Jinghai's vacancy remains its own to fill."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t02_kor_at_1050 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1050 = yes } set_variable = { name = ywc_t02_pending value = 1050 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "愿意出走的教师",
+            "en": "The Teacher Willing to Leave"
+          },
+          "reads": [
+            "KOR pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "KOR departure record",
+            "JHG next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1051",
+          "title": {
+            "zh": "空缺的职位",
+            "en": "The Vacant Post"
+          },
+          "desc": {
+            "zh": "靖海的官署、营伍与学塾都报了人手不足。发出邀请与译写聘书要真金支出；若改用本地人手，交换就此作罢。已支付的邀请不会在复议时再收一次。",
+            "en": "Jinghai's offices, garrisons and schools all report understaffing. Sending an invitation and translated appointment costs real treasury funds; filling the post locally ends the exchange. A paid invitation is not collected twice on reconsideration."
+          },
+          "trigger": "{ ywc_t02_jhg_delivery_1051 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_jhg_delivery_1051 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "invite",
+              "label": {
+                "zh": "支付 500，发出邀请与译写聘书",
+                "en": "Pay 500 to send an invitation and translated appointment"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1051 = yes ywc_t02_partner_current = yes NOT = { has_variable = ywc_t02_invite_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1051 = yes ywc_t02_partner_current = yes NOT = { has_variable = ywc_t02_invite_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t02_invite_paid value = 1 } set_variable = { name = ywc_t02_stage value = 1052 } set_variable = { name = ywc_t02_pending value = 1052 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国库支付 500。",
+                "en": "Jinghai pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "邀请与译写聘书立档；资历审查随后进行。",
+                "en": "The invitation and translation are filed; the credential review follows."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已付邀请记录",
+                "en": "Use the paid invitation record"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1051 = yes ywc_t02_partner_current = yes var:ywc_t02_invite_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1051 = yes ywc_t02_partner_current = yes var:ywc_t02_invite_paid ?= 1 } set_variable = { name = ywc_t02_stage value = 1052 } set_variable = { name = ywc_t02_pending value = 1052 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "邀请与译写聘书立档；资历审查随后进行。",
+                "en": "The invitation and translation are filed; the credential review follows."
+              }
+            },
+            {
+              "key": "local",
+              "label": {
+                "zh": "改用本地人手，邀请作罢",
+                "en": "Fill the post with local hires instead"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1051 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1051 = yes } set_variable = { name = ywc_t02_local_hire value = 1 } set_variable = { name = ywc_t02_outcome value = 3 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "空缺以本地人手填补；交换记录以拒绝收束。",
+                "en": "The post is filled locally; the exchange closes as refused."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1051 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1051 = yes } set_variable = { name = ywc_t02_pending value = 1051 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "空缺的职位",
+            "en": "The Vacant Post"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG invitation record",
+            "JHG next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1052",
+          "title": {
+            "zh": "语言之外的资格",
+            "en": "Qualifications Beyond Language"
+          },
+          "desc": {
+            "zh": "来人通译名之外还带着医案与账册。靖海可以注册任用，可以只准试用并附署本地保人，也可以驳回资历送还证件。",
+            "en": "The visitor carries case notes and ledgers beyond language skill. Jinghai may register the appointment, allow a probation under local guarantors, or reject the credentials and send the papers back."
+          },
+          "trigger": "{ ywc_t02_jhg_delivery_1052 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_jhg_delivery_1052 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "register",
+              "label": {
+                "zh": "承认资历并注册任用",
+                "en": "Recognize the credentials and register the appointment"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1052 = yes ywc_t02_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1052 = yes ywc_t02_partner_current = yes } set_variable = { name = ywc_t02_review_mode value = 1 } set_variable = { name = ywc_t02_stage value = 1053 } set_variable = { name = ywc_t02_pending value = 1053 } c:KOR = { set_variable = { name = ywc_t02_pending value = 1053 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "任用注册留档；任期报告将送回大韩。",
+                "en": "The registration is filed; the term report returns to Korea."
+              }
+            },
+            {
+              "key": "probation",
+              "label": {
+                "zh": "只准试用一年，附署本地保人",
+                "en": "Allow one year of probation under local guarantors"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1052 = yes ywc_t02_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1052 = yes ywc_t02_partner_current = yes } set_variable = { name = ywc_t02_review_mode value = 2 } set_variable = { name = ywc_t02_stage value = 1053 } set_variable = { name = ywc_t02_pending value = 1053 } c:KOR = { set_variable = { name = ywc_t02_pending value = 1053 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "试用期与保人附署留档；任期报告将送回大韩。",
+                "en": "The probation and guarantors are filed; the term report returns to Korea."
+              }
+            },
+            {
+              "key": "reject",
+              "label": {
+                "zh": "驳回资历，送还证件与记录",
+                "en": "Reject the credentials and return the papers"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1052 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1052 = yes } set_variable = { name = ywc_t02_review_mode value = 3 } set_variable = { name = ywc_t02_outcome value = 3 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "资历被驳回；交换记录以拒绝收束。",
+                "en": "The credentials are rejected; the exchange closes as refused."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1052 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1052 = yes } set_variable = { name = ywc_t02_pending value = 1052 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "语言之外的资格",
+            "en": "Qualifications Beyond Language"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG review mode",
+            "JHG and KOR next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1053",
+          "title": {
+            "zh": "还乡的报告",
+            "en": "The Homecoming Report"
+          },
+          "desc": {
+            "zh": "第一份任期报告送回大韩。学署可以付钱整理留档，也可以对报告提出异议，把争执交给派系。",
+            "en": "The first term report has reached Korea. The school may pay to compile and file it, or dispute the report and leave the argument to the factions."
+          },
+          "trigger": "{ ywc_t02_kor_delivery_1053 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_kor_delivery_1053 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "endorse",
+              "label": {
+                "zh": "支付 500，整理并留档授业报告",
+                "en": "Pay 500 to compile and file the teaching report"
+              },
+              "trigger": "{ ywc_t02_kor_at_1053 = yes gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1053 = yes gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t02_report_paid value = 1 } set_variable = { name = ywc_t02_pending value = 1054 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_stage value = 1054 } set_variable = { name = ywc_t02_pending value = 1054 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "大韩国库支付 500。",
+                "en": "Korea pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "报告留档；第二封信将送到大韩朝廷。",
+                "en": "The report is filed; the second letter will reach the Korean court."
+              }
+            },
+            {
+              "key": "dispute",
+              "label": {
+                "zh": "对报告提出异议，交派系争执",
+                "en": "Dispute the report and leave it to faction argument"
+              },
+              "trigger": "{ ywc_t02_kor_at_1053 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1053 = yes } set_variable = { name = ywc_t02_report_disputed value = 1 } set_variable = { name = ywc_t02_pending value = 1054 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_stage value = 1054 } set_variable = { name = ywc_t02_pending value = 1054 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "争执留档；第二封信仍将送到大韩朝廷。",
+                "en": "The dispute is filed; the second letter will still reach the Korean court."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t02_kor_at_1053 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1053 = yes } set_variable = { name = ywc_t02_pending value = 1053 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "还乡的报告",
+            "en": "The Homecoming Report"
+          },
+          "reads": [
+            "KOR pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "KOR report record",
+            "KOR and JHG next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1054",
+          "title": {
+            "zh": "流亡者的第二封信",
+            "en": "The Exile's Second Letter"
+          },
+          "desc": {
+            "zh": "朝中有人称出走者为流亡者，第二封信恰在此时送到。回信并留档往来需要支出；只作派系记录则不予回应。",
+            "en": "Some at court call the departed an exile, and a second letter arrives. Answering and filing the correspondence costs funds; archiving it as a faction record answers nothing."
+          },
+          "trigger": "{ ywc_t02_kor_delivery_1054 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_kor_delivery_1054 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "answer",
+              "label": {
+                "zh": "支付 500，回信并留档往来",
+                "en": "Pay 500 to answer and file the correspondence"
+              },
+              "trigger": "{ ywc_t02_kor_at_1054 = yes gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1054 = yes gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t02_letter_answered value = 1 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_stage value = 1055 } set_variable = { name = ywc_t02_pending value = 1055 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "大韩国库支付 500。",
+                "en": "Korea pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "往来留档；靖海将面对本地的证件争执。",
+                "en": "The correspondence is filed; Jinghai will face its local credential dispute."
+              }
+            },
+            {
+              "key": "archive",
+              "label": {
+                "zh": "只作派系记录，不作回应",
+                "en": "File it as a faction record only"
+              },
+              "trigger": "{ ywc_t02_kor_at_1054 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1054 = yes } set_variable = { name = ywc_t02_letter_archived value = 1 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_stage value = 1055 } set_variable = { name = ywc_t02_pending value = 1055 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "派系记录留档；靖海将面对本地的证件争执。",
+                "en": "The faction record is filed; Jinghai will face its local credential dispute."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t02_kor_at_1054 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1054 = yes } set_variable = { name = ywc_t02_pending value = 1054 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "流亡者的第二封信",
+            "en": "The Exile's Second Letter"
+          },
+          "reads": [
+            "KOR pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "KOR letter record",
+            "JHG next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1055",
+          "title": {
+            "zh": "不被承认的证书",
+            "en": "The Unrecognized Certificate"
+          },
+          "desc": {
+            "zh": "靖海的本地行会与人手不肯承认外来证件。以保人联署维持注册要真金支出；可以降为有限访客教席，也可以撤销任用。已支付的联署不会在复议时再收一次。",
+            "en": "Jinghai's local guilds and staff refuse the foreign credentials. Upholding the registration with guarantors costs real treasury funds; the post may be downgraded to a limited visiting seat, or revoked. A paid sponsorship is not collected twice on reconsideration."
+          },
+          "trigger": "{ ywc_t02_jhg_delivery_1055 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_jhg_delivery_1055 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "uphold",
+              "label": {
+                "zh": "支付 1000，以本地保人联署维持注册",
+                "en": "Pay 1,000 to uphold the registration with local guarantors"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1055 = yes ywc_t02_partner_current = yes NOT = { has_variable = ywc_t02_registration_paid } gold_reserves >= 1000 }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1055 = yes ywc_t02_partner_current = yes NOT = { has_variable = ywc_t02_registration_paid } gold_reserves >= 1000 } add_treasury = -1000 set_variable = { name = ywc_t02_registration_paid value = 1 } set_variable = { name = ywc_t02_registration value = 1 } set_variable = { name = ywc_t02_stage value = 1056 } set_variable = { name = ywc_t02_pending value = 1056 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国库支付 1000。",
+                "en": "Jinghai pays 1,000 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "注册以保人联署维持；处置决定随后进行。",
+                "en": "The registration stands with guarantors; the placement decision follows."
+              }
+            },
+            {
+              "key": "downgrade",
+              "label": {
+                "zh": "改为有限访客教席",
+                "en": "Downgrade to a limited visiting seat"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1055 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1055 = yes } set_variable = { name = ywc_t02_registration value = 2 } set_variable = { name = ywc_t02_stage value = 1056 } set_variable = { name = ywc_t02_pending value = 1056 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "教席降为有限访客任用。",
+                "en": "The seat is downgraded to a limited visiting appointment."
+              }
+            },
+            {
+              "key": "revoke",
+              "label": {
+                "zh": "撤销任用，送还证件",
+                "en": "Revoke the appointment and return the papers"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1055 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1055 = yes } set_variable = { name = ywc_t02_registration value = 3 } set_variable = { name = ywc_t02_outcome value = 3 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "任用被撤销；交换记录以拒绝收束。",
+                "en": "The appointment is revoked; the exchange closes as refused."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1055 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1055 = yes } set_variable = { name = ywc_t02_pending value = 1055 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "不被承认的证书",
+            "en": "The Unrecognized Certificate"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG registration record",
+            "JHG next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1056",
+          "title": {
+            "zh": "留任、返乡或另寻去处",
+            "en": "Retain, Return Home, or Seek Elsewhere"
+          },
+          "desc": {
+            "zh": "任期与争执都已留档。靖海可以留任教习、遣送还乡，或准其另寻去处；若大韩已不可联系，靖海可自行结案。已支付的费用不退。",
+            "en": "The term and the dispute are both on file. Jinghai may retain the teacher, send them home, or let them seek another post; if Korea is unreachable, Jinghai may close on its own. Expenses already paid are not refunded."
+          },
+          "trigger": "{ ywc_t02_jhg_delivery_1056 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_jhg_delivery_1056 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "retain",
+              "label": {
+                "zh": "留任教习，议定教案交接班学徒",
+                "en": "Retain the teacher and settle the handover to the apprentice"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1056 = yes ywc_t02_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1056 = yes ywc_t02_partner_current = yes } set_variable = { name = ywc_t02_proposed_outcome value = 1 } set_variable = { name = ywc_t02_stage value = 1057 } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t02_placement_note value = 1 } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "留任决定写入双方可读的记录；大韩将读到交接安排。",
+                "en": "The retention is written to records both sides can read; Korea will read the handover."
+              }
+            },
+            {
+              "key": "return",
+              "label": {
+                "zh": "遣送还乡，教案移交本地学生",
+                "en": "Send the teacher home and pass the lesson plan to the local student"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1056 = yes ywc_t02_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1056 = yes ywc_t02_partner_current = yes } set_variable = { name = ywc_t02_proposed_outcome value = 2 } set_variable = { name = ywc_t02_stage value = 1057 } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t02_placement_note value = 2 } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "返乡决定写入双方可读的记录；教案移交本地学生。",
+                "en": "The return is written to records both sides can read; the lesson plan passes to the local student."
+              }
+            },
+            {
+              "key": "elsewhere",
+              "label": {
+                "zh": "准其另寻去处，收束交换记录",
+                "en": "Let them seek another post and close the exchange record"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1056 = yes ywc_t02_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1056 = yes ywc_t02_partner_current = yes } set_variable = { name = ywc_t02_proposed_outcome value = 3 } set_variable = { name = ywc_t02_stage value = 1057 } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:KOR = { set_variable = { name = ywc_t02_placement_note value = 3 } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "另寻去向写入双方可读的记录；交换就此收束。",
+                "en": "The departure is written to records both sides can read; the exchange closes."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "对方已不可联系，靖海自行结案",
+                "en": "Close on Jinghai's own record because Korea is unreachable"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1056 = yes NOT = { ywc_t02_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1056 = yes NOT = { ywc_t02_partner_current = yes } } if = { limit = { var:ywc_t02_proposed_outcome ?= 1 } set_variable = { name = ywc_t02_outcome value = 1 } } else_if = { limit = { var:ywc_t02_proposed_outcome ?= 2 } set_variable = { name = ywc_t02_outcome value = 2 } } else_if = { limit = { var:ywc_t02_proposed_outcome ?= 3 } set_variable = { name = ywc_t02_outcome value = 3 } } else_if = { limit = { var:ywc_t02_invite_paid ?= 1 } set_variable = { name = ywc_t02_outcome value = 2 } } else = { set_variable = { name = ywc_t02_outcome value = 4 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按已有记录结案；已支付的费用不退。",
+                "en": "The case closes on existing records; expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t02_jhg_at_1056 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_jhg_at_1056 = yes } set_variable = { name = ywc_t02_pending value = 1056 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "留任、返乡或另寻去处",
+            "en": "Retain, Return Home, or Seek Elsewhere"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG proposed outcome",
+            "KOR placement note",
+            "JHG and KOR next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1057",
+          "title": {
+            "zh": "学生接过教案",
+            "en": "The Student Takes Over the Lesson Plan"
+          },
+          "desc": {
+            "zh": "本地学徒已经能接下医案、账册与译务。大韩可以认可这交接，也可以留档异议：无论哪一种，两边各自保留自己的学署与预算。",
+            "en": "The local apprentice can now take over the case notes, ledgers and interpretation. Korea may accept the handover or file reservations; either way each side keeps its own school and budget."
+          },
+          "trigger": "{ ywc_t02_kor_delivery_1057 = yes }",
+          "immediate": "{ if = { limit = { ywc_t02_kor_delivery_1057 = yes } remove_variable = ywc_t02_pending if = { limit = { NOT = { has_variable = ywc_t02_popup_epoch } } set_variable = { name = ywc_t02_popup_epoch value = 0 } } change_variable = { name = ywc_t02_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t02_popup_epoch value = var:ywc_t02_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "welcome",
+              "label": {
+                "zh": "认可本地学徒接手",
+                "en": "Accept the local succession"
+              },
+              "trigger": "{ ywc_t02_kor_at_1057 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1057 = yes } change_relations = { country = c:JHG value = 5 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_outcome value = var:ywc_t02_proposed_outcome } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "大韩对靖海关系增加 5。",
+                "en": "Korea gains 5 relations with Jinghai."
+              }
+            },
+            {
+              "key": "reserve",
+              "label": {
+                "zh": "留档异议并记录差异",
+                "en": "File reservations and record the differences"
+              },
+              "trigger": "{ ywc_t02_kor_at_1057 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1057 = yes } change_relations = { country = c:JHG value = -5 } change_variable = { name = ywc_t02_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t02_outcome value = var:ywc_t02_proposed_outcome } change_variable = { name = ywc_t02_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "大韩对靖海关系减少 5。",
+                "en": "Korea loses 5 relations with Jinghai."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t02_kor_at_1057 = yes }",
+              "effect": "{ if = { limit = { ywc_t02_kor_at_1057 = yes } set_variable = { name = ywc_t02_pending value = 1057 } change_variable = { name = ywc_t02_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "学生接过教案",
+            "en": "The Student Takes Over the Lesson Plan"
+          },
+          "reads": [
+            "KOR pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "JHG outcome",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        }
+      ],
       "outcomes": [
-        "pending"
+        "v03_t02_talent_accepted",
+        "v03_t02_talent_limited",
+        "v03_t02_talent_refused",
+        "v03_t02_talent_lapsed"
       ],
       "legacy_links": [
-        "pending"
+        "ywc_v03_kor_v03_kor_school_factions_outcome"
       ]
     }
   ]
