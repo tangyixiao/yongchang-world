@@ -1,0 +1,129 @@
+﻿# Crisis C08 侨民保护与沿岸裁判: entry hooks. Initialization follows the shared
+# startup pattern with per-country exists guards; the monthly hook adds the
+# crisis journals only after real eligibility, one instance per holder country.
+# DMG holds the jurisdiction case (event 1700) once the real-link eligibility
+# trigger fires; NMG joins through the mounted case_open flag after the claim
+# classification; the real-link partners join at the after-event (1711).
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c08_after_lobby } }
+
+ywc_v03_c08_after_lobby = {
+	effect = {
+		if = {
+			limit = { exists = c:DMG }
+			c:DMG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:MHG }
+			c:MHG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:NMG }
+			c:NMG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:LAN }
+			c:LAN = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:WBK }
+			c:WBK = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:SHU }
+			c:SHU = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:JHG }
+			c:JHG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c08_monthly } }
+
+ywc_v03_c08_monthly = {
+	effect = {
+		# Journal 1: investigation and answers. DMG opens the case only on the
+		# real-link eligibility trigger; NMG and the partners enter through the
+		# mounted case_open flag, each with its own capacity check.
+		if = {
+			limit = {
+				ywc_c08_case_ready_dmg = yes
+				NOT = { has_journal_entry = ywc_je_v03_c08_protection_eligibility }
+			}
+			add_journal_entry = { type = ywc_je_v03_c08_protection_eligibility }
+		}
+		if = {
+			limit = {
+				c:NMG ?= this
+				var:ywc_c08_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c08_started }
+				NOT = { has_journal_entry = ywc_je_v03_c08_protection_eligibility }
+			}
+			add_journal_entry = { type = ywc_je_v03_c08_protection_eligibility }
+		}
+		if = {
+			limit = {
+				OR = {
+					c:MHG ?= this
+					c:SHU ?= this
+					c:JHG ?= this
+					c:LAN ?= this
+					c:WBK ?= this
+				}
+				var:ywc_c08_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c08_started }
+				NOT = { has_journal_entry = ywc_je_v03_c08_protection_eligibility }
+			}
+			add_journal_entry = { type = ywc_je_v03_c08_protection_eligibility }
+		}
+		# Journal 2: court answer, funding, residence, protest and conditions,
+		# only for countries that entered the execution phase.
+		if = {
+			limit = {
+				OR = {
+					c:DMG ?= this
+					c:NMG ?= this
+				}
+				has_variable = ywc_c08_started
+				var:ywc_c08_program_open ?= 1
+				NOT = { has_variable = ywc_c08_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c08_court_consul_boundary }
+			}
+			add_journal_entry = { type = ywc_je_v03_c08_court_consul_boundary }
+		}
+		# Journal 3: renegotiation, confirmation and aftermath.
+		if = {
+			limit = {
+				OR = {
+					c:DMG ?= this
+					c:NMG ?= this
+				}
+				has_variable = ywc_c08_started
+				var:ywc_c08_review_open ?= 1
+				NOT = { has_variable = ywc_c08_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c08_protection_promise_settlement }
+			}
+			add_journal_entry = { type = ywc_je_v03_c08_protection_promise_settlement }
+		}
+	}
+}

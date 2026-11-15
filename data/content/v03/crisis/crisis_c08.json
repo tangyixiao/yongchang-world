@@ -25,14 +25,1405 @@
         "JHG"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_c08_protection_eligibility",
+          "title": {
+            "zh": "谁有资格请求保护",
+            "en": "Who May Ask for Protection"
+          },
+          "desc": {
+            "zh": "谁在这起沿岸案件里真正有资格请求保护，要靠身份与联系来回答：管辖口岸的真实人口待遇、船籍登记与来往航路先查清，跨海的保护要求按本国预算独立作答，有真实航路、市场或外交往来的伙伴各自记录立场；民族或宗教相近从不是自动干预的许可。",
+            "en": "Who may truly ask for protection in this coastal case is answered by identity and contact: the port's actual treatment of residents, ship registries and trade lanes are examined first, the overseas protection claim answers on its own budget, and partners with real lanes, markets or diplomacy record their own stance; cultural or religious similarity alone is never licence to intervene."
+          },
+          "script": "{\nis_shown_when_inactive = {\n\thas_variable = ywc_v03_initialized\n\tNOT = { has_variable = ywc_c08_started }\n\tOR = {\n\t\tAND = { c:DMG ?= this OR = { ywc_c08_case_ready_dmg = yes var:ywc_c08_case_open ?= 1 } }\n\t\tAND = { c:NMG ?= this var:ywc_c08_case_open ?= 1 }\n\t\tAND = { OR = { c:MHG ?= this c:SHU ?= this c:JHG ?= this c:LAN ?= this c:WBK ?= this } var:ywc_c08_case_open ?= 1 }\n\t}\n}\npossible = {\n\thas_variable = ywc_v03_initialized\n\tywc_v03_has_capacity = yes\n\tNOT = { has_variable = ywc_c08_started }\n\tOR = {\n\t\tAND = { c:DMG ?= this OR = { ywc_c08_case_ready_dmg = yes var:ywc_c08_case_open ?= 1 } }\n\t\tAND = { c:NMG ?= this var:ywc_c08_case_open ?= 1 }\n\t\tAND = { OR = { c:MHG ?= this c:SHU ?= this c:JHG ?= this c:LAN ?= this c:WBK ?= this } var:ywc_c08_case_open ?= 1 }\n\t}\n}\nimmediate = {\n\tif = { limit = { NOT = { has_variable = ywc_c08_started } }\n\t\tset_variable = { name = ywc_c08_started value = 1 }\n\t\tset_variable = { name = ywc_c08_popup_epoch value = 0 }\n\t\tset_variable = { name = ywc_c08_wait_age value = 0 }\n\t\tchange_variable = { name = ywc_v03_active_arc_count add = 1 }\n\t\tchange_variable = { name = ywc_v03_visible_task_count add = 1 }\n\t}\n\tif = { limit = { NOT = { has_variable = ywc_c08_popup_epoch } } set_variable = { name = ywc_c08_popup_epoch value = 0 } }\n\tif = { limit = { c:DMG ?= this NOT = { has_variable = ywc_c08_role } } set_variable = { name = ywc_c08_role value = 1 } }\n\tif = { limit = { c:NMG ?= this NOT = { has_variable = ywc_c08_role } } set_variable = { name = ywc_c08_role value = 2 } }\n\tif = { limit = { OR = { c:MHG ?= this c:SHU ?= this c:JHG ?= this c:LAN ?= this c:WBK ?= this } NOT = { has_variable = ywc_c08_role } } set_variable = { name = ywc_c08_role value = 3 } }\n\tif = { limit = { c:DMG ?= this NOT = { has_variable = ywc_c08_stage } }\n\t\tset_variable = { name = ywc_c08_case_open value = 1 }\n\t\tset_variable = { name = ywc_c08_stage value = 1700 }\n\t\tset_variable = { name = ywc_c08_pending value = 1700 }\n\t}\n}\non_monthly_pulse = {\n\teffect = {\n# DMG awaits the external note; a dead or withdrawn claimant proceeds unilaterally.\n\tif = { limit = { c:DMG ?= this var:ywc_c08_stage ?= 1712 }\n\t\tchange_variable = { name = ywc_c08_wait_age add = 1 }\n\t\tif = { limit = { ywc_c08_nmg_note_moot = yes } ywc_c08_after_ext_note = yes }\n\t\telse_if = { limit = { OR = { ywc_c08_nmg_note_recorded = yes var:ywc_c08_wait_age >= 12 } } ywc_c08_after_ext_note = yes }\n\t}\n# Orphan close: the claimant or a partner holding an early stage loses its counterpart.\n\tif = { limit = {\n\t\tOR = { c:NMG ?= this OR = { c:MHG ?= this c:SHU ?= this c:JHG ?= this c:LAN ?= this c:WBK ?= this } }\n\t\tOR = { var:ywc_c08_stage ?= 1702 var:ywc_c08_stage ?= 1711 }\n\t\tywc_c08_initiator_gone = yes\n\t}\n\t\tywc_c08_close_no_talks = yes\n\t}\n# Deliveries bound to journal 1.\n\tif = { limit = { ywc_c08_dmg_delivery_1700 = yes } trigger_event = { id = ywc_crisis.1700 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1701 = yes } trigger_event = { id = ywc_crisis.1701 } }\n\tif = { limit = { ywc_c08_nmg_delivery_1702 = yes } trigger_event = { id = ywc_crisis.1702 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1703 = yes } trigger_event = { id = ywc_crisis.1703 } }\n\tif = { limit = { ywc_c08_partner_delivery_1711 = yes } trigger_event = { id = ywc_crisis.1711 } }\n\t}\n}\n}",
+          "goal": "{ OR = { has_variable = ywc_c08_roster_done has_variable = ywc_c08_ext_response has_variable = ywc_c08_partner_note } }",
+          "exit_conditions": "{ OR = { var:ywc_c08_outcome ?= 4 var:ywc_c08_outcome ?= 6 } }"
+        },
+        {
+          "id": "ywc_je_v03_c08_court_consul_boundary",
+          "title": {
+            "zh": "法庭与领事的边界",
+            "en": "The Boundary between Court and Consulate"
+          },
+          "desc": {
+            "zh": "管辖与协助各归各位：法庭按公开审理、有限会审或拒绝外部裁判独立答复，双方各自用自己的预算承担翻译、证人与路费，居留待遇依现行法律办理；外部国若把援助绑定商权，管辖国另行接受或拒绝，任何一方都不得替他国默认同意。",
+            "en": "Jurisdiction and assistance each stay in their own place: the court answers independently with a public trial, a limited joint session or a refusal of external adjudication, both sides fund interpreters, witnesses and travel from their own budgets, and residence follows the law as it stands; if the external state ties aid to commercial terms, the jurisdiction accepts or refuses separately, and no one consents on another's behalf."
+          },
+          "script": "{\nis_shown_when_inactive = { has_variable = ywc_c08_program_open }\npossible = {\n\thas_variable = ywc_v03_initialized\n\thas_variable = ywc_c08_started\n\tvar:ywc_c08_program_open ?= 1\n\tOR = { c:DMG ?= this c:NMG ?= this }\n\tNOT = { has_variable = ywc_c08_outcome }\n}\nimmediate = {\n\tif = { limit = { NOT = { has_variable = ywc_c08_popup_epoch } } set_variable = { name = ywc_c08_popup_epoch value = 0 } }\n}\non_monthly_pulse = {\n\teffect = {\n# DMG awaits the conditions answer; a dead, withdrawn or silent claimant opens the reply anyway.\n\tif = { limit = { c:DMG ?= this var:ywc_c08_stage ?= 1715 }\n\t\tchange_variable = { name = ywc_c08_wait_age add = 1 }\n\t\tif = { limit = { ywc_c08_nmg_conditions_moot = yes } ywc_c08_skip_conditions = yes }\n\t\telse_if = { limit = { OR = { ywc_c08_nmg_conditions_recorded = yes var:ywc_c08_wait_age >= 24 } } ywc_c08_open_condition_reply = yes }\n\t}\n# Orphan close: the claimant at its own execution stages loses its counterpart.\n\tif = { limit = {\n\t\tc:NMG ?= this\n\t\tOR = { var:ywc_c08_stage ?= 1704 var:ywc_c08_stage ?= 1707 }\n\t\tywc_c08_dmg_gone_or_closed = yes\n\t}\n\t\tywc_c08_close_no_talks = yes\n\t}\n# Deliveries bound to journal 2.\n\tif = { limit = { ywc_c08_dmg_delivery_1704 = yes } trigger_event = { id = ywc_crisis.1704 } }\n\tif = { limit = { ywc_c08_nmg_delivery_1704 = yes } trigger_event = { id = ywc_crisis.1704 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1705 = yes } trigger_event = { id = ywc_crisis.1705 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1706 = yes } trigger_event = { id = ywc_crisis.1706 } }\n\tif = { limit = { ywc_c08_nmg_delivery_1707 = yes } trigger_event = { id = ywc_crisis.1707 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1716 = yes } trigger_event = { id = ywc_crisis.1707 } }\n\t}\n}\n}",
+          "goal": "{ OR = { has_variable = ywc_c08_prog_funded has_variable = ywc_c08_ext_funded } }",
+          "exit_conditions": "{ OR = { var:ywc_c08_outcome ?= 4 var:ywc_c08_outcome ?= 6 } }"
+        },
+        {
+          "id": "ywc_je_v03_c08_protection_promise_settlement",
+          "title": {
+            "zh": "保护承诺的归宿",
+            "en": "Where the Protection Promise Rests"
+          },
+          "desc": {
+            "zh": "承诺最终落在纸面与实践中：单案仲裁或互认的安排由两家分别确认，居民的去留选择如实记录，判决执行与援助兑现按实际清点；拒绝、退出与履约失败同样入册，未决事项留给正常游戏继续。",
+            "en": "Promises finally rest on paper and practice: the single-case or mutual-recognition arrangement is confirmed by each side, residents' choices to stay or leave are recorded as made, and verdict enforcement and aid delivery are counted as they actually stand; refusal, withdrawal and failed fulfillment enter the same ledger, and open questions continue through normal play."
+          },
+          "script": "{\nis_shown_when_inactive = { has_variable = ywc_c08_review_open }\npossible = {\n\thas_variable = ywc_v03_initialized\n\thas_variable = ywc_c08_started\n\tvar:ywc_c08_review_open ?= 1\n\tOR = { c:DMG ?= this c:NMG ?= this }\n\tNOT = { has_variable = ywc_c08_outcome }\n}\nimmediate = {\n\tif = { limit = { NOT = { has_variable = ywc_c08_popup_epoch } } set_variable = { name = ywc_c08_popup_epoch value = 0 } }\n}\non_monthly_pulse = {\n\teffect = {\n# NMG awaits the forum proposal; a dead or closed jurisdiction closes the talks.\n\tif = { limit = { c:NMG ?= this var:ywc_c08_stage ?= 1718 }\n\t\tchange_variable = { name = ywc_c08_wait_age add = 1 }\n\t\tif = { limit = { ywc_c08_dmg_gone_or_closed = yes } ywc_c08_close_no_talks = yes }\n\t\telse_if = { limit = { OR = { ywc_c08_dmg_forum_proposed = yes var:ywc_c08_wait_age >= 24 } } ywc_c08_open_nmg_renegotiation = yes }\n\t}\n# NMG has accepted on record and awaits the jurisdiction's settlement.\n\tif = { limit = { c:NMG ?= this var:ywc_c08_stage ?= 1721 }\n\t\tchange_variable = { name = ywc_c08_wait_age add = 1 }\n\t\tif = { limit = { ywc_c08_dmg_gone_or_closed = yes } ywc_c08_close_no_talks = yes }\n\t\telse_if = { limit = { var:ywc_c08_wait_age >= 36 } ywc_c08_close_status_quo = yes }\n\t}\n# Mirror: once the jurisdiction settles, the acceptance on record adopts its outcome.\n\tif = { limit = {\n\t\tc:NMG ?= this\n\t\thas_variable = ywc_c08_nmg_confirm\n\t\tNOT = { has_variable = ywc_c08_outcome }\n\t\tywc_c08_dmg_settled = yes\n\t}\n\t\tywc_c08_nmg_mirror_settle = yes\n\t}\n# Orphan close for the claimant inside the renegotiation and settlement rounds.\n\tif = { limit = {\n\t\tc:NMG ?= this\n\t\tOR = { var:ywc_c08_stage ?= 1709 var:ywc_c08_stage ?= 1710 }\n\t\tywc_c08_dmg_gone_or_closed = yes\n\t}\n\t\tywc_c08_close_no_talks = yes\n\t}\n# Deliveries bound to journal 3.\n\tif = { limit = { ywc_c08_dmg_delivery_1708 = yes } trigger_event = { id = ywc_crisis.1708 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1709 = yes } trigger_event = { id = ywc_crisis.1709 } }\n\tif = { limit = { ywc_c08_nmg_delivery_1709 = yes } trigger_event = { id = ywc_crisis.1709 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1710 = yes } trigger_event = { id = ywc_crisis.1710 } }\n\tif = { limit = { ywc_c08_nmg_delivery_1710 = yes } trigger_event = { id = ywc_crisis.1710 } }\n\tif = { limit = { ywc_c08_dmg_delivery_1711 = yes } trigger_event = { id = ywc_crisis.1711 } }\n\t}\n}\n}",
+          "goal": "{ OR = { has_variable = ywc_c08_aftermath AND = { has_variable = ywc_c08_outcome OR = { var:ywc_c08_outcome ?= 3 var:ywc_c08_outcome ?= 5 } } } }",
+          "exit_conditions": "{ OR = { var:ywc_c08_outcome ?= 4 var:ywc_c08_outcome ?= 6 } }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_crisis.1700",
+          "title": {
+            "zh": "两种身份证明",
+            "en": "Two Proofs of Identity"
+          },
+          "desc": {
+            "zh": "同一批沿岸居民，在户口册、船籍登记与航路日志上各有各的记法。管辖口岸要逐项核对：谁住在本地、哪条船挂哪一国旗、与外部的真实来往是航路、市场还是外交接触；先查清身份，再谈保护。",
+            "en": "The same coastal residents are recorded differently in the household register, the ship registry and the lane logs. The port jurisdiction must reconcile them line by line: who actually lives here, which flag each ship sails under, and whether the real contact with the outside runs through lanes, markets or diplomacy. Identity is settled before protection is discussed."
+          },
+          "trigger": "{ ywc_c08_dmg_delivery_1700 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_dmg_delivery_1700 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "full_registry_review",
+              "label": {
+                "zh": "逐项核对户口、船籍与航路",
+                "en": "Reconcile the household, ship and lane registers line by line"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1700 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1700 = yes } set_variable = { name = ywc_c08_case_scope value = 1 } set_variable = { name = ywc_c08_stage value = 1701 } set_variable = { name = ywc_c08_pending value = 1701 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "审查范围入册，作为后续安置与裁判的底册。",
+                "en": "The scope of review is registered as the baseline for resettlement and adjudication."
+              }
+            },
+            {
+              "key": "ship_and_crew_focus",
+              "label": {
+                "zh": "只核船籍与船员名册，陆地另议",
+                "en": "Review only ship registries and crew rosters; the land question waits"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1700 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1700 = yes } set_variable = { name = ywc_c08_case_scope value = 2 } set_variable = { name = ywc_c08_stage value = 1701 } set_variable = { name = ywc_c08_pending value = 1701 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重核身份册",
+                "en": "Wait and recheck the registers"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1700 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1700 = yes } set_variable = { name = ywc_c08_pending value = 1700 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "查明真实人口待遇、船籍与来往联系，确认谁涉案",
+            "en": "Establish the actual treatment of residents, ship registry and real contact to confirm who is involved"
+          },
+          "reads": [
+            "holder's own stage/pending via the delivery trigger",
+            "NMG's real contact links via the entry trigger ywc_c08_case_ready_dmg evaluated inside an explicit c:NMG block"
+          ],
+          "writes": [
+            "holder case_scope, stage/pending, wait_age, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1701",
+          "title": {
+            "zh": "保护者不止一个",
+            "en": "More than One Protector"
+          },
+          "desc": {
+            "zh": "要求保护的声音不止一种：住在口岸的居民谈的是入籍与日常差别，海外谈的是领事照会与援助，商人谈的是航线与货栈。把三种诉求分开登记，不让任何一国把整个社群写成自己的代理人。",
+            "en": "More than one voice asks for protection: residents of the port speak of naturalization and daily differential treatment, the overseas claimant speaks of consular notes and aid, merchants speak of lanes and warehouses. Register the three claims separately, and let no country write the whole community up as its proxy."
+          },
+          "trigger": "{ ywc_c08_dmg_delivery_1701 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_dmg_delivery_1701 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "separate_local_claims",
+              "label": {
+                "zh": "居民诉求按本地民事登记，领事诉求单独递送",
+                "en": "Register resident claims as local civil matters; forward the consular claim separately"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1701 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1701 = yes } set_variable = { name = ywc_c08_claim_mode value = 1 } ywc_c08_open_answers = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "诉求分类入册；照会送外部保护要求方独立作答。",
+                "en": "The claim categories are registered; the note goes to the external claimant for its own answer."
+              }
+            },
+            {
+              "key": "route_through_note",
+              "label": {
+                "zh": "一律经外部照会转交，本地诉求并入附页",
+                "en": "Route everything through the external note, local claims appended"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1701 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1701 = yes } set_variable = { name = ywc_c08_claim_mode value = 2 } ywc_c08_open_answers = yes } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "merchant_separate",
+              "label": {
+                "zh": "商人利益与保护诉求分册，互不捆绑",
+                "en": "Keep merchant interests in a separate register, unbound from the protection claims"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1701 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1701 = yes } set_variable = { name = ywc_c08_claim_mode value = 3 } ywc_c08_open_answers = yes } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再分诉求",
+                "en": "Wait and sort the claims again"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1701 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1701 = yes } set_variable = { name = ywc_c08_pending value = 1701 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 25 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "分清居民自治诉求、领事诉求与商人利益，避免把社群写成外部代理",
+            "en": "Separate resident self-rule claims, consular claims and merchant interests; avoid writing the community as an external proxy"
+          },
+          "reads": [
+            "holder's own claim registration",
+            "alive state of NMG via the explicit c:NMG block inside the mounting effect ywc_c08_open_answers"
+          ],
+          "writes": [
+            "holder claim_mode, stage 1703/pending, wait_age, popup_epoch",
+            "case_open/role/stage 1702/pending mounted on NMG (required claimant) in the same effect"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1702",
+          "title": {
+            "zh": "跨海递来的照会",
+            "en": "The Note from Across the Sea"
+          },
+          "desc": {
+            "zh": "跨海而来的保护照会摆上桌面。外部国按自己的预算与国内章程作答：出一笔法律援助并承担汇兑，或只派有限代表列席，或声明不介入；答与不答都记在自己名下，不替口岸代答。",
+            "en": "The protection note from across the sea is on the table. The external state answers on its own budget and under its own statutes: fund legal aid and carry the exchange, send only limited representatives to observe, or declare non-intervention. The answer is its own, recorded under its own name; it does not answer for the port."
+          },
+          "trigger": "{ ywc_c08_nmg_delivery_1702 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_nmg_delivery_1702 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "fund_legal_aid",
+              "label": {
+                "zh": "支付法律援助（200），照会正式递达",
+                "en": "Fund legal aid (200); the note is formally served"
+              },
+              "trigger": "{ AND = { ywc_c08_nmg_at_1702 = yes gold_reserves >= 200 } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1702 = yes gold_reserves >= 200 } } add_treasury = -200 set_variable = { name = ywc_c08_ext_response value = 1 } if = { limit = { c:DMG ?= { is_country_alive = yes } } c:DMG = { add_treasury = 200 set_variable = { name = ywc_c08_ext_aid_received value = 1 } } } change_relations = { country = c:DMG value = 2 } set_variable = { name = ywc_c08_program_open value = 1 } set_variable = { name = ywc_c08_stage value = 1704 } set_variable = { name = ywc_c08_pending value = 1704 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "本国国库支付 200，直接汇入管辖口岸国库。",
+                "en": "This country's treasury pays 200, sent directly to the port jurisdiction."
+              },
+              "consequence_note": {
+                "zh": "援助到账记入口岸名下；双方转入各自的筹资程序。",
+                "en": "The aid is recorded on the port; both sides enter their own funding procedure."
+              }
+            },
+            {
+              "key": "limited_representation",
+              "label": {
+                "zh": "只派有限代表列席，不出资金",
+                "en": "Send limited representatives only; no funds committed"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1702 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_nmg_at_1702 = yes } set_variable = { name = ywc_c08_ext_response value = 2 } set_variable = { name = ywc_c08_program_open value = 1 } set_variable = { name = ywc_c08_stage value = 1704 } set_variable = { name = ywc_c08_pending value = 1704 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "declare_non_intervention",
+              "label": {
+                "zh": "声明不介入，撤回保护要求",
+                "en": "Declare non-intervention and withdraw the protection claim"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1702 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_nmg_at_1702 = yes } set_variable = { name = ywc_c08_ext_response value = 3 } if = { limit = { c:DMG ?= { is_country_alive = yes } } change_relations = { country = c:DMG value = -1 } } ywc_c08_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "外部国以主动退出结案；口岸的国内程序照常进行。",
+                "en": "The external state closes as withdrawn; the port's domestic procedure continues."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1702 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_nmg_at_1702 = yes } set_variable = { name = ywc_c08_pending value = 1702 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "外部保护要求方就援助与介入独立作答",
+            "en": "The external claimant answers aid and involvement on its own authority"
+          },
+          "reads": [
+            "holder's own treasury via gold_reserves",
+            "alive state of DMG via the explicit c:DMG block for the transfer and the aid marker"
+          ],
+          "writes": [
+            "holder ext_response, program_open, stage/pending, relations with DMG",
+            "cross-country transfer: holder pays 200 and DMG receives 200 in the same effect",
+            "ext_aid_received marker mounted on DMG (explicit c:DMG block) in the same effect"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1703",
+          "title": {
+            "zh": "本地法庭的管辖答复",
+            "en": "The Local Court's Answer on Jurisdiction"
+          },
+          "desc": {
+            "zh": "法庭对管辖权本身作答：按现行法公开审理，或为这一案设有限会审，或拒绝外部裁判、只认本地程序。答复是口岸自己的；外部国是否接受，由外部国另行决定，法庭不代任何一方默认同意。",
+            "en": "The court answers the question of jurisdiction itself: a public trial under the law as it stands, a limited joint session for this one case, or a refusal of external adjudication that recognizes local procedure alone. The answer is the port's own; whether the external state accepts it is that state's separate decision, and the court defaults for no one."
+          },
+          "trigger": "{ ywc_c08_dmg_delivery_1703 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_dmg_delivery_1703 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "public_trial",
+              "label": {
+                "zh": "按现行法公开审理",
+                "en": "Hold a public trial under the law as it stands"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1703 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1703 = yes } set_variable = { name = ywc_c08_court_answer value = 1 } set_variable = { name = ywc_c08_stage value = 1712 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "limited_joint_session",
+              "label": {
+                "zh": "为本案设有限会审，外部列席有限",
+                "en": "Convene a limited joint session for this case; external observers sit within bounds"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1703 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1703 = yes } set_variable = { name = ywc_c08_court_answer value = 2 } set_variable = { name = ywc_c08_stage value = 1712 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "refuse_external",
+              "label": {
+                "zh": "拒绝外部裁判，只认本地程序",
+                "en": "Refuse external adjudication; local procedure alone is recognized"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1703 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1703 = yes } set_variable = { name = ywc_c08_court_answer value = 3 } set_variable = { name = ywc_c08_stage value = 1712 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再议管辖",
+                "en": "Wait and deliberate jurisdiction again"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1703 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1703 = yes } set_variable = { name = ywc_c08_pending value = 1703 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "管辖国就管辖与协助边界独立答复，不替他国默认同意",
+            "en": "The jurisdiction answers the court-consul boundary on its own authority, defaulting for no one"
+          },
+          "reads": [
+            "holder's own stage via the delivery trigger",
+            "NMG's note record via the explicit c:NMG block in the monthly wait exit"
+          ],
+          "writes": [
+            "holder court_answer, stage 1712 waiting marker, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1704",
+          "title": {
+            "zh": "翻译、证人与路费",
+            "en": "Interpreters, Witnesses and Travel Money"
+          },
+          "desc": {
+            "zh": "程序要花钱，钱只能来自各自预算：翻译聘本地实际可用的语言人手，证人的路费按实报销，小国库先办这一案。两边各自记账，谁也不能把程序开销摊给对方。",
+            "en": "Procedure costs money and the money can only come from each side's own budget: interpreters hired from the languages actually available locally, witnesses' travel reimbursed as incurred, and a small treasury starts with this one case. Each side keeps its own accounts; neither shifts procedural costs onto the other."
+          },
+          "trigger": "{ OR = { ywc_c08_dmg_delivery_1704 = yes ywc_c08_nmg_delivery_1704 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c08_dmg_delivery_1704 = yes ywc_c08_nmg_delivery_1704 = yes } } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "fund_full_program",
+              "label": {
+                "zh": "支付完整程序开支（300）",
+                "en": "Fund the full procedural program (300)"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1704 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c08_prog_funded } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1704 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c08_prog_funded } } } add_treasury = -300 set_variable = { name = ywc_c08_prog_funded value = 1 } set_variable = { name = ywc_c08_stage value = 1705 } set_variable = { name = ywc_c08_pending value = 1705 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "本国国库支付 300。",
+                "en": "The holder's treasury pays 300."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "single_case_first",
+              "label": {
+                "zh": "先办单案，只出最低开支（100）",
+                "en": "Start with the single case; pay the minimal outlay (100)"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1704 = yes gold_reserves >= 100 NOT = { has_variable = ywc_c08_prog_funded } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1704 = yes gold_reserves >= 100 NOT = { has_variable = ywc_c08_prog_funded } } } add_treasury = -100 set_variable = { name = ywc_c08_prog_funded value = 2 } set_variable = { name = ywc_c08_stage value = 1705 } set_variable = { name = ywc_c08_pending value = 1705 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "本国国库支付 100。",
+                "en": "The holder's treasury pays 100."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "fund_full_share",
+              "label": {
+                "zh": "外部支付完整份额（300）",
+                "en": "Fund the full external share (300)"
+              },
+              "trigger": "{ AND = { ywc_c08_nmg_at_1704 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c08_ext_funded } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1704 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c08_ext_funded } } } add_treasury = -300 set_variable = { name = ywc_c08_ext_funded value = 1 } set_variable = { name = ywc_c08_stage value = 1707 } set_variable = { name = ywc_c08_pending value = 1707 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 85 }",
+              "cost_note": {
+                "zh": "本国国库支付 300。",
+                "en": "The holder's treasury pays 300."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "minimal_share",
+              "label": {
+                "zh": "外部只出最低份额（100）",
+                "en": "Fund only the minimal external share (100)"
+              },
+              "trigger": "{ AND = { ywc_c08_nmg_at_1704 = yes gold_reserves >= 100 NOT = { has_variable = ywc_c08_ext_funded } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1704 = yes gold_reserves >= 100 NOT = { has_variable = ywc_c08_ext_funded } } } add_treasury = -100 set_variable = { name = ywc_c08_ext_funded value = 2 } set_variable = { name = ywc_c08_stage value = 1707 } set_variable = { name = ywc_c08_pending value = 1707 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 65 }",
+              "cost_note": {
+                "zh": "本国国库支付 100。",
+                "en": "The holder's treasury pays 100."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重核开支",
+                "en": "Wait and recheck the outlay"
+              },
+              "trigger": "{ OR = { ywc_c08_dmg_at_1704 = yes ywc_c08_nmg_at_1704 = yes } }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1704 = yes NOT = { has_variable = ywc_c08_prog_funded } } set_variable = { name = ywc_c08_pending value = 1704 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } if = { limit = { ywc_c08_nmg_at_1704 = yes NOT = { has_variable = ywc_c08_ext_funded } } set_variable = { name = ywc_c08_pending value = 1704 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "双方分别筹资承担翻译、证人与路费",
+            "en": "Both sides fund interpreters, witnesses and travel from their own budgets"
+          },
+          "reads": [
+            "each side's own stage via its delivery trigger",
+            "each holder's own treasury via gold_reserves"
+          ],
+          "writes": [
+            "holder prog_funded (DMG) or ext_funded (NMG), stage/pending routing, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1705",
+          "title": {
+            "zh": "住在这里的人",
+            "en": "The People Who Live Here"
+          },
+          "desc": {
+            "zh": "案件落到住在这里的人身上：入籍按现行法办，居留给有边界的许可，差别待遇照实保留。法庭照法律写文书，不越过法律伪造平等，也不替立法机构宣布新法。",
+            "en": "The case lands on the people who live here: naturalization follows the law as it stands, residence gets bounded permits, differential treatment is kept as it actually is. The court writes its papers under the law; it does not fake equality beyond the law or legislate in the assembly's name."
+          },
+          "trigger": "{ ywc_c08_dmg_delivery_1705 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_dmg_delivery_1705 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "lawful_naturalization",
+              "label": {
+                "zh": "按现行法受理入籍申请",
+                "en": "Receive naturalization applications under the law as it stands"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1705 = yes NOT = { has_variable = ywc_c08_residence_rule } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1705 = yes NOT = { has_variable = ywc_c08_residence_rule } } } set_variable = { name = ywc_c08_residence_rule value = 1 } set_variable = { name = ywc_c08_stage value = 1706 } set_variable = { name = ywc_c08_pending value = 1706 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 85 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "bounded_residence",
+              "label": {
+                "zh": "只给有边界的居留许可，不涉公民资格",
+                "en": "Grant bounded residence permits only; citizenship stays out of reach"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1705 = yes NOT = { has_variable = ywc_c08_residence_rule } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1705 = yes NOT = { has_variable = ywc_c08_residence_rule } } } set_variable = { name = ywc_c08_residence_rule value = 2 } set_variable = { name = ywc_c08_stage value = 1706 } set_variable = { name = ywc_c08_pending value = 1706 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "keep_differential",
+              "label": {
+                "zh": "差别待遇照现行法律保留",
+                "en": "Keep differential treatment as the current law provides"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1705 = yes NOT = { has_variable = ywc_c08_residence_rule } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1705 = yes NOT = { has_variable = ywc_c08_residence_rule } } } set_variable = { name = ywc_c08_residence_rule value = 3 } set_variable = { name = ywc_c08_stage value = 1706 } set_variable = { name = ywc_c08_pending value = 1706 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再读法律",
+                "en": "Wait and read the law again"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1705 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1705 = yes } set_variable = { name = ywc_c08_pending value = 1705 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "居留与入籍依真实法律处理，不伪造平等",
+            "en": "Residence and naturalization handled under the real law, without faking equality"
+          },
+          "reads": [
+            "holder's own stage and the law as it stands"
+          ],
+          "writes": [
+            "holder residence_rule, stage/pending, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1706",
+          "title": {
+            "zh": "领事馆外的抗议",
+            "en": "The Protest outside the Consulate"
+          },
+          "desc": {
+            "zh": "领事馆外聚起了人群：有递状纸的，有只求见领事一面的，也有堵门的。口岸按现行集会章程处置：接收合法申诉，或按公共秩序限缩集会，或把诉求转入正在进行的谈判；读的是实际的政治权利与运动，不是想象中的秩序。",
+            "en": "A crowd gathers outside the consulate: some hand in petitions, some only ask to see the consul, some block the gate. The port disposes under its assembly rules as they stand: receive the lawful petitions, restrict assemblies for public order, or route the demands into the ongoing talks. What is read is the actual political rights and movements, not an imagined order."
+          },
+          "trigger": "{ ywc_c08_dmg_delivery_1706 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_dmg_delivery_1706 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "receive_petitions",
+              "label": {
+                "zh": "接收合法申诉，登记造册",
+                "en": "Receive the lawful petitions and register them"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1706 = yes NOT = { has_variable = ywc_c08_protest_choice } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1706 = yes NOT = { has_variable = ywc_c08_protest_choice } } } set_variable = { name = ywc_c08_protest_choice value = 1 } set_variable = { name = ywc_c08_stage value = 1715 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "restrict_assemblies",
+              "label": {
+                "zh": "按公共秩序章程限缩集会",
+                "en": "Restrict the assemblies under the public-order rules"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1706 = yes NOT = { has_variable = ywc_c08_protest_choice } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1706 = yes NOT = { has_variable = ywc_c08_protest_choice } } } set_variable = { name = ywc_c08_protest_choice value = 2 } set_variable = { name = ywc_c08_stage value = 1715 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "route_to_talks",
+              "label": {
+                "zh": "把诉求转入正在进行的谈判",
+                "en": "Route the demands into the ongoing talks"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1706 = yes NOT = { has_variable = ywc_c08_protest_choice } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1706 = yes NOT = { has_variable = ywc_c08_protest_choice } } } set_variable = { name = ywc_c08_protest_choice value = 3 } set_variable = { name = ywc_c08_stage value = 1715 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再看章程",
+                "en": "Wait and read the rules again"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1706 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1706 = yes } set_variable = { name = ywc_c08_pending value = 1706 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "读取实际政治权利与运动并处置抗议",
+            "en": "Read the actual political rights and movements and dispose of the protest"
+          },
+          "reads": [
+            "holder's own stage and its assembly rules as they stand",
+            "NMG's condition record via the explicit c:NMG block in the monthly wait exit"
+          ],
+          "writes": [
+            "holder protest_choice, stage 1715 waiting marker, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1707",
+          "title": {
+            "zh": "保护要求的附带条件",
+            "en": "Conditions Attached to Protection"
+          },
+          "desc": {
+            "zh": "外部国的援助送到了附带条件的关口：把援助绑定排他商权，或去掉条件照单援助，或干脆撤回照会；管辖口岸对条件另行作答——接受条件、拒绝附带条件，或暂缓。两个答复各自记账，谁也不能替对方签。",
+            "en": "The external state's aid reaches the gate of attached conditions: tie the aid to exclusive commercial rights, drop the conditions and aid as listed, or withdraw the note outright. The port jurisdiction answers the conditions separately - accept them, refuse what is attached, or hold. The two answers keep their own ledgers; neither signs for the other."
+          },
+          "trigger": "{ OR = { ywc_c08_nmg_delivery_1707 = yes ywc_c08_dmg_delivery_1716 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c08_nmg_delivery_1707 = yes ywc_c08_dmg_delivery_1716 = yes } } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "tie_aid_to_terms",
+              "label": {
+                "zh": "把援助绑定排他商权",
+                "en": "Tie the aid to exclusive commercial rights"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } } } set_variable = { name = ywc_c08_condition_mode value = 1 } set_variable = { name = ywc_c08_stage value = 1718 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "条件入册；口岸另行接受或拒绝，外部国转入等待。",
+                "en": "The conditions are registered; the port answers separately and the external state waits."
+              }
+            },
+            {
+              "key": "aid_without_conditions",
+              "label": {
+                "zh": "去掉条件，照单援助",
+                "en": "Drop the conditions; aid as listed"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } } } set_variable = { name = ywc_c08_condition_mode value = 2 } set_variable = { name = ywc_c08_stage value = 1718 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 75 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "withdraw_note",
+              "label": {
+                "zh": "撤回照会，援助一并撤回",
+                "en": "Withdraw the note; the aid goes with it"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } } } set_variable = { name = ywc_c08_condition_mode value = 3 } if = { limit = { c:DMG ?= { is_country_alive = yes } } change_relations = { country = c:DMG value = -2 } } ywc_c08_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 35 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "与口岸关系 -2；外部国以主动退出结案。",
+                "en": "Relations with the port drop by 2; the external state closes as withdrawn."
+              }
+            },
+            {
+              "key": "accept_note_terms",
+              "label": {
+                "zh": "接受照会条款，援助照单生效",
+                "en": "Accept the note's terms; the aid takes effect as listed"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1716 = yes NOT = { has_variable = ywc_c08_condition_reply } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1716 = yes NOT = { has_variable = ywc_c08_condition_reply } } } set_variable = { name = ywc_c08_condition_reply value = 1 } set_variable = { name = ywc_c08_review_open value = 1 } set_variable = { name = ywc_c08_stage value = 1708 } set_variable = { name = ywc_c08_pending value = 1708 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "refuse_conditions",
+              "label": {
+                "zh": "拒绝附带条件，援助另议",
+                "en": "Refuse the attached conditions; the aid returns to negotiation"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1716 = yes NOT = { has_variable = ywc_c08_condition_reply } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1716 = yes NOT = { has_variable = ywc_c08_condition_reply } } } set_variable = { name = ywc_c08_condition_reply value = 2 } if = { limit = { c:NMG ?= { is_country_alive = yes } } change_relations = { country = c:NMG value = -2 } } set_variable = { name = ywc_c08_review_open value = 1 } set_variable = { name = ywc_c08_stage value = 1708 } set_variable = { name = ywc_c08_pending value = 1708 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "与外部国关系 -2；拒绝记录在案，完整安排此后不可用。",
+                "en": "Relations with the external state drop by 2; the refusal stays on record and the full arrangement is no longer available."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓处置",
+                "en": "Wait before disposing"
+              },
+              "trigger": "{ OR = { ywc_c08_nmg_at_1707 = yes ywc_c08_dmg_at_1716 = yes } }",
+              "effect": "{ if = { limit = { ywc_c08_nmg_at_1707 = yes NOT = { has_variable = ywc_c08_condition_mode } } set_variable = { name = ywc_c08_pending value = 1707 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } if = { limit = { ywc_c08_dmg_at_1716 = yes NOT = { has_variable = ywc_c08_condition_reply } } set_variable = { name = ywc_c08_pending value = 1716 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "外部国自定援助条件，管辖国另行接受或拒绝",
+            "en": "The external state sets its own conditions; the jurisdiction accepts or refuses separately"
+          },
+          "reads": [
+            "each side's own stage via its delivery trigger",
+            "counterparty alive state via explicit c:DMG/c:NMG blocks in the relation changes"
+          ],
+          "writes": [
+            "NMG condition_mode, stage 1718 waiting marker, relations with DMG",
+            "DMG condition_reply, review_open, stage 1708/pending, relations with NMG"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1708",
+          "title": {
+            "zh": "先审一案，再谈通则",
+            "en": "One Case First, Then General Rules"
+          },
+          "desc": {
+            "zh": "到了立规矩的时候：为本案设单案仲裁，主权在手但一案一审走得慢；提出判决互认，走得快但要有现成的登记、送达与执行班子；或者只保留本地法庭，不谈通则。提案由口岸提出，外部国自行答复。",
+            "en": "Time to set rules: single-case arbitration for this one dispute keeps sovereignty but moves slowly; mutual recognition of verdicts moves faster but needs registries, service and enforcement that actually exist; or the local forum alone is kept and no general rules are negotiated. The port proposes; the external state answers for itself."
+          },
+          "trigger": "{ ywc_c08_dmg_delivery_1708 = yes }",
+          "immediate": "{ if = { limit = { ywc_c08_dmg_delivery_1708 = yes } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "propose_single_case",
+              "label": {
+                "zh": "为本案设单案仲裁，通则另议",
+                "en": "Propose single-case arbitration for this case; general rules wait"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1708 = yes NOT = { has_variable = ywc_c08_forum_mode } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1708 = yes NOT = { has_variable = ywc_c08_forum_mode } } } set_variable = { name = ywc_c08_forum_mode value = 1 } set_variable = { name = ywc_c08_stage value = 1709 } set_variable = { name = ywc_c08_pending value = 1709 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "propose_mutual_recognition",
+              "label": {
+                "zh": "提出判决互认，凭现成登记与执行班子",
+                "en": "Propose mutual recognition of verdicts, on the registries and enforcement that exist"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1708 = yes NOT = { has_variable = ywc_c08_forum_mode } var:ywc_c08_prog_funded ?= 1 var:ywc_c08_protest_choice ?= 1 } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1708 = yes NOT = { has_variable = ywc_c08_forum_mode } var:ywc_c08_prog_funded ?= 1 var:ywc_c08_protest_choice ?= 1 } } set_variable = { name = ywc_c08_forum_mode value = 2 } set_variable = { name = ywc_c08_stage value = 1709 } set_variable = { name = ywc_c08_pending value = 1709 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 65 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "互认提案以实际建成的登记与执行班底为基础；班底不足时只能单案。",
+                "en": "The recognition proposal rests on the registries and enforcement actually built; without them only the single case stands."
+              }
+            },
+            {
+              "key": "keep_local_forum",
+              "label": {
+                "zh": "只保留本地法庭，不谈通则",
+                "en": "Keep the local forum alone; no general rules"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1708 = yes NOT = { has_variable = ywc_c08_forum_mode } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1708 = yes NOT = { has_variable = ywc_c08_forum_mode } } } set_variable = { name = ywc_c08_forum_mode value = 3 } set_variable = { name = ywc_c08_stage value = 1709 } set_variable = { name = ywc_c08_pending value = 1709 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再拟条文",
+                "en": "Wait and draft again"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1708 = yes }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1708 = yes } set_variable = { name = ywc_c08_pending value = 1708 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "管辖国提案：单案仲裁或互认，各依制度基础",
+            "en": "The jurisdiction proposes single-case arbitration or mutual recognition, each on its own institutional basis"
+          },
+          "reads": [
+            "holder's own funded record and petition record (the institutional basis for recognition)",
+            "NMG's confirmation later via the explicit c:NMG block in the settlement gate"
+          ],
+          "writes": [
+            "holder forum_mode, stage/pending, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1709",
+          "title": {
+            "zh": "让居民自己选择",
+            "en": "Let the Residents Choose"
+          },
+          "desc": {
+            "zh": "安排的最后一问是人的去留：承认居民按意愿选择居留或归化，并保留退出保护的通道；或只承认居留不提退出；或维持现行章程。两边分别表决，任何一方的选择只代表自己。",
+            "en": "The last question is about people, not clauses: recognize the residents' choice of residence or naturalization and keep an exit from protection open; or recognize residence without the exit; or keep the current rules. Both sides vote separately, and each choice binds only its own side."
+          },
+          "trigger": "{ OR = { ywc_c08_dmg_delivery_1709 = yes ywc_c08_nmg_delivery_1709 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c08_dmg_delivery_1709 = yes ywc_c08_nmg_delivery_1709 = yes } } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "recognize_choice_and_exit",
+              "label": {
+                "zh": "承认居留与归化选择，并保留退出保护的通道",
+                "en": "Recognize residence and naturalization choices; keep an exit from protection open"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1709 = yes NOT = { has_variable = ywc_c08_dmg_choice } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1709 = yes NOT = { has_variable = ywc_c08_dmg_choice } } } set_variable = { name = ywc_c08_dmg_choice value = 1 } set_variable = { name = ywc_c08_stage value = 1710 } set_variable = { name = ywc_c08_pending value = 1710 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "recognize_residence_only",
+              "label": {
+                "zh": "只承认居留，不设退出通道",
+                "en": "Recognize residence only; no exit from protection"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1709 = yes NOT = { has_variable = ywc_c08_dmg_choice } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1709 = yes NOT = { has_variable = ywc_c08_dmg_choice } } } set_variable = { name = ywc_c08_dmg_choice value = 2 } set_variable = { name = ywc_c08_stage value = 1710 } set_variable = { name = ywc_c08_pending value = 1710 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 65 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "keep_current_rules",
+              "label": {
+                "zh": "维持现行章程，居民选择另案处理",
+                "en": "Keep the current rules; residents' choices are handled case by case"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1709 = yes NOT = { has_variable = ywc_c08_dmg_choice } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1709 = yes NOT = { has_variable = ywc_c08_dmg_choice } } } set_variable = { name = ywc_c08_dmg_choice value = 3 } set_variable = { name = ywc_c08_stage value = 1710 } set_variable = { name = ywc_c08_pending value = 1710 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "recognize_and_accept_forum",
+              "label": {
+                "zh": "承认去留选择，并准备接受管辖国提出的安排",
+                "en": "Recognize the residents' choices and stand ready to accept the jurisdiction's arrangement"
+              },
+              "trigger": "{ AND = { ywc_c08_nmg_at_1709 = yes NOT = { has_variable = ywc_c08_nmg_choice } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1709 = yes NOT = { has_variable = ywc_c08_nmg_choice } } } set_variable = { name = ywc_c08_nmg_choice value = 1 } set_variable = { name = ywc_c08_forum_reply value = 1 } set_variable = { name = ywc_c08_stage value = 1710 } set_variable = { name = ywc_c08_pending value = 1710 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 85 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "nmg_residence_only",
+              "label": {
+                "zh": "只承认居留，只接受单案协助",
+                "en": "Recognize residence only; accept single-case assistance only"
+              },
+              "trigger": "{ AND = { ywc_c08_nmg_at_1709 = yes NOT = { has_variable = ywc_c08_nmg_choice } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1709 = yes NOT = { has_variable = ywc_c08_nmg_choice } } } set_variable = { name = ywc_c08_nmg_choice value = 2 } set_variable = { name = ywc_c08_forum_reply value = 2 } set_variable = { name = ywc_c08_stage value = 1710 } set_variable = { name = ywc_c08_pending value = 1710 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "nmg_keep_current",
+              "label": {
+                "zh": "维持现行章程，不设对外法庭安排",
+                "en": "Keep the current rules; no external forum arrangement"
+              },
+              "trigger": "{ AND = { ywc_c08_nmg_at_1709 = yes NOT = { has_variable = ywc_c08_nmg_choice } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1709 = yes NOT = { has_variable = ywc_c08_nmg_choice } } } set_variable = { name = ywc_c08_nmg_choice value = 3 } set_variable = { name = ywc_c08_forum_reply value = 3 } set_variable = { name = ywc_c08_stage value = 1710 } set_variable = { name = ywc_c08_pending value = 1710 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓表决",
+                "en": "Wait before the vote"
+              },
+              "trigger": "{ OR = { ywc_c08_dmg_at_1709 = yes ywc_c08_nmg_at_1709 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c08_dmg_at_1709 = yes ywc_c08_nmg_at_1709 = yes } } set_variable = { name = ywc_c08_pending value = 1709 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "外部国与管辖国就居民去留与退出保护分别决策",
+            "en": "The external state and the jurisdiction each decide the residents' choices and the exit from protection separately"
+          },
+          "reads": [
+            "each side's own stage via its delivery trigger",
+            "each side's forum reply read later via explicit c:DMG/c:NMG blocks in the settlement gates"
+          ],
+          "writes": [
+            "holder dmg_choice (DMG) or nmg_choice/forum_reply (NMG), stage/pending, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1710",
+          "title": {
+            "zh": "判决抵达另一个港口",
+            "en": "The Verdict Reaches Another Port"
+          },
+          "desc": {
+            "zh": "判决与承诺要落到对岸的港口：完整安排须两家都认——法庭答复、出资、条件与居民选择缺一不可；先签有限安排，把未决事项列明；或保留现状。外部国可认可在册，也可拒绝退出；未决事项如实留档。",
+            "en": "Verdicts and promises must land on the port across the water: the full arrangement needs both - court answer, funding, conditions and the residents' choice all in place; a limited arrangement signs first and lists what stays open; or the status quo is kept. The external state may accept on record or refuse and withdraw; open items stay honestly on file."
+          },
+          "trigger": "{ OR = { ywc_c08_dmg_delivery_1710 = yes ywc_c08_nmg_delivery_1710 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c08_dmg_delivery_1710 = yes ywc_c08_nmg_delivery_1710 = yes } } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "confirm_full",
+              "label": {
+                "zh": "确认完整安排：法庭、出资、条件与居民选择俱全",
+                "en": "Confirm the full arrangement: court, funding, conditions and the residents' choice all in place"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1710 = yes ywc_c08_dmg_can_settle_full = yes } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1710 = yes ywc_c08_dmg_can_settle_full = yes } } ywc_c08_dmg_settle_full = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "完整安排成立；外部国的认可在册，转入余波记录。",
+                "en": "The full arrangement stands; the external state's acceptance is on record and the aftermath follows."
+              }
+            },
+            {
+              "key": "confirm_limited",
+              "label": {
+                "zh": "先签有限安排，未决事项列明另议",
+                "en": "Sign the limited arrangement first; open items listed for later talks"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1710 = yes NOT = { has_variable = ywc_c08_outcome } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1710 = yes NOT = { has_variable = ywc_c08_outcome } } } ywc_c08_dmg_settle_limited = yes } }",
+              "ai_chance": "{ base = 75 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "keep_status_quo",
+              "label": {
+                "zh": "保留现状，现行章程照旧",
+                "en": "Keep the status quo; the current usage stands"
+              },
+              "trigger": "{ ywc_c08_dmg_at_1710 = yes NOT = { has_variable = ywc_c08_outcome } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1710 = yes NOT = { has_variable = ywc_c08_outcome } } } ywc_c08_dmg_settle_status_quo = yes } }",
+              "ai_chance": "{ base = 45 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "accept_on_record",
+              "label": {
+                "zh": "外部国认可在册，等待口岸确认",
+                "en": "The external state accepts on record and awaits the port's confirmation"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1710 = yes NOT = { has_variable = ywc_c08_nmg_confirm } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1710 = yes NOT = { has_variable = ywc_c08_nmg_confirm } } } set_variable = { name = ywc_c08_nmg_confirm value = 1 } set_variable = { name = ywc_c08_stage value = 1721 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 85 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "认可入册；口岸确认后两边同账，若口岸长期不决则按现状结案。",
+                "en": "The acceptance is on record; once the port confirms, both sides share one ledger, and a port that never settles closes as status quo."
+              }
+            },
+            {
+              "key": "refuse_withdraw",
+              "label": {
+                "zh": "外部国拒绝认可，退出本轮",
+                "en": "The external state refuses and leaves this round"
+              },
+              "trigger": "{ ywc_c08_nmg_at_1710 = yes NOT = { has_variable = ywc_c08_nmg_confirm } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_nmg_at_1710 = yes NOT = { has_variable = ywc_c08_nmg_confirm } } } set_variable = { name = ywc_c08_nmg_confirm value = 2 } if = { limit = { c:DMG ?= { is_country_alive = yes } } change_relations = { country = c:DMG value = -3 } } ywc_c08_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "与口岸关系 -3；外部国以主动退出结案。",
+                "en": "Relations with the port drop by 3; the external state closes as withdrawn."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓确认",
+                "en": "Wait before confirming"
+              },
+              "trigger": "{ OR = { ywc_c08_dmg_at_1710 = yes ywc_c08_nmg_at_1710 = yes } }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1710 = yes NOT = { has_variable = ywc_c08_outcome } } set_variable = { name = ywc_c08_pending value = 1710 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } if = { limit = { ywc_c08_nmg_at_1710 = yes NOT = { has_variable = ywc_c08_nmg_confirm } } set_variable = { name = ywc_c08_pending value = 1710 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "必需双方分别确认最终安排，未决事项如实留档",
+            "en": "Both required parties confirm the final arrangement separately; open items stay on file"
+          },
+          "reads": [
+            "DMG's settle gate reads NMG's confirmation via the explicit c:NMG block (ywc_c08_dmg_can_settle_full)",
+            "NMG's mirror reads DMG's outcome via the explicit c:DMG block (ywc_c08_dmg_settled)"
+          ],
+          "writes": [
+            "DMG settle_choice/outcome, stage 1711/pending",
+            "NMG nmg_confirm, stage 1721 waiting marker, relations with DMG"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1711",
+          "title": {
+            "zh": "没有领事出席的下一次庭审",
+            "en": "The Next Hearing without a Consul"
+          },
+          "desc": {
+            "zh": "下一次庭审开庭时，席位上的领事可能已经离开——法庭按已形成的法律、行政能力与履约史开庭。管辖口岸如实记录余波：章程落在户籍与课堂，援助按实际兑现记账，未决事项移交正常游戏；有真实航路的伙伴各自记录自己的立场，不代理任何一方。",
+            "en": "When the next hearing convenes, the consular seat may stand empty - the court proceeds on the law, administrative capability and fulfillment history that actually exist. The port records the aftermath honestly: rules land in registers and classrooms, aid is accounted as actually delivered, and open questions pass to normal play. Partners with real lanes record their own stance, speaking for no one else."
+          },
+          "trigger": "{ OR = { ywc_c08_dmg_delivery_1711 = yes ywc_c08_mhg_delivery_1711 = yes ywc_c08_shu_delivery_1711 = yes ywc_c08_jhg_delivery_1711 = yes ywc_c08_lan_delivery_1711 = yes ywc_c08_wbk_delivery_1711 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c08_dmg_delivery_1711 = yes ywc_c08_mhg_delivery_1711 = yes ywc_c08_shu_delivery_1711 = yes ywc_c08_jhg_delivery_1711 = yes ywc_c08_lan_delivery_1711 = yes ywc_c08_wbk_delivery_1711 = yes } } ywc_c08_receive_major = yes } }",
+          "options": [
+            {
+              "key": "record_aftermath_kept",
+              "label": {
+                "zh": "按实际实行记录章程与援助",
+                "en": "Record the rules and the aid as actually practiced"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1711 = yes NOT = { has_variable = ywc_c08_aftermath } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1711 = yes NOT = { has_variable = ywc_c08_aftermath } } } ywc_c08_aftermath_kept = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "余波记录分送外部国与真实伙伴；容量名额释放。",
+                "en": "The aftermath record is shared with the external state and the real partners; the capacity slot is released."
+              }
+            },
+            {
+              "key": "record_fulfillment_failed",
+              "label": {
+                "zh": "如实记入履约失败，未决事项移交正常游戏",
+                "en": "Record the fulfillment failure honestly; open questions pass to normal play"
+              },
+              "trigger": "{ AND = { ywc_c08_dmg_at_1711 = yes NOT = { has_variable = ywc_c08_aftermath } OR = { has_variable = ywc_c08_conditions_unresolved var:ywc_c08_condition_reply ?= 2 var:ywc_c08_prog_funded ?= 2 } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_dmg_at_1711 = yes NOT = { has_variable = ywc_c08_aftermath } OR = { has_variable = ywc_c08_conditions_unresolved var:ywc_c08_condition_reply ?= 2 var:ywc_c08_prog_funded ?= 2 } } } ywc_c08_aftermath_failed = yes } }",
+              "ai_chance": "{ base = 55 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "履约失败入册；剩余问题以普通游戏方式延续。",
+                "en": "Fulfillment failure is recorded; the remaining questions continue through normal play."
+              }
+            },
+            {
+              "key": "continue_legal_line",
+              "label": {
+                "zh": "伙伴延续法律援助渠道",
+                "en": "The partner continues the legal-aid channel"
+              },
+              "trigger": "{ ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } } } set_variable = { name = ywc_c08_partner_note value = 1 } if = { limit = { c:DMG ?= { is_country_alive = yes } } change_relations = { country = c:DMG value = 1 } } ywc_c08_release_capacity = yes } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "case_records_only",
+              "label": {
+                "zh": "伙伴只留案件记录，不设后续",
+                "en": "The partner keeps case records only; no follow-up"
+              },
+              "trigger": "{ ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } } } set_variable = { name = ywc_c08_partner_note value = 2 } ywc_c08_release_capacity = yes } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "normalize_relations",
+              "label": {
+                "zh": "伙伴回归常态往来，不追问本案",
+                "en": "The partner returns to ordinary relations and does not press the case"
+              },
+              "trigger": "{ ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } }",
+              "effect": "{ if = { limit = { AND = { ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } } } set_variable = { name = ywc_c08_partner_note value = 3 } ywc_c08_release_capacity = yes } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓记录",
+                "en": "Wait before recording"
+              },
+              "trigger": "{ OR = { ywc_c08_dmg_at_1711 = yes ywc_c08_partner_at_1711 = yes } }",
+              "effect": "{ if = { limit = { ywc_c08_dmg_at_1711 = yes NOT = { has_variable = ywc_c08_aftermath } } set_variable = { name = ywc_c08_pending value = 1711 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } if = { limit = { ywc_c08_partner_at_1711 = yes NOT = { has_variable = ywc_c08_partner_note } } set_variable = { name = ywc_c08_pending value = 1711 } change_variable = { name = ywc_c08_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "读取已形成法律、行政能力及履约史，记录余波并接后续",
+            "en": "Read the formed law, administrative capability and fulfillment history; record the aftermath and hand off what remains"
+          },
+          "reads": [
+            "DMG's own outcome, conditions and funding records",
+            "partners' own real contact record via the entry triggers"
+          ],
+          "writes": [
+            "DMG aftermath/outcome (on failed), stage 1719 terminal, capacity release",
+            "aftermath marker mounted on NMG and case_open/role/stage 1711/pending mounted on each qualifying partner (explicit c:XXX blocks) in the same effect",
+            "partner partner_note, relations with DMG, capacity release"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_c08_pact_full",
+        "v03_c08_pact_limited",
+        "v03_c08_status_quo",
+        "v03_c08_withdrawn",
+        "v03_c08_fulfillment_failed",
+        "v03_c08_no_talks"
+      ],
+      "legacy_links": []
     }
   ]
 }
