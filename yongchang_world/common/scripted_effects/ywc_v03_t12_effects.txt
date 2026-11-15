@@ -1,0 +1,33 @@
+﻿# Theme T12 helpers. All state transfers keep both sides in one effect:
+# a hand-off writes the owner's mirrored stage plus the partner's pending, and
+# a self transition writes stage and pending together, so no adjacent jump can
+# strand a pending record on either side.
+
+# Capacity release, mirrored from the T01/T10 pattern: runs on the JE owner
+# (SHU) exactly once when the arc completes or fails.
+ywc_t12_release_capacity = { if = { limit = { var:ywc_t12_started ?= 1 NOT = { has_variable = ywc_t12_released } } set_variable = { name = ywc_t12_released value = 1 } change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 } clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } } }
+
+# Hand SHU's budget or soldier verdict to DMG's limits stage. Called on SHU.
+# Partner reachable: clear the loss flag, mirror stage 1554, arm DMG pending.
+# Partner gone: close the hand-off locally at 1555 so SHU keeps its own exit.
+ywc_t12_open_dmg_limits = {
+ if = { limit = { ywc_t12_partner_current = yes } remove_variable = ywc_t12_partner_lost set_variable = { name = ywc_t12_stage value = 1554 } set_variable = { name = ywc_t12_wait_months value = 0 } c:DMG = { set_variable = { name = ywc_t12_pending value = 1554 } } }
+ else = { set_variable = { name = ywc_t12_partner_lost value = 1 } set_variable = { name = ywc_t12_stage value = 1555 } set_variable = { name = ywc_t12_pending value = 1555 } set_variable = { name = ywc_t12_wait_months value = 0 } c:DMG ?= { remove_variable = ywc_t12_pending } }
+}
+
+# After SHU's verdict at 1556 with no DMG record yet, arm DMG's independent
+# verdict leg. Called on SHU. Partner gone: close locally at 1557.
+ywc_t12_open_dmg_verdict = {
+ if = { limit = { ywc_t12_partner_current = yes } remove_variable = ywc_t12_partner_lost set_variable = { name = ywc_t12_wait_months value = 0 } c:DMG = { set_variable = { name = ywc_t12_pending value = 1556 } } }
+ else = { set_variable = { name = ywc_t12_partner_lost value = 1 } set_variable = { name = ywc_t12_stage value = 1557 } set_variable = { name = ywc_t12_pending value = 1557 } set_variable = { name = ywc_t12_wait_months value = 0 } c:DMG ?= { remove_variable = ywc_t12_pending } }
+}
+
+# Compute the final outcome from the verdict records. Called on SHU at 1557.
+# Any exit ends the compact; any revision limits it; full acceptance requires
+# both voices, so a one-sided closure lands on limited.
+ywc_t12_close_outcome = {
+ if = { limit = { OR = { var:ywc_t12_shu_verdict ?= 3 var:ywc_t12_partner_verdict_note ?= 3 } } set_variable = { name = ywc_t12_outcome value = 3 } }
+ else_if = { limit = { OR = { var:ywc_t12_shu_verdict ?= 2 var:ywc_t12_partner_verdict_note ?= 2 } } set_variable = { name = ywc_t12_outcome value = 2 } }
+ else_if = { limit = { var:ywc_t12_shu_verdict ?= 1 has_variable = ywc_t12_partner_verdict_note } set_variable = { name = ywc_t12_outcome value = 1 } }
+ else = { set_variable = { name = ywc_t12_outcome value = 2 } }
+}
