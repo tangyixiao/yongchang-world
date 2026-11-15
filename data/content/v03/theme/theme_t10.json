@@ -21,14 +21,813 @@
         "NQG"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t10_trade_jurisdiction",
+          "title": {
+            "zh": "一份通商照会的边界",
+            "en": "The Boundary of a Trade Note"
+          },
+          "desc": {
+            "zh": "靖海国的商埠收到东明商船带来的管辖主张。本朝须核对本港航路、税则与官署缺口，决定以透明规则、有限仲裁还是保留裁判回应，并承担相应的行政支出、关系与来例资格。",
+            "en": "Jinghai's port faces a jurisdictional claim carried by Dongming merchants. The court audits its routes, tariff and offices, then answers with transparent rules, limited arbitration, or its own precedent, and bears the administrative cost, relations and next-time standing."
+          },
+          "script": "{\nis_shown_when_inactive = { c:JHG ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t10_started } }\npossible = { c:JHG ?= this ywc_v03_has_capacity = yes ywc_t10_entry_ready = yes NOT = { has_variable = ywc_t10_started } }\nimmediate = { set_variable = { name = ywc_t10_started value = 1 } set_variable = { name = ywc_t10_stage value = 1450 } set_variable = { name = ywc_t10_pending value = 1450 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } }\non_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t10_stage ?= 1451 var:ywc_t10_stage ?= 1454 var:ywc_t10_stage ?= 1456 } } if = { limit = { NOT = { ywc_t10_partner_current = yes } } c:DMG ?= { remove_variable = ywc_t10_pending } set_variable = { name = ywc_t10_stage value = 1455 } set_variable = { name = ywc_t10_pending value = 1455 } set_variable = { name = ywc_t10_partner_lost value = 1 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } else = { if = { limit = { NOT = { has_variable = ywc_t10_wait_months } } set_variable = { name = ywc_t10_wait_months value = 1 } } else = { change_variable = { name = ywc_t10_wait_months add = 1 } } if = { limit = { var:ywc_t10_wait_months >= 6 } set_variable = { name = ywc_t10_outcome value = 4 } set_variable = { name = ywc_t10_stage value = 1457 } remove_variable = ywc_t10_pending set_variable = { name = ywc_t10_wait_months value = 0 } c:DMG ?= { remove_variable = ywc_t10_pending } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } } if = { limit = { ywc_t10_jhg_delivery_1450 = yes } trigger_event = { id = ywc_society.1450 } } if = { limit = { ywc_t10_jhg_delivery_1452 = yes } trigger_event = { id = ywc_society.1452 } } if = { limit = { ywc_t10_jhg_delivery_1453 = yes } trigger_event = { id = ywc_society.1453 } } if = { limit = { ywc_t10_jhg_delivery_1455 = yes } trigger_event = { id = ywc_society.1455 } } if = { limit = { ywc_t10_jhg_delivery_1457 = yes } trigger_event = { id = ywc_society.1457 } } } }\non_complete = { ywc_t10_release_capacity = yes }\non_fail = { ywc_t10_release_capacity = yes }\n}",
+          "goal": "{ OR = { var:ywc_t10_outcome ?= 1 var:ywc_t10_outcome ?= 2 var:ywc_t10_outcome ?= 3 } }",
+          "exit_conditions": "{ var:ywc_t10_outcome ?= 4 }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1450",
+          "title": {
+            "zh": "陌生的船照",
+            "en": "A Ship's Papers from an Unfamiliar Court"
+          },
+          "desc": {
+            "zh": "东明商船进港，随船照会声称其船员纠纷应由该国领事依约审理。靖海国的港务官署先要决定：这份照会是入档受理，还是扣照待查，或径行拒收。",
+            "en": "A Dongming merchant ship docks with a note claiming consular trial for its crew's disputes. Jinghai's harbour office must register the claim, hold the papers for inspection, or refuse the note outright."
+          },
+          "trigger": "{ ywc_t10_jhg_delivery_1450 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_jhg_delivery_1450 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "register",
+              "label": {
+                "zh": "受理登记，照会入档",
+                "en": "Register the note and file it"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1450 = yes ywc_t10_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1450 = yes ywc_t10_partner_current = yes } set_variable = { name = ywc_t10_claim_mode value = 1 } set_variable = { name = ywc_t10_stage value = 1451 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_pending value = 1451 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "照会入档，东明收到交涉请求；等待期自本月起算。",
+                "en": "The note is filed and Dongming is asked to respond; the waiting clock starts this month."
+              }
+            },
+            {
+              "key": "custody",
+              "label": {
+                "zh": "扣照待查，先按本地章程看管",
+                "en": "Hold the papers under local rules"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1450 = yes ywc_t10_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1450 = yes ywc_t10_partner_current = yes } set_variable = { name = ywc_t10_claim_mode value = 2 } set_variable = { name = ywc_t10_stage value = 1451 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_pending value = 1451 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "照会被扣查验，仍通知东明；等待期自本月起算。",
+                "en": "The papers are held for inspection and Dongming is still notified; the waiting clock starts this month."
+              }
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "拒收照会，按旧例自行裁断",
+                "en": "Refuse the note and keep local practice"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1450 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1450 = yes } set_variable = { name = ywc_t10_stage value = 1455 } set_variable = { name = ywc_t10_pending value = 1455 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "本案直接进入裁决：是否承认优先权由本朝自定。",
+                "en": "The case moves straight to the verdict: whether to grant precedence stays with Jinghai."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1450 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1450 = yes } set_variable = { name = ywc_t10_pending value = 1450 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "陌生的船照",
+            "en": "A Ship's Papers from an Unfamiliar Court"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "claim registration mode"
+          ]
+        },
+        {
+          "id": "ywc_society.1451",
+          "title": {
+            "zh": "商人请求本国交涉",
+            "en": "The Merchants Ask Their Own Court"
+          },
+          "desc": {
+            "zh": "照会入档的消息传回东明。本地商会请求本国出人交涉；东明的官署可以出资遣领事属员，也可以让商人自理，但本案不会因此停摆。",
+            "en": "Word of the registered note reaches Dongming. Its merchants ask their own court to intervene; Dongming may fund a consular agent or let the merchants stand alone, but the case will not pause by itself."
+          },
+          "trigger": "{ ywc_t10_dmg_delivery_1451 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_dmg_delivery_1451 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "negotiate",
+              "label": {
+                "zh": "付 500 遣领事属员交涉",
+                "en": "Pay 500 to send a consular agent"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1451 = yes NOT = { has_variable = ywc_t10_dmg_agent_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1451 = yes NOT = { has_variable = ywc_t10_dmg_agent_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t10_dmg_agent_paid value = 1 } set_variable = { name = ywc_t10_dmg_support value = 1 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t10_case_response value = 1 } set_variable = { name = ywc_t10_stage value = 1452 } set_variable = { name = ywc_t10_pending value = 1452 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 500；不向靖海国转款。",
+                "en": "Dongming pays 500 from its treasury; nothing is transferred to Jinghai."
+              },
+              "consequence_note": {
+                "zh": "领事属员成行，靖海国收到答复并续审。",
+                "en": "The agent is sent; Jinghai receives the answer and continues the case."
+              }
+            },
+            {
+              "key": "refuse",
+              "label": {
+                "zh": "不垫付，商人自理",
+                "en": "Let the merchants stand alone"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1451 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1451 = yes } set_variable = { name = ywc_t10_dmg_support value = 2 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t10_case_response value = 2 } set_variable = { name = ywc_t10_stage value = 1452 } set_variable = { name = ywc_t10_pending value = 1452 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "东明不出人，靖海国收到答复并续审。",
+                "en": "Dongming sends no one; Jinghai receives the answer and continues the case."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1451 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1451 = yes } set_variable = { name = ywc_t10_pending value = 1451 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；悬而不决逾半年，照会将作过期收束。",
+                "en": "Records this decision; if the note sits unanswered for over half a year it lapses."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "对方已结案，撤回请求",
+                "en": "The case has closed; withdraw the request"
+              },
+              "trigger": "{ NOT = { ywc_t10_jhg_waits_1451 = yes } }",
+              "effect": "{ if = { limit = { NOT = { ywc_t10_jhg_waits_1451 = yes } } remove_variable = ywc_t10_pending change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回本国请求，仅清理本案挂起记录。",
+                "en": "Withdraws this request and clears only this case's pending record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "商人请求本国交涉",
+            "en": "The Merchants Ask Their Own Court"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "JHG case phase and reachability"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "consular support record"
+          ]
+        },
+        {
+          "id": "ywc_society.1452",
+          "title": {
+            "zh": "本地关税的依据",
+            "en": "The Basis of the Local Tariff"
+          },
+          "desc": {
+            "zh": "审理之前，税则与讼费先要有个说法。靖海国可以付资颁布透明税则，也可以只设一庭有限仲裁，或干脆不出依据、保留旧例。",
+            "en": "Before any hearing, the tariff and fees need a stated basis. Jinghai may pay to publish transparent rules, fund a limited arbitration bench, or state no basis and keep the old practice."
+          },
+          "trigger": "{ ywc_t10_jhg_delivery_1452 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_jhg_delivery_1452 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "publish",
+              "label": {
+                "zh": "付 500 颁布透明税则",
+                "en": "Pay 500 to publish transparent rules"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1452 = yes NOT = { has_variable = ywc_t10_rules_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1452 = yes NOT = { has_variable = ywc_t10_rules_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t10_rules_paid value = 1 } set_variable = { name = ywc_t10_tariff_mode value = 1 } set_variable = { name = ywc_t10_stage value = 1453 } set_variable = { name = ywc_t10_pending value = 1453 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国国库支付 500。",
+                "en": "Jinghai pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "税则颁行，本案按透明规则续审。",
+                "en": "The rules are published and the case continues under transparent rules."
+              }
+            },
+            {
+              "key": "arbitrate",
+              "label": {
+                "zh": "付 200 设有限仲裁庭",
+                "en": "Pay 200 for a limited arbitration bench"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1452 = yes NOT = { has_variable = ywc_t10_arbitration_paid } gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1452 = yes NOT = { has_variable = ywc_t10_arbitration_paid } gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t10_arbitration_paid value = 1 } set_variable = { name = ywc_t10_tariff_mode value = 2 } set_variable = { name = ywc_t10_stage value = 1453 } set_variable = { name = ywc_t10_pending value = 1453 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国国库支付 200。",
+                "en": "Jinghai pays 200 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "只设一庭有限仲裁，不颁布一般税则。",
+                "en": "A single limited bench is funded; no general rules are published."
+              }
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "不出依据，保留旧例",
+                "en": "State no basis and keep the old practice"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1452 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1452 = yes } set_variable = { name = ywc_t10_stage value = 1455 } set_variable = { name = ywc_t10_pending value = 1455 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "本案跳过席次一节，直接进入裁决。",
+                "en": "The case skips the seating question and moves to the verdict."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1452 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1452 = yes } set_variable = { name = ywc_t10_pending value = 1452 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "本地关税的依据",
+            "en": "The Basis of the Local Tariff"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "current phase and participant identity"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "tariff basis mode"
+          ]
+        },
+        {
+          "id": "ywc_society.1453",
+          "title": {
+            "zh": "法官与领事的席次",
+            "en": "The Judge and the Consul Share a Bench"
+          },
+          "desc": {
+            "zh": "开庭在即。东明若已遣属员，可以准其列席并同席记档；若未遣人，或本朝不愿，则由法官独席审理，席次照旧例。",
+            "en": "The hearing is imminent. If Dongming sent an agent, the consul may sit and be recorded beside the judge; otherwise the judge sits alone and the seating follows the old practice."
+          },
+          "trigger": "{ ywc_t10_jhg_delivery_1453 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_jhg_delivery_1453 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "seat_consul",
+              "label": {
+                "zh": "准领事属员列席记档",
+                "en": "Seat the consular agent with the record"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1453 = yes ywc_t10_consul_present = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1453 = yes ywc_t10_consul_present = yes } set_variable = { name = ywc_t10_seating value = 1 } set_variable = { name = ywc_t10_stage value = 1454 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_dmg_seat_notice value = 1 } set_variable = { name = ywc_t10_pending value = 1454 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "席次同记，东明收到放货请求。",
+                "en": "The seating is recorded and Dongming is asked about the cargo."
+              }
+            },
+            {
+              "key": "bench_only",
+              "label": {
+                "zh": "法官独席，席次照旧",
+                "en": "The judge sits alone as before"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1453 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1453 = yes } set_variable = { name = ywc_t10_seating value = 2 } set_variable = { name = ywc_t10_stage value = 1454 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_dmg_seat_notice value = 2 } set_variable = { name = ywc_t10_pending value = 1454 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "席次照旧，东明收到放货请求。",
+                "en": "The seating stays as before and Dongming is asked about the cargo."
+              }
+            },
+            {
+              "key": "decline",
+              "label": {
+                "zh": "暂停审理程序",
+                "en": "Suspend the hearing"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1453 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1453 = yes } set_variable = { name = ywc_t10_stage value = 1455 } set_variable = { name = ywc_t10_pending value = 1455 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "审理暂停，直接进入裁决。",
+                "en": "The hearing is suspended and the case moves to the verdict."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1453 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1453 = yes } set_variable = { name = ywc_t10_pending value = 1453 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "法官与领事的席次",
+            "en": "The Judge and the Consul Share a Bench"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "DMG consular support record"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "seating decision on both sides"
+          ]
+        },
+        {
+          "id": "ywc_society.1454",
+          "title": {
+            "zh": "货物等不起审理",
+            "en": "The Cargo Cannot Wait for the Verdict"
+          },
+          "desc": {
+            "zh": "舱货在泊位上日日生费。东明商人请求具结先行放货，或由货随案押、听候审理完结；两边都得承认，货物等不起一场漫长的审理。",
+            "en": "The cargo accrues charges at berth every day. Dongming's merchants ask for release on bond, or the goods stay with the case until the verdict; both sides know the cargo cannot wait out a long trial."
+          },
+          "trigger": "{ ywc_t10_dmg_delivery_1454 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_dmg_delivery_1454 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "bail",
+              "label": {
+                "zh": "付 200 保证金，先行放货",
+                "en": "Pay 200 bond and release the cargo"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1454 = yes NOT = { has_variable = ywc_t10_dmg_bail_paid } gold_reserves >= 200 }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1454 = yes NOT = { has_variable = ywc_t10_dmg_bail_paid } gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_t10_dmg_bail_paid value = 1 } set_variable = { name = ywc_t10_dmg_goods_mode value = 1 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t10_goods_response value = 1 } set_variable = { name = ywc_t10_stage value = 1455 } set_variable = { name = ywc_t10_pending value = 1455 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "东明国库支付 200 保证金。",
+                "en": "Dongming pays 200 as bond from its treasury."
+              },
+              "consequence_note": {
+                "zh": "货物先放，靖海国收到答复并进入裁决。",
+                "en": "The cargo is released; Jinghai receives the answer and moves to the verdict."
+              }
+            },
+            {
+              "key": "hold",
+              "label": {
+                "zh": "货随案押，候审完结",
+                "en": "Hold the cargo with the case"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1454 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1454 = yes } set_variable = { name = ywc_t10_dmg_goods_mode value = 2 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t10_goods_response value = 2 } set_variable = { name = ywc_t10_stage value = 1455 } set_variable = { name = ywc_t10_pending value = 1455 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "货物随案，靖海国收到答复并进入裁决。",
+                "en": "The cargo stays with the case; Jinghai receives the answer and moves to the verdict."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1454 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1454 = yes } set_variable = { name = ywc_t10_pending value = 1454 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；悬而不决逾半年，照会将作过期收束。",
+                "en": "Records this decision; if the note sits unanswered for over half a year it lapses."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "对方已结案，撤回请求",
+                "en": "The case has closed; withdraw the request"
+              },
+              "trigger": "{ NOT = { ywc_t10_jhg_waits_1454 = yes } }",
+              "effect": "{ if = { limit = { NOT = { ywc_t10_jhg_waits_1454 = yes } } remove_variable = ywc_t10_pending change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回放货请求，仅清理本案挂起记录。",
+                "en": "Withdraws this request and clears only this case's pending record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "货物等不起审理",
+            "en": "The Cargo Cannot Wait for the Verdict"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "JHG case phase and reachability"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "cargo disposition record"
+          ]
+        },
+        {
+          "id": "ywc_society.1455",
+          "title": {
+            "zh": "拒绝优先权的代价",
+            "en": "The Price of Refusing Precedence"
+          },
+          "desc": {
+            "zh": "到了裁决的时候：承认本案优先，送交对方签订仅限本案的约定；或拒绝优先权，按本地法一律办理，承担商路改道的代价。若对方已不可联系，也可自行结案。",
+            "en": "The verdict is due: grant this case precedence and send the case-limited agreement for signature, or refuse precedence, apply local law evenly, and bear the rerouted trade. If the partner is unreachable, the court may close alone."
+          },
+          "trigger": "{ ywc_t10_jhg_delivery_1455 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_jhg_delivery_1455 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "accept",
+              "label": {
+                "zh": "承认本案优先，送交签订",
+                "en": "Grant precedence and send for signature"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1455 = yes ywc_t10_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1455 = yes ywc_t10_partner_current = yes } if = { limit = { var:ywc_t10_tariff_mode ?= 1 } set_variable = { name = ywc_t10_proposed_outcome value = 1 } } else = { set_variable = { name = ywc_t10_proposed_outcome value = 2 } } set_variable = { name = ywc_t10_stage value = 1456 } set_variable = { name = ywc_t10_wait_months value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_pending value = 1456 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拟定结果送东明签订；已颁税则记为全案接受，否则记为有限接受。",
+                "en": "The proposed result goes to Dongming for signature; published rules count as full acceptance, otherwise limited."
+              }
+            },
+            {
+              "key": "refuse",
+              "label": {
+                "zh": "拒绝优先权，承担改道代价",
+                "en": "Refuse precedence and bear the rerouting"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1455 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1455 = yes } set_variable = { name = ywc_t10_outcome value = 3 } add_treasury = -300 change_relations = { country = c:DMG value = -5 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "靖海国国库承担 300 过境税损失。",
+                "en": "Jinghai's treasury absorbs 300 in lost transit customs."
+              },
+              "consequence_note": {
+                "zh": "拒绝优先权结案，东明对靖海关系减少 5。",
+                "en": "The case closes with precedence refused; Dongming loses 5 relations with Jinghai."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "对方已不可联系，自行结案",
+                "en": "Close alone because the partner is unreachable"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1455 = yes NOT = { ywc_t10_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1455 = yes NOT = { ywc_t10_partner_current = yes } } if = { limit = { OR = { var:ywc_t10_tariff_mode ?= 1 var:ywc_t10_tariff_mode ?= 2 } } set_variable = { name = ywc_t10_outcome value = 2 } } else = { set_variable = { name = ywc_t10_outcome value = 3 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "已付过税则或仲裁费用的记为有限接受，否则记为保留裁判。",
+                "en": "A paid rules or arbitration record closes as limited; otherwise as kept jurisdiction."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1455 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1455 = yes } set_variable = { name = ywc_t10_pending value = 1455 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "拒绝优先权的代价",
+            "en": "The Price of Refusing Precedence"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "paid tariff or arbitration record"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "proposed or final outcome"
+          ]
+        },
+        {
+          "id": "ywc_society.1456",
+          "title": {
+            "zh": "仅限本案的约定",
+            "en": "An Agreement for This Case Only"
+          },
+          "desc": {
+            "zh": "约定文本送到东明：税则、席次与放货安排只适用于本案。东明可以签订，也可以坚持把安排写成通例——那就要重新掂量这条航路。",
+            "en": "The draft reaches Dongming: the tariff, seating and bonded release apply to this case only. Dongming may sign, or insist on generalizing the arrangement, and reweigh this route."
+          },
+          "trigger": "{ ywc_t10_dmg_delivery_1456 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_dmg_delivery_1456 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "sign",
+              "label": {
+                "zh": "签订仅限本案的约定",
+                "en": "Sign the case-limited agreement"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1456 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1456 = yes } set_variable = { name = ywc_t10_dmg_signed value = 1 } change_relations = { country = c:JHG value = 5 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t10_case_response value = 1 } set_variable = { name = ywc_t10_stage value = 1457 } set_variable = { name = ywc_t10_pending value = 1457 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "东明对靖海关系增加 5；靖海国收到签署回执。",
+                "en": "Dongming gains 5 relations with Jinghai; Jinghai receives the signed receipt."
+              }
+            },
+            {
+              "key": "insist",
+              "label": {
+                "zh": "坚持写成通例",
+                "en": "Insist on a general precedent"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1456 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1456 = yes } set_variable = { name = ywc_t10_dmg_signed value = 2 } change_relations = { country = c:JHG value = -5 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:JHG = { set_variable = { name = ywc_t10_case_response value = 2 } set_variable = { name = ywc_t10_stage value = 1457 } set_variable = { name = ywc_t10_pending value = 1457 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "东明对靖海关系减少 5；靖海国收到分歧回执。",
+                "en": "Dongming loses 5 relations with Jinghai; Jinghai receives the disagreement receipt."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t10_dmg_at_1456 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_dmg_at_1456 = yes } set_variable = { name = ywc_t10_pending value = 1456 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定；悬而不决逾半年，照会将作过期收束。",
+                "en": "Records this decision; if the note sits unanswered for over half a year it lapses."
+              }
+            },
+            {
+              "key": "withdraw",
+              "label": {
+                "zh": "对方已结案，撤回签署",
+                "en": "The case has closed; withdraw the signature"
+              },
+              "trigger": "{ NOT = { ywc_t10_jhg_waits_1456 = yes } }",
+              "effect": "{ if = { limit = { NOT = { ywc_t10_jhg_waits_1456 = yes } } remove_variable = ywc_t10_pending change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "撤回签署，仅清理本案挂起记录。",
+                "en": "Withdraws the signature and clears only this case's pending record."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "仅限本案的约定",
+            "en": "An Agreement for This Case Only"
+          },
+          "reads": [
+            "DMG pending delivery",
+            "JHG proposed arrangement"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "signature record on both sides"
+          ]
+        },
+        {
+          "id": "ywc_society.1457",
+          "title": {
+            "zh": "下一次能否照此办理",
+            "en": "Whether the Next Case May Follow"
+          },
+          "desc": {
+            "zh": "本案已了。靖海国的官署把结果记入档册：来例是否照此办理，由本朝自定；东明那边也记下同一份结果。",
+            "en": "The case is closed. Jinghai's office records the result and decides whether the next case may follow it; Dongming records the same outcome on its side."
+          },
+          "trigger": "{ ywc_t10_jhg_delivery_1457 = yes }",
+          "immediate": "{ if = { limit = { ywc_t10_jhg_delivery_1457 = yes } remove_variable = ywc_t10_pending if = { limit = { NOT = { has_variable = ywc_t10_popup_epoch } } set_variable = { name = ywc_t10_popup_epoch value = 0 } } change_variable = { name = ywc_t10_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t10_popup_epoch value = var:ywc_t10_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "confirm",
+              "label": {
+                "zh": "照此办理，记为来例",
+                "en": "Let the next case follow this one"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1457 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1457 = yes } set_variable = { name = ywc_t10_outcome value = var:ywc_t10_proposed_outcome } set_variable = { name = ywc_t10_next_time value = 1 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_dmg_next_time value = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按拟定结果结案，来例可循，双方档册各记一份。",
+                "en": "Closes with the proposed result, marks it repeatable, and files one copy on each side."
+              }
+            },
+            {
+              "key": "discontinue",
+              "label": {
+                "zh": "不设来例，就此存档",
+                "en": "Record it without a precedent"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1457 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1457 = yes } set_variable = { name = ywc_t10_outcome value = var:ywc_t10_proposed_outcome } set_variable = { name = ywc_t10_next_time value = 0 } change_variable = { name = ywc_t10_popup_epoch add = 1 } c:DMG = { set_variable = { name = ywc_t10_dmg_next_time value = 0 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按拟定结果结案，但不设来例，双方档册各记一份。",
+                "en": "Closes with the proposed result but no precedent, filed on both sides."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t10_jhg_at_1457 = yes }",
+              "effect": "{ if = { limit = { ywc_t10_jhg_at_1457 = yes } set_variable = { name = ywc_t10_pending value = 1457 } change_variable = { name = ywc_t10_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "下一次能否照此办理",
+            "en": "Whether the Next Case May Follow"
+          },
+          "reads": [
+            "JHG pending delivery",
+            "DMG signed receipt and proposed outcome"
+          ],
+          "writes": [
+            "pending delivery receipt",
+            "popup epoch",
+            "final outcome and next-time standing on both sides"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t10_rules_accepted",
+        "v03_t10_arbitration_limited",
+        "v03_t10_jurisdiction_kept",
+        "v03_t10_note_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
