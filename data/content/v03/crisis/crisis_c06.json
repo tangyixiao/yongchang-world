@@ -27,14 +27,1242 @@
         "AHM"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_c06_pass_two_orders",
+          "title": {
+            "zh": "山口上的两封命令",
+            "en": "The Two Orders at the Passes"
+          },
+          "desc": {
+            "zh": "登记山道上确实相冲突的义务：大顺边务衙门的征役与缅京旧例的贡期各是一份命令。提案国逐项核对、向两边分别求得回书，单一合法安排时不虚构两属。",
+            "en": "Register the obligations that genuinely clash at the passes: the frontier office's levy and the old Burmese tribute season are two separate orders. The proposing hill country verifies each one, asks both courts for their replies in writing, and never invents a double allegiance when only one arrangement is lawful."
+          },
+          "script": "{\nis_shown_when_inactive = {\n\thas_variable = ywc_v03_initialized\n\tNOT = { has_variable = ywc_c06_started }\n\tOR = {\n\t\tAND = { ywc_c06_is_pool_tag = yes OR = { ywc_c06_case_ready_local = yes var:ywc_c06_case_open ?= 1 } }\n\t\tAND = { c:SHU ?= this var:ywc_c06_case_open ?= 1 }\n\t\tAND = { c:BUR ?= this var:ywc_c06_case_open ?= 1 }\n\t}\n}\npossible = {\n\thas_variable = ywc_v03_initialized\n\tywc_v03_has_capacity = yes\n\tNOT = { has_variable = ywc_c06_started }\n\tOR = {\n\t\tAND = { ywc_c06_is_pool_tag = yes ywc_c06_case_ready_local = yes }\n\t\tAND = { ywc_c06_is_pool_tag = yes var:ywc_c06_case_open ?= 1 }\n\t\tAND = { c:SHU ?= this var:ywc_c06_case_open ?= 1 }\n\t\tAND = { c:BUR ?= this var:ywc_c06_case_open ?= 1 }\n\t}\n}\nimmediate = {\n\tif = { limit = { NOT = { has_variable = ywc_c06_started } }\n\t\tset_variable = { name = ywc_c06_started value = 1 }\n\t\tset_variable = { name = ywc_c06_popup_epoch value = 0 }\n\t\tset_variable = { name = ywc_c06_wait_age value = 0 }\n\t\tchange_variable = { name = ywc_v03_active_arc_count add = 1 }\n\t\tchange_variable = { name = ywc_v03_visible_task_count add = 1 }\n\t}\n\tif = { limit = { NOT = { has_variable = ywc_c06_popup_epoch } } set_variable = { name = ywc_c06_popup_epoch value = 0 } }\n\tif = { limit = { ywc_c06_is_pool_tag = yes NOT = { has_variable = ywc_c06_role } NOT = { has_variable = ywc_c06_case_open } } set_variable = { name = ywc_c06_role value = 1 } }\n\tif = { limit = { c:SHU ?= this NOT = { has_variable = ywc_c06_role } } set_variable = { name = ywc_c06_role value = 2 } }\n\tif = { limit = { c:BUR ?= this NOT = { has_variable = ywc_c06_role } } set_variable = { name = ywc_c06_role value = 3 } }\n\tif = { limit = { var:ywc_c06_role ?= 1 NOT = { has_variable = ywc_c06_stage } }\n\t\tset_variable = { name = ywc_c06_case_open value = 1 }\n\t\tset_variable = { name = ywc_c06_stage value = 1500 }\n\t\tset_variable = { name = ywc_c06_pending value = 1500 }\n\t}\n\tif = { limit = { OR = { var:ywc_c06_role ?= 2 var:ywc_c06_role ?= 3 var:ywc_c06_role ?= 5 } NOT = { has_variable = ywc_c06_stage } } set_variable = { name = ywc_c06_stage value = 1518 } }\n\tif = { limit = { var:ywc_c06_role ?= 1 } ywc_c06_select_claimants = yes }\n}\non_monthly_pulse = {\n\teffect = {\n\t\tif = { limit = { var:ywc_c06_role ?= 1 var:ywc_c06_stage ?= 1513 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { OR = { ywc_c06_replies_resolved = yes var:ywc_c06_wait_age >= 12 } } ywc_c06_after_replies = yes }\n\t\t}\n\t\tif = { limit = { OR = { var:ywc_c06_role ?= 2 var:ywc_c06_role ?= 3 } var:ywc_c06_stage ?= 1518 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { OR = { ywc_c06_proposer_gone = yes var:ywc_c06_wait_age >= 36 } } ywc_c06_close_no_talks = yes }\n\t\t}\n\t\tif = { limit = { OR = { var:ywc_c06_role ?= 2 var:ywc_c06_role ?= 3 } OR = { var:ywc_c06_stage ?= 1502 var:ywc_c06_stage ?= 1503 } NOT = { ywc_c06_proposer_awaiting = yes } }\n\t\t\tywc_c06_close_no_talks = yes\n\t\t}\n\t\tif = { limit = { ywc_c06_pool_delivery_1500 = yes } trigger_event = { id = ywc_crisis.1500 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1501 = yes } trigger_event = { id = ywc_crisis.1501 } }\n\t\tif = { limit = { ywc_c06_shu_delivery_1502 = yes } trigger_event = { id = ywc_crisis.1502 } }\n\t\tif = { limit = { ywc_c06_bur_delivery_1502 = yes } trigger_event = { id = ywc_crisis.1502 } }\n\t\tif = { limit = { ywc_c06_bur_delivery_1503 = yes } trigger_event = { id = ywc_crisis.1503 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1503 = yes } trigger_event = { id = ywc_crisis.1503 } }\n\t}\n}\n}",
+          "goal": "{ var:ywc_c06_orders_done ?= 1 NOT = { OR = { var:ywc_c06_outcome ?= 4 var:ywc_c06_outcome ?= 6 } } }",
+          "exit_conditions": "{ OR = { var:ywc_c06_outcome ?= 4 var:ywc_c06_outcome ?= 6 } }"
+        },
+        {
+          "id": "ywc_je_v03_c06_local_council_mandate",
+          "title": {
+            "zh": "地方议事的授权",
+            "en": "The Mandate of the Local Council"
+          },
+          "desc": {
+            "zh": "回书到齐之后进入执行：贡茶折费、有限粮供或按村分摊，每一家承担自己的真实成本；联席会议由实际受牵连的地方国共议，谁有权代表、谁被落下，都要写进册子。",
+            "en": "With the replies in, execution begins: tea tribute converted to a fee, a limited grain supply, or village-by-village apportionment, each bearing its own real cost. The joint council convenes among the hill countries actually affected; who may speak for it and who is left out must be written into the register."
+          },
+          "script": "{\nis_shown_when_inactive = { has_variable = ywc_c06_shares_open }\npossible = {\n\thas_variable = ywc_v03_initialized\n\thas_variable = ywc_c06_started\n\tvar:ywc_c06_shares_open ?= 1\n\tywc_c06_is_participant = yes\n\tNOT = { has_variable = ywc_c06_outcome }\n}\nimmediate = {\n\tif = { limit = { NOT = { has_variable = ywc_c06_popup_epoch } } set_variable = { name = ywc_c06_popup_epoch value = 0 } }\n}\non_monthly_pulse = {\n\teffect = {\n\t\tif = { limit = { ywc_c06_pool_delivery_1504 = yes } trigger_event = { id = ywc_crisis.1504 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1505 = yes } trigger_event = { id = ywc_crisis.1505 } }\n\t}\n}\n}",
+          "goal": "{ var:ywc_c06_shares_done ?= 1 }",
+          "exit_conditions": "{ OR = { var:ywc_c06_outcome ?= 4 var:ywc_c06_outcome ?= 6 } }"
+        },
+        {
+          "id": "ywc_je_v03_c06_frontier_precedent_bounds",
+          "title": {
+            "zh": "边务旧例的新边界",
+            "en": "New Bounds for the Frontier Precedent"
+          },
+          "desc": {
+            "zh": "执行与复议阶段检验旧例的边界：过境兵的冬粮、一枚印信能否两签、贸易与军事条款的分合，最后按各方实际落款与实付回写贡期之后的山路。",
+            "en": "Execution and review test where the old precedent ends: the transit troops' winter grain, whether one seal can sign twice, the split between trade and military clauses, and finally the mountain roads after tribute season are written back according to each party's actual signature and actual payment."
+          },
+          "script": "{\nis_shown_when_inactive = { has_variable = ywc_c06_review_open }\npossible = {\n\thas_variable = ywc_v03_initialized\n\thas_variable = ywc_c06_started\n\tvar:ywc_c06_review_open ?= 1\n\tywc_c06_is_participant = yes\n\tNOT = { has_variable = ywc_c06_outcome }\n}\nimmediate = {\n\tif = { limit = { NOT = { has_variable = ywc_c06_popup_epoch } } set_variable = { name = ywc_c06_popup_epoch value = 0 } }\n}\non_monthly_pulse = {\n\teffect = {\n\t\tif = { limit = { OR = { var:ywc_c06_role ?= 2 var:ywc_c06_role ?= 3 } var:ywc_c06_stage ?= 1506 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { OR = { ywc_c06_proposer_gone = yes var:ywc_c06_wait_age >= 12 } } ywc_c06_transit_unilateral = yes }\n\t\t}\n\t\tif = { limit = { var:ywc_c06_role ?= 1 var:ywc_c06_stage ?= 1512 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { OR = { ywc_c06_claimant_a_gone = yes var:ywc_c06_wait_age >= 24 } } ywc_c06_transit_skip = yes }\n\t\t}\n\t\tif = { limit = { NOT = { has_variable = ywc_c06_signatory } var:ywc_c06_stage ?= 1514 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { OR = { ywc_c06_proposer_gone = yes var:ywc_c06_wait_age >= 24 } } ywc_c06_renegotiation_self = yes }\n\t\t}\n\t\tif = { limit = { OR = { has_variable = ywc_c06_signatory has_variable = ywc_c06_signatory_limited } var:ywc_c06_stage ?= 1515 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { OR = { ywc_c06_proposer_gone = yes var:ywc_c06_wait_age >= 36 } } ywc_c06_self_settle = yes }\n\t\t}\n\t\tif = { limit = { var:ywc_c06_stage ?= 1511 }\n\t\t\tchange_variable = { name = ywc_c06_wait_age add = 1 }\n\t\t\tif = { limit = { var:ywc_c06_wait_age >= 12 }\n\t\t\t\tset_variable = { name = ywc_c06_aftermath value = 1 }\n\t\t\t\tset_variable = { name = ywc_c06_stage value = 1516 }\n\t\t\t\tset_variable = { name = ywc_c06_wait_age value = 0 }\n\t\t\t\tif = { limit = { has_variable = ywc_c06_pending } remove_variable = ywc_c06_pending }\n\t\t\t\tywc_c06_release_capacity = yes\n\t\t\t}\n\t\t}\n\t\tif = { limit = { ywc_c06_shu_delivery_1506 = yes } trigger_event = { id = ywc_crisis.1506 } }\n\t\tif = { limit = { ywc_c06_bur_delivery_1506 = yes } trigger_event = { id = ywc_crisis.1506 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1512 = yes } trigger_event = { id = ywc_crisis.1506 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1507 = yes } trigger_event = { id = ywc_crisis.1507 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1508 = yes } trigger_event = { id = ywc_crisis.1508 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1509 = yes } trigger_event = { id = ywc_crisis.1509 } }\n\t\tif = { limit = { ywc_c06_shu_delivery_1509 = yes } trigger_event = { id = ywc_crisis.1509 } }\n\t\tif = { limit = { ywc_c06_bur_delivery_1509 = yes } trigger_event = { id = ywc_crisis.1509 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1510 = yes } trigger_event = { id = ywc_crisis.1510 } }\n\t\tif = { limit = { ywc_c06_shu_delivery_1510 = yes } trigger_event = { id = ywc_crisis.1510 } }\n\t\tif = { limit = { ywc_c06_bur_delivery_1510 = yes } trigger_event = { id = ywc_crisis.1510 } }\n\t\tif = { limit = { ywc_c06_pool_delivery_1511 = yes } trigger_event = { id = ywc_crisis.1511 } }\n\t\tif = { limit = { ywc_c06_shu_delivery_1511 = yes } trigger_event = { id = ywc_crisis.1511 } }\n\t\tif = { limit = { ywc_c06_bur_delivery_1511 = yes } trigger_event = { id = ywc_crisis.1511 } }\n\t}\n}\n}",
+          "goal": "{ OR = { has_variable = ywc_c06_aftermath var:ywc_c06_outcome ?= 3 var:ywc_c06_outcome ?= 5 } }",
+          "exit_conditions": "{ OR = { var:ywc_c06_outcome ?= 4 var:ywc_c06_outcome ?= 6 } }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_crisis.1500",
+          "title": {
+            "zh": "先到的是贡期还是军令",
+            "en": "Tribute Season or the Military Order"
+          },
+          "desc": {
+            "zh": "山道上同时到了两份文书：大顺边务衙门催征冬役，缅京使者重提旧例贡期。提案国逐项核对两份义务是否确实相冲突；只有一方提出要求时，登记为单一合法安排，不虚构两属。",
+            "en": "Two documents arrive on the same pass road: the Great Shun frontier office pressing the winter levy, and the Burmese envoy reviving the old tribute season. The proposing hill country checks clause by clause whether the two obligations genuinely clash; when only one court demands anything, it is registered as a single lawful arrangement and no double allegiance is invented."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1500 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1500 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "register_dual",
+              "label": {
+                "zh": "登记两份确实相冲突的义务",
+                "en": "Register the two obligations as genuinely conflicting"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1500 = yes ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1500 = yes ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } } } set_variable = { name = ywc_c06_orders_dual value = 1 } set_variable = { name = ywc_c06_stage value = 1501 } set_variable = { name = ywc_c06_pending value = 1501 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "register_single",
+              "label": {
+                "zh": "登记单一合法安排，不虚构两属",
+                "en": "Register a single lawful arrangement, invent no dual allegiance"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1500 = yes OR = { ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } NOT = { AND = { ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1500 = yes OR = { ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } NOT = { AND = { ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } } } } } set_variable = { name = ywc_c06_orders_dual value = 2 } set_variable = { name = ywc_c06_stage value = 1501 } set_variable = { name = ywc_c06_pending value = 1501 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "no_counterparty",
+              "label": {
+                "zh": "两边都已无实际要求方，无从谈判",
+                "en": "Neither court has a live demanding party; there is nothing to negotiate"
+              },
+              "trigger": "{ AND = { ywc_c06_pool_at_1500 = yes NOT = { OR = { ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } } } }",
+              "effect": "{ if = { limit = { AND = { ywc_c06_pool_at_1500 = yes NOT = { OR = { ywc_c06_shu_order_ready = yes ywc_c06_bur_order_ready = yes } } } } ywc_c06_close_no_talks = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "本案以无从谈判结案，容量名额就地释放。",
+                "en": "The case closes as no-talks and the capacity slot is released at once."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对文书",
+                "en": "Wait and re-examine the documents"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1500 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1500 = yes } } set_variable = { name = ywc_c06_pending value = 1500 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "先到的是贡期还是军令",
+            "en": "Tribute Season or the Military Order"
+          },
+          "reads": [
+            "the holder's own settled prior line (frontier-start or southwest six-country resolution)",
+            "live state of both demanding courts via explicit c:SHU/c:BUR contact blocks"
+          ],
+          "writes": [
+            "holder orders_dual, stage/pending/wait_age/popup_epoch",
+            "claimant markers and mounted stages on SHU/BUR/hill claimants (bilateral, one effect)"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1501",
+          "title": {
+            "zh": "没有通到村寨的官道",
+            "en": "No Official Road to the Villages"
+          },
+          "desc": {
+            "zh": "征役的文书有了，路还没有：可征的人口散在茶山与河谷之间，官道只到土司衙门。核查可征役人口、道路与实际维护成本之后，再把两份命令正式送出去求答。",
+            "en": "The levy papers exist; the road does not. The corvee-liable households are scattered between the tea hills and the river valleys, and the official road stops at the chieftain's gate. Only after checking the levy-liable population, the roads and the real cost of upkeep are the two orders formally sent out for replies."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1501 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1501 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "verify_roads",
+              "label": {
+                "zh": "核查可征役人口与道路，按册送出两份命令",
+                "en": "Verify the levy-liable population and roads, then send both orders out as listed"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1501 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1501 = yes } } ywc_c06_open_replies = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "recount_upkeep",
+              "label": {
+                "zh": "按实际维护成本重议征役（300）",
+                "en": "Renegotiate the levy against the real upkeep cost (300)"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1501 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c06_upkeep_noted } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1501 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c06_upkeep_noted } } } } add_treasury = -300 set_variable = { name = ywc_c06_upkeep_noted value = 1 } ywc_c06_open_replies = yes } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "本国国库支付 300，用于道路与役册核查。",
+                "en": "The holder's treasury pays 300 for the road and levy-register audit."
+              },
+              "consequence_note": {
+                "zh": "道路与役册按实核计，登记在册供结算时查证。",
+                "en": "The roads and levy register are audited against actual cost and recorded for the settlement review."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再查一遍山路",
+                "en": "Wait and survey the mountain roads once more"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1501 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1501 = yes } } set_variable = { name = ywc_c06_pending value = 1501 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "没有通到村寨的官道",
+            "en": "No Official Road to the Villages"
+          },
+          "reads": [
+            "holder's own treasury via gold_reserves",
+            "holder's own audit record"
+          ],
+          "writes": [
+            "holder upkeep_noted, stage routing via open_replies (proposer waiting 1513, claimants 1502/1503, bilateral, one effect)",
+            "holder stage/pending/popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1502",
+          "title": {
+            "zh": "大顺边务衙门的回书",
+            "en": "The Frontier Office's Reply"
+          },
+          "desc": {
+            "zh": "边务衙门的回书到了：或接受限额贡役、按册支应，或以明确通行权换征役名额，或拒绝此次征役保留旧例。答复记在实际要求方名下，提案国不能代签。",
+            "en": "The frontier office's reply has arrived: accept the levy within a fixed cap and answer it from the register, trade a definite passage right against the levy quota, or refuse this requisition and keep the old usage. The answer is recorded under the actual demanding party's own name; the proposing hill country cannot sign for it."
+          },
+          "trigger": "{ OR = { ywc_c06_shu_delivery_1502 = yes ywc_c06_bur_delivery_1502 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_shu_delivery_1502 = yes ywc_c06_bur_delivery_1502 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "accept_capped",
+              "label": {
+                "zh": "接受限额贡役，按册支应",
+                "en": "Accept the capped levy and answer it from the register"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } } set_variable = { name = ywc_c06_response_a value = 1 } set_variable = { name = ywc_c06_signatory value = 1 } set_variable = { name = ywc_c06_pending value = 1502 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "trade_passage",
+              "label": {
+                "zh": "以明确通行权换征役名额",
+                "en": "Trade a definite passage right against the levy quota"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } } set_variable = { name = ywc_c06_response_a value = 2 } set_variable = { name = ywc_c06_signatory value = 1 } set_variable = { name = ywc_c06_pending value = 1502 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "refuse_requisition",
+              "label": {
+                "zh": "拒绝此次征役，保留旧例",
+                "en": "Refuse this requisition and keep the old usage"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } } set_variable = { name = ywc_c06_response_a value = 3 } set_variable = { name = ywc_c06_pending value = 1502 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1502 = yes ywc_c06_bur_at_1502 = yes } } set_variable = { name = ywc_c06_pending value = 1502 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "大顺边务衙门的回书",
+            "en": "The Frontier Office's Reply"
+          },
+          "reads": [
+            "holder's own reply history",
+            "proposer's awaiting stage via explicit c: blocks in the delivery trigger"
+          ],
+          "writes": [
+            "holder response_a, signatory, stage/pending, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1503",
+          "title": {
+            "zh": "缅甸使者另开的条件",
+            "en": "The Burmese Envoy's Separate Terms"
+          },
+          "desc": {
+            "zh": "缅甸使者不与大顺合议，另开一纸条件：或准季节通行、贡期照旧，或要求山口排他通行权，或干脆不参加此次会约。此答复独立成册，不复制边务衙门的措辞。",
+            "en": "The Burmese envoy does not negotiate jointly with Great Shun and opens separate terms instead: grant seasonal passage with the tribute season unchanged, demand exclusive rights over the passes, or stay out of this compact altogether. This answer is kept in its own register and never copies the frontier office's wording."
+          },
+          "trigger": "{ OR = { ywc_c06_bur_delivery_1503 = yes ywc_c06_pool_delivery_1503 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_bur_delivery_1503 = yes ywc_c06_pool_delivery_1503 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "seasonal_passage",
+              "label": {
+                "zh": "准季节通行，贡期照旧",
+                "en": "Grant seasonal passage with the tribute season unchanged"
+              },
+              "trigger": "{ OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } } set_variable = { name = ywc_c06_response_b value = 1 } set_variable = { name = ywc_c06_signatory value = 1 } set_variable = { name = ywc_c06_pending value = 1503 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "demand_exclusive",
+              "label": {
+                "zh": "要求山口排他通行权",
+                "en": "Demand exclusive rights over the passes"
+              },
+              "trigger": "{ OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } } set_variable = { name = ywc_c06_response_b value = 2 } set_variable = { name = ywc_c06_signatory value = 1 } set_variable = { name = ywc_c06_pending value = 1503 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "not_join",
+              "label": {
+                "zh": "不参加此次会约，各行其是",
+                "en": "Stay out of this compact; each keeps its own course"
+              },
+              "trigger": "{ OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } } set_variable = { name = ywc_c06_response_b value = 3 } set_variable = { name = ywc_c06_pending value = 1503 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_bur_at_1503 = yes ywc_c06_pool_at_1503 = yes } } set_variable = { name = ywc_c06_pending value = 1503 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "缅甸使者另开的条件",
+            "en": "The Burmese Envoy's Separate Terms"
+          },
+          "reads": [
+            "holder's own reply history",
+            "proposer's awaiting stage via explicit c: blocks in the delivery trigger"
+          ],
+          "writes": [
+            "holder response_b, signatory, stage/pending, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1504",
+          "title": {
+            "zh": "茶山与粮秣的份额",
+            "en": "Shares of Tea and Grain"
+          },
+          "desc": {
+            "zh": "贡役折成什么、由谁承担，要落到账上：贡茶折费一次付清，或以有限粮供支应过境，或按村分摊让各寨自认其份。每种选择都由本国国库实际支付，不赊欠也不预支。",
+            "en": "What the tribute becomes and who bears it must land in the accounts: convert the tea tribute into a fee paid at once, answer the transit with a limited grain supply, or apportion shares village by village and let each stockade own its part. Every choice is paid from this country's own treasury; nothing is borrowed or collected in advance."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1504 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1504 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "pay_tea_fee",
+              "label": {
+                "zh": "贡茶折费，一次付清（500）",
+                "en": "Convert the tea tribute into a fee and pay it at once (500)"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1504 = yes gold_reserves >= 500 NOT = { has_variable = ywc_c06_share_mode } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1504 = yes gold_reserves >= 500 NOT = { has_variable = ywc_c06_share_mode } } } } add_treasury = -500 set_variable = { name = ywc_c06_share_mode value = 1 } ywc_c06_after_shares = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "本国国库支付 500。",
+                "en": "The holder's treasury pays 500."
+              },
+              "consequence_note": {
+                "zh": "贡役折费入册；结算时可确认完整会约。",
+                "en": "The converted fee is registered; the full compact can be confirmed at settlement."
+              }
+            },
+            {
+              "key": "limited_grain",
+              "label": {
+                "zh": "以有限粮供支应过境（300）",
+                "en": "Answer the transit with a limited grain supply (300)"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1504 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c06_share_mode } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1504 = yes gold_reserves >= 300 NOT = { has_variable = ywc_c06_share_mode } } } } add_treasury = -300 set_variable = { name = ywc_c06_share_mode value = 2 } ywc_c06_after_shares = yes } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "本国国库支付 300。",
+                "en": "The holder's treasury pays 300."
+              },
+              "consequence_note": {
+                "zh": "粮供限额入册；结算时只可确认有限会约。",
+                "en": "The limited grain supply is registered; only the limited compact can be confirmed at settlement."
+              }
+            },
+            {
+              "key": "village_share",
+              "label": {
+                "zh": "按村分摊，各寨自认其份（200）",
+                "en": "Apportion shares village by village (200)"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1504 = yes gold_reserves >= 200 NOT = { has_variable = ywc_c06_share_mode } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1504 = yes gold_reserves >= 200 NOT = { has_variable = ywc_c06_share_mode } } } } add_treasury = -200 set_variable = { name = ywc_c06_share_mode value = 3 } ywc_c06_after_shares = yes } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "本国国库支付 200 的造册与分摊费用。",
+                "en": "The holder's treasury pays 200 for the register and apportionment."
+              },
+              "consequence_note": {
+                "zh": "各村份额入册；结算时只可确认有限会约。",
+                "en": "Each village's share is registered; only the limited compact can be confirmed at settlement."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再核一遍账目",
+                "en": "Wait and check the accounts once more"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1504 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1504 = yes } } set_variable = { name = ywc_c06_pending value = 1504 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "茶山与粮秣的份额",
+            "en": "Shares of Tea and Grain"
+          },
+          "reads": [
+            "holder's own treasury via gold_reserves",
+            "holder's own share record",
+            "claimant-A signatory and alive state via explicit c:SHU/c:BUR blocks"
+          ],
+          "writes": [
+            "holder share_mode, shares_done, stage routing (transit pair 1506/1512 or straight to 1507)",
+            "claimant-A stage 1506/pending (bilateral, one effect)",
+            "holder stage/pending/popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1505",
+          "title": {
+            "zh": "谁能代表联席会议",
+            "en": "Who Speaks for the Joint Council"
+          },
+          "desc": {
+            "zh": "联席议事开到一半就停了：土司们各带各村的名册，却没人说得出自己能代表谁。核对地方授权与反对者之后，或以有限共议入约，或交由集中裁决而留下后续争执。",
+            "en": "The joint council stalls halfway: the chieftains each bring their villages' registers, yet none can say whom they are empowered to speak for. After checking the local mandates and the objectors, either join the compact by limited joint deliberation, or hand the matter to central arbitration and leave the dispute for later."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1505 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1505 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "limited_council",
+              "label": {
+                "zh": "有限共议，各留裁决之权",
+                "en": "Deliberate jointly within limits, each keeping its own adjudication"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1505 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1505 = yes } } set_variable = { name = ywc_c06_council_mode value = 1 } set_variable = { name = ywc_c06_signatory_limited value = 1 } set_variable = { name = ywc_c06_shares_done value = 1 } set_variable = { name = ywc_c06_review_open value = 1 } set_variable = { name = ywc_c06_stage value = 1515 } set_variable = { name = ywc_c06_pending value = 1515 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "central_arbitration",
+              "label": {
+                "zh": "交由集中裁决，留下后续",
+                "en": "Hand it to central arbitration and leave the aftermath open"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1505 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1505 = yes } } set_variable = { name = ywc_c06_council_mode value = 2 } set_variable = { name = ywc_c06_shares_done value = 1 } set_variable = { name = ywc_c06_review_open value = 1 } set_variable = { name = ywc_c06_stage value = 1514 } set_variable = { name = ywc_c06_pending value = 1514 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再问各村授权",
+                "en": "Wait and ask the villages for their mandates again"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1505 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1505 = yes } } set_variable = { name = ywc_c06_pending value = 1505 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "谁能代表联席会议",
+            "en": "Who Speaks for the Joint Council"
+          },
+          "reads": [
+            "holder's own mandate record",
+            "proposer's identity via explicit c: blocks in the mounting effect"
+          ],
+          "writes": [
+            "holder council_mode, signatory_limited, shares_done, review_open, stage/pending, popup_epoch"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1506",
+          "title": {
+            "zh": "过境兵索取冬粮",
+            "en": "Transit Troops Demand Winter Grain"
+          },
+          "desc": {
+            "zh": "依约过境的兵在山口扎营，管队把征粮册拍在案上：军需紧要，过境即征。地方或供冬粮、或以税折偿、或闭口谢客；要求方也可坚持军需、按市价补偿或撤回通行。双方各按各册承担结果。",
+            "en": "The troops passing under the compact have camped at the pass, and their column commander slaps the requisition register on the table: military needs are pressing, and passage means requisition. The hill country may supply the winter grain, convert it into a toll, or close the passes; the demanding side may press the requisition, pay the market price, or withdraw the passage claim. Each side carries the result in its own ledger."
+          },
+          "trigger": "{ OR = { ywc_c06_shu_delivery_1506 = yes ywc_c06_bur_delivery_1506 = yes ywc_c06_pool_delivery_1512 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_shu_delivery_1506 = yes ywc_c06_bur_delivery_1506 = yes ywc_c06_pool_delivery_1512 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "insist_requisition",
+              "label": {
+                "zh": "强调军需，按册征粮",
+                "en": "Press the military need and requisition by the register"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } } set_variable = { name = ywc_c06_transit_demand value = 1 } } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "征粮册留在山口；地方另行作答，答与不答各记各册。",
+                "en": "The requisition register stays at the pass; the hill country answers separately and each answer is kept in its own ledger."
+              }
+            },
+            {
+              "key": "offer_compensation",
+              "label": {
+                "zh": "按市价补偿过境征用",
+                "en": "Compensate the transit requisition at market price"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } } set_variable = { name = ywc_c06_transit_demand value = 2 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "withdraw_passage",
+              "label": {
+                "zh": "撤回通行要求，兵马另道",
+                "en": "Withdraw the passage claim and route the troops elsewhere"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } } set_variable = { name = ywc_c06_transit_demand value = 3 } } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "demand_wait",
+              "label": {
+                "zh": "暂缓，重新核计军需",
+                "en": "Wait and recount the military needs"
+              },
+              "trigger": "{ OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_shu_at_1506 = yes ywc_c06_bur_at_1506 = yes } } set_variable = { name = ywc_c06_pending value = 1506 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "supply_grain",
+              "label": {
+                "zh": "供冬粮，按册支应（400）",
+                "en": "Supply the winter grain from the register (400)"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1512 = yes gold_reserves >= 400 NOT = { has_variable = ywc_c06_transit_answer } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1512 = yes gold_reserves >= 400 NOT = { has_variable = ywc_c06_transit_answer } } } } add_treasury = -400 set_variable = { name = ywc_c06_transit_answer value = 1 } if = { limit = { var:ywc_c06_claimant_a ?= 1 c:SHU ?= { is_country_alive = yes NOT = { var:ywc_c06_transit_demand ?= 3 } } } change_relations = { country = c:SHU value = 2 } } if = { limit = { var:ywc_c06_claimant_a ?= 2 c:BUR ?= { is_country_alive = yes NOT = { var:ywc_c06_transit_demand ?= 3 } } } change_relations = { country = c:BUR value = 2 } } ywc_c06_transit_settle = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "本国国库支付 400。",
+                "en": "The holder's treasury pays 400."
+              },
+              "consequence_note": {
+                "zh": "冬粮实付入册；要求方按其册记录此次支应。",
+                "en": "The grain payment is registered; the demanding side records this supply in its own ledger."
+              }
+            },
+            {
+              "key": "grain_for_toll",
+              "label": {
+                "zh": "以税折偿，留册待算",
+                "en": "Convert the grain into a toll and leave the account open"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1512 = yes NOT = { has_variable = ywc_c06_transit_answer } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1512 = yes NOT = { has_variable = ywc_c06_transit_answer } } } } set_variable = { name = ywc_c06_transit_answer value = 2 } if = { limit = { var:ywc_c06_claimant_a ?= 1 c:SHU ?= { is_country_alive = yes } } change_relations = { country = c:SHU value = 1 } } if = { limit = { var:ywc_c06_claimant_a ?= 2 c:BUR ?= { is_country_alive = yes } } change_relations = { country = c:BUR value = 1 } } ywc_c06_transit_settle = yes } }",
+              "ai_chance": "{ base = 70 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "close_passes",
+              "label": {
+                "zh": "闭口谢客，中断通行",
+                "en": "Close the passes and end the transit"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1512 = yes NOT = { has_variable = ywc_c06_transit_answer } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1512 = yes NOT = { has_variable = ywc_c06_transit_answer } } } } set_variable = { name = ywc_c06_transit_answer value = 3 } if = { limit = { var:ywc_c06_claimant_a ?= 1 c:SHU ?= { is_country_alive = yes } } change_relations = { country = c:SHU value = -3 } } if = { limit = { var:ywc_c06_claimant_a ?= 2 c:BUR ?= { is_country_alive = yes } } change_relations = { country = c:BUR value = -3 } } ywc_c06_transit_settle = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "通行中断；与要求方关系 -3，会约条款进入复议。",
+                "en": "The transit ends; relations with the demanding side drop by 3 and the compact clauses go to review."
+              }
+            },
+            {
+              "key": "answer_wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before answering"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1512 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1512 = yes } } set_variable = { name = ywc_c06_pending value = 1512 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "过境兵索取冬粮",
+            "en": "Transit Troops Demand Winter Grain"
+          },
+          "reads": [
+            "demander's own stage and requisition record",
+            "proposer's own treasury via gold_reserves",
+            "claimant demand record via explicit c:SHU/c:BUR blocks in the answer options"
+          ],
+          "writes": [
+            "demander transit_demand; answer-side transit_answer and stage routing (claimant released to 1515 and proposer to 1507, bilateral, one effect)"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1507",
+          "title": {
+            "zh": "一枚印信不能签两次",
+            "en": "One Seal Cannot Sign Twice"
+          },
+          "desc": {
+            "zh": "造册的文书铺开时对出了旧账：同一方印信已在不同年份给两边写过相反的承诺。或公开更正旧承诺、注明先后，或暂且隐瞒先行用印，或暂停签字把旧账交回旧例。更正者留下凭据，隐瞒者留下隐患。",
+            "en": "As the register is unrolled, the old accounts collide: the same seal has written opposite promises to both courts in different years. Correct the old promise openly and note the order of precedence, conceal it for now and set the seal anyway, or suspend the signing and hand the old accounts back to the old usage. Correction leaves evidence; concealment leaves a snare."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1507 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1507 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "public_correction",
+              "label": {
+                "zh": "公开更正旧承诺，注明先后",
+                "en": "Correct the old promise openly and note the order of precedence"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1507 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1507 = yes } } set_variable = { name = ywc_c06_seal_choice value = 1 } set_variable = { name = ywc_c06_stage value = 1508 } set_variable = { name = ywc_c06_pending value = 1508 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "conceal_conflict",
+              "label": {
+                "zh": "暂且隐瞒冲突，先行用印",
+                "en": "Conceal the conflict for now and set the seal anyway"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1507 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1507 = yes } } set_variable = { name = ywc_c06_seal_choice value = 2 } set_variable = { name = ywc_c06_stage value = 1508 } set_variable = { name = ywc_c06_pending value = 1508 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "印信已用；隐瞒之账留待复议时清算，完整会约自此不可确认。",
+                "en": "The seal is set; the concealed account waits for the review, and the full compact can no longer be confirmed."
+              }
+            },
+            {
+              "key": "suspend_signing",
+              "label": {
+                "zh": "暂停签字，旧账交回旧例",
+                "en": "Suspend the signing and hand the old accounts back to the old usage"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1507 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1507 = yes } } ywc_c06_close_status_quo = yes } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "保留现状结案，剩余义务按旧例各归各册，正常游戏继续。",
+                "en": "The case closes with the status quo; remaining obligations stay under the old usage and normal play continues."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再翻旧册",
+                "en": "Wait and go through the old registers once more"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1507 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1507 = yes } } set_variable = { name = ywc_c06_pending value = 1507 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "一枚印信不能签两次",
+            "en": "One Seal Cannot Sign Twice"
+          },
+          "reads": [
+            "holder's own seal and prior-promise records"
+          ],
+          "writes": [
+            "holder seal_choice, stage/pending, popup_epoch; status-quo closer releases the slot"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1508",
+          "title": {
+            "zh": "先保互市，不谈驻军",
+            "en": "Markets First, Garrisons Later"
+          },
+          "desc": {
+            "zh": "复议开始：提案国把全案摊开重议——或收窄为互市与民事通行，让无法接受军事条款者继续留在桌上；或坚持全案，把驻军与征役一并写入。收窄之约签订者少而怨少，全案之约条款重而责重。",
+            "en": "The review opens and the proposer lays the whole text out again: narrow it to border trade and civil passage so that those who cannot accept the military clauses stay at the table, or insist on the full text and write garrisons and levies into it together. The narrow pact has fewer signatures and less resentment; the full pact carries heavier clauses and heavier duties."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1508 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1508 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "narrow_trade",
+              "label": {
+                "zh": "收窄为互市与民事通行",
+                "en": "Narrow the compact to border trade and civil passage"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1508 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1508 = yes } } set_variable = { name = ywc_c06_narrow_choice value = 1 } ywc_c06_open_renegotiation = yes } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "keep_full_terms",
+              "label": {
+                "zh": "坚持全案，军事条款照写",
+                "en": "Insist on the full text with the military clauses intact"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1508 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1508 = yes } } set_variable = { name = ywc_c06_narrow_choice value = 2 } ywc_c06_open_renegotiation = yes } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再议条款",
+                "en": "Wait and weigh the clauses again"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1508 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1508 = yes } } set_variable = { name = ywc_c06_pending value = 1508 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "先保互市，不谈驻军",
+            "en": "Markets First, Garrisons Later"
+          },
+          "reads": [
+            "holder's own narrow-choice record",
+            "participant signatory records via explicit c: blocks in the routing effect"
+          ],
+          "writes": [
+            "holder narrow_choice, stage routing (signatories to 1510, non-signatories to 1509, bilateral, one effect)"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1509",
+          "title": {
+            "zh": "山地小国的保留条款",
+            "en": "The Hill State's Reservations"
+          },
+          "desc": {
+            "zh": "会约重开之前，未签之方各自提出保留：或限定征役名额与期限后附保留加入，或主动退回旧例、承担互市受限的代价，或保留现状不入会约。退回旧例者不因退约而受罚，只按市价少一条商路。",
+            "en": "Before the compact reopens, each non-signatory states its reservations: join with the levy quota and its term limited, withdraw to the old usage and accept the cost of constrained trade, or keep the status quo and stay outside the compact. Returning to the old usage carries no punishment beyond it; it only costs one trade route at the market price."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1509 = yes ywc_c06_shu_delivery_1509 = yes ywc_c06_bur_delivery_1509 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1509 = yes ywc_c06_shu_delivery_1509 = yes ywc_c06_bur_delivery_1509 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "limit_levy_term",
+              "label": {
+                "zh": "限定征役与期限，附保留加入",
+                "en": "Limit the levy and its term, then join with reservations"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } } set_variable = { name = ywc_c06_reservation_choice value = 1 } set_variable = { name = ywc_c06_signatory_limited value = 1 } set_variable = { name = ywc_c06_stage value = 1510 } set_variable = { name = ywc_c06_pending value = 1510 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "return_old_usage",
+              "label": {
+                "zh": "主动退回旧例，承担互市代价",
+                "en": "Return to the old usage and bear the trade cost"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } } set_variable = { name = ywc_c06_reservation_choice value = 2 } if = { limit = { var:ywc_c06_claimant_a ?= 1 c:SHU ?= { is_country_alive = yes } } change_relations = { country = c:SHU value = -3 } } if = { limit = { var:ywc_c06_claimant_a ?= 2 c:BUR ?= { is_country_alive = yes } } change_relations = { country = c:BUR value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 2 c:BUR ?= { is_country_alive = yes } } change_relations = { country = c:BUR value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 3 c:KTG ?= { is_country_alive = yes } } change_relations = { country = c:KTG value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 4 c:WAA ?= { is_country_alive = yes } } change_relations = { country = c:WAA value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 5 c:KCH ?= { is_country_alive = yes } } change_relations = { country = c:KCH value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 6 c:SHD ?= { is_country_alive = yes } } change_relations = { country = c:SHD value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 7 c:LJG ?= { is_country_alive = yes } } change_relations = { country = c:LJG value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 8 c:DLI ?= { is_country_alive = yes } } change_relations = { country = c:DLI value = -3 } } if = { limit = { var:ywc_c06_claimant_b ?= 9 c:AHM ?= { is_country_alive = yes } } change_relations = { country = c:AHM value = -3 } } ywc_c06_close_withdrawn = yes } }",
+              "ai_chance": "{ base = 50 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "主动退出结案，旧例恢复并承担互市代价，正常游戏继续。",
+                "en": "The case closes as a voluntary withdrawal; the old usage returns with a trade cost and normal play continues."
+              }
+            },
+            {
+              "key": "keep_status",
+              "label": {
+                "zh": "保留现状，不入会约",
+                "en": "Keep the status quo and stay outside the compact"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } } set_variable = { name = ywc_c06_reservation_choice value = 3 } ywc_c06_close_status_quo = yes } }",
+              "ai_chance": "{ base = 60 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "保留现状结案，剩余义务按旧例各归各册，正常游戏继续。",
+                "en": "The case closes with the status quo; remaining obligations stay under the old usage and normal play continues."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，再算保留条款",
+                "en": "Wait and weigh the reservations once more"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1509 = yes ywc_c06_shu_at_1509 = yes ywc_c06_bur_at_1509 = yes } } set_variable = { name = ywc_c06_pending value = 1509 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "山地小国的保留条款",
+            "en": "The Hill State's Reservations"
+          },
+          "reads": [
+            "holder's own reservation record",
+            "claimant alive state via explicit c: blocks"
+          ],
+          "writes": [
+            "holder reservation_choice, signatory_limited, stage routing or terminal closer; relations with claimants on withdrawal"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1510",
+          "title": {
+            "zh": "边务会约的三种落款",
+            "en": "Three Signatures on the Frontier Compact"
+          },
+          "desc": {
+            "zh": "会约文本誊清，落款分三种：实付与更正俱全者签完整会约；只入局部互市者签有限会约；不愿落款者保留现状。落款只对本方生效，谁签了什么、限到哪一条，各册各自记清。",
+            "en": "The compact text is copied out fair, and the signatures come in three forms: those whose payment and correction are both complete sign the full compact; those joining only the border trade sign the limited one; those unwilling to sign keep the status quo. A signature binds only its own signatory; what each signed and where each clause stops is recorded plainly in each own ledger."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1510 = yes ywc_c06_shu_delivery_1510 = yes ywc_c06_bur_delivery_1510 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1510 = yes ywc_c06_shu_delivery_1510 = yes ywc_c06_bur_delivery_1510 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "confirm_full",
+              "label": {
+                "zh": "确认完整会约",
+                "en": "Confirm the full compact"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } OR = { AND = { var:ywc_c06_role ?= 1 var:ywc_c06_share_mode ?= 1 var:ywc_c06_seal_choice ?= 1 } AND = { var:ywc_c06_role ?= 3 var:ywc_c06_signatory ?= 1 } } } AND = { ywc_c06_shu_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_bur_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } OR = { AND = { var:ywc_c06_role ?= 1 var:ywc_c06_share_mode ?= 1 var:ywc_c06_seal_choice ?= 1 } AND = { var:ywc_c06_role ?= 3 var:ywc_c06_signatory ?= 1 } } } AND = { ywc_c06_shu_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_bur_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } } } set_variable = { name = ywc_c06_settle_choice value = 1 } set_variable = { name = ywc_c06_outcome value = 1 } set_variable = { name = ywc_c06_stage value = 1511 } set_variable = { name = ywc_c06_pending value = 1511 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "多方承认的完整会约落款，各自实际支付与期限入册。",
+                "en": "The full compact is acknowledged by its signatories; each actual payment and term is registered."
+              }
+            },
+            {
+              "key": "confirm_limited",
+              "label": {
+                "zh": "确认局部互市会约",
+                "en": "Confirm the limited trade compact"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1510 = yes OR = { var:ywc_c06_signatory ?= 1 var:ywc_c06_signatory_limited ?= 1 } NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_shu_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_bur_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1510 = yes OR = { var:ywc_c06_signatory ?= 1 var:ywc_c06_signatory_limited ?= 1 } NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_shu_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_bur_at_1510 = yes var:ywc_c06_signatory ?= 1 NOT = { has_variable = ywc_c06_outcome } } } } set_variable = { name = ywc_c06_settle_choice value = 2 } set_variable = { name = ywc_c06_outcome value = 2 } set_variable = { name = ywc_c06_stage value = 1511 } set_variable = { name = ywc_c06_pending value = 1511 } set_variable = { name = ywc_c06_wait_age value = 0 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 80 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "局部互市会约落款，未签各方按旧例自理。",
+                "en": "The limited trade compact is signed; those who did not sign keep to the old usage."
+              }
+            },
+            {
+              "key": "keep_status_quo",
+              "label": {
+                "zh": "不出会约，保留现状",
+                "en": "Sign nothing and keep the status quo"
+              },
+              "trigger": "{ OR = { AND = { ywc_c06_pool_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_shu_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_bur_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } } } }",
+              "effect": "{ if = { limit = { OR = { AND = { ywc_c06_pool_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_shu_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } } AND = { ywc_c06_bur_at_1510 = yes NOT = { has_variable = ywc_c06_outcome } } } } ywc_c06_close_status_quo = yes } }",
+              "ai_chance": "{ base = 40 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "保留现状结案，剩余义务按旧例各归各册，正常游戏继续。",
+                "en": "The case closes with the status quo; remaining obligations stay under the old usage and normal play continues."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓落款",
+                "en": "Wait before signing"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1510 = yes ywc_c06_shu_at_1510 = yes ywc_c06_bur_at_1510 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1510 = yes ywc_c06_shu_at_1510 = yes ywc_c06_bur_at_1510 = yes } } set_variable = { name = ywc_c06_pending value = 1510 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "边务会约的三种落款",
+            "en": "Three Signatures on the Frontier Compact"
+          },
+          "reads": [
+            "holder's own signatory and execution records (share_mode, seal_choice on the proposer; response on claimants)",
+            "holder's own outcome state"
+          ],
+          "writes": [
+            "holder settle_choice, outcome, stage/pending/popup_epoch; status-quo closer releases the slot"
+          ]
+        },
+        {
+          "id": "ywc_crisis.1511",
+          "title": {
+            "zh": "贡期之后的山路",
+            "en": "The Mountain Roads after Tribute Season"
+          },
+          "desc": {
+            "zh": "会约落款之后一个整年，山路按册检验：征役是否按期限止住，贡茶折费是否实付，边务衙门的巡防开销是否有着落。SHU 签字国从本国国库实付边费；守约者留名，失约者如实记败，回写地方治理与下一轮代表权。",
+            "en": "A full year after the signatures, the mountain roads are checked against the register: did the levies stop on their term, was the tea fee actually paid, and does the frontier office's patrol spending have its funding? SHU signatories pay the frontier upkeep from their own treasury; those who kept faith keep their standing, defaults are recorded as failures, and the verdict is written back to local governance and to the next round of representation."
+          },
+          "trigger": "{ OR = { ywc_c06_pool_delivery_1511 = yes ywc_c06_shu_delivery_1511 = yes ywc_c06_bur_delivery_1511 = yes } }",
+          "immediate": "{ if = { limit = { OR = { ywc_c06_pool_delivery_1511 = yes ywc_c06_shu_delivery_1511 = yes ywc_c06_bur_delivery_1511 = yes } } ywc_c06_receive_major = yes } }",
+          "options": [
+            {
+              "key": "audit_kept",
+              "label": {
+                "zh": "检查执行，回写治理与边费",
+                "en": "Audit the execution and write back governance and frontier costs"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1511 = yes ywc_c06_shu_at_1511 = yes ywc_c06_bur_at_1511 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1511 = yes ywc_c06_shu_at_1511 = yes ywc_c06_bur_at_1511 = yes } } if = { limit = { c:SHU ?= this var:ywc_c06_signatory ?= 1 gold_reserves >= 200 } add_treasury = -200 set_variable = { name = ywc_c06_border_upkeep_paid value = 1 } } ywc_c06_aftermath_kept = yes } }",
+              "ai_chance": "{ base = 90 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "守约结论写入各参与国之册；SHU 签字国实付边费 200。",
+                "en": "The kept verdict is written into every participant's register; SHU signatories pay 200 in frontier upkeep."
+              }
+            },
+            {
+              "key": "admit_broken",
+              "label": {
+                "zh": "承认履约失败，记录欠账",
+                "en": "Admit fulfillment failed and record the arrears"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1511 = yes ywc_c06_shu_at_1511 = yes ywc_c06_bur_at_1511 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1511 = yes ywc_c06_shu_at_1511 = yes ywc_c06_bur_at_1511 = yes } } ywc_c06_aftermath_broken = yes } }",
+              "ai_chance": "{ base = 30 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "履约失败结案，欠账如实记录，正常游戏继续。",
+                "en": "The case closes as fulfillment failed; the arrears are recorded as they are and normal play continues."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓结算",
+                "en": "Wait before the final audit"
+              },
+              "trigger": "{ OR = { ywc_c06_pool_at_1511 = yes ywc_c06_shu_at_1511 = yes ywc_c06_bur_at_1511 = yes } }",
+              "effect": "{ if = { limit = { OR = { ywc_c06_pool_at_1511 = yes ywc_c06_shu_at_1511 = yes ywc_c06_bur_at_1511 = yes } } set_variable = { name = ywc_c06_pending value = 1511 } change_variable = { name = ywc_c06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 20 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "贡期之后的山路",
+            "en": "The Mountain Roads after Tribute Season"
+          },
+          "reads": [
+            "holder's own treasury via gold_reserves (SHU signatory upkeep)",
+            "participation state of every country via explicit c: blocks in the aftermath effects"
+          ],
+          "writes": [
+            "holder aftermath, outcome (broken), stage 1516 terminal; shared verdict on all participants (bilateral, one effect); capacity release"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_c06_passes_full",
+        "v03_c06_passes_limited",
+        "v03_c06_passes_status_quo",
+        "v03_c06_passes_withdrawn",
+        "v03_c06_passes_fulfillment_failed",
+        "v03_c06_passes_no_talks"
+      ],
+      "legacy_links": []
     }
   ]
 }

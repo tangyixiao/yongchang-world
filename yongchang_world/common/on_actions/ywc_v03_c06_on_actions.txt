@@ -1,0 +1,104 @@
+﻿# Crisis C06 滇缅山口与双重贡赋: entry hooks. Initialization follows the shared
+# startup pattern with per-country exists guards; the monthly hook adds the
+# crisis journals only after real eligibility, one instance per holder country.
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c06_after_lobby } }
+
+ywc_v03_c06_after_lobby = {
+	effect = {
+		every_country = {
+			limit = {
+				# Exists-check comparisons: a tag absent from the current world must
+				# not raise "Event target link c returned an unset scope".
+				OR = {
+					c:SHU ?= this
+					c:BUR ?= this
+					c:KTG ?= this
+					c:WAA ?= this
+					c:KCH ?= this
+					c:SHD ?= this
+					c:LJG ?= this
+					c:DLI ?= this
+					c:AHM ?= this
+				}
+			}
+			ywc_v03_initialize_country = yes
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c06_monthly } }
+
+ywc_v03_c06_monthly = {
+	effect = {
+		# Journal 1: registration and replies. A hill country opens the case when
+		# its settled prior line clashes with a live SHU or Burma order; SHU,
+		# Burma and linked hill countries enter when mounted by the proposer.
+		# Every holder branch of JE1's is_shown_when_inactive has a matching
+		# add_journal_entry path here.
+		if = {
+			limit = {
+				ywc_c06_case_ready_local = yes
+				NOT = { has_journal_entry = ywc_je_v03_c06_pass_two_orders }
+			}
+			add_journal_entry = { type = ywc_je_v03_c06_pass_two_orders }
+		}
+		if = {
+			limit = {
+				c:SHU ?= this
+				var:ywc_c06_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c06_started }
+				NOT = { has_journal_entry = ywc_je_v03_c06_pass_two_orders }
+			}
+			add_journal_entry = { type = ywc_je_v03_c06_pass_two_orders }
+		}
+		if = {
+			limit = {
+				c:BUR ?= this
+				var:ywc_c06_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c06_started }
+				NOT = { has_journal_entry = ywc_je_v03_c06_pass_two_orders }
+			}
+			add_journal_entry = { type = ywc_je_v03_c06_pass_two_orders }
+		}
+		if = {
+			limit = {
+				ywc_c06_is_pool_tag = yes
+				var:ywc_c06_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c06_started }
+				NOT = { has_journal_entry = ywc_je_v03_c06_pass_two_orders }
+			}
+			add_journal_entry = { type = ywc_je_v03_c06_pass_two_orders }
+		}
+		# Journal 2: shares and council mandate, only for countries mounted onto
+		# the execution phase.
+		if = {
+			limit = {
+				has_variable = ywc_c06_started
+				var:ywc_c06_shares_open ?= 1
+				ywc_c06_is_participant = yes
+				NOT = { has_variable = ywc_c06_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c06_local_council_mandate }
+			}
+			add_journal_entry = { type = ywc_je_v03_c06_local_council_mandate }
+		}
+		# Journal 3: transit conflict, seal, renegotiation, settlement and
+		# aftermath review.
+		if = {
+			limit = {
+				has_variable = ywc_c06_started
+				var:ywc_c06_review_open ?= 1
+				ywc_c06_is_participant = yes
+				NOT = { has_variable = ywc_c06_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c06_frontier_precedent_bounds }
+			}
+			add_journal_entry = { type = ywc_je_v03_c06_frontier_precedent_bounds }
+		}
+	}
+}
