@@ -1,0 +1,58 @@
+﻿# Theme T10 "A Trade Note's Boundary": shared partner and phase guards.
+# JHG is the jurisdiction country (JE owner); DMG is the trade country.
+
+# Partner reachability: DMG must be alive and still diplomatically relevant
+# to JHG. Usable from JHG scope and from inside c:JHG blocks.
+ywc_t10_partner_current = {
+ c:DMG ?= { is_country_alive = yes has_diplomatic_relevance = c:JHG }
+}
+
+# Entry: JHG holds a real staffed port and trade center, its customs courts
+# have a real staffing gap for the claim to land in, and DMG has its own
+# port or trade presence so the route is real on both ends.
+ywc_t10_entry_ready = {
+ c:JHG ?= this
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_port occupancy >= 0.5 } }
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_trade_center occupancy >= 0.3 } }
+ any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_government_administration occupancy < 0.6 } }
+ c:DMG = {
+  is_country_alive = yes
+  has_diplomatic_relevance = c:JHG
+  OR = {
+   any_scope_state = { owner = c:DMG any_scope_building = { is_building_type = building_port occupancy >= 0.3 } }
+   any_scope_state = { owner = c:DMG any_scope_building = { is_building_type = building_trade_center occupancy >= 0.3 } }
+  }
+ }
+}
+
+# Dongming actually sent a consular agent (its own recorded choice).
+ywc_t10_consul_present = {
+ c:DMG ?= { is_country_alive = yes var:ywc_t10_dmg_support ?= 1 }
+}
+
+# JHG-side delivery: owner state only; no partner condition, so every JHG
+# stage stays deliverable even when DMG is gone.
+ywc_t10_jhg_delivery_1450 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1450 var:ywc_t10_pending ?= 1450 ywc_v03_can_deliver_major = yes }
+ywc_t10_jhg_at_1450 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1450 scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch }
+ywc_t10_jhg_delivery_1452 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1452 var:ywc_t10_pending ?= 1452 ywc_v03_can_deliver_major = yes }
+ywc_t10_jhg_at_1452 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1452 scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch }
+ywc_t10_jhg_delivery_1453 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1453 var:ywc_t10_pending ?= 1453 ywc_v03_can_deliver_major = yes }
+ywc_t10_jhg_at_1453 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1453 scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch }
+ywc_t10_jhg_delivery_1455 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1455 var:ywc_t10_pending ?= 1455 ywc_v03_can_deliver_major = yes }
+ywc_t10_jhg_at_1455 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1455 scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch }
+ywc_t10_jhg_delivery_1457 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1457 var:ywc_t10_pending ?= 1457 ywc_v03_can_deliver_major = yes }
+ywc_t10_jhg_at_1457 = { c:JHG ?= this has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1457 scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch }
+
+# JHG still waiting at a hand-off stage (withdraw-option guard on DMG side).
+ywc_t10_jhg_waits_1451 = { c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1451 } }
+ywc_t10_jhg_waits_1454 = { c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1454 } }
+ywc_t10_jhg_waits_1456 = { c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1456 } }
+
+# DMG-side delivery: pending on DMG, mirrored stage on the JHG owner, and
+# mutual reachability so the request cannot fire at a vanished partner.
+ywc_t10_dmg_delivery_1451 = { c:DMG ?= this var:ywc_t10_pending ?= 1451 ywc_v03_can_deliver_major = yes c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1451 ywc_t10_partner_current = yes } }
+ywc_t10_dmg_at_1451 = { c:DMG ?= this scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1451 ywc_t10_partner_current = yes } }
+ywc_t10_dmg_delivery_1454 = { c:DMG ?= this var:ywc_t10_pending ?= 1454 ywc_v03_can_deliver_major = yes c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1454 ywc_t10_partner_current = yes } }
+ywc_t10_dmg_at_1454 = { c:DMG ?= this scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1454 ywc_t10_partner_current = yes } }
+ywc_t10_dmg_delivery_1456 = { c:DMG ?= this var:ywc_t10_pending ?= 1456 ywc_v03_can_deliver_major = yes c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1456 ywc_t10_partner_current = yes } }
+ywc_t10_dmg_at_1456 = { c:DMG ?= this scope:ywc_t10_popup_epoch ?= var:ywc_t10_popup_epoch c:JHG ?= { is_country_alive = yes has_journal_entry = ywc_je_v03_t10_trade_jurisdiction var:ywc_t10_stage ?= 1456 ywc_t10_partner_current = yes } }
