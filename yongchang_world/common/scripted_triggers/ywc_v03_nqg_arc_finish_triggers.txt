@@ -1,0 +1,30 @@
+﻿# ---------------------------------------------------------------------------
+# v03_nqg_island_representation epilogue pair (ywc_nqg.1208 / ywc_nqg.1209)
+#
+# Gates for the island-seat line's settled aftermath events. The arc machine
+# itself (ywc_nqg.1200..1207, its two journal entries and the native
+# ywc_v03_nqg_* helpers) is untouched: these triggers only read the arc's
+# settled outcome interface plus this pair's own finish markers, so the
+# epilogue can never re-enter the open arc or fire twice.
+#
+# Finish markers owned by this pair:
+#   ywc_nqg_island_finish_stage      1208 while the generational question is
+#                                    open, 1209 once a disposition is chosen
+#   ywc_nqg_island_finish_seen       1 after ywc_nqg.1208 has been delivered
+#   ywc_nqg_island_finish_continuity 1 charter carried / 2 capped seats /
+#                                    3 old terms restored / 4 lapsed
+#   ywc_nqg_island_finish_waiting    1 while the player defers a round
+#   ywc_nqg_island_finish_sealed     1 once ywc_nqg.1209 archives the record
+# ---------------------------------------------------------------------------
+
+# Entry gate for ywc_nqg.1208. The arc must be settled (its outcome snapshot
+# exists), the question not yet asked and not yet archived. A future delivery
+# hook should additionally gate on ywc_v03_can_deliver_major before firing,
+# exactly like the arc's journal pulses do.
+ywc_nqg_island_finish_entry_ready = { has_variable = ywc_v03_nqg_v03_nqg_island_representation_settled NOT = { has_variable = ywc_nqg_island_finish_seen } NOT = { has_variable = ywc_nqg_island_finish_sealed } }
+
+# Stage guards, mirroring the arc's own stage_NNNN / at_NNNN pattern.
+ywc_nqg_island_finish_stage_1208 = { has_variable = ywc_nqg_island_finish_seen var:ywc_nqg_island_finish_stage = 1208 NOT = { has_variable = ywc_nqg_island_finish_sealed } }
+ywc_nqg_island_finish_at_1208 = { ywc_nqg_island_finish_stage_1208 = yes }
+ywc_nqg_island_finish_stage_1209 = { has_variable = ywc_nqg_island_finish_seen var:ywc_nqg_island_finish_stage = 1209 has_variable = ywc_nqg_island_finish_continuity NOT = { has_variable = ywc_nqg_island_finish_sealed } }
+ywc_nqg_island_finish_at_1209 = { ywc_nqg_island_finish_stage_1209 = yes }
