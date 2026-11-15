@@ -1,0 +1,107 @@
+﻿# Crisis C02 黑水边疆: entry hooks. Initialization follows the shared startup
+# pattern with per-country exists guards; the monthly hook adds the crisis
+# journals only after real eligibility, one instance per holder country. MGL is
+# initialized too: it holds the guarantor answer (event 1103) once invited.
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c02_after_lobby } }
+
+ywc_v03_c02_after_lobby = {
+	effect = {
+		if = {
+			limit = { exists = c:NQG }
+			c:NQG = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:SHU }
+			c:SHU = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:AMR }
+			c:AMR = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:SOL }
+			c:SOL = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:HUL }
+			c:HUL = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+		if = {
+			limit = { exists = c:MGL }
+			c:MGL = {
+				if = { limit = { is_country_alive = yes } ywc_v03_initialize_country = yes }
+			}
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c02_monthly } }
+
+ywc_v03_c02_monthly = {
+	effect = {
+		# Journal 1: investigation and testimonies. NQG opens the case by
+		# default; SHU organizes the fallback case when NQG is not on its
+		# winter-court line; AMR/SOL organize only when neither is available.
+		# Local participants and MGL join through the mounted case_open flag.
+		if = {
+			limit = {
+				OR = {
+					AND = { c:NQG ?= this ywc_c02_case_ready_nqg = yes }
+					AND = { c:SHU ?= this ywc_c02_case_ready_shu = yes }
+					AND = { c:AMR ?= this ywc_c02_case_ready_amr = yes }
+					AND = { c:SOL ?= this ywc_c02_case_ready_sol = yes }
+				}
+				NOT = { has_journal_entry = ywc_je_v03_c02_blackwater_testimonies }
+			}
+			add_journal_entry = { type = ywc_je_v03_c02_blackwater_testimonies }
+		}
+		if = {
+			limit = {
+				OR = {
+					AND = { OR = { c:SHU ?= this c:AMR ?= this c:SOL ?= this c:HUL ?= this } var:ywc_c02_case_open ?= 1 }
+					AND = { c:MGL ?= this var:ywc_c02_case_open ?= 1 }
+				}
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c02_started }
+				NOT = { has_journal_entry = ywc_je_v03_c02_blackwater_testimonies }
+			}
+			add_journal_entry = { type = ywc_je_v03_c02_blackwater_testimonies }
+		}
+		# Journal 2: river-defense and border-trade ledger, only for countries
+		# that entered the execution phase.
+		if = {
+			limit = {
+				has_variable = ywc_c02_started
+				var:ywc_c02_ledger_open ?= 1
+				OR = { c:NQG ?= this c:SHU ?= this c:AMR ?= this c:SOL ?= this c:HUL ?= this c:MGL ?= this }
+				NOT = { has_variable = ywc_c02_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c02_river_defense_ledger }
+			}
+			add_journal_entry = { type = ywc_je_v03_c02_river_defense_ledger }
+		}
+		# Journal 3: fulfillment conflicts, renegotiation, settlement and
+		# aftermath review.
+		if = {
+			limit = {
+				has_variable = ywc_c02_started
+				var:ywc_c02_review_open ?= 1
+				OR = { c:NQG ?= this c:SHU ?= this c:AMR ?= this c:SOL ?= this c:HUL ?= this c:MGL ?= this }
+				NOT = { has_variable = ywc_c02_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c02_spring_flood_agreement }
+			}
+			add_journal_entry = { type = ywc_je_v03_c02_spring_flood_agreement }
+		}
+	}
+}
