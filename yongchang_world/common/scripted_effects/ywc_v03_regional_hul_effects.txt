@@ -1,0 +1,88 @@
+﻿# Regional HUL (F03) support effects. Capacity claims are guarded and single
+# (matching the T01 pattern: possible gates auto-activation, the claim adds the
+# shared counters exactly once); releases subtract them back under a released
+# latch with clamps. Journal B opens only from a real winter-terms choice,
+# never at startup. All pending/stage writes live on the HUL country scope;
+# no effect here writes inside a foreign c:TAG block.
+ywc_v03_regional_hul_claim_a = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_hul_a_started }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+		}
+		set_variable = { name = ywc_hul_a_started value = 1 }
+		set_variable = { name = ywc_hul_a_stage value = 1200 }
+		set_variable = { name = ywc_hul_a_pending value = 1200 }
+		set_variable = { name = ywc_hul_a_captured_income value = yearly_gross_income }
+		change_variable = { name = ywc_hul_a_captured_income divide = 52 }
+		clamp_variable = { name = ywc_hul_a_captured_income min = 100 max = 1000000000 }
+		set_variable = { name = ywc_hul_a_fee value = var:ywc_hul_a_captured_income }
+		set_variable = { name = ywc_hul_a_half_fee value = var:ywc_hul_a_captured_income }
+		change_variable = { name = ywc_hul_a_half_fee divide = 2 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	}
+}
+
+ywc_v03_regional_hul_release_a = {
+	if = {
+		limit = {
+			var:ywc_hul_a_started ?= 1
+			NOT = { has_variable = ywc_hul_a_released }
+		}
+		set_variable = { name = ywc_hul_a_released value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+ywc_v03_regional_hul_claim_b = {
+	ywc_v03_initialize_country = yes
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_hul_b_started }
+			var:ywc_v03_active_arc_count < 3
+			var:ywc_v03_visible_task_count < 6
+		}
+		set_variable = { name = ywc_hul_b_started value = 1 }
+		set_variable = { name = ywc_hul_b_stage value = 1203 }
+		set_variable = { name = ywc_hul_b_pending value = 1203 }
+		set_variable = { name = ywc_hul_b_captured_income value = yearly_gross_income }
+		change_variable = { name = ywc_hul_b_captured_income divide = 52 }
+		clamp_variable = { name = ywc_hul_b_captured_income min = 100 max = 1000000000 }
+		set_variable = { name = ywc_hul_b_fee value = var:ywc_hul_b_captured_income }
+		set_variable = { name = ywc_hul_b_half_fee value = var:ywc_hul_b_captured_income }
+		change_variable = { name = ywc_hul_b_half_fee divide = 2 }
+		change_variable = { name = ywc_v03_active_arc_count add = 1 }
+		change_variable = { name = ywc_v03_visible_task_count add = 1 }
+	}
+}
+
+ywc_v03_regional_hul_release_b = {
+	if = {
+		limit = {
+			var:ywc_hul_b_started ?= 1
+			NOT = { has_variable = ywc_hul_b_released }
+		}
+		set_variable = { name = ywc_hul_b_released value = 1 }
+		change_variable = { name = ywc_v03_active_arc_count add = -1 }
+		change_variable = { name = ywc_v03_visible_task_count add = -1 }
+		clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 }
+		clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 }
+	}
+}
+
+ywc_v03_regional_hul_open_b = {
+	if = {
+		limit = {
+			NOT = { has_journal_entry = ywc_je_v03_hul_b }
+			NOT = { has_variable = ywc_hul_b_started }
+			is_country_alive = yes
+		}
+		add_journal_entry = { type = ywc_je_v03_hul_b }
+	}
+}
