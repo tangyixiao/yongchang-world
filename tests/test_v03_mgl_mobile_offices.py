@@ -114,7 +114,10 @@ class MglMobileOfficeCatalogTests(unittest.TestCase):
         arc = rows[0]
         self.assertEqual(arc["era"], "middle")
         self.assertEqual([event["id"] for event in arc["events"]], [f"ywc_mng.{n}" for n in range(1100, 1106)])
-        self.assertEqual([journal["id"] for journal in arc["journals"]], ["ywc_je_v03_mgl_mobile_offices"])
+        # PR #115 registers the observation-only review JE beside the register JE,
+        # bound in exactly that order.
+        self.assertEqual([journal["id"] for journal in arc["journals"]],
+                         ["ywc_je_v03_mgl_mobile_offices", "ywc_je_v03_mgl_mobile_offices_review"])
         self.assertEqual(arc["outcomes"], ["mobile_circuit", "joint_banner_office", "limited_registry", "withdrawn"])
 
     def test_real_three_way_outcomes_are_paid_and_have_distinct_long_term_modifiers(self):
@@ -210,7 +213,9 @@ class MglMobileOfficeCatalogTests(unittest.TestCase):
         journals, events = foundation._native_business_projection(catalog)
         self.assertEqual((len(journals), len(events)), (6, 24))
         all_journals, all_events = foundation._native_business_projection(catalog, include_mobile=True)
-        self.assertEqual((len(all_journals), len(all_events)), (7, 30))
+        # PR #115 adds the mobile review JE, so the registered mobile projection
+        # carries seven journals over the same six events.
+        self.assertEqual((len(all_journals), len(all_events)), (8, 30))
 
     def test_actual_rendered_mobile_final_event_remains_live_until_close_choice(self):
         from copy import deepcopy

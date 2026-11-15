@@ -17,6 +17,19 @@ ARCS = {
     "v03_nqg_winter_court": (1000, 1032, 13, 3, "winter"),
     "v03_nqg_hunting_rights": (1010, 1015, 6, 1, "hunting"),
     "v03_nqg_northern_port": (1020, 1029, 10, 2, "port"),
+    # The merged NQG procurement premium PR and the ten-country ship added the
+    # middle/late arcs; the fixture follows each arc's real catalog shape and its
+    # own pending/close helper prefix (ywc_nqg_<short>_pending_event,
+    # ywc_nqg_<short>_close_*), and NqgWorldFactsRuntime needs every catalog arc
+    # listed here to build its journal_started map.
+    "v03_nqg_strait_licenses": (1100, 1105, 6, 1, "strait"),
+    "v03_nqg_timber_migrants": (1110, 1119, 10, 3, "timber"),
+    "v03_nqg_banner_school": (1120, 1127, 8, 2, "banner"),
+    # PR #116 (arc-finish delivery) extended the island representation arc to
+    # ids 1200-1209 (ten events) with its island_seat register/review JE pair.
+    "v03_nqg_island_representation": (1200, 1209, 10, 2, "island"),
+    "v03_nqg_protection_terms": (1210, 1215, 6, 2, "protect"),
+    "v03_nqg_dynastic_memory": (1220, 1227, 8, 2, "dynasty"),
 }
 # The winter arc's disjoint 1030-1039 range holds the real aid response (1030),
 # the local aid ledger (1031) and the hidden repayment endpoint (1032). They are
@@ -537,7 +550,15 @@ class NqgWorldFactsRuntime(PulseWorld):
             short = ARCS[arc["slug"]][4]
             started = {"winter":"ywc_v03_nqg_v03_nqg_winter_court_started",
                        "hunting":"ywc_v03_nqg_v03_nqg_hunting_rights_started",
-                       "port":"ywc_v03_nqg_v03_nqg_northern_port_started"}[short]
+                       "port":"ywc_v03_nqg_v03_nqg_northern_port_started",
+                       # The middle/late arcs reuse the same slot pattern with
+                       # their own slot names (ywc_v03_nqg_v03_nqg_<slot>_started).
+                       "strait":"ywc_v03_nqg_v03_nqg_strait_licenses_started",
+                       "timber":"ywc_v03_nqg_v03_nqg_timber_migrants_started",
+                       "banner":"ywc_v03_nqg_v03_nqg_banner_school_started",
+                       "island":"ywc_v03_nqg_v03_nqg_island_representation_started",
+                       "protect":"ywc_v03_nqg_v03_nqg_protection_terms_started",
+                       "dynasty":"ywc_v03_nqg_v03_nqg_dynastic_memory_started"}[short]
             for journal in arc["journals"]:
                 self.journal_started[journal["id"]] = started
 
