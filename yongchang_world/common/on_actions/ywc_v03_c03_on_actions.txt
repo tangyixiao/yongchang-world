@@ -1,0 +1,78 @@
+﻿# Crisis C03 草原与高原商路: entry hooks. Initialization follows the shared
+# startup pattern with per-country exists guards; the monthly hook adds the
+# crisis journals only after real eligibility, one instance per holder country.
+
+on_game_started_after_lobby = { on_actions = { ywc_v03_c03_after_lobby } }
+
+ywc_v03_c03_after_lobby = {
+	effect = {
+		every_country = {
+			limit = {
+				# Exists-check comparisons: a tag absent from the current world must
+				# not raise "Event target link c returned an unset scope".
+				OR = {
+					c:OIR ?= this
+					c:MGL ?= this
+					c:TIB ?= this
+					c:SHU ?= this
+				}
+			}
+			ywc_v03_initialize_country = yes
+		}
+	}
+}
+
+on_monthly_pulse_country = { on_actions = { ywc_v03_c03_monthly } }
+
+ywc_v03_c03_monthly = {
+	effect = {
+		# Journal 1: investigation and transit answers. OIR opens when its settled
+		# routes reality (toll, road or pasture line) meets two connected route
+		# partners; MGL/TIB/SHU enter when the proposer's opening mounted their
+		# case_open marker (review contract: every invited holder keeps a
+		# reachable add path of its own).
+		if = {
+			limit = {
+				ywc_c03_case_ready_oir = yes
+				NOT = { has_journal_entry = ywc_je_v03_c03_caravan_routes_reality }
+			}
+			add_journal_entry = { type = ywc_je_v03_c03_caravan_routes_reality }
+		}
+		if = {
+			limit = {
+				OR = {
+					c:MGL ?= this
+					c:TIB ?= this
+					c:SHU ?= this
+				}
+				var:ywc_c03_case_open ?= 1
+				has_variable = ywc_v03_initialized
+				ywc_v03_has_capacity = yes
+				NOT = { has_variable = ywc_c03_started }
+				NOT = { has_journal_entry = ywc_je_v03_c03_caravan_routes_reality }
+			}
+			add_journal_entry = { type = ywc_je_v03_c03_caravan_routes_reality }
+		}
+		# Journal 2: funding and execution, only for countries that entered the
+		# signatory funding phase (sponsors_open).
+		if = {
+			limit = {
+				has_variable = ywc_c03_started
+				var:ywc_c03_sponsors_open ?= 1
+				NOT = { has_variable = ywc_c03_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c03_relay_station_sponsors }
+			}
+			add_journal_entry = { type = ywc_je_v03_c03_relay_station_sponsors }
+		}
+		# Journal 3: conflicts, renegotiation, settlement and aftermath.
+		if = {
+			limit = {
+				has_variable = ywc_c03_started
+				var:ywc_c03_review_open ?= 1
+				NOT = { has_variable = ywc_c03_outcome }
+				NOT = { has_journal_entry = ywc_je_v03_c03_transit_rights_next_season }
+			}
+			add_journal_entry = { type = ywc_je_v03_c03_transit_rights_next_season }
+		}
+	}
+}

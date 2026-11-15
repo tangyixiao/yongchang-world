@@ -1,0 +1,233 @@
+﻿# Crisis C03 草原与高原商路: scripted effects. Every cross-country state
+# transition writes BOTH sides inside one effect, each cross-scope write is
+# guarded by an if-limit that re-checks the target's live state, and no effect
+# removes ywc_c03_pending right before a gated trigger_event.
+
+# Shared receipt: consume the pending marker, advance the popup epoch, save the
+# epoch scope for the option at_ triggers, and start the 90-day major-event
+# cooldown. Called only from event immediates whose limit already verified the
+# delivery trigger, so the removal never precedes a gated trigger_event.
+ywc_c03_receive_major = { remove_variable = ywc_c03_pending if = { limit = { NOT = { has_variable = ywc_c03_popup_epoch } } set_variable = { name = ywc_c03_popup_epoch value = 0 } } change_variable = { name = ywc_c03_popup_epoch add = 1 } save_scope_value_as = { name = ywc_c03_popup_epoch value = var:ywc_c03_popup_epoch } ywc_v03_mark_major_delivered = yes }
+
+# Release this country's single crisis arc slot; only effective once.
+ywc_c03_release_capacity = { if = { limit = { var:ywc_c03_started ?= 1 NOT = { has_variable = ywc_c03_released } } set_variable = { name = ywc_c03_released value = 1 } change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 } clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } } }
+
+# Terminal closers. Pending is cleared only here, where no further delivery
+# depends on it, together with the final outcome and the slot release.
+ywc_c03_close_status_quo = { set_variable = { name = ywc_c03_outcome value = 3 } set_variable = { name = ywc_c03_routes_done value = 1 } set_variable = { name = ywc_c03_wait_age value = 0 } if = { limit = { has_variable = ywc_c03_pending } remove_variable = ywc_c03_pending } ywc_c03_release_capacity = yes }
+ywc_c03_close_withdrawn = { set_variable = { name = ywc_c03_outcome value = 4 } set_variable = { name = ywc_c03_routes_done value = 1 } set_variable = { name = ywc_c03_wait_age value = 0 } if = { limit = { has_variable = ywc_c03_pending } remove_variable = ywc_c03_pending } ywc_c03_release_capacity = yes }
+ywc_c03_close_no_talks = { set_variable = { name = ywc_c03_outcome value = 6 } set_variable = { name = ywc_c03_routes_done value = 1 } set_variable = { name = ywc_c03_wait_age value = 0 } if = { limit = { has_variable = ywc_c03_pending } remove_variable = ywc_c03_pending } ywc_c03_release_capacity = yes }
+
+# Initiator (OIR): after the audit settles, open the transit round. The
+# initiator mounts its own waiting stage (1213) and, in the same effect, mounts
+# the answer stage on every connected, still-living responder and the funding
+# stage on the tariff holder.
+ywc_c03_open_transit_rounds = {
+	set_variable = { name = ywc_c03_stage value = 1213 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	if = {
+		limit = { c:MGL ?= { is_country_alive = yes has_variable = ywc_v03_initialized ywc_c03_contact_oir = yes NOT = { has_variable = ywc_c03_outcome } NOT = { has_variable = ywc_c03_pending } } }
+		set_variable = { name = ywc_c03_invited_mgl value = 1 }
+		c:MGL = { set_variable = { name = ywc_c03_stage value = 1202 } set_variable = { name = ywc_c03_pending value = 1202 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:TIB ?= { is_country_alive = yes has_variable = ywc_v03_initialized ywc_c03_contact_oir = yes NOT = { has_variable = ywc_c03_outcome } NOT = { has_variable = ywc_c03_pending } } }
+		set_variable = { name = ywc_c03_invited_tib value = 1 }
+		c:TIB = { set_variable = { name = ywc_c03_stage value = 1203 } set_variable = { name = ywc_c03_pending value = 1203 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_v03_initialized ywc_c03_contact_oir = yes NOT = { has_variable = ywc_c03_outcome } NOT = { has_variable = ywc_c03_pending } } }
+		c:SHU = { set_variable = { name = ywc_c03_signatory value = 1 } set_variable = { name = ywc_c03_routes_done value = 1 } set_variable = { name = ywc_c03_sponsors_open value = 1 } set_variable = { name = ywc_c03_stage value = 1204 } set_variable = { name = ywc_c03_pending value = 1204 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+}
+
+# Initiator: all invited responders have answered (or the record elapsed).
+# The initiator signs its own roster and enters the funding stage, and in the
+# same effect routes every invited living responder: unanswered or declining
+# responders move to the non-signatory review wait (stage 1214, overwriting any
+# stale stage instead of deleting pending), acceptors only gain the sponsor
+# marker they already carry into their own mounted funding stage.
+ywc_c03_init_after_responses = {
+	set_variable = { name = ywc_c03_routes_done value = 1 }
+	set_variable = { name = ywc_c03_signatory value = 1 }
+	set_variable = { name = ywc_c03_sponsors_open value = 1 }
+	set_variable = { name = ywc_c03_stage value = 1204 }
+	set_variable = { name = ywc_c03_pending value = 1204 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	if = {
+		limit = { var:ywc_c03_invited_mgl ?= 1 c:MGL ?= { is_country_alive = yes OR = { NOT = { has_variable = ywc_c03_mgl_response } var:ywc_c03_mgl_response ?= 3 } NOT = { has_variable = ywc_c03_outcome } } }
+		c:MGL = { set_variable = { name = ywc_c03_review_open value = 1 } set_variable = { name = ywc_c03_stage value = 1214 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c03_invited_mgl ?= 1 c:MGL ?= { is_country_alive = yes OR = { var:ywc_c03_mgl_response ?= 1 var:ywc_c03_mgl_response ?= 2 } } }
+		c:MGL = { set_variable = { name = ywc_c03_sponsors_open value = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c03_invited_tib ?= 1 c:TIB ?= { is_country_alive = yes OR = { NOT = { has_variable = ywc_c03_tib_response } var:ywc_c03_tib_response ?= 3 } NOT = { has_variable = ywc_c03_outcome } } }
+		c:TIB = { set_variable = { name = ywc_c03_review_open value = 1 } set_variable = { name = ywc_c03_stage value = 1214 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { var:ywc_c03_invited_tib ?= 1 c:TIB ?= { is_country_alive = yes OR = { var:ywc_c03_tib_response ?= 1 var:ywc_c03_tib_response ?= 2 } } }
+		c:TIB = { set_variable = { name = ywc_c03_sponsors_open value = 1 } }
+	}
+}
+
+# Each signatory: after the contract mode is chosen, record the execution
+# result and route onward by role. Single-country writes only; the OIR
+# narrowing event then mounts the renegotiation stages on the others.
+ywc_c03_after_contract_route = {
+	set_variable = { name = ywc_c03_exec_done value = 1 }
+	set_variable = { name = ywc_c03_review_open value = 1 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	if = {
+		limit = { var:ywc_c03_role ?= 1 }
+		set_variable = { name = ywc_c03_stage value = 1208 }
+		set_variable = { name = ywc_c03_pending value = 1208 }
+	}
+	else_if = {
+		limit = { var:ywc_c03_role ?= 2 }
+		set_variable = { name = ywc_c03_stage value = 1206 }
+		set_variable = { name = ywc_c03_pending value = 1206 }
+	}
+	else_if = {
+		limit = { var:ywc_c03_role ?= 4 }
+		set_variable = { name = ywc_c03_stage value = 1207 }
+		set_variable = { name = ywc_c03_pending value = 1207 }
+	}
+	else = {
+		set_variable = { name = ywc_c03_stage value = 1215 }
+	}
+}
+
+# Initiator: open the renegotiation window. The initiator mounts its own
+# settlement wait and, in the same effect, mounts the tariff answer stage on
+# the living signatory tariff holder and the settlement wait on the other
+# living signatories, skipping anyone still carrying a pending event.
+ywc_c03_open_renegotiation = {
+	set_variable = { name = ywc_c03_stage value = 1215 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	if = {
+		limit = { c:SHU ?= { is_country_alive = yes var:ywc_c03_signatory ?= 1 NOT = { has_variable = ywc_c03_outcome } NOT = { has_variable = ywc_c03_pending } } }
+		c:SHU = { set_variable = { name = ywc_c03_stage value = 1209 } set_variable = { name = ywc_c03_pending value = 1209 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:MGL ?= { is_country_alive = yes var:ywc_c03_signatory ?= 1 NOT = { has_variable = ywc_c03_outcome } NOT = { has_variable = ywc_c03_pending } } }
+		c:MGL = { set_variable = { name = ywc_c03_stage value = 1215 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:TIB ?= { is_country_alive = yes var:ywc_c03_signatory ?= 1 NOT = { has_variable = ywc_c03_outcome } NOT = { has_variable = ywc_c03_pending } } }
+		c:TIB = { set_variable = { name = ywc_c03_stage value = 1215 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+}
+
+# Tariff holder (SHU): settle the last levy answer and, in the same effect,
+# mount the seal stage on itself and on every living signatory still waiting
+# at the settlement wait. Stages mid-delivery are skipped; their own monthly
+# pulse fast-path re-mounts them once the settlement window is visible.
+ywc_c03_open_settlement = {
+	set_variable = { name = ywc_c03_stage value = 1210 }
+	set_variable = { name = ywc_c03_pending value = 1210 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	if = {
+		limit = { c:OIR ?= { is_country_alive = yes var:ywc_c03_signatory ?= 1 NOT = { has_variable = ywc_c03_outcome } var:ywc_c03_stage ?= 1215 } }
+		c:OIR = { set_variable = { name = ywc_c03_stage value = 1210 } set_variable = { name = ywc_c03_pending value = 1210 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:MGL ?= { is_country_alive = yes var:ywc_c03_signatory ?= 1 NOT = { has_variable = ywc_c03_outcome } var:ywc_c03_stage ?= 1215 } }
+		c:MGL = { set_variable = { name = ywc_c03_stage value = 1210 } set_variable = { name = ywc_c03_pending value = 1210 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+	if = {
+		limit = { c:TIB ?= { is_country_alive = yes var:ywc_c03_signatory ?= 1 NOT = { has_variable = ywc_c03_outcome } var:ywc_c03_stage ?= 1215 } }
+		c:TIB = { set_variable = { name = ywc_c03_stage value = 1210 } set_variable = { name = ywc_c03_pending value = 1210 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+	}
+}
+
+# Tariff holder (SHU): route onward after the closure answer. When the
+# initiator's renegotiation window is already open, mount the tariff answer
+# directly; otherwise wait for it at the settlement wait, where the monthly
+# pulse keeps a self-settling exit available.
+ywc_c03_after_closure_route = {
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	if = {
+		limit = { ywc_c03_renegotiation_window_open = yes }
+		set_variable = { name = ywc_c03_stage value = 1209 }
+		set_variable = { name = ywc_c03_pending value = 1209 }
+	}
+	else = {
+		set_variable = { name = ywc_c03_stage value = 1215 }
+	}
+}
+
+# Stranded signatory: the initiator is gone or silent too long, or the
+# settlement round already opened, so the country mounts its own seal stage
+# instead of waiting forever. Pending is re-armed together with the stage.
+ywc_c03_self_settle = { set_variable = { name = ywc_c03_stage value = 1210 } set_variable = { name = ywc_c03_pending value = 1210 } set_variable = { name = ywc_c03_wait_age value = 0 } change_variable = { name = ywc_c03_popup_epoch add = 1 } }
+
+# Aftermath write-back: record the verdict once on every participating country
+# that has already fixed its own outcome, so the follow-up country lines can
+# read one shared verdict. Countries still carrying a pending event (their own
+# seal or aftermath record is not done) are left untouched, and a first
+# verdict is never overwritten by a later one.
+ywc_c03_write_back_aftermath = {
+	if = { limit = { c:OIR ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:OIR = { set_variable = { name = ywc_c03_aftermath value = 1 } } }
+	if = { limit = { c:MGL ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:MGL = { set_variable = { name = ywc_c03_aftermath value = 1 } } }
+	if = { limit = { c:TIB ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:TIB = { set_variable = { name = ywc_c03_aftermath value = 1 } } }
+	if = { limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:SHU = { set_variable = { name = ywc_c03_aftermath value = 1 } } }
+}
+ywc_c03_write_back_aftermath_broken = {
+	if = { limit = { c:OIR ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:OIR = { set_variable = { name = ywc_c03_aftermath value = 2 } } }
+	if = { limit = { c:MGL ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:MGL = { set_variable = { name = ywc_c03_aftermath value = 2 } } }
+	if = { limit = { c:TIB ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:TIB = { set_variable = { name = ywc_c03_aftermath value = 2 } } }
+	if = { limit = { c:SHU ?= { is_country_alive = yes has_variable = ywc_c03_outcome NOT = { has_variable = ywc_c03_pending } NOT = { has_variable = ywc_c03_aftermath } } } c:SHU = { set_variable = { name = ywc_c03_aftermath value = 2 } } }
+}
+
+# Full or limited seal: the tariff holder routes to its own aftermath record
+# event (1211) before the aftermath verdict exists; every other signatory
+# settles into the terminal aftermath stage at once.
+ywc_c03_after_stamp = {
+	if = {
+		limit = { c:SHU ?= this OR = { var:ywc_c03_outcome ?= 1 var:ywc_c03_outcome ?= 2 } }
+		set_variable = { name = ywc_c03_stage value = 1211 }
+		set_variable = { name = ywc_c03_pending value = 1211 }
+		set_variable = { name = ywc_c03_wait_age value = 0 }
+		change_variable = { name = ywc_c03_popup_epoch add = 1 }
+	}
+	else_if = {
+		limit = { OR = { var:ywc_c03_outcome ?= 1 var:ywc_c03_outcome ?= 2 } }
+		set_variable = { name = ywc_c03_aftermath value = 1 }
+		set_variable = { name = ywc_c03_stage value = 1219 }
+		set_variable = { name = ywc_c03_wait_age value = 0 }
+		if = { limit = { has_variable = ywc_c03_pending } remove_variable = ywc_c03_pending }
+		ywc_c03_release_capacity = yes
+		ywc_c03_write_back_aftermath = yes
+	}
+}
+
+# Shared aftermath settle: record the kept verdict, release the slot and write
+# the verdict back. Called from the tariff holder's aftermath event options
+# and, through ywc_c03_after_stamp, from the other signatories' seals.
+ywc_c03_aftermath_set = {
+	set_variable = { name = ywc_c03_aftermath value = 1 }
+	set_variable = { name = ywc_c03_stage value = 1219 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c03_pending } remove_variable = ywc_c03_pending }
+	ywc_c03_release_capacity = yes
+	ywc_c03_write_back_aftermath = yes
+}
+
+# Failure seal: record the broken verdict, release the slot and write the
+# verdict back. The outcome (5) is set by the calling option first.
+ywc_c03_aftermath_broken = {
+	set_variable = { name = ywc_c03_aftermath value = 2 }
+	set_variable = { name = ywc_c03_stage value = 1219 }
+	set_variable = { name = ywc_c03_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c03_pending } remove_variable = ywc_c03_pending }
+	ywc_c03_release_capacity = yes
+	ywc_c03_write_back_aftermath_broken = yes
+}
