@@ -21,14 +21,841 @@
         "TIB"
       ],
       "depends_on": [],
-      "journals": [],
-      "events": [],
-      "outcomes": [
-        "pending"
+      "journals": [
+        {
+          "id": "ywc_je_v03_t06_one_textbook_many_readers",
+          "title": {
+            "zh": "一份教材的多种读者",
+            "en": "One Textbook, Many Readers"
+          },
+          "desc": {
+            "zh": "甘丹颇章的印经坊有可借的版片与译例；大顺须先核对本地识字、官署与学校机构，再决定是否借版、译写并自编下一册。",
+            "en": "Ganden Phodrang's printing houses hold plates and translation examples to lend; Shu must audit its own literacy, offices and school institutions before borrowing plates, translating and compiling its own next volume."
+          },
+          "script": "{\nis_shown_when_inactive = { c:SHU ?= this has_variable = ywc_v03_initialized NOT = { has_variable = ywc_t06_started } }\npossible = { c:SHU ?= this ywc_v03_has_capacity = yes ywc_t06_partner_current = yes ywc_t06_local_need = yes NOT = { has_variable = ywc_t06_started } }\nimmediate = { set_variable = { name = ywc_t06_started value = 1 } set_variable = { name = ywc_t06_stage value = 1250 } set_variable = { name = ywc_t06_pending value = 1250 } change_variable = { name = ywc_v03_active_arc_count add = 1 } change_variable = { name = ywc_v03_visible_task_count add = 1 } }\non_monthly_pulse = { effect = { if = { limit = { OR = { var:ywc_t06_stage ?= 1251 var:ywc_t06_stage ?= 1255 var:ywc_t06_stage ?= 1257 } NOT = { ywc_t06_partner_current = yes } NOT = { has_variable = ywc_t06_outcome } } c:TIB ?= { remove_variable = ywc_t06_pending } set_variable = { name = ywc_t06_stage value = 1256 } set_variable = { name = ywc_t06_pending value = 1256 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } if = { limit = { ywc_t06_shu_delivery_1250 = yes } trigger_event = { id = ywc_society.1250 } } if = { limit = { ywc_t06_shu_delivery_1252 = yes } trigger_event = { id = ywc_society.1252 } } if = { limit = { ywc_t06_shu_delivery_1253 = yes } trigger_event = { id = ywc_society.1253 } } if = { limit = { ywc_t06_shu_delivery_1254 = yes } trigger_event = { id = ywc_society.1254 } } if = { limit = { ywc_t06_shu_delivery_1256 = yes } trigger_event = { id = ywc_society.1256 } } } }\non_complete = { ywc_t06_release_capacity = yes }\non_fail = { ywc_t06_release_capacity = yes }\n}",
+          "goal": "{ OR = { var:ywc_t06_outcome ?= 1 var:ywc_t06_outcome ?= 2 } }",
+          "exit_conditions": "{ OR = { var:ywc_t06_outcome ?= 3 var:ywc_t06_outcome ?= 4 } }"
+        }
       ],
-      "legacy_links": [
-        "pending"
-      ]
+      "events": [
+        {
+          "id": "ywc_society.1250",
+          "title": {
+            "zh": "谁来读第一册",
+            "en": "Who Reads the First Volume"
+          },
+          "desc": {
+            "zh": "大顺要为学塾印第一册课本。识字不足的百姓与官署的空缺已经核对在册；是否向甘丹颇章借版，须按学校机构与语言安排自行定夺。",
+            "en": "Shu wants to print a first textbook for its schools. Its low-literacy subjects and office vacancies are already on file; whether to borrow plates from Ganden Phodrang is its own decision under school institutions and language arrangements."
+          },
+          "trigger": "{ ywc_t06_shu_delivery_1250 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_shu_delivery_1250 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "borrow",
+              "label": {
+                "zh": "向甘丹颇章请求借版",
+                "en": "Request plates from Ganden Phodrang"
+              },
+              "trigger": "{ ywc_t06_shu_at_1250 = yes ywc_t06_partner_current = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1250 = yes ywc_t06_partner_current = yes } set_variable = { name = ywc_t06_stage value = 1251 } set_variable = { name = ywc_t06_pending value = 1251 } c:TIB = { set_variable = { name = ywc_t06_pending value = 1251 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "借版请求立档；甘丹颇章将决定借出整版、只借拓片还是拒绝。",
+                "en": "The request is filed; Ganden Phodrang will decide between lending whole plates, lending rubbings only, or refusing."
+              }
+            },
+            {
+              "key": "selfprint",
+              "label": {
+                "zh": "自刻印版，不假外借",
+                "en": "Carve local plates instead of borrowing"
+              },
+              "trigger": "{ ywc_t06_shu_at_1250 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1250 = yes } set_variable = { name = ywc_t06_outcome value = 3 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "课本以本地刻版收束；借版记录以拒绝结案。",
+                "en": "The textbook closes as a local carving; the borrowing record ends as refused."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t06_shu_at_1250 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1250 = yes } set_variable = { name = ywc_t06_pending value = 1250 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "谁来读第一册",
+            "en": "Who Reads the First Volume"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "current stage and partner identity"
+          ],
+          "writes": [
+            "SHU next stage",
+            "TIB pending delivery",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1251",
+          "title": {
+            "zh": "借来的印版",
+            "en": "The Borrowed Plates"
+          },
+          "desc": {
+            "zh": "大顺的借版请求送到甘丹颇章。印经坊可以整版借出，可以只交拓片留版在寺，也可以拒绝外来印务；寺内僧侣与官员对此各有立场。",
+            "en": "Shu's borrowing request has reached Ganden Phodrang. The printing houses may lend whole plates, deliver rubbings while keeping the plates at the monastery, or refuse outside printing; monks and officials each hold their own position."
+          },
+          "trigger": "{ ywc_t06_tib_delivery_1251 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_tib_delivery_1251 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "lend",
+              "label": {
+                "zh": "整版借出，立借版记录",
+                "en": "Lend the whole plates with a lending record"
+              },
+              "trigger": "{ ywc_t06_tib_at_1251 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1251 = yes } set_variable = { name = ywc_t06_plates_lent value = 1 } add_loyalists = { value = small_loyalists pop_type = clergymen } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_plates value = 1 } set_variable = { name = ywc_t06_stage value = 1252 } set_variable = { name = ywc_t06_pending value = 1252 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "版片借出立档；寺内印经僧侣增加拥戴；大顺将自行核对名册。",
+                "en": "The plates are lent on record; the monastery's printing monks gain loyalists; Shu audits its own roster next."
+              }
+            },
+            {
+              "key": "rubbings",
+              "label": {
+                "zh": "只交拓片，版片留寺",
+                "en": "Deliver rubbings only and keep the plates at the monastery"
+              },
+              "trigger": "{ ywc_t06_tib_at_1251 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1251 = yes } set_variable = { name = ywc_t06_plates_lent value = 2 } add_loyalists = { value = small_loyalists pop_type = bureaucrats } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_plates value = 2 } set_variable = { name = ywc_t06_stage value = 1252 } set_variable = { name = ywc_t06_pending value = 1252 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "拓片交付立档；掌管版片的官员增加拥戴；大顺只能按拓片重刻。",
+                "en": "The rubbings are delivered on record; the officials keeping the plates gain loyalists; Shu must recarve from rubbings."
+              }
+            },
+            {
+              "key": "refuse",
+              "label": {
+                "zh": "拒绝外来印务",
+                "en": "Refuse outside printing"
+              },
+              "trigger": "{ ywc_t06_tib_at_1251 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1251 = yes } set_variable = { name = ywc_t06_plates_lent value = 3 } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_outcome value = 3 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "借版记录以拒绝收束；大顺的课本须自筹版源。",
+                "en": "The borrowing record closes as refused; Shu must find its own plates."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t06_tib_at_1251 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1251 = yes } set_variable = { name = ywc_t06_pending value = 1251 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "借来的印版",
+            "en": "The Borrowed Plates"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "SHU stage mirror and partner identity"
+          ],
+          "writes": [
+            "TIB lending record",
+            "SHU plates record and next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1252",
+          "title": {
+            "zh": "学校门前的名册",
+            "en": "The Roster Before the School Gate"
+          },
+          "desc": {
+            "zh": "版片或拓片已经到位。名册上哪些班次先用印本、印多少册，按学校机构与学塾容量决定；全量印制要真金支出，已付的印费不会在复议时再收一次。",
+            "en": "Plates or rubbings are in place. Which classes receive the printed volume first, and how many copies, is decided by school institutions and school capacity; a full print run costs real treasury funds, and a paid print bill is not collected twice on reconsideration."
+          },
+          "trigger": "{ ywc_t06_shu_delivery_1252 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_shu_delivery_1252 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "print",
+              "label": {
+                "zh": "支付 500，全量印行",
+                "en": "Pay 500 for a full print run"
+              },
+              "trigger": "{ ywc_t06_shu_at_1252 = yes NOT = { has_variable = ywc_t06_print_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1252 = yes NOT = { has_variable = ywc_t06_print_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t06_print_paid value = 1 } set_variable = { name = ywc_t06_roster value = 1 } set_variable = { name = ywc_t06_stage value = 1253 } set_variable = { name = ywc_t06_pending value = 1253 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "大顺国库支付 500。",
+                "en": "Shu pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "印行记录立档；译写安排随后进行。",
+                "en": "The print run is filed; the translation arrangement follows."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已付印行记录",
+                "en": "Use the paid print record"
+              },
+              "trigger": "{ ywc_t06_shu_at_1252 = yes var:ywc_t06_print_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1252 = yes var:ywc_t06_print_paid ?= 1 } set_variable = { name = ywc_t06_roster value = 1 } set_variable = { name = ywc_t06_stage value = 1253 } set_variable = { name = ywc_t06_pending value = 1253 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "印行记录立档；译写安排随后进行。",
+                "en": "The print run is filed; the translation arrangement follows."
+              }
+            },
+            {
+              "key": "limited",
+              "label": {
+                "zh": "先印一班试读",
+                "en": "Print one trial class first"
+              },
+              "trigger": "{ ywc_t06_shu_at_1252 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1252 = yes } set_variable = { name = ywc_t06_roster value = 2 } set_variable = { name = ywc_t06_stage value = 1253 } set_variable = { name = ywc_t06_pending value = 1253 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "试读班立档；译写安排随后进行。",
+                "en": "The trial class is filed; the translation arrangement follows."
+              }
+            },
+            {
+              "key": "stop",
+              "label": {
+                "zh": "暂停印本计划",
+                "en": "Suspend the printed volume plan"
+              },
+              "trigger": "{ ywc_t06_shu_at_1252 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1252 = yes } set_variable = { name = ywc_t06_outcome value = 3 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "印本计划以拒绝收束；已支付的印费不退。",
+                "en": "The volume plan closes as refused; a paid print bill is not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t06_shu_at_1252 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1252 = yes } set_variable = { name = ywc_t06_pending value = 1252 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "学校门前的名册",
+            "en": "The Roster Before the School Gate"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "current stage and paid print record"
+          ],
+          "writes": [
+            "SHU print and roster records",
+            "SHU next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1253",
+          "title": {
+            "zh": "翻译决定了什么",
+            "en": "What Translation Decides"
+          },
+          "desc": {
+            "zh": "版上的文字与学塾里的语言并不一致。雇双语学者重写要真金支出；逐字照刻则保留原样。语言安排决定学生读到什么，已付的译费不会在复议时再收一次。",
+            "en": "The plates' script and the schoolroom language do not match. Employing bilingual scholars to rewrite costs real treasury funds; a literal recarving keeps the original text. The language arrangement decides what students read, and a paid translation bill is not collected twice on reconsideration."
+          },
+          "trigger": "{ ywc_t06_shu_delivery_1253 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_shu_delivery_1253 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "vernacular",
+              "label": {
+                "zh": "支付 500，雇双语学者重写",
+                "en": "Pay 500 to employ bilingual scholars"
+              },
+              "trigger": "{ ywc_t06_shu_at_1253 = yes NOT = { has_variable = ywc_t06_translate_paid } gold_reserves >= 500 }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1253 = yes NOT = { has_variable = ywc_t06_translate_paid } gold_reserves >= 500 } add_treasury = -500 set_variable = { name = ywc_t06_translate_paid value = 1 } set_variable = { name = ywc_t06_translate value = 1 } set_variable = { name = ywc_t06_stage value = 1254 } set_variable = { name = ywc_t06_pending value = 1254 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "大顺国库支付 500。",
+                "en": "Shu pays 500 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "译写记录立档；毕业生任用随后核对。",
+                "en": "The translation is filed; graduate placements are audited next."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已付译写记录",
+                "en": "Use the paid translation record"
+              },
+              "trigger": "{ ywc_t06_shu_at_1253 = yes var:ywc_t06_translate_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1253 = yes var:ywc_t06_translate_paid ?= 1 } set_variable = { name = ywc_t06_translate value = 1 } set_variable = { name = ywc_t06_stage value = 1254 } set_variable = { name = ywc_t06_pending value = 1254 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "译写记录立档；毕业生任用随后核对。",
+                "en": "The translation is filed; graduate placements are audited next."
+              }
+            },
+            {
+              "key": "literal",
+              "label": {
+                "zh": "逐字照刻，不另译写",
+                "en": "Recarve literally without retranslation"
+              },
+              "trigger": "{ ywc_t06_shu_at_1253 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1253 = yes } set_variable = { name = ywc_t06_translate value = 2 } set_variable = { name = ywc_t06_stage value = 1254 } set_variable = { name = ywc_t06_pending value = 1254 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "照刻记录立档；毕业生任用随后核对。",
+                "en": "The literal recarving is filed; graduate placements are audited next."
+              }
+            },
+            {
+              "key": "stop",
+              "label": {
+                "zh": "暂停印本计划",
+                "en": "Suspend the printed volume plan"
+              },
+              "trigger": "{ ywc_t06_shu_at_1253 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1253 = yes } set_variable = { name = ywc_t06_outcome value = 3 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "印本计划以拒绝收束；已支付的费用不退。",
+                "en": "The volume plan closes as refused; expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t06_shu_at_1253 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1253 = yes } set_variable = { name = ywc_t06_pending value = 1253 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "翻译决定了什么",
+            "en": "What Translation Decides"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "current stage and paid translation record"
+          ],
+          "writes": [
+            "SHU translation record",
+            "SHU next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1254",
+          "title": {
+            "zh": "毕业后没有职位",
+            "en": "No Post After Graduation"
+          },
+          "desc": {
+            "zh": "用过印本的第一班已经毕业。官署有空缺可以任用，学塾缺教习也可以留校；任用安排决定这册课本是行政工具还是架上旧物。",
+            "en": "The first class taught from the printed volume has graduated. Vacant offices can appoint them and understaffed schools can keep them; the appointment arrangement decides whether the textbook becomes an administrative tool or a shelf piece."
+          },
+          "trigger": "{ ywc_t06_shu_delivery_1254 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_shu_delivery_1254 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "office",
+              "label": {
+                "zh": "任用毕业生填补官署空缺",
+                "en": "Appoint graduates to vacant offices"
+              },
+              "trigger": "{ ywc_t06_shu_at_1254 = yes ywc_t06_office_vacancy = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1254 = yes ywc_t06_office_vacancy = yes } set_variable = { name = ywc_t06_placement value = 1 } set_variable = { name = ywc_t06_stage value = 1255 } set_variable = { name = ywc_t06_pending value = 1255 } c:TIB = { set_variable = { name = ywc_t06_pending value = 1255 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "任用记录立档；印本流入市集后，甘丹颇章将对禁令自行定夺。",
+                "en": "The appointments are filed; once the volume reaches the markets, Ganden Phodrang rules on the ban itself."
+              }
+            },
+            {
+              "key": "school",
+              "label": {
+                "zh": "留毕业生在学塾任教",
+                "en": "Keep graduates teaching at the schools"
+              },
+              "trigger": "{ ywc_t06_shu_at_1254 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1254 = yes } set_variable = { name = ywc_t06_placement value = 2 } set_variable = { name = ywc_t06_stage value = 1255 } set_variable = { name = ywc_t06_pending value = 1255 } c:TIB = { set_variable = { name = ywc_t06_pending value = 1255 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "留任记录立档；印本流入市集后，甘丹颇章将对禁令自行定夺。",
+                "en": "The teaching posts are filed; once the volume reaches the markets, Ganden Phodrang rules on the ban itself."
+              }
+            },
+            {
+              "key": "stop",
+              "label": {
+                "zh": "不加任用，课本归档",
+                "en": "Make no appointments and archive the textbook"
+              },
+              "trigger": "{ ywc_t06_shu_at_1254 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1254 = yes } set_variable = { name = ywc_t06_outcome value = 3 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "课本计划以拒绝收束；已支付的费用不退。",
+                "en": "The textbook plan closes as refused; expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t06_shu_at_1254 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1254 = yes } set_variable = { name = ywc_t06_pending value = 1254 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "毕业后没有职位",
+            "en": "No Post After Graduation"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "current stage and office vacancies"
+          ],
+          "writes": [
+            "SHU placement record",
+            "SHU next stage",
+            "TIB pending delivery",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1255",
+          "title": {
+            "zh": "禁书令跨过边界",
+            "en": "The Book Ban Crosses the Border"
+          },
+          "desc": {
+            "zh": "大顺的印本流入甘丹颇章的市集，寺中议定禁书。禁令是通行全境还是只及边界查验，由甘丹颇章自行定夺；大顺的下一册将面对这条禁令。",
+            "en": "Shu's printed volume has reached Ganden Phodrang's markets and the monastery council has moved to ban it. Whether the ban is enforced everywhere or checked at the border only is Ganden Phodrang's own call; Shu's next volume will face it."
+          },
+          "trigger": "{ ywc_t06_tib_delivery_1255 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_tib_delivery_1255 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "enforce",
+              "label": {
+                "zh": "禁令通行全境",
+                "en": "Enforce the ban everywhere"
+              },
+              "trigger": "{ ywc_t06_tib_at_1255 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1255 = yes } set_variable = { name = ywc_t06_ban_mode value = 1 } add_radicals = { value = small_radicals pop_type = shopkeepers } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_ban_note value = 1 } set_variable = { name = ywc_t06_stage value = 1256 } set_variable = { name = ywc_t06_pending value = 1256 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "全境禁令立档；市集商户增加激愤；大顺将决定是否自编下一册。",
+                "en": "The full ban is filed; market shopkeepers grow radical; Shu decides whether to compile its own next volume."
+              }
+            },
+            {
+              "key": "border",
+              "label": {
+                "zh": "禁令只及边界查验",
+                "en": "Check the ban at the border only"
+              },
+              "trigger": "{ ywc_t06_tib_at_1255 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1255 = yes } set_variable = { name = ywc_t06_ban_mode value = 2 } add_radicals = { value = small_radicals pop_type = clergymen } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_ban_note value = 2 } set_variable = { name = ywc_t06_stage value = 1256 } set_variable = { name = ywc_t06_pending value = 1256 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "边界禁令立档；主张全禁的僧侣增加激愤；大顺将决定是否自编下一册。",
+                "en": "The border-only ban is filed; monks who wanted the full ban grow radical; Shu decides whether to compile its own next volume."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓定夺",
+                "en": "Wait before ruling"
+              },
+              "trigger": "{ ywc_t06_tib_at_1255 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1255 = yes } set_variable = { name = ywc_t06_pending value = 1255 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "禁书令跨过边界",
+            "en": "The Book Ban Crosses the Border"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "SHU stage mirror and partner identity"
+          ],
+          "writes": [
+            "TIB ban record",
+            "SHU ban note and next stage",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1256",
+          "title": {
+            "zh": "本地编写的下一册",
+            "en": "The Next Volume Written Locally"
+          },
+          "desc": {
+            "zh": "无论禁令如何写，大顺都要决定是否自编下一册：付账雇人编纂立新账，还是沿用借版旧例。对方已不可联系时，大顺可按已有记录自行结案；已支付的费用不退。",
+            "en": "Whatever the ban says, Shu decides whether to compile its own next volume: pay to have it written with new accounts, or keep the borrowed example. If the partner is unreachable, Shu closes on its own records; expenses already paid are not refunded."
+          },
+          "trigger": "{ ywc_t06_shu_delivery_1256 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_shu_delivery_1256 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "compile",
+              "label": {
+                "zh": "支付 1000，自编下一册",
+                "en": "Pay 1,000 to compile the next volume locally"
+              },
+              "trigger": "{ ywc_t06_shu_at_1256 = yes ywc_t06_partner_current = yes NOT = { has_variable = ywc_t06_compile_paid } gold_reserves >= 1000 }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1256 = yes ywc_t06_partner_current = yes NOT = { has_variable = ywc_t06_compile_paid } gold_reserves >= 1000 } add_treasury = -1000 set_variable = { name = ywc_t06_compile_paid value = 1 } set_variable = { name = ywc_t06_compile value = 1 } if = { limit = { var:ywc_t06_print_paid ?= 1 var:ywc_t06_translate ?= 1 } set_variable = { name = ywc_t06_proposed_outcome value = 1 } } else = { set_variable = { name = ywc_t06_proposed_outcome value = 2 } } set_variable = { name = ywc_t06_stage value = 1257 } set_variable = { name = ywc_t06_pending value = 1257 } c:TIB = { set_variable = { name = ywc_t06_pending value = 1257 } set_variable = { name = ywc_t06_aftermath_note value = 1 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "大顺国库支付 1000。",
+                "en": "Shu pays 1,000 from its treasury."
+              },
+              "consequence_note": {
+                "zh": "自编记录立档；余波报告将送回甘丹颇章。",
+                "en": "The local compilation is filed; the aftermath report returns to Ganden Phodrang."
+              }
+            },
+            {
+              "key": "reuse",
+              "label": {
+                "zh": "沿用已付编纂记录",
+                "en": "Use the paid compilation record"
+              },
+              "trigger": "{ ywc_t06_shu_at_1256 = yes ywc_t06_partner_current = yes var:ywc_t06_compile_paid ?= 1 }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1256 = yes ywc_t06_partner_current = yes var:ywc_t06_compile_paid ?= 1 } set_variable = { name = ywc_t06_compile value = 1 } if = { limit = { var:ywc_t06_print_paid ?= 1 var:ywc_t06_translate ?= 1 } set_variable = { name = ywc_t06_proposed_outcome value = 1 } } else = { set_variable = { name = ywc_t06_proposed_outcome value = 2 } } set_variable = { name = ywc_t06_stage value = 1257 } set_variable = { name = ywc_t06_pending value = 1257 } c:TIB = { set_variable = { name = ywc_t06_pending value = 1257 } set_variable = { name = ywc_t06_aftermath_note value = 1 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "自编记录立档；余波报告将送回甘丹颇章。",
+                "en": "The local compilation is filed; the aftermath report returns to Ganden Phodrang."
+              }
+            },
+            {
+              "key": "reconsider",
+              "label": {
+                "zh": "重新审阅译写安排",
+                "en": "Reconsider the translation arrangement"
+              },
+              "trigger": "{ ywc_t06_shu_at_1256 = yes ywc_t06_partner_current = yes NOT = { has_variable = ywc_t06_compile_paid } }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1256 = yes ywc_t06_partner_current = yes NOT = { has_variable = ywc_t06_compile_paid } } set_variable = { name = ywc_t06_stage value = 1253 } set_variable = { name = ywc_t06_pending value = 1253 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            },
+            {
+              "key": "alone",
+              "label": {
+                "zh": "对方已不可联系，大顺自行结案",
+                "en": "Close on Shu's own record because the partner is unreachable"
+              },
+              "trigger": "{ ywc_t06_shu_at_1256 = yes NOT = { ywc_t06_partner_current = yes } }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1256 = yes NOT = { ywc_t06_partner_current = yes } } if = { limit = { var:ywc_t06_compile ?= 1 } set_variable = { name = ywc_t06_outcome value = 1 } } else_if = { limit = { var:ywc_t06_print_paid ?= 1 } set_variable = { name = ywc_t06_outcome value = 2 } } else = { set_variable = { name = ywc_t06_outcome value = 4 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "按已有记录结案；已支付的费用不退。",
+                "en": "The case closes on existing records; expenses already paid are not refunded."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓，重新核对",
+                "en": "Wait and review again"
+              },
+              "trigger": "{ ywc_t06_shu_at_1256 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_shu_at_1256 = yes } set_variable = { name = ywc_t06_pending value = 1256 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "本地编写的下一册",
+            "en": "The Next Volume Written Locally"
+          },
+          "reads": [
+            "SHU pending delivery",
+            "current stage, paid records and partner identity"
+          ],
+          "writes": [
+            "SHU compilation and proposed outcome",
+            "SHU next stage",
+            "TIB pending delivery and aftermath note",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        },
+        {
+          "id": "ywc_society.1257",
+          "title": {
+            "zh": "新一代怎样记账",
+            "en": "How the New Generation Keeps Accounts"
+          },
+          "desc": {
+            "zh": "大顺自编的下一册已经印行，新一代用它记算学与政务。甘丹颇章可以认可这册本地课本并留下往来记录，也可以留档异议；无论哪一种，两边各自保留自己的印坊与学塾。",
+            "en": "Shu's locally compiled next volume is in print and the new generation keeps accounts and offices with it. Ganden Phodrang may accept the local textbook and file the correspondence, or file reservations; either way each side keeps its own printing houses and schools."
+          },
+          "trigger": "{ ywc_t06_tib_delivery_1257 = yes }",
+          "immediate": "{ if = { limit = { ywc_t06_tib_delivery_1257 = yes } remove_variable = ywc_t06_pending if = { limit = { NOT = { has_variable = ywc_t06_popup_epoch } } set_variable = { name = ywc_t06_popup_epoch value = 0 } } change_variable = { name = ywc_t06_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t06_popup_epoch value = var:ywc_t06_popup_epoch } ywc_v03_mark_major_delivered = yes } }",
+          "options": [
+            {
+              "key": "welcome",
+              "label": {
+                "zh": "认可本地课本，留档往来",
+                "en": "Accept the local textbook and file the correspondence"
+              },
+              "trigger": "{ ywc_t06_tib_at_1257 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1257 = yes } set_variable = { name = ywc_t06_source_standing value = 1 } change_relations = { country = c:SHU value = 5 } add_loyalists = { value = small_loyalists pop_type = clergymen } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_outcome value = var:ywc_t06_proposed_outcome } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "甘丹颇章对大顺关系增加 5；印经僧侣增加拥戴。",
+                "en": "Ganden Phodrang gains 5 relations with Shu; its printing monks gain loyalists."
+              }
+            },
+            {
+              "key": "reserve",
+              "label": {
+                "zh": "留档异议并记录差异",
+                "en": "File reservations and record the differences"
+              },
+              "trigger": "{ ywc_t06_tib_at_1257 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1257 = yes } set_variable = { name = ywc_t06_source_standing value = 2 } change_relations = { country = c:SHU value = -5 } add_radicals = { value = small_radicals pop_type = clergymen } change_variable = { name = ywc_t06_popup_epoch add = 1 } c:SHU = { set_variable = { name = ywc_t06_outcome value = var:ywc_t06_proposed_outcome } change_variable = { name = ywc_t06_popup_epoch add = 1 } } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "甘丹颇章对大顺关系减少 5；寺中僧侣增加激愤。",
+                "en": "Ganden Phodrang loses 5 relations with Shu; its monastery clergy grow radical."
+              }
+            },
+            {
+              "key": "wait",
+              "label": {
+                "zh": "暂缓答复",
+                "en": "Wait before responding"
+              },
+              "trigger": "{ ywc_t06_tib_at_1257 = yes }",
+              "effect": "{ if = { limit = { ywc_t06_tib_at_1257 = yes } set_variable = { name = ywc_t06_pending value = 1257 } change_variable = { name = ywc_t06_popup_epoch add = 1 } } }",
+              "ai_chance": "{ base = 100 }",
+              "cost_note": {
+                "zh": "无额外国库支出。",
+                "en": "No additional treasury expense."
+              },
+              "consequence_note": {
+                "zh": "记录本次决定。",
+                "en": "Records this decision."
+              }
+            }
+          ],
+          "purpose": {
+            "zh": "新一代怎样记账",
+            "en": "How the New Generation Keeps Accounts"
+          },
+          "reads": [
+            "TIB pending delivery",
+            "SHU stage mirror and proposed outcome"
+          ],
+          "writes": [
+            "TIB standing record",
+            "SHU outcome",
+            "pending delivery receipt",
+            "popup epoch"
+          ]
+        }
+      ],
+      "outcomes": [
+        "v03_t06_textbook_accepted",
+        "v03_t06_textbook_limited",
+        "v03_t06_textbook_refused",
+        "v03_t06_textbook_lapsed"
+      ],
+      "legacy_links": []
     }
   ]
 }
