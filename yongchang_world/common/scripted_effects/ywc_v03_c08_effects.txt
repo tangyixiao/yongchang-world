@@ -1,0 +1,192 @@
+﻿# Crisis C08 侨民保护与沿岸裁判: scripted effects. Every cross-country state
+# transition writes BOTH sides inside one effect, each cross-scope write is
+# guarded by an if-limit that re-checks the target's live state, and no effect
+# removes ywc_c08_pending right before a gated trigger_event.
+
+# Shared receipt: consume the pending marker, advance the popup epoch, save the
+# epoch scope for the option at_ triggers, and start the 90-day major-event
+# cooldown. Called only from event immediates whose limit already verified the
+# delivery trigger, so the removal never precedes a gated trigger_event.
+ywc_c08_receive_major = { remove_variable = ywc_c08_pending if = { limit = { NOT = { has_variable = ywc_c08_popup_epoch } } set_variable = { name = ywc_c08_popup_epoch value = 0 } } change_variable = { name = ywc_c08_popup_epoch add = 1 } save_scope_value_as = { name = ywc_c08_popup_epoch value = var:ywc_c08_popup_epoch } ywc_v03_mark_major_delivered = yes }
+
+# Release this country's single crisis arc slot; only effective once.
+ywc_c08_release_capacity = { if = { limit = { var:ywc_c08_started ?= 1 NOT = { has_variable = ywc_c08_released } } set_variable = { name = ywc_c08_released value = 1 } change_variable = { name = ywc_v03_active_arc_count add = -1 } change_variable = { name = ywc_v03_visible_task_count add = -1 } clamp_variable = { name = ywc_v03_active_arc_count min = 0 max = 3 } clamp_variable = { name = ywc_v03_visible_task_count min = 0 max = 6 } } }
+
+# Terminal closers. Pending is cleared only here, where no further delivery
+# depends on it, together with the final outcome and the slot release.
+ywc_c08_close_status_quo = { set_variable = { name = ywc_c08_outcome value = 3 } set_variable = { name = ywc_c08_wait_age value = 0 } if = { limit = { has_variable = ywc_c08_pending } remove_variable = ywc_c08_pending } ywc_c08_release_capacity = yes }
+ywc_c08_close_withdrawn = { set_variable = { name = ywc_c08_outcome value = 4 } set_variable = { name = ywc_c08_wait_age value = 0 } if = { limit = { has_variable = ywc_c08_pending } remove_variable = ywc_c08_pending } ywc_c08_release_capacity = yes }
+ywc_c08_close_no_talks = { set_variable = { name = ywc_c08_outcome value = 6 } set_variable = { name = ywc_c08_wait_age value = 0 } if = { limit = { has_variable = ywc_c08_pending } remove_variable = ywc_c08_pending } ywc_c08_release_capacity = yes }
+
+# Jurisdiction (DMG only): the claim classification is registered. Enter the
+# court-answer stage and, in the same effect, mount the note stage on the
+# required external claimant while it is alive and not already closed.
+ywc_c08_open_answers = {
+	set_variable = { name = ywc_c08_stage value = 1703 }
+	set_variable = { name = ywc_c08_pending value = 1703 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+	if = {
+		limit = { c:NMG ?= { is_country_alive = yes NOT = { has_variable = ywc_c08_outcome } } }
+		c:NMG = { set_variable = { name = ywc_c08_case_open value = 1 } set_variable = { name = ywc_c08_role value = 2 } set_variable = { name = ywc_c08_stage value = 1702 } set_variable = { name = ywc_c08_pending value = 1702 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } }
+	}
+}
+
+# Jurisdiction (DMG only): after the court answer is on record, hold at the
+# note-waiting stage. The monthly pulse exits through ywc_c08_after_ext_note.
+# (The wait mount itself is single-sided on purpose: the note is NMG's own act.)
+
+# Jurisdiction: the external note is recorded (or moot, or elapsed). Enter the
+# execution phase and, in the same effect, mount the funding stage on the
+# claimant when it actually joined the protection arrangement.
+ywc_c08_after_ext_note = {
+	set_variable = { name = ywc_c08_roster_done value = 1 }
+	set_variable = { name = ywc_c08_program_open value = 1 }
+	set_variable = { name = ywc_c08_stage value = 1704 }
+	set_variable = { name = ywc_c08_pending value = 1704 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+	if = {
+		limit = { ywc_c08_nmg_joined_execution = yes }
+		c:NMG = { set_variable = { name = ywc_c08_stage value = 1704 } set_variable = { name = ywc_c08_pending value = 1704 } set_variable = { name = ywc_c08_wait_age value = 0 } change_variable = { name = ywc_c08_popup_epoch add = 1 } }
+	}
+}
+
+# Jurisdiction: the claimant's conditions are stated (or elapsed). Open the
+# reply stage so the jurisdiction answers the attached conditions separately.
+ywc_c08_open_condition_reply = {
+	set_variable = { name = ywc_c08_stage value = 1716 }
+	set_variable = { name = ywc_c08_pending value = 1716 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+}
+
+# Jurisdiction: the claimant is dead, withdrawn or has withdrawn its note.
+# Skip the conditions exchange and open the renegotiation proposal directly.
+ywc_c08_skip_conditions = {
+	set_variable = { name = ywc_c08_conditions_unresolved value = 1 }
+	set_variable = { name = ywc_c08_review_open value = 1 }
+	set_variable = { name = ywc_c08_stage value = 1708 }
+	set_variable = { name = ywc_c08_pending value = 1708 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+}
+
+# Claimant (NMG only): the jurisdiction's forum proposal is on record (or the
+# wait elapsed). Open its own renegotiation stage.
+ywc_c08_open_nmg_renegotiation = {
+	set_variable = { name = ywc_c08_review_open value = 1 }
+	set_variable = { name = ywc_c08_stage value = 1709 }
+	set_variable = { name = ywc_c08_pending value = 1709 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+}
+
+# Jurisdiction: confirm the full arrangement. Reached only when the option
+# trigger has verified the claimant's acceptance on record and the funded,
+# answered, unblocked state of this side.
+ywc_c08_dmg_settle_full = {
+	set_variable = { name = ywc_c08_settle_choice value = 1 }
+	set_variable = { name = ywc_c08_outcome value = 1 }
+	set_variable = { name = ywc_c08_stage value = 1711 }
+	set_variable = { name = ywc_c08_pending value = 1711 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+}
+
+# Jurisdiction: confirm the limited arrangement.
+ywc_c08_dmg_settle_limited = {
+	set_variable = { name = ywc_c08_settle_choice value = 2 }
+	set_variable = { name = ywc_c08_outcome value = 2 }
+	set_variable = { name = ywc_c08_stage value = 1711 }
+	set_variable = { name = ywc_c08_pending value = 1711 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+}
+
+# Jurisdiction: keep the status quo as the settlement.
+ywc_c08_dmg_settle_status_quo = {
+	set_variable = { name = ywc_c08_settle_choice value = 3 }
+	set_variable = { name = ywc_c08_outcome value = 3 }
+	set_variable = { name = ywc_c08_stage value = 1711 }
+	set_variable = { name = ywc_c08_pending value = 1711 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	change_variable = { name = ywc_c08_popup_epoch add = 1 }
+}
+
+# Aftermath write-back (partners only): mount the after-event on every
+# qualifying, still-living, not-yet-settled partner with a real link, so each
+# partner records its own stance instead of being spoken for. The claimant's
+# aftermath marker is written by the caller with a literal value, never by
+# reading a holder variable across the scope boundary.
+ywc_c08_aftermath_mount = {
+	if = {
+		limit = { c:MHG ?= { is_country_alive = yes ywc_c08_contact_dmg = yes NOT = { has_variable = ywc_c08_outcome } NOT = { has_variable = ywc_c08_case_open } } }
+		set_variable = { name = ywc_c08_invited_mhg value = 1 }
+		c:MHG = { set_variable = { name = ywc_c08_case_open value = 1 } set_variable = { name = ywc_c08_role value = 3 } set_variable = { name = ywc_c08_stage value = 1711 } set_variable = { name = ywc_c08_pending value = 1711 } set_variable = { name = ywc_c08_wait_age value = 0 } set_variable = { name = ywc_c08_popup_epoch value = 0 } }
+	}
+	if = {
+		limit = { c:SHU ?= { is_country_alive = yes ywc_c08_contact_dmg = yes NOT = { has_variable = ywc_c08_outcome } NOT = { has_variable = ywc_c08_case_open } } }
+		set_variable = { name = ywc_c08_invited_shu value = 1 }
+		c:SHU = { set_variable = { name = ywc_c08_case_open value = 1 } set_variable = { name = ywc_c08_role value = 3 } set_variable = { name = ywc_c08_stage value = 1711 } set_variable = { name = ywc_c08_pending value = 1711 } set_variable = { name = ywc_c08_wait_age value = 0 } set_variable = { name = ywc_c08_popup_epoch value = 0 } }
+	}
+	if = {
+		limit = { c:JHG ?= { is_country_alive = yes ywc_c08_contact_dmg = yes NOT = { has_variable = ywc_c08_outcome } NOT = { has_variable = ywc_c08_case_open } } }
+		set_variable = { name = ywc_c08_invited_jhg value = 1 }
+		c:JHG = { set_variable = { name = ywc_c08_case_open value = 1 } set_variable = { name = ywc_c08_role value = 3 } set_variable = { name = ywc_c08_stage value = 1711 } set_variable = { name = ywc_c08_pending value = 1711 } set_variable = { name = ywc_c08_wait_age value = 0 } set_variable = { name = ywc_c08_popup_epoch value = 0 } }
+	}
+	if = {
+		limit = { c:LAN ?= { is_country_alive = yes ywc_c08_contact_dmg = yes NOT = { has_variable = ywc_c08_outcome } NOT = { has_variable = ywc_c08_case_open } } }
+		set_variable = { name = ywc_c08_invited_lan value = 1 }
+		c:LAN = { set_variable = { name = ywc_c08_case_open value = 1 } set_variable = { name = ywc_c08_role value = 3 } set_variable = { name = ywc_c08_stage value = 1711 } set_variable = { name = ywc_c08_pending value = 1711 } set_variable = { name = ywc_c08_wait_age value = 0 } set_variable = { name = ywc_c08_popup_epoch value = 0 } }
+	}
+	if = {
+		limit = { c:WBK ?= { is_country_alive = yes ywc_c08_contact_dmg = yes NOT = { has_variable = ywc_c08_outcome } NOT = { has_variable = ywc_c08_case_open } } }
+		set_variable = { name = ywc_c08_invited_wbk value = 1 }
+		c:WBK = { set_variable = { name = ywc_c08_case_open value = 1 } set_variable = { name = ywc_c08_role value = 3 } set_variable = { name = ywc_c08_stage value = 1711 } set_variable = { name = ywc_c08_pending value = 1711 } set_variable = { name = ywc_c08_wait_age value = 0 } set_variable = { name = ywc_c08_popup_epoch value = 0 } }
+	}
+}
+
+# Jurisdiction: the arrangement was practiced as recorded. Terminal.
+ywc_c08_aftermath_kept = {
+	set_variable = { name = ywc_c08_aftermath value = 1 }
+	set_variable = { name = ywc_c08_stage value = 1719 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c08_pending } remove_variable = ywc_c08_pending }
+	ywc_c08_release_capacity = yes
+	if = { limit = { c:NMG ?= { is_country_alive = yes has_variable = ywc_c08_case_open } } c:NMG = { set_variable = { name = ywc_c08_aftermath value = 1 } } }
+	ywc_c08_aftermath_mount = yes
+}
+
+# Jurisdiction: fulfillment failed and the failure is recorded as it stands.
+ywc_c08_aftermath_failed = {
+	set_variable = { name = ywc_c08_aftermath value = 2 }
+	set_variable = { name = ywc_c08_outcome value = 5 }
+	set_variable = { name = ywc_c08_stage value = 1719 }
+	set_variable = { name = ywc_c08_wait_age value = 0 }
+	if = { limit = { has_variable = ywc_c08_pending } remove_variable = ywc_c08_pending }
+	ywc_c08_release_capacity = yes
+	if = { limit = { c:NMG ?= { is_country_alive = yes has_variable = ywc_c08_case_open } } c:NMG = { set_variable = { name = ywc_c08_aftermath value = 2 } } }
+	ywc_c08_aftermath_mount = yes
+}
+
+# Claimant: once it has accepted on record and the jurisdiction has settled
+# (or failed), mirror the joint result on its own scope, mark the aftermath and
+# release its slot. Called from the monthly mirror branch; the limit makes
+# repeated calls safe.
+ywc_c08_nmg_mirror_settle = {
+	if = {
+		limit = {
+			NOT = { has_variable = ywc_c08_outcome }
+			ywc_c08_dmg_settled = yes
+		}
+		if = { limit = { c:DMG ?= { var:ywc_c08_outcome ?= 1 } } set_variable = { name = ywc_c08_outcome value = 1 } set_variable = { name = ywc_c08_aftermath value = 1 } }
+		else_if = { limit = { c:DMG ?= { var:ywc_c08_outcome ?= 2 } } set_variable = { name = ywc_c08_outcome value = 2 } set_variable = { name = ywc_c08_aftermath value = 1 } }
+		else_if = { limit = { c:DMG ?= { var:ywc_c08_outcome ?= 5 } } set_variable = { name = ywc_c08_outcome value = 5 } set_variable = { name = ywc_c08_aftermath value = 2 } }
+		else = { set_variable = { name = ywc_c08_outcome value = 3 } set_variable = { name = ywc_c08_aftermath value = 1 } }
+		set_variable = { name = ywc_c08_stage value = 1719 }
+		set_variable = { name = ywc_c08_wait_age value = 0 }
+		if = { limit = { has_variable = ywc_c08_pending } remove_variable = ywc_c08_pending }
+		ywc_c08_release_capacity = yes
+	}
+}

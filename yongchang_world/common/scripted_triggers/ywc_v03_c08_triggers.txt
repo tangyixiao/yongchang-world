@@ -1,0 +1,92 @@
+﻿# Crisis C08 侨民保护与沿岸裁判: scripted triggers. All state variables are
+# per-country with the ywc_c08_ prefix; every cross-country read stays inside
+# an explicit c:XXX ?= { } block so no variable is read outside its writer's
+# scope. Stage values: 1700/1701 DMG investigation, 1702 NMG note, 1703 DMG
+# court answer, 1704 shared funding, 1705 DMG residence, 1706 DMG protest,
+# 1707 NMG conditions, 1716 DMG conditions reply (same event ywc_crisis.1707),
+# 1708 DMG forum proposal, 1709 shared resident choice, 1710 shared settlement
+# confirm, 1711 shared aftermath (DMG via journal 3, partners via journal 1);
+# internal waiting stages: 1712 (DMG awaits the external note), 1715 (DMG
+# awaits the conditions answer), 1718 (NMG awaits the forum proposal),
+# 1721 (NMG awaits the DMG settlement), 1719 (terminal aftermath marker).
+
+# --- Entry readiness ---------------------------------------------------------
+# The case opens only on real links between the port jurisdiction (DMG) and a
+# living external claimant (NMG): market, adjacency, diplomatic relevance or a
+# port-to-port trade lane. Cultural or religious similarity alone never
+# qualifies, and no third country joins without its own real link.
+
+ywc_c08_market_dmg = { c:DMG ?= { is_country_alive = yes } is_in_same_market_area = c:DMG.capital }
+
+ywc_c08_contact_dmg = { OR = { any_scope_state = { any_neighbouring_state = { c:DMG ?= owner } } has_diplomatic_relevance = c:DMG ywc_c08_market_dmg = yes AND = { has_port_country = yes ywc_c08_market_dmg = yes } } }
+
+ywc_c08_case_ready_dmg = { c:DMG ?= this is_country_alive = yes has_variable = ywc_v03_initialized ywc_v03_has_capacity = yes c:NMG ?= { is_country_alive = yes ywc_c08_contact_dmg = yes } NOT = { has_variable = ywc_c08_started } NOT = { has_variable = ywc_c08_outcome } }
+
+# --- Cross-country state helpers ---------------------------------------------
+# Every read of another country's variable happens inside that country's scope.
+
+ywc_c08_initiator_alive_for_me = { c:DMG ?= { is_country_alive = yes var:ywc_c08_role ?= 1 } }
+ywc_c08_initiator_gone = { NOT = { ywc_c08_initiator_alive_for_me = yes } }
+ywc_c08_nmg_note_recorded = { c:NMG ?= { is_country_alive = yes has_variable = ywc_c08_ext_response } }
+ywc_c08_nmg_note_moot = { OR = { NOT = { c:NMG ?= { is_country_alive = yes } } c:NMG ?= { is_country_alive = yes OR = { var:ywc_c08_outcome ?= 4 var:ywc_c08_outcome ?= 6 } } } }
+ywc_c08_nmg_joined_execution = { c:NMG ?= { is_country_alive = yes OR = { var:ywc_c08_ext_response ?= 1 var:ywc_c08_ext_response ?= 2 } NOT = { has_variable = ywc_c08_outcome } } }
+ywc_c08_nmg_conditions_recorded = { c:NMG ?= { is_country_alive = yes OR = { var:ywc_c08_condition_mode ?= 1 var:ywc_c08_condition_mode ?= 2 } NOT = { has_variable = ywc_c08_outcome } } }
+ywc_c08_nmg_conditions_moot = { OR = { NOT = { c:NMG ?= { is_country_alive = yes } } c:NMG ?= { is_country_alive = yes OR = { var:ywc_c08_condition_mode ?= 3 var:ywc_c08_outcome ?= 4 var:ywc_c08_outcome ?= 6 } } } }
+ywc_c08_dmg_forum_proposed = { c:DMG ?= { is_country_alive = yes has_variable = ywc_c08_forum_mode } }
+ywc_c08_dmg_gone_or_closed = { OR = { NOT = { c:DMG ?= { is_country_alive = yes } } c:DMG ?= { is_country_alive = yes OR = { var:ywc_c08_outcome ?= 4 var:ywc_c08_outcome ?= 6 } } } }
+ywc_c08_dmg_settled = { c:DMG ?= { is_country_alive = yes OR = { var:ywc_c08_outcome ?= 1 var:ywc_c08_outcome ?= 2 var:ywc_c08_outcome ?= 3 var:ywc_c08_outcome ?= 5 } } }
+ywc_c08_dmg_can_settle_full = { c:NMG ?= { is_country_alive = yes var:ywc_c08_nmg_confirm ?= 1 } var:ywc_c08_court_answer ?= 2 var:ywc_c08_prog_funded ?= 1 has_variable = ywc_c08_condition_reply NOT = { has_variable = ywc_c08_conditions_unresolved } OR = { var:ywc_c08_forum_mode ?= 1 var:ywc_c08_forum_mode ?= 2 } NOT = { has_variable = ywc_c08_outcome } }
+
+# --- Delivery and popup-snapshot triggers ------------------------------------
+# Every delivery trigger carries the shared ywc_v03_can_deliver_major gate;
+# the at_ triggers pin options to the popup instance via the saved epoch scope.
+# Journal binding: 1700/1701/1702/1703 on journal 1, 1704/1705/1706/1707(1716)
+# on journal 2, 1708/1709/1710/1711 on journal 3 for DMG and NMG; the partner
+# instances of 1711 stay on journal 1 because partners hold no other journal.
+
+ywc_c08_dmg_delivery_1700 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1700 var:ywc_c08_pending ?= 1700 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1700 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1700 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1701 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1701 var:ywc_c08_pending ?= 1701 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1701 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1701 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_nmg_delivery_1702 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1702 var:ywc_c08_pending ?= 1702 ywc_v03_can_deliver_major = yes }
+ywc_c08_nmg_at_1702 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1702 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1703 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1703 var:ywc_c08_pending ?= 1703 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1703 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1703 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1704 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1704 var:ywc_c08_pending ?= 1704 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1704 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1704 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_nmg_delivery_1704 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1704 var:ywc_c08_pending ?= 1704 ywc_v03_can_deliver_major = yes }
+ywc_c08_nmg_at_1704 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1704 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1705 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1705 var:ywc_c08_pending ?= 1705 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1705 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1705 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1706 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1706 var:ywc_c08_pending ?= 1706 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1706 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1706 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_nmg_delivery_1707 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1707 var:ywc_c08_pending ?= 1707 ywc_v03_can_deliver_major = yes }
+ywc_c08_nmg_at_1707 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1707 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1716 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1716 var:ywc_c08_pending ?= 1716 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1716 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_court_consul_boundary var:ywc_c08_stage ?= 1716 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1708 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1708 var:ywc_c08_pending ?= 1708 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1708 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1708 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1709 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1709 var:ywc_c08_pending ?= 1709 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1709 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1709 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_nmg_delivery_1709 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1709 var:ywc_c08_pending ?= 1709 ywc_v03_can_deliver_major = yes }
+ywc_c08_nmg_at_1709 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1709 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1710 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1710 var:ywc_c08_pending ?= 1710 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1710 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1710 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_nmg_delivery_1710 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1710 var:ywc_c08_pending ?= 1710 ywc_v03_can_deliver_major = yes }
+ywc_c08_nmg_at_1710 = { c:NMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1710 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_dmg_delivery_1711 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1711 var:ywc_c08_pending ?= 1711 ywc_v03_can_deliver_major = yes }
+ywc_c08_dmg_at_1711 = { c:DMG ?= this has_journal_entry = ywc_je_v03_c08_protection_promise_settlement var:ywc_c08_stage ?= 1711 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_mhg_delivery_1711 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 var:ywc_c08_pending ?= 1711 ywc_v03_can_deliver_major = yes }
+ywc_c08_mhg_at_1711 = { c:MHG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_shu_delivery_1711 = { c:SHU ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 var:ywc_c08_pending ?= 1711 ywc_v03_can_deliver_major = yes }
+ywc_c08_shu_at_1711 = { c:SHU ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_jhg_delivery_1711 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 var:ywc_c08_pending ?= 1711 ywc_v03_can_deliver_major = yes }
+ywc_c08_jhg_at_1711 = { c:JHG ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_lan_delivery_1711 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 var:ywc_c08_pending ?= 1711 ywc_v03_can_deliver_major = yes }
+ywc_c08_lan_at_1711 = { c:LAN ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+ywc_c08_wbk_delivery_1711 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 var:ywc_c08_pending ?= 1711 ywc_v03_can_deliver_major = yes }
+ywc_c08_wbk_at_1711 = { c:WBK ?= this has_journal_entry = ywc_je_v03_c08_protection_eligibility var:ywc_c08_stage ?= 1711 scope:ywc_c08_popup_epoch ?= var:ywc_c08_popup_epoch }
+# Group triggers for the shared partner options and deliveries of event 1711.
+# The catalog references these named triggers directly; no anonymous brace groups.
+ywc_c08_partner_delivery_1711 = { OR = { ywc_c08_mhg_delivery_1711 = yes ywc_c08_shu_delivery_1711 = yes ywc_c08_jhg_delivery_1711 = yes ywc_c08_lan_delivery_1711 = yes ywc_c08_wbk_delivery_1711 = yes } }
+ywc_c08_partner_at_1711 = { OR = { ywc_c08_mhg_at_1711 = yes ywc_c08_shu_at_1711 = yes ywc_c08_jhg_at_1711 = yes ywc_c08_lan_at_1711 = yes ywc_c08_wbk_at_1711 = yes } }
