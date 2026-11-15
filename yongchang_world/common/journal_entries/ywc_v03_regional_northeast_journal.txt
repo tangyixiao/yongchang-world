@@ -31,3 +31,35 @@ ywc_je_v03_chi_b = {
     complete = { OR = { var:ywc_chi_b_outcome ?= 1 var:ywc_chi_b_outcome ?= 2 } }
     fail = { var:ywc_chi_b_outcome ?= 4 }
 }
+
+ywc_je_v03_khq_a = {
+    is_shown_when_inactive = { c:KHQ ?= this NOT = { has_variable = ywc_khq_a_started } }
+    possible = { c:KHQ ?= this is_country_alive = yes NOT = { has_variable = ywc_khq_a_started } }
+    immediate = { set_variable = { name = ywc_khq_a_started value = 1 } set_variable = { name = ywc_khq_a_stage value = 1100 } set_variable = { name = ywc_khq_a_pending value = 1100 } set_variable = { name = ywc_khq_a_captured_income value = yearly_gross_income } change_variable = { name = ywc_khq_a_captured_income divide = 52 } clamp_variable = { name = ywc_khq_a_captured_income min = 100 max = 1000000000 } set_variable = { name = ywc_khq_a_fee value = var:ywc_khq_a_captured_income } set_variable = { name = ywc_khq_a_half_fee value = var:ywc_khq_a_captured_income } change_variable = { name = ywc_khq_a_half_fee divide = 2 } set_variable = { name = ywc_khq_a_double_fee value = var:ywc_khq_a_captured_income } change_variable = { name = ywc_khq_a_double_fee multiply = 2 } }
+    on_monthly_pulse = { effect = {
+    if = { limit = { ywc_khq_delivery_1100 = yes } trigger_event = { id = ywc_regional.1100 } }
+    if = { limit = { ywc_khq_delivery_1101 = yes } trigger_event = { id = ywc_regional.1101 } }
+    if = { limit = { has_variable = ywc_khq_a_review_open NOT = { has_variable = ywc_khq_a_review_clock } NOT = { has_variable = ywc_khq_a_outcome } is_country_alive = yes } if = { limit = { in_default = no NOT = { has_modifier = declared_bankruptcy } } if = { limit = { var:ywc_khq_field_register ?= 1 var:ywc_khq_service_mode ?= 1 } set_variable = { name = ywc_khq_a_outcome value = 1 } } else = { set_variable = { name = ywc_khq_a_outcome value = 2 } } } else = { set_variable = { name = ywc_khq_a_outcome value = 2 } set_variable = { name = ywc_khq_a_review_break value = 1 } } remove_variable = ywc_khq_a_review_open ywc_khq_open_league_je = yes }
+    } }
+    on_complete = { remove_variable = ywc_khq_a_pending remove_variable = ywc_khq_a_stage }
+    on_fail = { remove_variable = ywc_khq_a_pending remove_variable = ywc_khq_a_stage }
+    complete = { OR = { var:ywc_khq_a_outcome ?= 1 var:ywc_khq_a_outcome ?= 2 } }
+    fail = { var:ywc_khq_a_outcome ?= 4 }
+}
+
+ywc_je_v03_khq_b = {
+    is_shown_when_inactive = { c:KHQ ?= this NOT = { has_variable = ywc_khq_b_started } }
+    possible = { c:KHQ ?= this is_country_alive = yes has_variable = ywc_khq_b_started }
+    immediate = { set_variable = { name = ywc_khq_b_started value = 1 } set_variable = { name = ywc_khq_b_stage value = 1102 } set_variable = { name = ywc_khq_b_pending value = 1102 } set_variable = { name = ywc_khq_b_captured_income value = yearly_gross_income } change_variable = { name = ywc_khq_b_captured_income divide = 52 } clamp_variable = { name = ywc_khq_b_captured_income min = 100 max = 1000000000 } set_variable = { name = ywc_khq_b_fee value = var:ywc_khq_b_captured_income } set_variable = { name = ywc_khq_b_half_fee value = var:ywc_khq_b_captured_income } change_variable = { name = ywc_khq_b_half_fee divide = 2 } }
+    on_monthly_pulse = { effect = {
+    if = { limit = { has_variable = ywc_khq_pledge_open NOT = { has_variable = ywc_khq_pledge_clock } NOT = { has_variable = ywc_khq_pledge_confirmed } NOT = { has_variable = ywc_khq_pledge_break } is_country_alive = yes } if = { limit = { in_default = no NOT = { has_modifier = declared_bankruptcy } } set_variable = { name = ywc_khq_pledge_confirmed value = 1 } } else = { set_variable = { name = ywc_khq_pledge_break value = 1 } } remove_variable = ywc_khq_pledge_open }
+    if = { limit = { ywc_khq_delivery_1102 = yes } trigger_event = { id = ywc_regional.1102 } }
+    if = { limit = { ywc_khq_delivery_1103 = yes } trigger_event = { id = ywc_regional.1103 } }
+    if = { limit = { ywc_khq_delivery_1104 = yes } trigger_event = { id = ywc_regional.1104 } }
+    if = { limit = { ywc_khq_delivery_1105 = yes } trigger_event = { id = ywc_regional.1105 } }
+    } }
+    on_complete = { remove_variable = ywc_khq_b_pending remove_variable = ywc_khq_b_stage }
+    on_fail = { remove_variable = ywc_khq_b_pending remove_variable = ywc_khq_b_stage }
+    complete = { OR = { var:ywc_khq_b_outcome ?= 1 var:ywc_khq_b_outcome ?= 2 var:ywc_khq_b_outcome ?= 3 } }
+    fail = { var:ywc_khq_b_outcome ?= 4 }
+}
