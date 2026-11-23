@@ -40,15 +40,11 @@ ywc_t12_entry_ready = {
  ywc_t12_partner_current = yes
 }
 
-# Real war or mobilization: current war, mass conscription or militia law, or
-# heavily staffed barracks. War is never an entry requirement; it only opens
-# the returning-soldiers stage.
-ywc_t12_has_mobilization = {
+# Conditions under which the court hears military families or extends its mandate.
+ywc_t12_war_or_mobilized_army = {
  OR = {
   is_at_war = yes
-  has_law_or_variant = law_type:law_mass_conscription
-  has_law_or_variant = law_type:law_national_militia
-  any_scope_state = { owner = ROOT any_scope_building = { is_building_type = building_barracks occupancy >= 0.7 } }
+  any_military_formation = { is_army = yes is_mobilized = yes }
  }
 }
 
@@ -58,6 +54,29 @@ ywc_t12_shu_delivery_1550 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_r
 ywc_t12_shu_at_1550 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_representation_pact var:ywc_t12_stage ?= 1550 scope:ywc_t12_popup_epoch ?= var:ywc_t12_popup_epoch }
 ywc_t12_shu_delivery_1552 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_representation_pact var:ywc_t12_stage ?= 1552 var:ywc_t12_pending ?= 1552 ywc_v03_can_deliver_major = yes }
 ywc_t12_shu_at_1552 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_representation_pact var:ywc_t12_stage ?= 1552 scope:ywc_t12_popup_epoch ?= var:ywc_t12_popup_epoch }
+
+ywc_t12_operating_port_state = {
+ owner = root
+ any_scope_building = { is_building_type = building_port occupancy >= 0.3 }
+}
+
+ywc_t12_can_fund_budget = {
+ ywc_t12_shu_at_1552 = yes
+ NOT = { has_variable = ywc_t12_budget_paid }
+ gold_reserves >= 800
+}
+
+ywc_t12_can_fund_post_roads = {
+ ywc_t12_can_fund_budget = yes
+ exists = capital
+ capital ?= { owner = root }
+}
+
+ywc_t12_can_fund_port_supply = {
+ ywc_t12_can_fund_budget = yes
+ any_scope_state = { ywc_t12_operating_port_state = yes }
+}
+
 ywc_t12_shu_delivery_1553 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_representation_pact var:ywc_t12_stage ?= 1553 var:ywc_t12_pending ?= 1553 ywc_v03_can_deliver_major = yes }
 ywc_t12_shu_at_1553 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_representation_pact var:ywc_t12_stage ?= 1553 scope:ywc_t12_popup_epoch ?= var:ywc_t12_popup_epoch }
 ywc_t12_shu_delivery_1555 = { c:SHU ?= this has_journal_entry = ywc_je_v03_t12_representation_pact var:ywc_t12_stage ?= 1555 var:ywc_t12_pending ?= 1555 ywc_v03_can_deliver_major = yes }

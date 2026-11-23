@@ -237,6 +237,7 @@ if = {
  set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
  set_variable = { name = ywc_nmg_office_closed value = 1 }
  set_variable = { name = ywc_nmg_office_compromise value = 1 }
+ ywc_nmg_end_bilingual_office_service = yes
  ywc_nmg_release_slot = yes
 }
 else_if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_settled } }
@@ -251,6 +252,7 @@ if = { limit = { has_variable = ywc_v03_nmg_v03_nmg_bilingual_office_started NOT
  set_variable = { name = ywc_v03_nmg_v03_nmg_bilingual_office_settled value = 1 }
  set_variable = { name = ywc_nmg_office_closed value = 1 }
  set_variable = { name = ywc_nmg_office_withdrawn value = 1 }
+ ywc_nmg_end_bilingual_office_service = yes
  ywc_nmg_release_slot = yes
 }
 }
@@ -382,6 +384,7 @@ else_if = {
  ywc_nmg_office_pay_fee_once = yes
  if = { limit = { has_variable = ywc_nmg_office_fee_paid }
   set_variable = { name = ywc_nmg_office_route value = 1 }
+  add_modifier = { name = ywc_nmg_bilingual_office_upkeep months = 120 }
   add_modifier = { name = ywc_nmg_bilingual_office_gain months = 120 }
   set_variable = { name = ywc_nmg_office_pending value = 1011 }
  }
@@ -390,17 +393,46 @@ else_if = {
 else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
 }
 
+ywc_nmg_end_bilingual_office_service = {
+ remove_modifier = ywc_nmg_bilingual_office_gain
+ remove_modifier = ywc_nmg_bilingual_office_upkeep
+}
+
+ywc_nmg_switch_office_to_local = {
+ if = {
+  limit = { ywc_nmg_office_can_switch_local = yes }
+  remove_variable = ywc_nmg_office_blocked_defer
+  ywc_nmg_end_bilingual_office_service = yes
+  if = {
+   limit = { NOT = { var:ywc_nmg_office_route = 2 } }
+   set_variable = { name = ywc_nmg_office_route value = 2 }
+   add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 }
+  }
+  if = {
+   limit = { NOR = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_pending } }
+   set_variable = { name = ywc_nmg_office_pending value = 1015 }
+  }
+ }
+ else_if = {
+  limit = { ywc_nmg_office_unsettled = yes NOR = { has_variable = ywc_nmg_office_notice_response_context has_variable = ywc_nmg_office_pending } }
+  if = { limit = { has_variable = ywc_nmg_office_fee_paid } set_variable = { name = ywc_nmg_office_pending value = 1014 } }
+  else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
+ }
+}
+
 ywc_nmg_choose_office_local = {
 if = {
  limit = { var:ywc_nmg_office_route = 2 has_variable = ywc_nmg_office_fee_paid }
  set_variable = { name = ywc_nmg_office_pending value = 1011 }
 }
 else_if = {
- limit = { var:ywc_nmg_office_route = 0 ywc_nmg_office_local_ready = yes }
+ limit = { OR = { var:ywc_nmg_office_route = 0 var:ywc_nmg_office_route = 2 } ywc_nmg_office_local_ready = yes }
  ywc_nmg_office_pay_fee_once = yes
  if = { limit = { has_variable = ywc_nmg_office_fee_paid }
-  set_variable = { name = ywc_nmg_office_route value = 2 }
-  add_modifier = { name = ywc_nmg_local_translator_uneven months = 120 }
+  if = { limit = { var:ywc_nmg_office_route = 0 }
+   set_variable = { name = ywc_nmg_office_route value = 2 }
+   add_modifier = { name = ywc_nmg_local_translator_uneven months = 120 }
+  }
   set_variable = { name = ywc_nmg_office_pending value = 1011 }
  }
  else = { set_variable = { name = ywc_nmg_office_pending value = 1010 } }
@@ -598,7 +630,8 @@ ywc_nmg_land_select_limited_target = {
 }
 
 ywc_nmg_office_select_limited_target = {
- if = { limit = { has_variable = ywc_nmg_office_fee_paid NOT = { var:ywc_nmg_office_route = 3 } NOT = { ywc_nmg_office_route_ready = yes } ywc_nmg_office_single_ready = yes }
+ if = { limit = { ywc_nmg_office_unsettled = yes has_variable = ywc_nmg_office_fee_paid NOT = { var:ywc_nmg_office_route = 3 } NOT = { ywc_nmg_office_route_ready = yes } ywc_nmg_office_single_ready = yes }
+  ywc_nmg_end_bilingual_office_service = yes
   set_variable = { name = ywc_nmg_office_route value = 3 } set_variable = { name = ywc_nmg_office_roster_full value = 1 } set_variable = { name = ywc_nmg_office_borrowed value = 1 } set_variable = { name = ywc_nmg_office_limited_selected value = 1 }
   add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 } remove_variable = ywc_nmg_office_watch_started remove_variable = ywc_nmg_office_watch_timer remove_variable = ywc_nmg_office_six_months_complete if = { limit = { NOT = { has_variable = ywc_nmg_office_notice_response_context } } set_variable = { name = ywc_nmg_office_pending value = 1015 } }
  } else = { set_variable = { name = ywc_nmg_office_pending value = 1015 } }

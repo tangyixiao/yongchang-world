@@ -56,6 +56,8 @@ v0.2 给西南六国各补一条核心日志与三个双语事件（设计见 [s
 
 ## 开发验证
 
+新增或修改事件前，请先按[事件编审](docs/development/event-editorial-review.md)核对选题、史料、世界线和双语成稿。文中有大顺机房的审稿实例，以及内容 PR 的验收方式。
+
 ```powershell
 python -m unittest discover -s tests -v
 python tools/ywc_check.py --mod-root yongchang_world --game-root "E:\SteamLibrary\steamapps\common\Victoria 3\game"

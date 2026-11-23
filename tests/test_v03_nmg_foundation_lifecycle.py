@@ -331,6 +331,89 @@ def fixture():
 
 
 class NmgLifecycleTest(unittest.TestCase):
+    def test_bilingual_office_charges_once_and_ends_service_on_each_exit(self):
+        journal = "ywc_je_v03_nmg_bilingual_office"
+        service = {"ywc_nmg_bilingual_office_gain", "ywc_nmg_bilingual_office_upkeep"}
+        world = NmgWorld(fixture())
+        self.activate(world, journal)
+        self.choose(world, self.pulse_until_event(world, journal), "bilingual")
+        world.run("ywc_nmg_choose_office_bilingual", "NMG")
+
+        def service_terms(game):
+            return [(fields["name"], fields["months"]) for tag, fields in game.modifiers
+                    if tag == "NMG" and fields["name"] in service]
+
+        self.assertCountEqual(service_terms(world), [(name, "120") for name in service])
+        self.assertEqual(world.treasury["NMG"], -1000)
+        for key, event, option in (("local", "1014", "switch_local"),
+                                   ("lower", "1015", "close_partial"),
+                                   ("withdraw", "1014", "withdraw"),
+                                   ("journal failure", None, None)):
+            with self.subTest(exit=key):
+                branch = copy.deepcopy(world)
+                if event is None:
+                    # A pre-update office can have the education benefit alone.
+                    branch.execute(parse("remove_modifier = ywc_nmg_bilingual_office_upkeep"), "NMG")
+                    branch.execute(field(GENERATED_JES[journal], "on_fail"), "NMG")
+                else:
+                    choice = event_option(f"ywc_nmg.{event}", option)
+                    branch.execute([n for n in choice if n[0] not in
+                                    ("name", "trigger", "ai_chance", "custom_tooltip")], "NMG")
+                self.assertEqual(service_terms(branch), [])
+                self.assertEqual(branch.treasury["NMG"], -1000)
+
+        # A mature operating office can settle immediately, without the fallback above.
+        world.countries["NMG"].update(ywc_nmg_office_roster_full=1, ywc_nmg_office_schools=1,
+                                      ywc_nmg_office_parish_recorded=1, ywc_nmg_office_six_months_complete=1)
+        for outcome in ("established", "compromise"):
+            with self.subTest(settlement=outcome):
+                branch = copy.deepcopy(world)
+                branch.run(f"ywc_nmg_close_office_as_{outcome}", "NMG")
+                self.assertEqual(branch.countries["NMG"][f"ywc_nmg_office_{outcome}"], 1)
+                expected = service_terms(world) if outcome == "established" else []
+                self.assertCountEqual(service_terms(branch), expected)
+
+    def test_unpaid_notice_returns_to_filing_and_recovers_old_local_route(self):
+        journal = "ywc_je_v03_nmg_bilingual_office"
+        world = NmgWorld(fixture())
+        self.activate(world, journal)
+        world.countries["NMG"]["gold_reserves"] = 0
+
+        for _ in range(12):
+            event = self.pulse_until_event(world, journal)
+            if event == "ywc_nmg.1014":
+                break
+            self.assertEqual(event, "ywc_nmg.1010")
+            self.choose(world, event, "wait_for_funds")
+        self.assertEqual(event, "ywc_nmg.1014")
+        self.assertEqual(world.countries["NMG"]["ywc_nmg_office_notice12_due"], 1)
+        switch = event_option(event, "switch_local")
+        self.assertFalse(world.conditions(field(switch, "trigger"), "NMG"))
+        self.choose(world, event, "keep_route")
+        self.assertEqual(world.countries["NMG"]["ywc_nmg_office_route"], 0)
+        self.assertNotIn("ywc_nmg_office_fee_paid", world.countries["NMG"])
+
+        for old_local_route in (False, True):
+            with self.subTest(old_local_route=old_local_route):
+                branch = copy.deepcopy(world)
+                country = branch.countries["NMG"]
+                if old_local_route:
+                    # Old saves could select local translators at the unpaid notice.
+                    country["ywc_nmg_office_route"] = 2
+                    branch.execute(parse("add_modifier = { name = ywc_nmg_local_translator_uneven months = 60 }"), "NMG")
+                country["gold_reserves"] = 2500
+                event = self.pulse_until_event(branch, journal)
+                self.assertEqual(event, "ywc_nmg.1010")
+                self.choose(branch, event, "local")
+                branch.run("ywc_nmg_choose_office_local", "NMG")
+                self.assertEqual(country["ywc_nmg_office_fee_paid"], 1)
+                self.assertEqual(country["ywc_nmg_office_route"], 2)
+                self.assertEqual((country["gold_reserves"], branch.treasury["NMG"]), (1500, -1000))
+                terms = [modifier["months"] for tag, modifier in branch.modifiers
+                         if tag == "NMG" and modifier["name"] == "ywc_nmg_local_translator_uneven"]
+                self.assertEqual(terms, ["60" if old_local_route else "120"])
+                self.assertEqual(self.pulse_until_event(branch, journal), "ywc_nmg.1011")
+
     def test_world_fact_fixture_rejects_missing_state_shortage_and_unknown_primitives(self):
         world = NmgWorld(fixture())
         v = world.countries["NMG"]
