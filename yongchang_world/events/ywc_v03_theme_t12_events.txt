@@ -85,19 +85,35 @@ ywc_society.1552 = {
     immediate = { if = { limit = { ywc_t12_shu_delivery_1552 = yes } remove_variable = ywc_t12_pending if = { limit = { NOT = { has_variable = ywc_t12_popup_epoch } } set_variable = { name = ywc_t12_popup_epoch value = 0 } } change_variable = { name = ywc_t12_popup_epoch add = 1 } save_scope_value_as = { name = ywc_t12_popup_epoch value = var:ywc_t12_popup_epoch } ywc_v03_mark_major_delivered = yes } }
     option = {
         name = ywc_society.1552.services_first
-        trigger = { ywc_t12_shu_at_1552 = yes NOT = { has_variable = ywc_t12_budget_paid } gold_reserves >= 800 }
-        ai_chance = { base = 100 }
+        trigger = { ywc_t12_can_fund_post_roads = yes }
+        ai_chance = { base = 10 modifier = { trigger = { gold_reserves >= 3200 } add = 10 } modifier = { trigger = { gold_reserves >= 1600 capital ?= { state_infrastructure_balance < 1 } } add = 40 } }
         custom_tooltip = { text = ywc_society.1552.services_first.cost_tooltip }
         custom_tooltip = { text = ywc_society.1552.services_first.consequence_tooltip }
-        if = { limit = { ywc_t12_shu_at_1552 = yes NOT = { has_variable = ywc_t12_budget_paid } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t12_budget_mode value = 1 } set_variable = { name = ywc_t12_budget_paid value = 1 } if = { limit = { ywc_t12_has_mobilization = yes } set_variable = { name = ywc_t12_stage value = 1553 } set_variable = { name = ywc_t12_pending value = 1553 } set_variable = { name = ywc_t12_wait_months value = 0 } } else = { ywc_t12_open_dmg_limits = yes } change_variable = { name = ywc_t12_popup_epoch add = 1 } }
+        if = {
+         limit = { ywc_t12_can_fund_post_roads = yes }
+         capital = { add_modifier = { name = ywc_t12_capital_post_roads days = 180 } }
+         add_treasury = -800
+         set_variable = { name = ywc_t12_budget_paid value = 1 }
+         set_variable = { name = ywc_t12_budget_mode value = 1 }
+         ywc_t12_advance_budget = yes
+        }
+        else = { ywc_t12_requeue_budget = yes }
     }
     option = {
         name = ywc_society.1552.defense_share
-        trigger = { ywc_t12_shu_at_1552 = yes NOT = { has_variable = ywc_t12_budget_paid } gold_reserves >= 800 }
-        ai_chance = { base = 100 }
+        trigger = { ywc_t12_can_fund_port_supply = yes }
+        ai_chance = { base = 10 modifier = { trigger = { gold_reserves >= 3200 } add = 10 } modifier = { trigger = { gold_reserves >= 1600 ywc_t12_war_or_mobilized_army = yes } add = 40 } }
         custom_tooltip = { text = ywc_society.1552.defense_share.cost_tooltip }
         custom_tooltip = { text = ywc_society.1552.defense_share.consequence_tooltip }
-        if = { limit = { ywc_t12_shu_at_1552 = yes NOT = { has_variable = ywc_t12_budget_paid } gold_reserves >= 800 } add_treasury = -800 set_variable = { name = ywc_t12_budget_mode value = 2 } set_variable = { name = ywc_t12_budget_paid value = 1 } if = { limit = { ywc_t12_has_mobilization = yes } set_variable = { name = ywc_t12_stage value = 1553 } set_variable = { name = ywc_t12_pending value = 1553 } set_variable = { name = ywc_t12_wait_months value = 0 } } else = { ywc_t12_open_dmg_limits = yes } change_variable = { name = ywc_t12_popup_epoch add = 1 } }
+        if = {
+         limit = { ywc_t12_can_fund_port_supply = yes }
+         ordered_scope_state = { limit = { ywc_t12_operating_port_state = yes } order_by = gdp position = 0 check_range_bounds = no add_modifier = { name = ywc_t12_escort_provisions days = 180 } }
+         add_treasury = -800
+         set_variable = { name = ywc_t12_budget_paid value = 1 }
+         set_variable = { name = ywc_t12_budget_mode value = 2 }
+         ywc_t12_advance_budget = yes
+        }
+        else = { ywc_t12_requeue_budget = yes }
     }
     option = {
         name = ywc_society.1552.even_split
@@ -105,15 +121,15 @@ ywc_society.1552 = {
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_society.1552.even_split.cost_tooltip }
         custom_tooltip = { text = ywc_society.1552.even_split.consequence_tooltip }
-        if = { limit = { ywc_t12_shu_at_1552 = yes } set_variable = { name = ywc_t12_budget_mode value = 3 } if = { limit = { ywc_t12_has_mobilization = yes } set_variable = { name = ywc_t12_stage value = 1553 } set_variable = { name = ywc_t12_pending value = 1553 } set_variable = { name = ywc_t12_wait_months value = 0 } } else = { ywc_t12_open_dmg_limits = yes } change_variable = { name = ywc_t12_popup_epoch add = 1 } }
+        if = { limit = { ywc_t12_shu_at_1552 = yes } set_variable = { name = ywc_t12_budget_mode value = 3 } ywc_t12_advance_budget = yes }
     }
     option = {
         name = ywc_society.1552.wait
         trigger = { ywc_t12_shu_at_1552 = yes }
-        ai_chance = { base = 100 }
+        ai_chance = { base = 5 }
         custom_tooltip = { text = ywc_society.1552.wait.cost_tooltip }
         custom_tooltip = { text = ywc_society.1552.wait.consequence_tooltip }
-        if = { limit = { ywc_t12_shu_at_1552 = yes } set_variable = { name = ywc_t12_pending value = 1552 } change_variable = { name = ywc_t12_popup_epoch add = 1 } }
+        ywc_t12_requeue_budget = yes
     }
 }
 
@@ -216,11 +232,11 @@ ywc_society.1555 = {
     }
     option = {
         name = ywc_society.1555.extend_once
-        trigger = { ywc_t12_shu_at_1555 = yes ywc_t12_has_mobilization = yes }
+        trigger = { ywc_t12_shu_at_1555 = yes ywc_t12_war_or_mobilized_army = yes }
         ai_chance = { base = 100 }
         custom_tooltip = { text = ywc_society.1555.extend_once.cost_tooltip }
         custom_tooltip = { text = ywc_society.1555.extend_once.consequence_tooltip }
-        if = { limit = { ywc_t12_shu_at_1555 = yes ywc_t12_has_mobilization = yes } set_variable = { name = ywc_t12_emergency_mode value = 2 } set_variable = { name = ywc_t12_stage value = 1556 } set_variable = { name = ywc_t12_pending value = 1556 } set_variable = { name = ywc_t12_wait_months value = 0 } change_variable = { name = ywc_t12_popup_epoch add = 1 } }
+        if = { limit = { ywc_t12_shu_at_1555 = yes ywc_t12_war_or_mobilized_army = yes } set_variable = { name = ywc_t12_emergency_mode value = 2 } set_variable = { name = ywc_t12_stage value = 1556 } set_variable = { name = ywc_t12_pending value = 1556 } set_variable = { name = ywc_t12_wait_months value = 0 } change_variable = { name = ywc_t12_popup_epoch add = 1 } } else_if = { limit = { ywc_t12_shu_at_1555 = yes } set_variable = { name = ywc_t12_pending value = 1555 } change_variable = { name = ywc_t12_popup_epoch add = 1 } }
     }
     option = {
         name = ywc_society.1555.wait
